@@ -1,6 +1,6 @@
 /*
  *  convert_msa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -333,10 +333,14 @@ convert_msa(int           old_msa_fd,
             unsigned char old_version,
             unsigned char new_version)
 {
-   int         i, j;
-   size_t      new_size;
-   char        *ptr;
-   struct stat stat_buf;
+   int          i, j;
+   size_t       new_size;
+   char         *ptr;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    if ((old_version == 0) && (new_version == 1))
    {
@@ -345,22 +349,42 @@ convert_msa(int           old_msa_fd,
       struct mon_status_area_1 *new_msa;
 
       /* Get the size of the old MSA file. */
-      if (fstat(old_msa_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+      if (statx(old_msa_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
+      if (fstat(old_msa_fd, &stat_buf) == -1)
+#endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "Failed to fstat() %s : %s", old_msa_stat, strerror(errno));
+                    "Failed to access %s : %s",
+                    old_msa_stat, strerror(errno));
          *old_msa_size = -1;
          return(NULL);
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > 0)
+#else
          if (stat_buf.st_size > 0)
+#endif
          {
 #ifdef HAVE_MMAP
-            if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+            if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                            stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                            stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                             MAP_SHARED, old_msa_fd, 0)) == (caddr_t) -1)
 #else
-            if ((ptr = mmap_emu(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+            if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                 MAP_SHARED, old_msa_stat, 0)) == (caddr_t) -1)
 #endif
             {
@@ -392,7 +416,11 @@ convert_msa(int           old_msa_fd,
          ptr = (char *)old_msa;
          ptr -= AFD_WORD_OFFSET_0;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+         if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
          if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
          if (munmap_emu(ptr) == -1)
 #endif
@@ -528,22 +556,43 @@ convert_msa(int           old_msa_fd,
            struct mon_status_area_2 *new_msa;
 
            /* Get the size of the old MSA file. */
-           if (fstat(old_msa_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_msa_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE, &stat_buf) == -1)
+#else
+           if (fstat(old_msa_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
-                         "Failed to fstat() %s : %s", old_msa_stat, strerror(errno));
+                         "Failed to access %s : %s",
+                         old_msa_stat, strerror(errno));
               *old_msa_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_msa_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
+                                     (PROT_READ | PROT_WRITE),
                                      MAP_SHARED, old_msa_stat, 0)) == (caddr_t) -1)
 #endif
                  {
@@ -575,7 +624,11 @@ convert_msa(int           old_msa_fd,
               ptr = (char *)old_msa;
               ptr -= AFD_WORD_OFFSET_0;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -712,23 +765,45 @@ convert_msa(int           old_msa_fd,
            struct mon_status_area_3 *new_msa;
 
            /* Get the size of the old MSA file. */
-           if (fstat(old_msa_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_msa_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE, &stat_buf) == -1)
+#else
+           if (fstat(old_msa_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
-                         "Failed to fstat() %s : %s", old_msa_stat, strerror(errno));
+                         "Failed to access %s : %s",
+                         old_msa_stat, strerror(errno));
               *old_msa_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_msa_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
-                                     MAP_SHARED, old_msa_stat, 0)) == (caddr_t) -1)
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
+                                     (PROT_READ | PROT_WRITE),
+                                     MAP_SHARED, old_msa_stat,
+                                     0)) == (caddr_t) -1)
 #endif
                  {
                     system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -759,7 +834,11 @@ convert_msa(int           old_msa_fd,
               ptr = (char *)old_msa;
               ptr -= AFD_WORD_OFFSET_0;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -897,25 +976,46 @@ convert_msa(int           old_msa_fd,
            struct mon_status_area_2 *new_msa;
 
            /* Get the size of the old MSA file. */
-           if (fstat(old_msa_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_msa_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE, &stat_buf) == -1)
+#else
+           if (fstat(old_msa_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
-                         "Failed to fstat() %s : %s", old_msa_stat, strerror(errno));
+                         "Failed to access %s : %s",
+                         old_msa_stat, strerror(errno));
               *old_msa_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size,
+# else
+                                 stat_buf.st_size,
+# endif
                                  (PROT_READ | PROT_WRITE),
                                  MAP_SHARED, old_msa_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE),
-                                     MAP_SHARED, old_msa_stat, 0)) == (caddr_t) -1)
+                                     MAP_SHARED, old_msa_stat,
+                                     0)) == (caddr_t) -1)
 #endif
                  {
                     system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -946,7 +1046,11 @@ convert_msa(int           old_msa_fd,
               ptr = (char *)old_msa;
               ptr -= AFD_WORD_OFFSET_1;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -1083,26 +1187,46 @@ convert_msa(int           old_msa_fd,
            struct mon_status_area_3 *new_msa;
 
            /* Get the size of the old MSA file. */
-           if (fstat(old_msa_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_msa_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE, &stat_buf) == -1)
+#else
+           if (fstat(old_msa_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
-                         "Failed to fstat() %s : %s",
+                         "Failed to access %s : %s",
                          old_msa_stat, strerror(errno));
               *old_msa_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size,
+# else
+                                 stat_buf.st_size,
+# endif
                                  (PROT_READ | PROT_WRITE),
                                  MAP_SHARED, old_msa_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE),
-                                     MAP_SHARED, old_msa_stat, 0)) == (caddr_t) -1)
+                                     MAP_SHARED, old_msa_stat,
+                                     0)) == (caddr_t) -1)
 #endif
                  {
                     system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -1133,7 +1257,11 @@ convert_msa(int           old_msa_fd,
               ptr = (char *)old_msa;
               ptr -= AFD_WORD_OFFSET_1;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -1271,26 +1399,46 @@ convert_msa(int           old_msa_fd,
            struct mon_status_area_3 *new_msa;
 
            /* Get the size of the old MSA file. */
-           if (fstat(old_msa_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_msa_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE, &stat_buf) == -1)
+#else
+           if (fstat(old_msa_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
-                         "Failed to fstat() %s : %s",
+                         "Failed to access %s : %s",
                          old_msa_stat, strerror(errno));
               *old_msa_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size,
+# else
+                                 stat_buf.st_size,
+# endif
                                  (PROT_READ | PROT_WRITE),
                                  MAP_SHARED, old_msa_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE),
-                                     MAP_SHARED, old_msa_stat, 0)) == (caddr_t) -1)
+                                     MAP_SHARED, old_msa_stat,
+                                     0)) == (caddr_t) -1)
 #endif
                  {
                     system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -1321,7 +1469,11 @@ convert_msa(int           old_msa_fd,
               ptr = (char *)old_msa;
               ptr -= AFD_WORD_OFFSET_2;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif

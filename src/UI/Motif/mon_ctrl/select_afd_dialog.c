@@ -670,7 +670,11 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
       char                 ahl_file[MAX_PATH_LENGTH],
                            *p_ahl_file,
                            *ptr;
+#ifdef HAVE_STATX
+      struct statx         stat_buf;
+#else
       struct stat          stat_buf;
+#endif
       struct afd_host_list **ahl;
 
       p_ahl_file = ahl_file +
@@ -685,7 +689,12 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
       for (i = 0; i < no_of_afds; i++)
       {
          (void)sprintf(p_ahl_file, "%s", msa[i].afd_alias);
+#ifdef HAVE_STATX
+         if ((statx(0, ahl_file, AT_STATX_SYNC_AS_STAT,
+                    STATX_SIZE, &stat_buf) == 0) && (stat_buf.stx_size > 0))
+#else
          if ((stat(ahl_file, &stat_buf) == 0) && (stat_buf.st_size > 0))
+#endif
          {
             if ((ptr = map_file(ahl_file, &ahl_fd, NULL, &stat_buf,
                                 O_RDONLY)) == (caddr_t) -1)
@@ -802,9 +811,18 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
          if (ahl[i] != NULL)
          {
             (void)sprintf(p_ahl_file, "%s", msa[i].afd_alias);
+#ifdef HAVE_STATX
+            if (statx(0, ahl_file, AT_STATX_SYNC_AS_STAT,
+                      STATX_SIZE, &stat_buf) == 0)
+#else
             if (stat(ahl_file, &stat_buf) == 0)
+#endif
             {
+#ifdef HAVE_STATX
+               if (munmap((char *)ahl[i], stat_buf.stx_size) == -1)
+#else
                if (munmap((char *)ahl[i], stat_buf.st_size) == -1)
+#endif
                {
                   (void)fprintf(stderr,
                                 "ERROR : Failed to munmap() from %s : %s (%s %d)\n",

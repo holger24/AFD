@@ -144,7 +144,11 @@ main(int argc, char *argv[])
                     str_crc_val[MAX_INT_HEX_LENGTH];
    DIR              *dp;
    struct dirent    *p_dir;
+#ifdef HAVE_STATX
+   struct statx     stat_buf;
+#else
    struct stat      stat_buf;
+#endif
 #ifdef SA_FULLDUMP
    struct sigaction sact;
 #endif
@@ -399,12 +403,24 @@ main(int argc, char *argv[])
             continue;
          }
          (void)strcpy(p_local_tmp_file, p_dir->d_name);
-         if (stat(local_tmp_file, &stat_buf) < 0)
+#ifdef HAVE_STATX
+         if (statx(0, local_tmp_file, AT_STATX_SYNC_AS_STAT,
+# ifndef LINUX
+                   STATX_MODE |
+# endif
+                   STATX_SIZE, &stat_buf) == -1)
+#else
+         if (stat(local_tmp_file, &stat_buf) == -1)
+#endif
          {
             if (errno != ENOENT)
             {
                trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+#ifdef HAVE_STATX
+                         _("Failed to statx() file `%s' : %s"),
+#else
                          _("Failed to stat() file `%s' : %s"),
+#endif
                          local_tmp_file, strerror(errno));
             }
             continue;
@@ -412,7 +428,11 @@ main(int argc, char *argv[])
 
 #ifndef LINUX
          /* Sure it is a normal file? */
+#ifdef HAVE_STATX
+         if (S_ISREG(stat_buf.stx_mode))
+#else
          if (S_ISREG(stat_buf.st_mode))
+#endif
          {
 #endif
             /* Generate name for the new file. */
@@ -428,11 +448,19 @@ main(int argc, char *argv[])
             {
                if (db.fsa_pos != INCORRECT)
                {
+#ifdef HAVE_STATX
+                  fsa->job_status[(int)db.job_no].file_size_done += stat_buf.stx_size;
+#else
                   fsa->job_status[(int)db.job_no].file_size_done += stat_buf.st_size;
+#endif
                   fsa->job_status[(int)db.job_no].no_of_files_done += 1;
                }
                files_retrieved++;
+#ifdef HAVE_STATX
+               file_size_retrieved += stat_buf.stx_size;
+#else
                file_size_retrieved += stat_buf.st_size;
+#endif
                if (fsa->debug > NORMAL_MODE)
                {
                   trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,

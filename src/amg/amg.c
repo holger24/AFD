@@ -1,6 +1,6 @@
 /*
  *  amg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -235,7 +235,11 @@ main(int argc, char *argv[])
                     *ptr;
    fd_set           rset;
    struct timeval   timeout;
+#ifdef HAVE_STATX
+   struct statx     stat_buf;
+#else
    struct stat      stat_buf;
+#endif
 #ifdef SA_FULLDUMP
    struct sigaction sact;
 #endif
@@ -363,10 +367,19 @@ main(int argc, char *argv[])
       }
       else
       {
+#ifdef HAVE_STATX
+         if (statx(afd_active_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &stat_buf) < 0)
+#else
          if (fstat(afd_active_fd, &stat_buf) < 0)
+#endif
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                       _("Failed to statx() `%s' : %s"),
+#else
                        _("Failed to fstat() `%s' : %s"),
+#endif
                        afd_active_file, strerror(errno));
             (void)close(afd_active_fd);
             pid_list = NULL;
@@ -374,11 +387,21 @@ main(int argc, char *argv[])
          else
          {
 #ifdef HAVE_MMAP
-            if ((pid_list = mmap(NULL, stat_buf.st_size,
+            if ((pid_list = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size,
+# else
+                                 stat_buf.st_size,
+# endif
                                  (PROT_READ | PROT_WRITE), MAP_SHARED,
                                  afd_active_fd, 0)) == (caddr_t) -1)
 #else
-            if ((pid_list = mmap_emu(NULL, stat_buf.st_size,
+            if ((pid_list = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      afd_active_file, 0)) == (caddr_t) -1)
 #endif
@@ -387,7 +410,11 @@ main(int argc, char *argv[])
                           _("mmap() error : %s"), strerror(errno));
                pid_list = NULL;
             }
+#ifdef HAVE_STATX
+            afd_active_size = stat_buf.stx_size;
+#else
             afd_active_size = stat_buf.st_size;
+#endif
 
             if (close(afd_active_fd) == -1)
             {
@@ -415,7 +442,12 @@ main(int argc, char *argv[])
        * Create and initialize AMG counter file. Do it here to
        * avoid having two dir_checks trying to do the same.
        */
+#ifdef HAVE_STATX
+      if ((statx(0, counter_file, AT_STATX_SYNC_AS_STAT, 0, &stat_buf) == -1) &&
+          (errno == ENOENT))
+#else
       if ((stat(counter_file, &stat_buf) == -1) && (errno == ENOENT))
+#endif
       {
          /*
           * Lets assume when there is no counter file that this is the
@@ -452,7 +484,13 @@ main(int argc, char *argv[])
 
       /* If process AFD and AMG_DIALOG have not yet been created */
       /* we create the fifos needed to communicate with them.    */
-      if ((stat(amg_cmd_fifo, &stat_buf) < 0) || (!S_ISFIFO(stat_buf.st_mode)))
+#ifdef HAVE_STATX
+      if ((statx(0, amg_cmd_fifo, AT_STATX_SYNC_AS_STAT,
+                 STATX_MODE, &stat_buf) == -1) ||
+          (!S_ISFIFO(stat_buf.stx_mode)))
+#else
+      if ((stat(amg_cmd_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+#endif
       {
          if (make_fifo(amg_cmd_fifo) < 0)
          {
@@ -461,7 +499,14 @@ main(int argc, char *argv[])
             exit(INCORRECT);
          }
       }
-      if ((stat(db_update_fifo, &stat_buf) < 0) || (!S_ISFIFO(stat_buf.st_mode)))
+#ifdef HAVE_STATX
+      if ((statx(0, db_update_fifo, AT_STATX_SYNC_AS_STAT,
+                 STATX_MODE, &stat_buf) == -1) ||
+          (!S_ISFIFO(stat_buf.stx_mode)))
+#else
+      if ((stat(db_update_fifo, &stat_buf) == -1) ||
+          (!S_ISFIFO(stat_buf.st_mode)))
+#endif
       {
          if (make_fifo(db_update_fifo) < 0)
          {
@@ -671,10 +716,15 @@ main(int argc, char *argv[])
          if (dcfl[i].is_filter == NO)
          {
             /* Get the size of the database file. */
+#ifdef HAVE_STATX
+            if (statx(0, dcfl[i].dc_filter, AT_STATX_SYNC_AS_STAT,
+                      STATX_SIZE | STATX_MTIME, &stat_buf) == -1)
+#else
             if (stat(dcfl[i].dc_filter, &stat_buf) == -1)
+#endif
             {
                system_log(WARN_SIGN, __FILE__, __LINE__,
-                          _("Could not get size of database file `%s' : %s"),
+                          _("Could not get size + time of database file `%s' : %s"),
                           dcfl[i].dc_filter, strerror(errno));
             }
             else
@@ -707,10 +757,15 @@ main(int argc, char *argv[])
                }
                (void)memcpy(dc_dcl[no_of_dir_configs].dir_config_file,
                             dcfl[i].dc_filter, dcfl[i].length);
+#ifdef HAVE_STATX
+               db_size += stat_buf.stx_size;
+               dc_dcl[no_of_dir_configs].dc_old_time = stat_buf.stx_mtime.tv_sec;
+#else
+               db_size += stat_buf.st_size;
                dc_dcl[no_of_dir_configs].dc_old_time = stat_buf.st_mtime;
+#endif
                dc_dcl[no_of_dir_configs].is_filter = NO;
                no_of_dir_configs++;
-               db_size += stat_buf.st_size;
             }
          }
          else
@@ -1354,7 +1409,11 @@ main(int argc, char *argv[])
                                 char         db_update_reply_fifo[MAX_PATH_LENGTH],
                                              flag = fifo_buffer[count - 1],
                                              uc_reply_name[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+                                struct statx stat_buf;
+#else
                                 struct stat  stat_buf;
+#endif
                                 FILE         *uc_reply_fp = NULL;
 
                                 (void)memcpy(&ret_pid, &fifo_buffer[count],
@@ -1453,17 +1512,33 @@ main(int argc, char *argv[])
                                    }
                                    else
                                    {
-                                      if (stat(dc_dcl[i].dir_config_file, &stat_buf) < 0)
+#ifdef HAVE_STATX
+                                      if (statx(0, dc_dcl[i].dir_config_file,
+                                                AT_STATX_SYNC_AS_STAT,
+                                                STATX_SIZE | STATX_MTIME,
+                                                &stat_buf) == -1)
+#else
+                                      if (stat(dc_dcl[i].dir_config_file,
+                                               &stat_buf) == -1)
+#endif
                                       {
                                          system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                                                    _("Failed to statx() `%s' : %s"),
+#else
                                                     _("Failed to stat() `%s' : %s"),
+#endif
                                                     dc_dcl[i].dir_config_file,
                                                     strerror(errno));
                                          stat_error_set = YES;
                                       }
                                       else
                                       {
+#ifdef HAVE_STATX
+                                         if (dc_dcl[i].dc_old_time != stat_buf.stx_mtime.tv_sec)
+#else
                                          if (dc_dcl[i].dc_old_time != stat_buf.st_mtime)
+#endif
                                          {
                                             if ((flag > REREAD_DIR_CONFIG_VERBOSE1) &&
                                                 (uc_reply_fp != NULL))
@@ -1478,12 +1553,25 @@ main(int argc, char *argv[])
                                                              dc_dcl[i].dc_id,
                                                              dc_dcl[i].dir_config_file,
                                                              (pri_time_t)dc_dcl[i].dc_old_time,
-                                                             (pri_time_t)stat_buf.st_mtime);
+#ifdef HAVE_STATX
+                                                             (pri_time_t)stat_buf.stx_mtime.tv_sec
+#else
+                                                             (pri_time_t)stat_buf.st_mtime
+#endif
+                                                            );
                                             }
+#ifdef HAVE_STATX
+                                            dc_dcl[i].dc_old_time = stat_buf.stx_mtime.tv_sec;
+#else
                                             dc_dcl[i].dc_old_time = stat_buf.st_mtime;
+#endif
                                             dc_changed = YES;
                                          }
+#ifdef HAVE_STATX
+                                         db_size += stat_buf.stx_size;
+#else
                                          db_size += stat_buf.st_size;
+#endif
                                       }
                                    }
                                 }
@@ -1662,7 +1750,12 @@ main(int argc, char *argv[])
                * Check if the HOST_CONFIG file still exists. If not recreate
                * it from the internal current host_list structure.
                */
-              if (stat(host_config_file, &stat_buf) < 0)
+#ifdef HAVE_STATX
+              if (statx(0, host_config_file, AT_STATX_SYNC_AS_STAT,
+                        0, &stat_buf) == -1)
+#else
+              if (stat(host_config_file, &stat_buf) == -1)
+#endif
               {
                  if (errno == ENOENT)
                  {

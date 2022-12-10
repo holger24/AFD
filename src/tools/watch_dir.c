@@ -1,6 +1,6 @@
 /*
  *  watch_dir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -45,6 +45,9 @@ DESCR__E_M1
 #include <string.h>             /* strcpy(), strerror()                  */
 #include <stdlib.h>             /* exit()                                */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>             /* Definition of AT_* constants          */
+#endif
 #include <sys/stat.h>           /* stat(), S_ISDIR()                     */
 #include <dirent.h>             /* opendir(), readdir(), closedir()      */
 #include <unistd.h>             /* STDERR_FILENO                         */
@@ -69,7 +72,11 @@ main(int argc, char *argv[])
    char          *ptr,
                  filename[MAX_FILENAME_LENGTH],
                  watch_dir[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
    struct dirent *dirp;
    DIR           *dp;
 
@@ -107,24 +114,45 @@ main(int argc, char *argv[])
          }
 
          (void)strcpy(ptr, dirp->d_name);
-         if (stat(watch_dir, &stat_buf) < 0)
+#ifdef HAVE_STATX
+         if (statx(0, watch_dir, AT_STATX_SYNC_AS_STAT,
+                   STATX_MODE | STATX_SIZE | STATX_MTIME, &stat_buf) == -1)
+#else
+         if (stat(watch_dir, &stat_buf) == -1)
+#endif
          {
-            (void)fprintf(stderr, "WARNING : Failed to stat() %s : %s (%s %d)\n",
+            (void)fprintf(stderr, "WARNING : Failed to access %s : %s (%s %d)\n",
                           watch_dir, strerror(errno), __FILE__, __LINE__);
             continue;
          }
 
          /* Make sure it's NOT a directory. */
+#ifdef HAVE_STATX
+         if (S_ISDIR(stat_buf.stx_mode) == 0)
+#else
          if (S_ISDIR(stat_buf.st_mode) == 0)
+#endif
          {
+#ifdef HAVE_STATX
+            if (((ret = my_strcmp(dirp->d_name, filename)) != 0) ||
+                ((ret == 0) && (filesize != stat_buf.stx_size)))
+#else
             if (((ret = my_strcmp(dirp->d_name, filename)) != 0) ||
                 ((ret == 0) && (filesize != stat_buf.st_size)))
+#endif
             {
+#ifdef HAVE_STATX
+               (void)printf("%-39s |%10d | %s",
+                            dirp->d_name, (int)stat_buf.stx_size,
+                            ctime(&stat_buf.stx_mtime.tv_sec));
+               filesize = stat_buf.stx_size;
+#else
                (void)printf("%-39s |%10d | %s",
                             dirp->d_name, (int)stat_buf.st_size,
                             ctime(&stat_buf.st_mtime));
-               (void)strcpy(filename, dirp->d_name);
                filesize = stat_buf.st_size;
+#endif
+               (void)strcpy(filename, dirp->d_name);
                gotcha = 1;
             }
          }

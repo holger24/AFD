@@ -1,6 +1,6 @@
 /*
  *  evaluate_message.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -541,7 +541,11 @@ evaluate_message(int *bytes_done)
         {
            int         new_no_of_dirs;
            char        adl_file_name[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+           struct statx stat_buf;
+#else
            struct stat stat_buf;
+#endif
 
            ptr += 3;
            ptr_start = ptr;
@@ -555,7 +559,13 @@ evaluate_message(int *bytes_done)
            (void)sprintf(adl_file_name, "%s%s%s%s",
                          p_work_dir, FIFO_DIR, ADL_FILE_NAME,
                          msa[afd_no].afd_alias);
+#ifdef HAVE_STATX
+           if (statx(0, adl_file_name, AT_STATX_SYNC_AS_STAT,
+                     STATX_MODE | STATX_SIZE | STATX_ATIME | STATX_MTIME,
+                     &stat_buf) == 0)
+#else
            if (stat(adl_file_name, &stat_buf) == 0)
+#endif
            {
               char tmp_adl_file_name[MAX_PATH_LENGTH];
 
@@ -618,7 +628,11 @@ evaluate_message(int *bytes_done)
         {
            int         new_no_of_job_ids;
            char        ajl_file_name[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+           struct statx stat_buf;
+#else
            struct stat stat_buf;
+#endif
 
            ptr += 3;
            ptr_start = ptr;
@@ -632,7 +646,13 @@ evaluate_message(int *bytes_done)
            (void)sprintf(ajl_file_name, "%s%s%s%s",
                          p_work_dir, FIFO_DIR, AJL_FILE_NAME,
                          msa[afd_no].afd_alias);
+#ifdef HAVE_STATX
+           if (statx(0, ajl_file_name, AT_STATX_SYNC_AS_STAT,
+                     STATX_MODE | STATX_SIZE | STATX_ATIME | STATX_MTIME,
+                     &stat_buf) == 0)
+#else
            if (stat(ajl_file_name, &stat_buf) == 0)
+#endif
            {
               char tmp_ajl_file_name[MAX_PATH_LENGTH];
 
@@ -1605,20 +1625,34 @@ reshuffel_dir_data(int no_of_dirs)
    }
    else
    {
+#ifdef HAVE_STATX
+      struct statx        stat_buf;
+#else
       struct stat         stat_buf;
+#endif
       struct afd_dir_list *oadl;
 
       (void)sprintf(tmp_adl_file_name, "%s%s%s%s",
                     p_work_dir, FIFO_DIR, TMP_ADL_FILE_NAME,
                     msa[afd_no].afd_alias);
+#ifdef HAVE_STATX
+      if ((statx(0, tmp_adl_file_name, AT_STATX_SYNC_AS_STAT,
+                 STATX_SIZE, &stat_buf) == 0) &&
+          (stat_buf.stx_size > 0))
+#else
       if ((stat(tmp_adl_file_name, &stat_buf) == 0) &&
           (stat_buf.st_size > 0))
+#endif
       {
          int  fd,
               tmp_no_of_dirs;
          char *ptr2;
 
+#ifdef HAVE_STATX
+         tmp_no_of_dirs = stat_buf.stx_size / sizeof(struct afd_dir_list);
+#else
          tmp_no_of_dirs = stat_buf.st_size / sizeof(struct afd_dir_list);
+#endif
          if ((ptr2 = map_file(tmp_adl_file_name, &fd, NULL, &stat_buf,
                               O_RDONLY)) == (caddr_t)-1)
          {
@@ -1718,7 +1752,11 @@ reshuffel_dir_data(int no_of_dirs)
             } /* for (i = 0; i < tmp_no_of_dirs; i++) */
 
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+            if (munmap((void *)tadl, stat_buf.stx_size) == -1)
+# else
             if (munmap((void *)tadl, stat_buf.st_size) == -1)
+# endif
 #else
             if (munmap_emu((void *)tadl) == -1)
 #endif
@@ -1767,14 +1805,28 @@ reshuffel_dir_data(int no_of_dirs)
       {
          ptr = (char *)oadl - AFD_WORD_OFFSET;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+         if (statx(oadl_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &stat_buf) == -1)
+# else
          if (fstat(oadl_fd, &stat_buf) == -1)
+# endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "fstat() error : %s", strerror(errno));
+# ifdef HAVE_STATX
+                       "statx() error : %s",
+# else
+                       "fstat() error : %s",
+# endif
+                       strerror(errno));
          }
          else
          {
+# ifdef HAVE_STATX
+            if (munmap((void *)ptr, stat_buf.stx_size) == -1)
+# else
             if (munmap((void *)ptr, stat_buf.st_size) == -1)
+# endif
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           "munmap() error : %s", strerror(errno));
@@ -1836,20 +1888,34 @@ reshuffel_job_data(int no_of_job_ids)
    }
    else
    {
+#ifdef HAVE_STATX
+      struct statx        stat_buf;
+#else
       struct stat         stat_buf;
+#endif
       struct afd_job_list *oajl;
 
       (void)sprintf(tmp_ajl_file_name, "%s%s%s%s",
                     p_work_dir, FIFO_DIR, TMP_AJL_FILE_NAME,
                     msa[afd_no].afd_alias);
+#ifdef HAVE_STATX
+      if ((statx(0, tmp_ajl_file_name, AT_STATX_SYNC_AS_STAT,
+                 STATX_SIZE, &stat_buf) == 0) &&
+          (stat_buf.stx_size > 0))
+#else
       if ((stat(tmp_ajl_file_name, &stat_buf) == 0) &&
           (stat_buf.st_size > 0))
+#endif
       {
          int  fd,
               tmp_no_of_job_ids;
          char *ptr2;
 
+#ifdef HAVE_STATX
+         tmp_no_of_job_ids = stat_buf.stx_size / sizeof(struct afd_job_list);
+#else
          tmp_no_of_job_ids = stat_buf.st_size / sizeof(struct afd_job_list);
+#endif
          if ((ptr2 = map_file(tmp_ajl_file_name, &fd, NULL, &stat_buf,
                               O_RDONLY)) == (caddr_t)-1)
          {
@@ -1949,7 +2015,11 @@ reshuffel_job_data(int no_of_job_ids)
             } /* for (i = 0; i < tmp_no_of_job_ids; i++) */
 
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+            if (munmap((void *)tajl, stat_buf.stx_size) == -1)
+# else
             if (munmap((void *)tajl, stat_buf.st_size) == -1)
+# endif
 #else
             if (munmap_emu((void *)tajl) == -1)
 #endif
@@ -1998,14 +2068,28 @@ reshuffel_job_data(int no_of_job_ids)
       {
          ptr = (char *)oajl - AFD_WORD_OFFSET;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+         if (statx(oajl_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &stat_buf) == -1)
+# else
          if (fstat(oajl_fd, &stat_buf) == -1)
+# endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "fstat() error : %s", strerror(errno));
+# ifdef HAVE_STATX
+                       "statx() error : %s",
+# else
+                       "fstat() error : %s",
+# endif
+                       strerror(errno));
          }
          else
          {
+# ifdef HAVE_STATX
+            if (munmap((void *)ptr, stat_buf.stx_size) == -1)
+# else
             if (munmap((void *)ptr, stat_buf.st_size) == -1)
+# endif
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           "munmap() error : %s", strerror(errno));

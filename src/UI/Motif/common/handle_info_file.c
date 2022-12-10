@@ -1,6 +1,6 @@
 /*
  *  handle_info_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -111,17 +111,30 @@ write_info_file(Widget w, char *alias_name, char *central_info_filename)
       }
       else
       {
+#ifdef HAVE_STATX
+         struct statx stat_buf;
+#else
          struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+         if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &stat_buf) == -1)
+#else
          if (fstat(fd, &stat_buf) == -1)
+#endif
          {
             (void)xrec(ERROR_DIALOG,
-                       "Failed to fstat() %s : %s (%s %d)",
+                       "Failed to access %s : %s (%s %d)",
                        info_file, strerror(errno), __FILE__, __LINE__);
          }
          else
          {
+#ifdef HAVE_STATX
+            if (stat_buf.stx_size > 0)
+#else
             if (stat_buf.st_size > 0)
+#endif
             {
                size_t length;
                char   *buffer = NULL,
@@ -130,7 +143,11 @@ write_info_file(Widget w, char *alias_name, char *central_info_filename)
                       *search_str_end,
                       *search_str_start;
 
+#ifdef HAVE_STATX
+               if ((buffer = malloc(stat_buf.stx_size + 1)) == NULL)
+#else
                if ((buffer = malloc(stat_buf.st_size + 1)) == NULL)
+#endif
                {
                   (void)xrec(ERROR_DIALOG,
                              "Failed to allocate memory : %s (%s %d)",
@@ -138,8 +155,13 @@ write_info_file(Widget w, char *alias_name, char *central_info_filename)
                   (void)close(fd);
                   return;
                }
+#ifdef HAVE_STATX
+               if (readn(fd, buffer, stat_buf.stx_size,
+                         DEFAULT_TRANSFER_TIMEOUT) != stat_buf.stx_size)
+#else
                if (readn(fd, buffer, stat_buf.st_size,
                          DEFAULT_TRANSFER_TIMEOUT) != stat_buf.st_size)
+#endif
                {
                   (void)xrec(ERROR_DIALOG,
                              "Failed to read file to memory : %s (%s %d)",
@@ -148,7 +170,11 @@ write_info_file(Widget w, char *alias_name, char *central_info_filename)
                   (void)close(fd);
                   return;
                }
+#ifdef HAVE_STATX
+               buffer[stat_buf.stx_size] = '\0';
+#else
                buffer[stat_buf.st_size] = '\0';
+#endif
 
                length = strlen(alias_name);
                if ((search_str_end = malloc((3 + length + 2))) == NULL)
@@ -389,15 +415,33 @@ check_info_file(char *alias_name, char *central_info_filename, int check_mtime)
                  src_fd;
    char          alias_info_file[MAX_PATH_LENGTH],
                  central_info_file[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
 
    (void)snprintf(central_info_file, MAX_PATH_LENGTH, "%s%s/%s", p_work_dir,
                   ETC_DIR, central_info_filename);
+#ifdef HAVE_STATX
+   if ((statx(0, central_info_file, AT_STATX_SYNC_AS_STAT,
+              STATX_SIZE | STATX_MTIME, &stat_buf) == 0) &&
+       (stat_buf.stx_size > 0))
+#else
    if ((stat(central_info_file, &stat_buf) == 0) && (stat_buf.st_size > 0))
+#endif
    {
+#ifdef HAVE_STATX
+      if ((check_mtime == NO) || (stat_buf.stx_mtime.tv_sec > last_mtime_central))
+#else
       if ((check_mtime == NO) || (stat_buf.st_mtime > last_mtime_central))
+#endif
       {
+#ifdef HAVE_STATX
+         last_mtime_central = stat_buf.stx_mtime.tv_sec;
+#else
          last_mtime_central = stat_buf.st_mtime;
+#endif
 
          if ((src_fd = open(central_info_file, O_RDONLY)) < 0)
          {
@@ -409,11 +453,21 @@ check_info_file(char *alias_name, char *central_info_filename, int check_mtime)
             char *ptr;
 
 #ifdef HAVE_MMAP
-            if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+            if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                            stat_buf.stx_size, PROT_READ,
+# else
+                            stat_buf.st_size, PROT_READ,
+# endif
                             MAP_SHARED, src_fd, 0)) == (caddr_t) -1)
 #else
-            if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
-                                MAP_SHARED, central_info_file, 0)) == (caddr_t) -1)
+            if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                stat_buf.stx_size, PROT_READ, MAP_SHARED,
+# else
+                                stat_buf.st_size, PROT_READ, MAP_SHARED,
+# endif
+                                central_info_file, 0)) == (caddr_t) -1)
 #endif
             {
                (void)xrec(ERROR_DIALOG, "Failed to mmap() %s : %s (%s %d)",
@@ -436,7 +490,11 @@ check_info_file(char *alias_name, char *central_info_filename, int check_mtime)
                              strerror(errno), __FILE__, __LINE__);
                   (void)close(src_fd);
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+                  if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
                   if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
                   if (munmap_emu(ptr) == -1)
 #endif
@@ -460,7 +518,11 @@ check_info_file(char *alias_name, char *central_info_filename, int check_mtime)
                   free(search_str_end);
                   (void)close(src_fd);
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+                  if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
                   if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
                   if (munmap_emu(ptr) == -1)
 #endif
@@ -495,7 +557,11 @@ check_info_file(char *alias_name, char *central_info_filename, int check_mtime)
                   }
                   (void)close(src_fd);
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+                  if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
                   if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
                   if (munmap_emu(ptr) == -1)
 #endif
@@ -526,7 +592,12 @@ check_info_file(char *alias_name, char *central_info_filename, int check_mtime)
     */
    (void)snprintf(alias_info_file, MAX_PATH_LENGTH, "%s%s%s/%s", p_work_dir,
                   ETC_DIR, INFO_DIR, alias_name);
+#ifdef HAVE_STATX
+   if ((ret = statx(0, alias_info_file, AT_STATX_SYNC_AS_STAT,
+                    STATX_SIZE | STATX_MTIME, &stat_buf)) == 0)
+#else
    if ((ret = stat(alias_info_file, &stat_buf)) == 0)
+#endif
    {
       data_from_central_info_file = NO;
    }
@@ -534,16 +605,33 @@ check_info_file(char *alias_name, char *central_info_filename, int check_mtime)
    {
       (void)snprintf(alias_info_file, MAX_PATH_LENGTH, "%s%s/%s%s", p_work_dir,
                      ETC_DIR, INFO_IDENTIFIER, alias_name);
+#ifdef HAVE_STATX
+      if ((ret = statx(0, alias_info_file, AT_STATX_SYNC_AS_STAT,
+                       STATX_SIZE | STATX_MTIME, &stat_buf)) == 0)
+#else
       if ((ret = stat(alias_info_file, &stat_buf)) == 0)
+#endif
       {
          data_from_central_info_file = IN_ETC_DIR;
       }
    }
+#ifdef HAVE_STATX
+   if ((ret == 0) && (stat_buf.stx_size > 0))
+#else
    if ((ret == 0) && (stat_buf.st_size > 0))
+#endif
    {
+#ifdef HAVE_STATX
+      if ((check_mtime == NO) || (stat_buf.stx_mtime.tv_sec > last_mtime_host))
+#else
       if ((check_mtime == NO) || (stat_buf.st_mtime > last_mtime_host))
+#endif
       {
+#ifdef HAVE_STATX
+         last_mtime_host = stat_buf.stx_mtime.tv_sec;
+#else
          last_mtime_host = stat_buf.st_mtime;
+#endif
 
          if ((src_fd = open(alias_info_file, O_RDONLY)) < 0)
          {
@@ -562,7 +650,11 @@ check_info_file(char *alias_name, char *central_info_filename, int check_mtime)
             return(file_changed);
          }
          free(info_data);
+#ifdef HAVE_STATX
+         if ((info_data = malloc(stat_buf.stx_size + 1)) == NULL)
+#else
          if ((info_data = malloc(stat_buf.st_size + 1)) == NULL)
+#endif
          {
             (void)xrec(ERROR_DIALOG, "Failed to allocate memory : %s (%s %d)",
                        strerror(errno), __FILE__, __LINE__);
@@ -571,7 +663,11 @@ check_info_file(char *alias_name, char *central_info_filename, int check_mtime)
          }
 
          /* Read file in one chunk. */
+#ifdef HAVE_STATX
+         if (read(src_fd, info_data, stat_buf.stx_size) != stat_buf.stx_size)
+#else
          if (read(src_fd, info_data, stat_buf.st_size) != stat_buf.st_size)
+#endif
          {
             (void)xrec(ERROR_DIALOG,
                        "read() error when reading from %s : %s (%s %d)",
@@ -580,7 +676,11 @@ check_info_file(char *alias_name, char *central_info_filename, int check_mtime)
             return(NO);
          }
          (void)close(src_fd);
+#ifdef HAVE_STATX
+         info_data[stat_buf.stx_size] = '\0';
+#else
          info_data[stat_buf.st_size] = '\0';
+#endif
 
          first_time = YES;
          file_changed = YES;

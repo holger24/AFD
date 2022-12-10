@@ -1,6 +1,6 @@
 /*
  *  afdconvert.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2009 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2009 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -44,6 +44,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>                      /* Definition of AT_* constants */
+#endif
 #include <sys/stat.h>
 #include <unistd.h>                      /* STDERR_FILENO                */
 #include <errno.h>
@@ -61,10 +64,14 @@ const char *sys_log_name = SYSTEM_LOG_FIFO;
 int
 main(int argc, char *argv[])
 {
-   int         nnn_length = 0,
-               type;
-   off_t       file_size;
-   struct stat stat_buf;
+   int          nnn_length = 0,
+                type;
+   off_t        file_size;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    if (argc != 3)
    {
@@ -211,13 +218,21 @@ main(int argc, char *argv[])
            return(1);
         }
 
+#ifdef HAVE_STATX
+   if (statx(0, argv[2], AT_STATX_SYNC_AS_STAT, STATX_SIZE, &stat_buf) == -1)
+#else
    if (stat(argv[2], &stat_buf) == -1)
+#endif
    {
       (void)fprintf(stderr,
-                    "Failed to stat() %s : %s\n", argv[2], strerror(errno));
+                    "Failed to access %s : %s\n", argv[2], strerror(errno));
       return(1);
    }
+#ifdef HAVE_STATX
+   file_size = stat_buf.stx_size;
+#else
    file_size = stat_buf.st_size;
+#endif
    if (convert(".", argv[2], type, nnn_length, 0U, 0U, &file_size) != SUCCESS)
    {
       (void)fprintf(stderr, "Failed to convert %s\n", argv[2]);

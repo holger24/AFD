@@ -1,6 +1,6 @@
 /*
  *  handle_jid.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2010 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2010 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -104,19 +104,41 @@ alloc_jid(char *alias)
       }
       else
       {
+# ifdef HAVE_STATX
+         struct statx stat_buf;
+# else
          struct stat stat_buf;
+# endif
 
+# ifdef HAVE_STATX
+         if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &stat_buf) == -1)
+# else
          if (fstat(fd, &stat_buf) == -1)
+# endif
          {
-            (void)fprintf(stderr, "Failed to fstat() `%s' :  %s (%s %d)\n",
+            (void)fprintf(stderr,
+# ifdef HAVE_STATX
+                          "Failed to statx() `%s' :  %s (%s %d)\n",
+# else
+                          "Failed to fstat() `%s' :  %s (%s %d)\n",
+# endif
                           jidd.name, strerror(errno), __FILE__, __LINE__);
             ret = INCORRECT;
          }
          else
          {
+# ifdef HAVE_STATX
+            if (stat_buf.stx_size >= sizeof(struct afd_job_list))
+# else
             if (stat_buf.st_size >= sizeof(struct afd_job_list))
+# endif
             {
+# ifdef HAVE_STATX
+               if ((jidd.ajl = malloc(stat_buf.stx_size)) == NULL)
+# else
                if ((jidd.ajl = malloc(stat_buf.st_size)) == NULL)
+# endif
                {
                   (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
                                 strerror(errno), __FILE__, __LINE__);
@@ -124,7 +146,11 @@ alloc_jid(char *alias)
                }
                else
                {
+# ifdef HAVE_STATX
+                  if (read(fd, jidd.ajl, stat_buf.stx_size) != stat_buf.stx_size)
+# else
                   if (read(fd, jidd.ajl, stat_buf.st_size) != stat_buf.st_size)
+# endif
                   {
                      (void)fprintf(stderr,
                                    "Failed to read() from `%s' :  %s (%s %d)\n",
@@ -135,7 +161,11 @@ alloc_jid(char *alias)
                   }
                   else
                   {
+# ifdef HAVE_STATX
+                     jidd.no_of_job_ids = stat_buf.stx_size / sizeof(struct afd_job_list);
+# else
                      jidd.no_of_job_ids = stat_buf.st_size / sizeof(struct afd_job_list);
+# endif
                   }
                }
             }

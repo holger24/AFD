@@ -1,6 +1,6 @@
 /*
  *  get_display_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -77,12 +77,16 @@ get_display_data(char *search_file,
                  int  show_time,
                  int  file_no)
 {
-   int         from_fd = -1,
-	       length;
-   size_t      hunk,
-               left;
-   char        *buffer;
-   struct stat stat_buf;
+   int          from_fd = -1,
+                length;
+   size_t       hunk,
+                left;
+   char         *buffer;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    /* Open source file. */
    length = strlen(search_file);
@@ -90,13 +94,22 @@ get_display_data(char *search_file,
 
    if (start_line != NOT_SET)
    {
+#ifdef HAVE_STATX
+      if (statx(0, search_file, AT_STATX_SYNC_AS_STAT,
+                STATX_INO | STATX_SIZE, &stat_buf) != 0)
+#else
       if (stat(search_file, &stat_buf) != 0)
+#endif
       {
-         (void)fprintf(p_data, "500 Failed to stat() %s : %s (%s %d)\r\n",
+         (void)fprintf(p_data, "500 Failed to access %s : %s (%s %d)\r\n",
                        search_file, strerror(errno), __FILE__, __LINE__);
          return(INCORRECT);
       }
+#ifdef HAVE_STATX
+      if (stat_buf.stx_ino == fc[log_number].st_ino)
+#else
       if (stat_buf.st_ino == fc[log_number].st_ino)
+#endif
       {
          from_fd = fc[log_number].fd;
       }
@@ -128,18 +141,31 @@ get_display_data(char *search_file,
       if (start_line != NOT_SET)
       {
          fc[log_number].fd = from_fd;
+#ifdef HAVE_STATX
+         fc[log_number].st_ino = stat_buf.stx_ino;
+#else
          fc[log_number].st_ino = stat_buf.st_ino;
+#endif
       }
       else
       {
+#ifdef HAVE_STATX
+         if (statx(from_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &stat_buf) != 0)
+#else
          if (fstat(from_fd, &stat_buf) != 0)
+#endif
          {
-            (void)fprintf(p_data, "500 Failed to fstat() %s : %s (%s %d)\r\n",
+            (void)fprintf(p_data, "500 Failed to access %s : %s (%s %d)\r\n",
                           search_file, strerror(errno), __FILE__, __LINE__);
             (void)close(from_fd);
             return(INCORRECT);
          }
+#ifdef HAVE_STATX
+         else if (stat_buf.stx_size == 0)
+#else
          else if (stat_buf.st_size == 0)
+#endif
               {
                  (void)fprintf(p_data, "500 File %s is empty.\r\n", search_file);
                  (void)close(from_fd);
@@ -148,7 +174,11 @@ get_display_data(char *search_file,
       }
    }
 
+#ifdef HAVE_STATX
+   left = hunk = stat_buf.stx_size;
+#else
    left = hunk = stat_buf.st_size;
+#endif
 
    if (hunk > HUNK_MAX)
    {

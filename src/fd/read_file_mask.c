@@ -1,7 +1,7 @@
 /*
  *  read_file_mask.c - Part of AFD, an automatic file distribution
  *                     program.
- *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -70,12 +70,16 @@ extern char *p_work_dir;
 int
 read_file_mask(char *dir_alias, int *nfg, struct file_mask **fml)
 {
-   int         fd,
-               i;
-   char        *buffer,
-               file_mask_file[MAX_PATH_LENGTH],
-               *ptr;
-   struct stat stat_buf;
+   int          fd,
+                i;
+   char         *buffer,
+                file_mask_file[MAX_PATH_LENGTH],
+                *ptr;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    if (snprintf(file_mask_file, MAX_PATH_LENGTH, "%s%s%s%s/%s",
                 p_work_dir, AFD_FILE_DIR, INCOMING_DIR, FILE_MASK_DIR,
@@ -91,22 +95,39 @@ read_file_mask(char *dir_alias, int *nfg, struct file_mask **fml)
    {
       return(fd);
    }
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                 "Failed to statx() `%s' : %s",
+#else
                  "Failed to fstat() `%s' : %s",
+#endif
                  file_mask_file, strerror(errno));
       (void)close(fd);
       return(INCORRECT);
    }
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size == 0)
+#else
    if (stat_buf.st_size == 0)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  "File mask file `%s' is empty!", file_mask_file);
       (void)close(fd);
       return(INCORRECT);
    }
+#ifdef HAVE_STATX
+   if ((buffer = malloc(stat_buf.stx_size)) == NULL)
+#else
    if ((buffer = malloc(stat_buf.st_size)) == NULL)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
 #if SIZEOF_OFF_T == 4
@@ -114,11 +135,20 @@ read_file_mask(char *dir_alias, int *nfg, struct file_mask **fml)
 #else
                  "Failed to malloc() %lld bytes : %s",
 #endif
-                 (pri_off_t)stat_buf.st_size, strerror(errno));
+#ifdef HAVE_STATX
+                 (pri_off_t)stat_buf.stx_size,
+#else
+                 (pri_off_t)stat_buf.st_size,
+#endif
+                 strerror(errno));
       (void)close(fd);
       return(INCORRECT);
    }
+#ifdef HAVE_STATX
+   if (read(fd, buffer, stat_buf.stx_size) != stat_buf.stx_size)
+#else
    if (read(fd, buffer, stat_buf.st_size) != stat_buf.st_size)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
 #if SIZEOF_OFF_T == 4
@@ -126,7 +156,12 @@ read_file_mask(char *dir_alias, int *nfg, struct file_mask **fml)
 #else
                  "Failed to read() %lld bytes from `%s' : %s",
 #endif
-                 (pri_off_t)stat_buf.st_size, file_mask_file, strerror(errno));
+#ifdef HAVE_STATX
+                 (pri_off_t)stat_buf.stx_size,
+#else
+                 (pri_off_t)stat_buf.st_size,
+#endif
+                 file_mask_file, strerror(errno));
       free(buffer);
       (void)close(fd);
       return(INCORRECT);

@@ -1,6 +1,6 @@
 /*
  *  get_dc_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -406,21 +406,25 @@ get_dc_data(char         *host_name,
             int          no_of_search_host_alias,
             char         **search_host_alias)
 {
-   int         dcl_fd,
-               dnb_fd,
-               fmd_fd,
-               i,
-               j,
-               jd_fd,
-               position = 0, /* Silence compiler. */
-               pwb_fd;
-   size_t      dcl_size = 0,
-               dnb_size = 0,
-               fmd_size = 0,
-               jid_size = 0,
-               pwb_size = 0;
-   char        file[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+   int          dcl_fd,
+                dnb_fd,
+                fmd_fd,
+                i,
+                j,
+                jd_fd,
+                position = 0, /* Silence compiler. */
+                pwb_fd;
+   size_t       dcl_size = 0,
+                dnb_size = 0,
+                fmd_size = 0,
+                jid_size = 0,
+                pwb_size = 0;
+   char         file[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    /* First check if the host is in the FSA. */
    if ((host_name[0] != '\0') &&
@@ -446,20 +450,33 @@ get_dc_data(char         *host_name,
       free(current_jid_list);
       return;
    }
+#ifdef HAVE_STATX
+   if (statx(jd_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(jd_fd, &stat_buf) == -1)
+#endif
    {
-      (void)fprintf(stderr, _("Failed to fstat() `%s' : %s (%s %d)\n"),
+      (void)fprintf(stderr, _("Failed to access `%s' : %s (%s %d)\n"),
                     file, strerror(errno), __FILE__, __LINE__);
       (void)close(jd_fd);
       free(current_jid_list);
       return;
    }
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size > 0)
+#else
    if (stat_buf.st_size > 0)
+#endif
    {
       char *ptr;
 
+#ifdef HAVE_STATX
+      jid_size = stat_buf.stx_size;
+#else
       jid_size = stat_buf.st_size;
-      if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+#endif
+      if ((ptr = mmap(NULL, jid_size, PROT_READ,
                       MAP_SHARED, jd_fd, 0)) == (caddr_t) -1)
       {
          (void)fprintf(stderr, _("Failed to mmap() to %s : %s (%s %d)\n"),
@@ -512,9 +529,14 @@ get_dc_data(char         *host_name,
       }
       return;
    }
+#ifdef HAVE_STATX
+   if (statx(dnb_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(dnb_fd, &stat_buf) == -1)
+#endif
    {
-      (void)fprintf(stderr, _("Failed to fstat() `%s' : %s (%s %d)\n"),
+      (void)fprintf(stderr, _("Failed to access `%s' : %s (%s %d)\n"),
                     file, strerror(errno), __FILE__, __LINE__);
       (void)close(dnb_fd);
       free(current_jid_list);
@@ -528,12 +550,20 @@ get_dc_data(char         *host_name,
       }
       return;
    }
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size > 0)
+#else
    if (stat_buf.st_size > 0)
+#endif
    {
       char *ptr;
 
+#ifdef HAVE_STATX
+      dnb_size = stat_buf.stx_size;
+#else
       dnb_size = stat_buf.st_size;
-      if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+#endif
+      if ((ptr = mmap(NULL, dnb_size, PROT_READ,
                       MAP_SHARED, dnb_fd, 0)) == (caddr_t) -1)
       {
          (void)fprintf(stderr, _("Failed to mmap() to `%s' : %s (%s %d)\n"),
@@ -580,17 +610,36 @@ get_dc_data(char         *host_name,
    (void)sprintf(file, "%s%s%s", p_work_dir, FIFO_DIR, FILE_MASK_FILE);
    if ((fmd_fd = open(file, O_RDONLY)) != -1)
    {
+#ifdef HAVE_STATX
+      if (statx(fmd_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) != -1)
+#else
       if (fstat(fmd_fd, &stat_buf) != -1)
+#endif
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > 0)
+#else
          if (stat_buf.st_size > 0)
+#endif
          {
             char *ptr;
 
-            if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+            if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                            stat_buf.stx_size, PROT_READ,
+#else
+                            stat_buf.st_size, PROT_READ,
+#endif
                             MAP_SHARED, fmd_fd, 0)) != (caddr_t) -1)
             {
+#ifdef HAVE_STATX
+               fmd_size = stat_buf.stx_size;
+               fmd_end = ptr + stat_buf.stx_size;
+#else
                fmd_size = stat_buf.st_size;
                fmd_end = ptr + stat_buf.st_size;
+#endif
                no_of_file_mask_ids = *(int *)ptr;
                ptr += AFD_WORD_OFFSET;
                fmd = ptr;
@@ -612,7 +661,7 @@ get_dc_data(char         *host_name,
       }
       else
       {
-         (void)fprintf(stderr, _("Failed to fstat() `%s' : %s (%s %d)\n"),
+         (void)fprintf(stderr, _("Failed to access `%s' : %s (%s %d)\n"),
                        file, strerror(errno), __FILE__, __LINE__);
       }
       if (close(fmd_fd) == -1)
@@ -631,16 +680,34 @@ get_dc_data(char         *host_name,
    (void)sprintf(file, "%s%s%s", p_work_dir, FIFO_DIR, PWB_DATA_FILE);
    if ((pwb_fd = open(file, O_RDONLY)) != -1)
    {
+#ifdef HAVE_STATX
+      if (statx(pwb_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) != -1)
+#else
       if (fstat(pwb_fd, &stat_buf) != -1)
+#endif
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > 0)
+#else
          if (stat_buf.st_size > 0)
+#endif
          {
             char *ptr;
 
-            if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+            if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                            stat_buf.stx_size, PROT_READ,
+#else
+                            stat_buf.st_size, PROT_READ,
+#endif
                             MAP_SHARED, dnb_fd, 0)) != (caddr_t) -1)
             {
+#ifdef HAVE_STATX
+               pwb_size = stat_buf.stx_size;
+#else
                pwb_size = stat_buf.st_size;
+#endif
                no_of_passwd = *(int *)ptr;
                ptr += AFD_WORD_OFFSET;
                pwb = (struct passwd_buf *)ptr;
@@ -661,7 +728,7 @@ get_dc_data(char         *host_name,
       }
       else
       {
-         (void)fprintf(stderr, _("Failed to fstat() `%s' : %s (%s %d)\n"),
+         (void)fprintf(stderr, _("Failed to access `%s' : %s (%s %d)\n"),
                        file, strerror(errno), __FILE__, __LINE__);
       }
       if (close(pwb_fd) == -1)
@@ -683,16 +750,34 @@ get_dc_data(char         *host_name,
    (void)sprintf(file, "%s%s%s", p_work_dir, FIFO_DIR, DC_LIST_FILE);
    if ((dcl_fd = open(file, O_RDONLY)) != -1)
    {
+#ifdef HAVE_STATX
+      if (statx(dcl_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) != -1)
+#else
       if (fstat(dcl_fd, &stat_buf) != -1)
+#endif
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > 0)
+#else
          if (stat_buf.st_size > 0)
+#endif
          {
             char *ptr;
 
-            if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+            if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                            stat_buf.stx_size, PROT_READ,
+#else
+                            stat_buf.st_size, PROT_READ,
+#endif
                             MAP_SHARED, dcl_fd, 0)) != (caddr_t) -1)
             {
+#ifdef HAVE_STATX
+               dcl_size = stat_buf.stx_size;
+#else
                dcl_size = stat_buf.st_size;
+#endif
                no_of_dc_ids = *(int *)ptr;
                ptr += AFD_WORD_OFFSET;
                dcl = (struct dir_config_list *)ptr;
@@ -713,7 +798,7 @@ get_dc_data(char         *host_name,
       }
       else
       {
-         (void)fprintf(stderr, _("Failed to fstat() `%s' : %s (%s %d)\n"),
+         (void)fprintf(stderr, _("Failed to access `%s' : %s (%s %d)\n"),
                        file, strerror(errno), __FILE__, __LINE__);
       }
       if (close(dcl_fd) == -1)
@@ -922,7 +1007,11 @@ get_job_ids_per_config(int  is_id,
    char         **dir_config_name = NULL,
                 file[MAX_PATH_LENGTH],
                 separator;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
 
    current_jid_list = NULL;
    no_of_current_jobs = 0;
@@ -938,20 +1027,33 @@ get_job_ids_per_config(int  is_id,
       free(current_jid_list);
       return;
    }
+#ifdef HAVE_STATX
+   if (statx(jd_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(jd_fd, &stat_buf) == -1)
+#endif
    {
-      (void)fprintf(stderr, _("Failed to fstat() `%s' : %s (%s %d)\n"),
+      (void)fprintf(stderr, _("Failed to access `%s' : %s (%s %d)\n"),
                     file, strerror(errno), __FILE__, __LINE__);
       (void)close(jd_fd);
       free(current_jid_list);
       return;
    }
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size > 0)
+#else
    if (stat_buf.st_size > 0)
+#endif
    {
       char *ptr;
 
+#ifdef HAVE_STATX
+      jid_size = stat_buf.stx_size;
+#else
       jid_size = stat_buf.st_size;
-      if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+#endif
+      if ((ptr = mmap(NULL, jid_size, PROT_READ,
                       MAP_SHARED, jd_fd, 0)) == (caddr_t) -1)
       {
          (void)fprintf(stderr, _("Failed to mmap() to %s : %s (%s %d)\n"),
@@ -1003,16 +1105,34 @@ get_job_ids_per_config(int  is_id,
       (void)sprintf(file, "%s%s%s", p_work_dir, FIFO_DIR, DC_LIST_FILE);
       if ((dcl_fd = open(file, O_RDONLY)) != -1)
       {
+#ifdef HAVE_STATX
+         if (statx(dcl_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &stat_buf) != -1)
+#else
          if (fstat(dcl_fd, &stat_buf) != -1)
+#endif
          {
+#ifdef HAVE_STATX
+            if (stat_buf.stx_size > 0)
+#else
             if (stat_buf.st_size > 0)
+#endif
             {
                char *ptr;
 
-               if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+               if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                               stat_buf.stx_size, PROT_READ,
+#else
+                               stat_buf.st_size, PROT_READ,
+#endif
                                MAP_SHARED, dcl_fd, 0)) != (caddr_t) -1)
                {
+#ifdef HAVE_STATX
+                  dcl_size = stat_buf.stx_size;
+#else
                   dcl_size = stat_buf.st_size;
+#endif
                   no_of_dc_ids = *(int *)ptr;
                   ptr += AFD_WORD_OFFSET;
                   dcl = (struct dir_config_list *)ptr;
@@ -1033,7 +1153,7 @@ get_job_ids_per_config(int  is_id,
          }
          else
          {
-            (void)fprintf(stderr, _("Failed to fstat() `%s' : %s (%s %d)\n"),
+            (void)fprintf(stderr, _("Failed to access `%s' : %s (%s %d)\n"),
                           file, strerror(errno), __FILE__, __LINE__);
          }
          if (close(dcl_fd) == -1)

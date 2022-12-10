@@ -1,6 +1,6 @@
 /*
  *  maintainer_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -78,20 +78,24 @@ static void  sig_bus(int),
 int
 main(int argc, char *argv[])
 {
-   int         log_number = 0,
-               log_stat = START,
-               max_maintainer_log_files = MAX_MAINTAINER_LOG_FILES,
-               maintainer_log_fd;
+   int          log_number = 0,
+                log_stat = START,
+                max_maintainer_log_files = MAX_MAINTAINER_LOG_FILES,
+                maintainer_log_fd;
 #ifdef WITHOUT_FIFO_RW_SUPPORT
-   int         writefd;
+   int          writefd;
 #endif
-   off_t       max_maintainer_logfile_size = MAX_MAINTAINER_LOGFILE_SIZE;
-   char        *p_end = NULL,
-               *work_dir,
-               log_file[MAX_PATH_LENGTH],
-               current_log_file[MAX_PATH_LENGTH];
-   FILE        *p_log_file;
-   struct stat stat_buf;
+   off_t        max_maintainer_logfile_size = MAX_MAINTAINER_LOGFILE_SIZE;
+   char         *p_end = NULL,
+                *work_dir,
+                log_file[MAX_PATH_LENGTH],
+                current_log_file[MAX_PATH_LENGTH];
+   FILE         *p_log_file;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    CHECK_FOR_VERSION(argc, argv);
 
@@ -174,7 +178,12 @@ main(int argc, char *argv[])
 
    while (log_stat == START)
    {
-      if (stat(current_log_file, &stat_buf) < 0)
+#ifdef HAVE_STATX
+      if (statx(0, current_log_file, AT_STATX_SYNC_AS_STAT,
+                STATX_SIZE, &stat_buf) == -1)
+#else
+      if (stat(current_log_file, &stat_buf) == -1)
+#endif
       {
          /* The log file does not yet exist. */
          total_length = 0;
@@ -183,7 +192,11 @@ main(int argc, char *argv[])
       {
          /* Check if we have to start a new log file */
          /* because the current one is large enough. */
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > max_maintainer_logfile_size)
+#else
          if (stat_buf.st_size > max_maintainer_logfile_size)
+#endif
          {
             if (log_number < (max_maintainer_log_files - 1))
             {
@@ -207,7 +220,11 @@ main(int argc, char *argv[])
          }
          else
          {
+#ifdef HAVE_STATX
+            total_length = stat_buf.stx_size;
+#else
             total_length = stat_buf.st_size;
+#endif
          }
       }
 

@@ -122,7 +122,11 @@ create_fsa(void)
                               *ptr = NULL;
    struct filetransfer_status *old_fsa = NULL;
    struct flock               wlock = {F_WRLCK, SEEK_SET, 0, 1};
+#ifdef HAVE_STATX
+   struct statx               stat_buf;
+#else
    struct stat                stat_buf;
+#endif
 
    fsa_size = -1;
 
@@ -210,15 +214,29 @@ create_fsa(void)
                      ".%d", old_fsa_id);
 
       /* Get the size of the old FSA file. */
-      if (stat(old_fsa_stat, &stat_buf) < 0)
+#ifdef HAVE_STATX
+      if (statx(0, old_fsa_stat, AT_STATX_SYNC_AS_STAT,
+                STATX_SIZE, &stat_buf) == -1)
+#else
+      if (stat(old_fsa_stat, &stat_buf) == -1)
+#endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "Failed to stat() %s : %s", old_fsa_stat, strerror(errno));
+#ifdef HAVE_STATX
+                    "Failed to statx() %s : %s",
+#else
+                    "Failed to stat() %s : %s",
+#endif
+                    old_fsa_stat, strerror(errno));
          old_fsa_id = -1;
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > 0)
+#else
          if (stat_buf.st_size > 0)
+#endif
          {
             if ((old_fsa_fd = open(old_fsa_stat, O_RDWR)) < 0)
             {
@@ -233,7 +251,11 @@ create_fsa(void)
                 * Lock the whole region so all sf_xxx process stop
                 * writting data to the old FSA.
                 */
+#ifdef HAVE_STATX
+               wlock.l_len = stat_buf.stx_size;
+#else
                wlock.l_len = stat_buf.st_size;
+#endif
                if (fcntl(old_fsa_fd, F_SETLKW, &wlock) < 0)
                {
                   /* Is lock already set or are we setting it again? */
@@ -251,10 +273,20 @@ create_fsa(void)
                   }
                }
 #ifdef HAVE_MMAP
-               if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+               if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                               stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                               stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                MAP_SHARED, old_fsa_fd, 0)) == (caddr_t) -1)
 #else
-               if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+               if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                   stat_buf.stx_size,
+# else
+                                   stat_buf.st_size,
+# endif
                                    (PROT_READ | PROT_WRITE),
                                    MAP_SHARED, old_fsa_stat, 0)) == (caddr_t) -1)
 #endif
@@ -274,7 +306,11 @@ create_fsa(void)
                   }
                   else
                   {
+#ifdef HAVE_STATX
+                     old_fsa_size = stat_buf.stx_size;
+#else
                      old_fsa_size = stat_buf.st_size;
+#endif
                   }
 
                   /*

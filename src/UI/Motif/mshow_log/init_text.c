@@ -48,6 +48,9 @@ DESCR__E_M1
 #include <string.h>
 #include <stdlib.h>     /* calloc(), free()                              */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>     /* Definition of AT_* constants                  */
+#endif
 #include <sys/stat.h>
 #include <unistd.h>
 #include <X11/X.h>
@@ -120,16 +123,31 @@ init_text(void)
                 (log_type_flag != RECEIVE_LOG_TYPE) &&
                 (i == 0))
             {
+#ifdef HAVE_STATX
+               struct statx stat_buf;
+#else
                struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+               if (statx(fileno(p_log_file), "",
+                         AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                         STATX_INO, &stat_buf) == -1)
+#else
                if (fstat(fileno(p_log_file), &stat_buf) == -1)
+#endif
                {
                   (void)fprintf(stderr,
-                                "ERROR   : Could not fstat() %s : %s (%s %d)\n",
-                                log_file, strerror(errno), __FILE__, __LINE__);
+                                "ERROR   : Could not access %s : %s (%s %d)\n",
+                                log_file, strerror(errno),
+                                __FILE__, __LINE__);
                   exit(INCORRECT);
                }
+#ifdef HAVE_STATX
+               current_inode_no = stat_buf.stx_ino;
+#else
                current_inode_no = stat_buf.st_ino;
+#endif
             }
          }
       }
@@ -155,18 +173,31 @@ read_text(void)
                         *ptr_dst,
                         *ptr_start,
                         *ptr_line;
+#ifdef HAVE_STATX
+   struct statx         stat_buf;
+#else
    struct stat          stat_buf;
+#endif
    XSetWindowAttributes attrs;
    XEvent               event;
 
-   if (fstat(fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
+   if (fstat(fd, &stat_buf) == -1)
+#endif
    {
-      (void)xrec(FATAL_DIALOG, "fstat() error : %s (%s %d)",
+      (void)xrec(FATAL_DIALOG, "Failed to access log file : %s (%s %d)",
                  strerror(errno), __FILE__, __LINE__);
       return;
    }
 
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size > 0)
+#else
    if (stat_buf.st_size > 0)
+#endif
    {
       int    length,
              last = MISS;
@@ -179,13 +210,21 @@ read_text(void)
       XFlush(display);
 
       /* Copy file to memory. */
+#ifdef HAVE_STATX
+      if ((src = malloc(stat_buf.stx_size)) == NULL)
+#else
       if ((src = malloc(stat_buf.st_size)) == NULL)
+#endif
       {
          (void)xrec(FATAL_DIALOG, "malloc() error : %s (%s %d)",
                     strerror(errno), __FILE__, __LINE__);
          return;
       }
+#ifdef HAVE_STATX
+      if (read(fd, src, stat_buf.stx_size) != stat_buf.stx_size)
+#else
       if (read(fd, src, stat_buf.st_size) != stat_buf.st_size)
+#endif
       {
          int tmp_errno = errno;
 
@@ -194,12 +233,21 @@ read_text(void)
                     strerror(tmp_errno), __FILE__, __LINE__);
          return;
       }
+#ifdef HAVE_STATX
+      if ((dst = malloc(stat_buf.stx_size + 1)) == NULL)
+#else
       if ((dst = malloc(stat_buf.st_size + 1)) == NULL)
+#endif
       {
          free(src);
          free(dst);
          (void)xrec(FATAL_DIALOG, "malloc() error [%d bytes] : %s (%s %d)",
-                    stat_buf.st_size + 1, strerror(errno), __FILE__, __LINE__);
+#ifdef HAVE_STATX
+                    stat_buf.stx_size + 1, strerror(errno),
+#else
+                    stat_buf.st_size + 1, strerror(errno),
+#endif
+                    __FILE__, __LINE__);
          return;
       }
 
@@ -212,12 +260,21 @@ read_text(void)
       {
          int i;
 
+#ifdef HAVE_STATX
+         while (tmp_total_length < stat_buf.stx_size)
+#else
          while (tmp_total_length < stat_buf.st_size)
+#endif
          {
             length = 0;
             ptr_line = ptr;
+#ifdef HAVE_STATX
+            while ((*ptr != '\n') &&
+                   ((tmp_total_length + length) < stat_buf.stx_size))
+#else
             while ((*ptr != '\n') &&
                    ((tmp_total_length + length) < stat_buf.st_size))
+#endif
             {
                /* Remove unprintable characters. */
                if ((unsigned char)(*ptr) < ' ')
@@ -339,12 +396,21 @@ read_text(void)
       }
       else
       {
+#ifdef HAVE_STATX
+         while (tmp_total_length < stat_buf.stx_size)
+#else
          while (tmp_total_length < stat_buf.st_size)
+#endif
          {
             length = 0;
             ptr_line = ptr;
+#ifdef HAVE_STATX
+            while ((*ptr != '\n') &&
+                   ((tmp_total_length + length) < stat_buf.stx_size))
+#else
             while ((*ptr != '\n') &&
                    ((tmp_total_length + length) < stat_buf.st_size))
+#endif
             {
                /* Remove unprintable characters. */
                if ((unsigned char)(*ptr) < ' ')

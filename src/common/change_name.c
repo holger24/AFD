@@ -1,6 +1,6 @@
 /*
  *  change_name.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
  *                            Tobias Freyberg <>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1129,18 +1129,35 @@ get_alternate_number(unsigned int job_id)
       }
       else
       {
-         struct stat stat_buf;
+#ifdef HAVE_STATX
+         struct statx stat_buf;
+#else
+         struct stat  stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+         if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &stat_buf) == -1)
+#else
          if (fstat(fd, &stat_buf) == -1)
+#endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       _("Failed to open() `%s' : %s #%x"),
+#ifdef HAVE_STATX
+                       _("Failed to statx() `%s' : %s #%x"),
+#else
+                       _("Failed to fstat() `%s' : %s #%x"),
+#endif
                        alternate_file, strerror(errno), job_id);
             ret = INCORRECT;
          }
          else
          {
+#ifdef HAVE_STATX
+            if (stat_buf.stx_size == 0)
+#else
             if (stat_buf.st_size == 0)
+#endif
             {
                ret = 0;
             }

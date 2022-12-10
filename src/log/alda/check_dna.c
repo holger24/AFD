@@ -1,6 +1,6 @@
 /*
  *  check_dna.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -66,12 +66,23 @@ check_dna(void)
 {
    if (dna.fd > -1)
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
       if ((dna.buffer != NULL) &&
           ((*dna.no_of_dir_names != dna.initial_no_of_dir_names) ||
+#ifdef HAVE_STATX
+           ((statx(dna.fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_MTIME, &stat_buf) == 0) && 
+            (dna.mtime < stat_buf.stx_mtime.tv_sec))
+#else
            ((fstat(dna.fd, &stat_buf) == 0) && 
-            (dna.mtime < stat_buf.st_mtime))))
+            (dna.mtime < stat_buf.st_mtime))
+#endif
+          ))
       {
          if (close(dna.fd) == -1)
          {
@@ -113,24 +124,45 @@ check_dna(void)
       }
       else
       {
+#ifdef HAVE_STATX
+         struct statx stat_buf;
+#else
          struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+         if (statx(dna.fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE | STATX_MTIME, &stat_buf) == -1)
+#else
          if (fstat(dna.fd, &stat_buf) == -1)
+#endif
          {
             (void)fprintf(stderr,
-                          "Failed to fstat() %s : %s (%s %d)\n",
+                          "Failed to access %s : %s (%s %d)\n",
                           dna.filename, strerror(errno),
                           __FILE__, __LINE__);
          }
          else
          {
+#ifdef HAVE_STATX
+            if (stat_buf.stx_size > 0)
+#else
             if (stat_buf.st_size > 0)
+#endif
             {
+#ifdef HAVE_STATX
+               dna.size = stat_buf.stx_size;
+               dna.mtime = stat_buf.stx_mtime.tv_sec;
+               if ((dna.buffer = mmap(NULL, stat_buf.stx_size,
+                                      PROT_READ, MAP_SHARED, dna.fd,
+                                      0)) == (caddr_t) -1)
+#else
                dna.size = stat_buf.st_size;
                dna.mtime = stat_buf.st_mtime;
                if ((dna.buffer = mmap(NULL, stat_buf.st_size,
                                       PROT_READ, MAP_SHARED, dna.fd,
                                       0)) == (caddr_t) -1)
+#endif
                {
                   (void)fprintf(stderr,
                                 "Failed to mmap() to %s : %s (%s %d)\n",

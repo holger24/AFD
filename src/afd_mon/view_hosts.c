@@ -1,6 +1,6 @@
 /*
  *  view_hosts.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -163,14 +163,18 @@ main(int argc, char *argv[])
    }
    else
    {
-      int         ahl_fd,
-                  k,
-                  show_afd_name,
-                  show_header = YES;
-      char        ahl_file[MAX_PATH_LENGTH],
-                  *p_ahl_file,
-                  *ptr;
-      struct stat stat_buf;
+      int          ahl_fd,
+                   k,
+                   show_afd_name,
+                   show_header = YES;
+      char         ahl_file[MAX_PATH_LENGTH],
+                   *p_ahl_file,
+                   *ptr;
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
+      struct stat  stat_buf;
+#endif
 
       p_ahl_file = ahl_file +
                    sprintf(ahl_file, "%s%s%s",
@@ -185,7 +189,12 @@ main(int argc, char *argv[])
       for (i = 0; i < no_of_afds; i++)
       {
          (void)sprintf(p_ahl_file, "%s", msa[i].afd_alias);
+#ifdef HAVE_STATX
+         if ((statx(0, ahl_file, AT_STATX_SYNC_AS_STAT,
+                    STATX_SIZE, &stat_buf) == 0) && (stat_buf.stx_size > 0))
+#else
          if ((stat(ahl_file, &stat_buf) == 0) && (stat_buf.st_size > 0))
+#endif
          {
             if ((ptr = map_file(ahl_file, &ahl_fd, NULL, &stat_buf,
                                 O_RDWR | O_CREAT, FILE_MODE)) == (caddr_t) -1)

@@ -369,6 +369,18 @@ eval_dir_config(off_t        db_size,
    }
    else
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+
+      if (statx(0, p_work_dir, AT_STATX_SYNC_AS_STAT,
+                STATX_UID, &stat_buf) == -1)
+      {
+         system_log(FATAL_SIGN, __FILE__, __LINE__,
+                    "Failed to statx() `%s' : %s", p_work_dir, strerror(errno));
+         exit(INCORRECT);
+      }
+      current_uid = stat_buf.stx_uid;
+#else
       struct stat stat_buf;
 
       if (stat(p_work_dir, &stat_buf) == -1)
@@ -378,6 +390,7 @@ eval_dir_config(off_t        db_size,
          exit(INCORRECT);
       }
       current_uid = stat_buf.st_uid;
+#endif
    }
    dir->file = NULL;
    prev_user_name[0] = '\0';
@@ -2353,7 +2366,11 @@ check_dummy_line:
                                 *error_ptr = '\0';
                              }
                              update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+#ifdef HAVE_STATX
+                                           "Failed to statx() `%s' at line %d from %s : %s",
+#else
                                            "Failed to stat() `%s' at line %d from %s : %s",
+#endif
                                            dir->location,
                                            count_new_lines(database, dir_ptr),
                                            dcl[dcd].dir_config_file,

@@ -203,7 +203,11 @@ main(int argc, char *argv[])
                     *chunkbuffer = NULL,
                     *p_current_real_hostname,
                     *p_local_tmp_file;
+#ifdef HAVE_STATX
+   struct statx     stat_buf;
+#else
    struct stat      stat_buf;
+#endif
 #ifdef SA_FULLDUMP
    struct sigaction sact;
 #endif
@@ -765,7 +769,12 @@ main(int argc, char *argv[])
                         *(p_local_tmp_file + fd) = '\0';
                         if (fsa->file_size_offset != -1)
                         {
+#ifdef HAVE_STATX
+                           if (statx(0, local_tmp_file, AT_STATX_SYNC_AS_STAT,
+                                     STATX_SIZE, &stat_buf) == -1)
+#else
                            if (stat(local_tmp_file, &stat_buf) == -1)
+#endif
                            {
                               if (fra->stupid_mode == APPEND_ONLY)
                               {
@@ -778,7 +787,11 @@ main(int argc, char *argv[])
                            }
                            else
                            {
+#ifdef HAVE_STATX
+                              offset = stat_buf.stx_size;
+#else
                               offset = stat_buf.st_size;
+#endif
                               prev_download_exists = YES;
                            }
                         }

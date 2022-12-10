@@ -1,6 +1,6 @@
 /*
  *  check_disabled_dirs.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2020 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,9 @@ DESCR__E_M3
 #include <stdio.h>             /* snprintf()                             */
 #include <string.h>            /* strerror()                             */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>            /* Definition of AT_* constants           */
+#endif
 #include <sys/stat.h>
 #include <stdlib.h>            /* free()                                 */
 #include <errno.h>
@@ -64,7 +67,11 @@ check_disabled_dirs(void)
 {
    static time_t disabled_dir_mtime = 0;
    char          disabled_dir_name[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
 
    if (snprintf(disabled_dir_name, MAX_PATH_LENGTH, "%s%s/%s",
                 p_work_dir, ETC_DIR, DISABLED_DIR_FILE) >= MAX_PATH_LENGTH)
@@ -72,7 +79,12 @@ check_disabled_dirs(void)
       return(NO);
    }
 
-   if (stat(disabled_dir_name, &stat_buf) < 0)
+#ifdef HAVE_STATX
+   if (statx(0, disabled_dir_name, AT_STATX_SYNC_AS_STAT,
+             STATX_MTIME, &stat_buf) == -1)
+#else
+   if (stat(disabled_dir_name, &stat_buf) == -1)
+#endif
    {
       if (errno == ENOENT)
       {
@@ -89,13 +101,21 @@ check_disabled_dirs(void)
       else
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                    _("Failed to statx() %s : %s"),
+#else
                     _("Failed to stat() %s : %s"),
+#endif
                     disabled_dir_name, strerror(errno));
       }
       return(NO);
    }
 
+#ifdef HAVE_STATX
+   if (stat_buf.stx_mtime.tv_sec != disabled_dir_mtime)
+#else
    if (stat_buf.st_mtime != disabled_dir_mtime)
+#endif
    {
       char *buffer;
 
@@ -172,7 +192,11 @@ check_disabled_dirs(void)
 
          free(buffer);
       }
+#ifdef HAVE_STATX
+      disabled_dir_mtime = stat_buf.stx_mtime.tv_sec;
+#else
       disabled_dir_mtime = stat_buf.st_mtime;
+#endif
 
       return(YES);
    }

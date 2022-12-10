@@ -53,6 +53,9 @@ DESCR__E_M3
 #include <string.h>                /* strcpy(), strerror()               */
 #include <stdlib.h>                /* exit()                             */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>                /* Definition of AT_* constants       */
+#endif
 #include <sys/stat.h>              /* stat(), S_ISREG()                  */
 #include <dirent.h>                /* opendir(), closedir(), readdir(),  */
                                    /* DIR, struct dirent                 */
@@ -87,7 +90,11 @@ get_full_dc_names(char *dc_filter, off_t *db_size)
    if (*work_ptr == '/')
    {
       char          filter[MAX_FILENAME_LENGTH + 1];
+#ifdef HAVE_STATX
+      struct statx  stat_buf;
+#else
       struct stat   stat_buf;
+#endif
       DIR           *dp;
       struct dirent *p_dir;
 
@@ -116,7 +123,15 @@ get_full_dc_names(char *dc_filter, off_t *db_size)
          }
 
          (void)strcpy(work_ptr, p_dir->d_name);
-         if (stat(fullname, &stat_buf) < 0)
+#ifdef HAVE_STATX
+         if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+# ifndef LINUX
+                   STATX_MODE |
+# endif
+                   STATX_SIZE | STATX_MTIME, &stat_buf) == -1)
+#else
+         if (stat(fullname, &stat_buf) == -1)
+#endif
          {
             if (errno != ENOENT)
             {
@@ -130,7 +145,11 @@ get_full_dc_names(char *dc_filter, off_t *db_size)
 
 #ifndef LINUX
          /* Sure it is a normal file? */
+# ifdef HAVE_STATX
+         if (S_ISREG(stat_buf.stx_mode))
+# else
          if (S_ISREG(stat_buf.st_mode))
+# endif
          {
 #endif
             if (pmatch(filter, p_dir->d_name, NULL) == 0)
@@ -163,10 +182,15 @@ get_full_dc_names(char *dc_filter, off_t *db_size)
                }
                (void)memcpy(dc_dcl[no_of_dir_configs].dir_config_file,
                             fullname, length);
+#ifdef HAVE_STATX
+               *db_size += stat_buf.stx_size;
+               dc_dcl[no_of_dir_configs].dc_old_time = stat_buf.stx_mtime.tv_sec;
+#else
+               *db_size += stat_buf.st_size;
                dc_dcl[no_of_dir_configs].dc_old_time = stat_buf.st_mtime;
+#endif
                dc_dcl[no_of_dir_configs].is_filter = YES;
                no_of_dir_configs++;
-               *db_size += stat_buf.st_size;
             }
 #ifndef LINUX
          }
@@ -249,7 +273,11 @@ check_full_dc_name(char *dc_filter)
       int           gotcha,
                     i;
       char          filter[MAX_FILENAME_LENGTH + 1];
+#ifdef HAVE_STATX
+      struct statx  stat_buf;
+#else
       struct stat   stat_buf;
+#endif
       DIR           *dp;
       struct dirent *p_dir;
 
@@ -292,12 +320,24 @@ check_full_dc_name(char *dc_filter)
 
          if (gotcha == NO)
          {
+#ifdef HAVE_STATX
+            if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+# ifndef LINUX
+                      STATX_MODE |
+# endif
+                      STATX_SIZE | STATX_MTIME, &stat_buf) == -1)
+#else
             if (stat(fullname, &stat_buf) < 0)
+#endif
             {
                if (errno != ENOENT)
                {
                   system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                             _("Failed to statx() `%s' : %s"),
+#else
                              _("Failed to stat() `%s' : %s"),
+#endif
                              fullname, strerror(errno));
                }
                errno = 0;
@@ -306,7 +346,11 @@ check_full_dc_name(char *dc_filter)
 
 #ifndef LINUX
             /* Sure it is a normal file? */
+# ifdef HAVE_STATX
+            if (S_ISREG(stat_buf.stx_mode))
+# else
             if (S_ISREG(stat_buf.st_mode))
+# endif
             {
 #endif
                if (pmatch(filter, p_dir->d_name, NULL) == 0)
@@ -341,10 +385,15 @@ check_full_dc_name(char *dc_filter)
                              "Detected new DIR_CONFIG %s", fullname);
                   (void)memcpy(dc_dcl[no_of_dir_configs].dir_config_file,
                                fullname, length);
+#ifdef HAVE_STATX
+                  dc_dcl[no_of_dir_configs].dc_old_time = stat_buf.stx_mtime.tv_sec;
+                  dc_dcl[no_of_dir_configs].size = stat_buf.stx_size;
+#else
                   dc_dcl[no_of_dir_configs].dc_old_time = stat_buf.st_mtime;
+                  dc_dcl[no_of_dir_configs].size = stat_buf.st_size;
+#endif
                   dc_dcl[no_of_dir_configs].is_filter = YES;
                   dc_dcl[no_of_dir_configs].in_list = NEITHER;
-                  dc_dcl[no_of_dir_configs].size = stat_buf.st_size;
                   no_of_dir_configs++;
                   changed = YES;
                }

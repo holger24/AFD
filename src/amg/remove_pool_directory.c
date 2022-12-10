@@ -48,6 +48,9 @@ DESCR__E_M3
 #include <stdio.h>                     /* sprintf()                      */
 #include <string.h>                    /* strerror()                     */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>                    /* Definition of AT_* constants   */
+#endif
 #include <sys/stat.h>
 #include <dirent.h>                    /* opendir(), closedir(), DIR,    */
                                        /* readdir(), struct dirent       */
@@ -67,7 +70,11 @@ remove_pool_directory(char *job_dir, unsigned int dir_id)
 {
 #ifdef _DELETE_LOG
    char          *ptr;
+# ifdef HAVE_STATX
+   struct statx  stat_buf;
+# else
    struct stat   stat_buf;
+# endif
    struct dirent *p_dir;
    DIR           *dp;
 
@@ -83,25 +90,39 @@ remove_pool_directory(char *job_dir, unsigned int dir_id)
    errno = 0;
    while ((p_dir = readdir(dp)) != NULL)
    {
-#ifdef LINUX
+# ifdef LINUX
       if ((p_dir->d_type != DT_DIR) && (p_dir->d_name[0] != '.'))
-#else
+# else
       if (p_dir->d_name[0] != '.')
-#endif
+# endif
       {
          (void)strcpy(ptr, p_dir->d_name);
-         if (stat(job_dir, &stat_buf) < 0)
+# ifdef HAVE_STATX
+         if (statx(0, job_dir, AT_STATX_SYNC_AS_STAT,
+#  ifdef LINUX
+                   STATX_SIZE,
+#  else
+                   STATX_SIZE | STATX_MODE,
+#  endif
+                   &stat_buf) == -1)
+# else
+         if (stat(job_dir, &stat_buf) == -1)
+# endif
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
                        "Can't access file %s : %s", job_dir, strerror(errno));
             continue;
          }
 
-#ifndef LINUX
+# ifndef LINUX
          /* Sure it is a normal file? */
+#  ifdef HAVE_STATX
+         if (S_ISDIR(stat_buf.stx_mode) == 0)
+#  else
          if (S_ISDIR(stat_buf.st_mode) == 0)
+#  endif
          {
-#endif
+# endif
             if (unlink(job_dir) == -1)
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -118,7 +139,11 @@ remove_pool_directory(char *job_dir, unsigned int dir_id)
                               MAX_HOSTNAME_LENGTH + 4 + 1,
                               "%-*s %03x",
                               MAX_HOSTNAME_LENGTH, "-", DELETE_UNKNOWN_POOL_DIR);
+# ifdef HAVE_STATX
+               *dl.file_size = stat_buf.stx_size;
+# else
                *dl.file_size = stat_buf.st_size;
+# endif
                *dl.dir_id = dir_id;
                *dl.job_id = 0;
                *dl.input_time = 0L;
@@ -138,9 +163,9 @@ remove_pool_directory(char *job_dir, unsigned int dir_id)
                              "write() error : %s", strerror(errno));
                }
             }
-#ifndef LINUX
+# ifndef LINUX
          }
-#endif
+# endif
       }
       errno = 0;
    } /* while ((p_dir = readdir(dp)) != NULL) */

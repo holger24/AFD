@@ -1,6 +1,6 @@
 /*
  *  system_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2013 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -111,26 +111,53 @@ get_system_data(struct system_data *sd)
    }
    else
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(fd, &stat_buf) == -1)
+#endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                    "Failed to statx() `%s' : %s",
+#else
                     "Failed to fstat() `%s' : %s",
+#endif
                     sysdata_filename, strerror(errno));
          ret = INCORRECT;
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > 0)
+#else
          if (stat_buf.st_size > 0)
+#endif
          {
             char *ptr;
 
 #ifdef HAVE_MMAP
-            if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ, MAP_SHARED,
+            if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                            stat_buf.stx_size, PROT_READ, MAP_SHARED,
+# else
+                            stat_buf.st_size, PROT_READ, MAP_SHARED,
+# endif
                             fd, 0)) == (caddr_t) -1)
 #else
-            if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
+            if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                stat_buf.stx_size, PROT_READ,
+# else
+                                stat_buf.st_size, PROT_READ,
+# endif
                                 MAP_SHARED, sysdata_filename,
                                 0)) == (caddr_t) -1)
 #endif
@@ -180,12 +207,22 @@ get_system_data(struct system_data *sd)
                   if (*ptr == '#')
                   {
                      while ((*ptr != '\n') && (*ptr != '\r') &&
-                            ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                            ((ptr - p_start) < stat_buf.stx_size)
+#else
+                            ((ptr - p_start) < stat_buf.st_size)
+#endif
+                           )
                      {
                         ptr++;
                      }
                      while (((*ptr == '\n') || (*ptr == '\r')) &&
-                            ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                            ((ptr - p_start) < stat_buf.stx_size)
+#else
+                            ((ptr - p_start) < stat_buf.st_size)
+#endif
+                           )
                      {
                         ptr++;
                      }
@@ -194,7 +231,12 @@ get_system_data(struct system_data *sd)
                   {
                      i = 0;
                      while ((*ptr != '|') && (i < MAX_VAR_STR_LENGTH) &&
-                            ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                            ((ptr - p_start) < stat_buf.stx_size)
+#else
+                            ((ptr - p_start) < stat_buf.st_size)
+#endif
+                           )
                      {
                         var_str[i] = *ptr;
                         ptr++; i++;
@@ -215,7 +257,12 @@ get_system_data(struct system_data *sd)
 #else
                                      (k < MAX_TIME_T_LENGTH) &&
 #endif
-                                     ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                                     ((ptr - p_start) < stat_buf.stx_size)
+#else
+                                     ((ptr - p_start) < stat_buf.st_size)
+#endif
+                                    )
                               {
                                  val_str[k] = *ptr;
                                  ptr++; k++;
@@ -270,7 +317,12 @@ get_system_data(struct system_data *sd)
                                              while ((*ptr != '\n') &&
                                                     (*ptr != '\r') &&
                                                     (i < LOG_FIFO_SIZE) &&
-                                                    ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                                                    ((ptr - p_start) < stat_buf.stx_size)
+#else
+                                                    ((ptr - p_start) < stat_buf.st_size)
+#endif
+                                                   )
                                              {
                                                 switch (*ptr)
                                                 {
@@ -297,7 +349,12 @@ get_system_data(struct system_data *sd)
                                              {
                                                 while ((*ptr != '\n') &&
                                                        (*ptr != '\r') &&
-                                                       ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                                                       ((ptr - p_start) < stat_buf.stx_size)
+#else
+                                                       ((ptr - p_start) < stat_buf.st_size)
+#endif
+                                                      )
                                                 {
                                                    ptr++;
                                                 }
@@ -334,7 +391,12 @@ get_system_data(struct system_data *sd)
                                           {
                                              while ((*ptr != '\n') &&
                                                     (*ptr != '\r') &&
-                                                    ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                                                    ((ptr - p_start) < stat_buf.stx_size)
+#else
+                                                    ((ptr - p_start) < stat_buf.st_size)
+#endif
+                                                   )
                                              {
                                                 ptr++;
                                              }
@@ -349,7 +411,12 @@ get_system_data(struct system_data *sd)
                                              while ((*ptr != '\n') &&
                                                     (*ptr != '\r') &&
                                                     (i < LOG_FIFO_SIZE) &&
-                                                    ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                                                    ((ptr - p_start) < stat_buf.stx_size)
+#else
+                                                    ((ptr - p_start) < stat_buf.st_size)
+#endif
+                                                   )
                                              {
                                                 switch (*ptr)
                                                 {
@@ -379,7 +446,12 @@ get_system_data(struct system_data *sd)
                                              {
                                                 while ((*ptr != '\n') &&
                                                        (*ptr != '\r') &&
-                                                       ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                                                       ((ptr - p_start) < stat_buf.stx_size)
+#else
+                                                       ((ptr - p_start) < stat_buf.st_size)
+#endif
+                                                      )
                                                 {
                                                    ptr++;
                                                 }
@@ -419,7 +491,12 @@ get_system_data(struct system_data *sd)
                                           {
                                              while ((*ptr != '\n') &&
                                                     (*ptr != '\r') &&
-                                                    ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                                                    ((ptr - p_start) < stat_buf.stx_size)
+#else
+                                                    ((ptr - p_start) < stat_buf.st_size)
+#endif
+                                                   )
                                              {
                                                 ptr++;
                                              }
@@ -434,7 +511,12 @@ get_system_data(struct system_data *sd)
                                              while ((*ptr != '\n') &&
                                                     (*ptr != '\r') &&
                                                     (i < LOG_FIFO_SIZE) &&
-                                                    ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                                                    ((ptr - p_start) < stat_buf.stx_size)
+#else
+                                                    ((ptr - p_start) < stat_buf.st_size)
+#endif
+                                                   )
                                              {
                                                 switch (*ptr)
                                                 {
@@ -464,7 +546,12 @@ get_system_data(struct system_data *sd)
                                              {
                                                 while ((*ptr != '\n') &&
                                                        (*ptr != '\r') &&
-                                                       ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                                                       ((ptr - p_start) < stat_buf.stx_size)
+#else
+                                                       ((ptr - p_start) < stat_buf.st_size)
+#endif
+                                                      )
                                                 {
                                                    ptr++;
                                                 }
@@ -504,7 +591,12 @@ get_system_data(struct system_data *sd)
                                           {
                                              while ((*ptr != '\n') &&
                                                     (*ptr != '\r') &&
-                                                    ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                                                    ((ptr - p_start) < stat_buf.stx_size)
+#else
+                                                    ((ptr - p_start) < stat_buf.st_size)
+#endif
+                                                   )
                                              {
                                                 ptr++;
                                              }
@@ -534,7 +626,12 @@ get_system_data(struct system_data *sd)
                                              while ((*ptr != '\n') &&
                                                     (*ptr != '\r') &&
                                                     (i < MAX_VAR_STR_LENGTH) &&
-                                                    ((ptr - p_start) < stat_buf.st_size))
+# ifdef HAVE_STATX
+                                                    ((ptr - p_start) < stat_buf.stx_size)
+# else
+                                                    ((ptr - p_start) < stat_buf.st_size)
+# endif
+                                                   )
                                              {
                                                 var_str[i] = *ptr;
                                                 ptr++; i++;
@@ -566,7 +663,12 @@ get_system_data(struct system_data *sd)
                                              {
                                                 while ((*ptr != '\n') &&
                                                        (*ptr != '\r') &&
-                                                       ((ptr - p_start) < stat_buf.st_size))
+# ifdef HAVE_STATX
+                                                       ((ptr - p_start) < stat_buf.stx_size)
+# else
+                                                       ((ptr - p_start) < stat_buf.st_size)
+# endif
+                                                      )
                                                 {
                                                    ptr++;
                                                 }
@@ -577,7 +679,12 @@ get_system_data(struct system_data *sd)
                                              /* Go to end of line. */
                                              while ((*ptr != '\n') &&
                                                     (*ptr != '\r') &&
-                                                    ((ptr - p_start) < stat_buf.st_size))
+# ifdef HAVE_STATX
+                                                    ((ptr - p_start) < stat_buf.stx_size)
+# else
+                                                    ((ptr - p_start) < stat_buf.st_size)
+# endif
+                                                   )
                                              {
                                                 ptr++;
                                              }
@@ -608,7 +715,12 @@ get_system_data(struct system_data *sd)
                                              while ((*ptr != '\n') &&
                                                     (*ptr != '\r') &&
                                                     (i < MAX_VAR_STR_LENGTH) &&
-                                                    ((ptr - p_start) < stat_buf.st_size))
+# ifdef HAVE_STATX
+                                                    ((ptr - p_start) < stat_buf.stx_size)
+# else
+                                                    ((ptr - p_start) < stat_buf.st_size)
+# endif
+                                                   )
                                              {
                                                 var_str[i] = *ptr;
                                                 ptr++; i++;
@@ -640,7 +752,12 @@ get_system_data(struct system_data *sd)
                                              {
                                                 while ((*ptr != '\n') &&
                                                        (*ptr != '\r') &&
-                                                       ((ptr - p_start) < stat_buf.st_size))
+# ifdef HAVE_STATX
+                                                       ((ptr - p_start) < stat_buf.stx_size)
+# else
+                                                       ((ptr - p_start) < stat_buf.st_size)
+# endif
+                                                      )
                                                 {
                                                    ptr++;
                                                 }
@@ -651,7 +768,12 @@ get_system_data(struct system_data *sd)
                                              /* Go to end of line. */
                                              while ((*ptr != '\n') &&
                                                     (*ptr != '\r') &&
-                                                    ((ptr - p_start) < stat_buf.st_size))
+# ifdef HAVE_STATX
+                                                    ((ptr - p_start) < stat_buf.stx_size)
+# else
+                                                    ((ptr - p_start) < stat_buf.st_size)
+# endif
+                                                   )
                                              {
                                                 ptr++;
                                              }
@@ -682,7 +804,12 @@ get_system_data(struct system_data *sd)
                                              while ((*ptr != '\n') &&
                                                     (*ptr != '\r') &&
                                                     (i < MAX_VAR_STR_LENGTH) &&
-                                                    ((ptr - p_start) < stat_buf.st_size))
+# ifdef HAVE_STATX
+                                                    ((ptr - p_start) < stat_buf.stx_size)
+# else
+                                                    ((ptr - p_start) < stat_buf.st_size)
+# endif
+                                                   )
                                              {
                                                 var_str[i] = *ptr;
                                                 ptr++; i++;
@@ -714,7 +841,12 @@ get_system_data(struct system_data *sd)
                                              {
                                                 while ((*ptr != '\n') &&
                                                        (*ptr != '\r') &&
-                                                       ((ptr - p_start) < stat_buf.st_size))
+# ifdef HAVE_STATX
+                                                       ((ptr - p_start) < stat_buf.stx_size)
+# else
+                                                       ((ptr - p_start) < stat_buf.st_size)
+# endif
+                                                      )
                                                 {
                                                    ptr++;
                                                 }
@@ -725,7 +857,12 @@ get_system_data(struct system_data *sd)
                                              /* Go to end of line. */
                                              while ((*ptr != '\n') &&
                                                     (*ptr != '\r') &&
-                                                    ((ptr - p_start) < stat_buf.st_size))
+# ifdef HAVE_STATX
+                                                    ((ptr - p_start) < stat_buf.stx_size)
+# else
+                                                    ((ptr - p_start) < stat_buf.st_size)
+# endif
+                                                   )
                                              {
                                                 ptr++;
                                              }
@@ -756,7 +893,12 @@ get_system_data(struct system_data *sd)
                                              while ((*ptr != '\n') &&
                                                     (*ptr != '\r') &&
                                                     (i < MAX_VAR_STR_LENGTH) &&
-                                                    ((ptr - p_start) < stat_buf.st_size))
+# ifdef HAVE_STATX
+                                                    ((ptr - p_start) < stat_buf.stx_size)
+# else
+                                                    ((ptr - p_start) < stat_buf.st_size)
+# endif
+                                                   )
                                              {
                                                 var_str[i] = *ptr;
                                                 ptr++; i++;
@@ -788,7 +930,12 @@ get_system_data(struct system_data *sd)
                                              {
                                                 while ((*ptr != '\n') &&
                                                        (*ptr != '\r') &&
-                                                       ((ptr - p_start) < stat_buf.st_size))
+# ifdef HAVE_STATX
+                                                       ((ptr - p_start) < stat_buf.stx_size)
+# else
+                                                       ((ptr - p_start) < stat_buf.st_size)
+# endif
+                                                      )
                                                 {
                                                    ptr++;
                                                 }
@@ -799,7 +946,12 @@ get_system_data(struct system_data *sd)
                                              /* Go to end of line. */
                                              while ((*ptr != '\n') &&
                                                     (*ptr != '\r') &&
-                                                    ((ptr - p_start) < stat_buf.st_size))
+# ifdef HAVE_STATX
+                                                    ((ptr - p_start) < stat_buf.stx_size)
+# else
+                                                    ((ptr - p_start) < stat_buf.st_size)
+# endif
+                                                   )
                                              {
                                                 ptr++;
                                              }
@@ -818,13 +970,23 @@ get_system_data(struct system_data *sd)
                               else
                               {
                                  while ((*ptr != '\n') && (*ptr != '\r') &&
-                                        ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                                        ((ptr - p_start) < stat_buf.stx_size)
+#else
+                                        ((ptr - p_start) < stat_buf.st_size)
+#endif
+                                       )
                                  {
                                     ptr++;
                                  }
                               }
                               while (((*ptr == '\n') || (*ptr == '\r')) &&
-                                     ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                                     ((ptr - p_start) < stat_buf.stx_size)
+#else
+                                     ((ptr - p_start) < stat_buf.st_size)
+#endif
+                                    )
                               {
                                  ptr++;
                               }
@@ -837,22 +999,40 @@ get_system_data(struct system_data *sd)
                      {
                         /* Go to end of line. */
                         while ((*ptr != '\n') && (*ptr != '\r') &&
-                               ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                               ((ptr - p_start) < stat_buf.stx_size)
+#else
+                               ((ptr - p_start) < stat_buf.st_size)
+#endif
+                              )
                         {
                            ptr++;
                         }
                         while (((*ptr == '\n') || (*ptr == '\r')) &&
-                               ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                               ((ptr - p_start) < stat_buf.stx_size)
+#else
+                               ((ptr - p_start) < stat_buf.st_size)
+#endif
+                              )
                         {
                            ptr++;
                         }
                      }
                   }
+#ifdef HAVE_STATX
+               } while ((ptr - p_start) < stat_buf.stx_size);
+#else
                } while ((ptr - p_start) < stat_buf.st_size);
+#endif
 
                /* Unmap from file. */
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+               if (munmap(p_start, stat_buf.stx_size) == -1)
+# else
                if (munmap(p_start, stat_buf.st_size) == -1)
+# endif
 #else
                if (munmap_emu(p_start) == -1)
 #endif

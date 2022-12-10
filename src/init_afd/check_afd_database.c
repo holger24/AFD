@@ -1,6 +1,6 @@
 /*
  *  check_afd_database.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -52,6 +52,9 @@ DESCR__E_M1
 #include <string.h>           /* strcpy(), strerror()                    */
 #include <stdlib.h>           /* free()                                  */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>           /* Definition of AT_* constants            */
+#endif
 #include <sys/stat.h>         /* stat()                                  */
 #include <unistd.h>           /* R_OK                                    */
 #include <errno.h>
@@ -147,11 +150,19 @@ check_afd_database(void)
 #ifdef WITH_AUTO_CONFIG
    if (ret == -1)
    {
-      FILE        *fp;
-      struct stat stat_buf;
+      FILE         *fp;
+# ifdef HAVE_STATX
+      struct statx stat_buf;
+# else
+      struct stat  stat_buf;
+# endif
 
       db_file[length] = '\0';
+# ifdef HAVE_STATX
+      if (statx(0, db_file, AT_STATX_SYNC_AS_STAT, 0, &stat_buf) == -1)
+# else
       if (stat(db_file, &stat_buf) == -1)
+# endif
       {
          if (errno == ENOENT)
          {

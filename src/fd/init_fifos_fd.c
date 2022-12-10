@@ -1,6 +1,6 @@
 /*
  *  init_fifos_fd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -81,18 +81,22 @@ extern char *p_work_dir;
 int
 init_fifos_fd(void)
 {
-   char        delete_jobs_fifo[MAX_PATH_LENGTH],
-               fd_cmd_fifo[MAX_PATH_LENGTH],
-               fd_wake_up_fifo[MAX_PATH_LENGTH],
-               msg_fifo[MAX_PATH_LENGTH],
-               retry_fifo[MAX_PATH_LENGTH],
-               sf_fin_fifo[MAX_PATH_LENGTH],
+   char         delete_jobs_fifo[MAX_PATH_LENGTH],
+                fd_cmd_fifo[MAX_PATH_LENGTH],
+                fd_wake_up_fifo[MAX_PATH_LENGTH],
+                msg_fifo[MAX_PATH_LENGTH],
+                retry_fifo[MAX_PATH_LENGTH],
+                sf_fin_fifo[MAX_PATH_LENGTH],
 #ifdef SF_BURST_ACK
-               sf_burst_ack_fifo[MAX_PATH_LENGTH],
+                sf_burst_ack_fifo[MAX_PATH_LENGTH],
 #endif
-               transfer_log_fifo[MAX_PATH_LENGTH],
-               trl_calc_fifo[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+                transfer_log_fifo[MAX_PATH_LENGTH],
+                trl_calc_fifo[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    /* Initialise fifo names. */
    (void)strcpy(transfer_log_fifo, p_work_dir);
@@ -119,7 +123,12 @@ init_fifos_fd(void)
 
    /* If the process AFD has not yet created these fifos */
    /* create them now.                                   */
+#ifdef HAVE_STATX
+   if ((statx(0, fd_cmd_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
    if ((stat(fd_cmd_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(fd_cmd_fifo) < 0)
       {
@@ -128,8 +137,13 @@ init_fifos_fd(void)
          return(INCORRECT);
       }
    }
+#ifdef HAVE_STATX
+   if ((statx(0, transfer_log_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
    if ((stat(transfer_log_fifo, &stat_buf) == -1) ||
        (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(transfer_log_fifo) < 0)
       {
@@ -138,7 +152,12 @@ init_fifos_fd(void)
          return(INCORRECT);
       }
    }
+#ifdef HAVE_STATX
+   if ((statx(0, sf_fin_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
    if ((stat(sf_fin_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(sf_fin_fifo) < 0)
       {
@@ -147,7 +166,12 @@ init_fifos_fd(void)
          return(INCORRECT);
       }
    }
+#ifdef HAVE_STATX
+   if ((statx(0, msg_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
    if ((stat(msg_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(msg_fifo) < 0)
       {
@@ -156,8 +180,13 @@ init_fifos_fd(void)
          return(INCORRECT);
       }
    }
+#ifdef HAVE_STATX
+   if ((statx(0, fd_wake_up_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
    if ((stat(fd_wake_up_fifo, &stat_buf) == -1) ||
        (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(fd_wake_up_fifo) < 0)
       {
@@ -166,8 +195,13 @@ init_fifos_fd(void)
          return(INCORRECT);
       }
    }
+#ifdef HAVE_STATX
+   if ((statx(0, trl_calc_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
    if ((stat(trl_calc_fifo, &stat_buf) == -1) ||
        (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(trl_calc_fifo) < 0)
       {
@@ -176,7 +210,12 @@ init_fifos_fd(void)
          return(INCORRECT);
       }
    }
+#ifdef HAVE_STATX
+   if ((statx(0, retry_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
    if ((stat(retry_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(retry_fifo) < 0)
       {
@@ -185,8 +224,13 @@ init_fifos_fd(void)
          return(INCORRECT);
       }
    }
+#ifdef HAVE_STATX
+   if ((statx(0, delete_jobs_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
    if ((stat(delete_jobs_fifo, &stat_buf) == -1) ||
        (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(delete_jobs_fifo) < 0)
       {
@@ -196,8 +240,13 @@ init_fifos_fd(void)
       }
    }
 #ifdef SF_BURST_ACK
+# ifdef HAVE_STATX
+   if ((statx(0, sf_burst_ack_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+# else
    if ((stat(sf_burst_ack_fifo, &stat_buf) == -1) ||
        (!S_ISFIFO(stat_buf.st_mode)))
+# endif
    {
       if (make_fifo(sf_burst_ack_fifo) < 0)
       {

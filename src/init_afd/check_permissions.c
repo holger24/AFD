@@ -51,6 +51,9 @@ DESCR__E_M3
 #include <stdio.h>
 #include <string.h>             /* strcpy()                              */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>             /* Definition of AT_* constants          */
+#endif
 #include <sys/stat.h>           /* stat(), chmod()                       */
 #include <errno.h>
 #include "logdefs.h"
@@ -73,7 +76,11 @@ check_permissions(void)
    int               i;
    char              fullname[MAX_PATH_LENGTH],
                      *ptr;
+#ifdef HAVE_STATX
+   struct statx      stat_buf;
+#else
    struct stat       stat_buf;
+#endif
    struct check_list fifodir[] =
                      {
 #ifdef GROUP_CAN_WRITE
@@ -327,7 +334,12 @@ check_permissions(void)
    {
       (void)my_strncpy(ptr, fifodir[i].file_name,
                        MAX_PATH_LENGTH - (ptr - fullname));
+#ifdef HAVE_STATX
+      if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                STATX_MODE, &stat_buf) == -1)
+#else
       if (stat(fullname, &stat_buf) == -1)
+#endif
       {
          if (errno != ENOENT)
          {
@@ -337,11 +349,19 @@ check_permissions(void)
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_mode != fifodir[i].full_mode)
+#else
          if (stat_buf.st_mode != fifodir[i].full_mode)
+#endif
          {
             (void)fprintf(stdout,
                           _("File %s has mode %o, changing to %o. (%s %d)\n"),
+#ifdef HAVE_STATX
+                          fullname, stat_buf.stx_mode, fifodir[i].full_mode,
+#else
                           fullname, stat_buf.st_mode, fifodir[i].full_mode,
+#endif
                           __FILE__, __LINE__);
             if (chmod(fullname, fifodir[i].mode) == -1)
             {
@@ -356,7 +376,12 @@ check_permissions(void)
    } while (fifodir[i].file_name != NULL);
 
    (void)sprintf(ptr, "/%s.%x", AFD_STATUS_FILE, get_afd_status_struct_size());
+#ifdef HAVE_STATX
+   if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+             STATX_MODE, &stat_buf) == -1)
+#else
    if (stat(fullname, &stat_buf) == -1)
+#endif
    {
       if (errno != ENOENT)
       {
@@ -367,28 +392,44 @@ check_permissions(void)
    else
    {
 #ifdef GROUP_CAN_WRITE
+# ifdef HAVE_STATX
+      if (stat_buf.stx_mode != (S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP))
+# else
       if (stat_buf.st_mode != (S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP))
+# endif
       {
          (void)fprintf(stdout,
-               _("File %s has mode %o, changing to %o. (%s %d)\n"),
-               fullname, stat_buf.st_mode,
-               (S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP),
-               __FILE__, __LINE__);
+                       _("File %s has mode %o, changing to %o. (%s %d)\n"),
+# ifdef HAVE_STATX
+                       fullname, stat_buf.stx_mode,
+# else
+                       fullname, stat_buf.st_mode,
+# endif
+                       (S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP),
+                       __FILE__, __LINE__);
          if (chmod(fullname, (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
          {
             (void)fprintf(stdout,
                           _("Can't change mode to %o for file %s : %s (%s %d)\n"),
-                          (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP), fullname, strerror(errno),
-                          __FILE__, __LINE__);
+                          (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP),
+                          fullname, strerror(errno), __FILE__, __LINE__);
          }
       }
 #else
+# ifdef HAVE_STATX
+      if (stat_buf.stx_mode != (S_IFREG | S_IRUSR | S_IWUSR))
+# else
       if (stat_buf.st_mode != (S_IFREG | S_IRUSR | S_IWUSR))
+# endif
       {
          (void)fprintf(stdout,
-               _("File %s has mode %o, changing to %o. (%s %d)\n"),
-               fullname, stat_buf.st_mode, (S_IFREG | S_IRUSR | S_IWUSR),
-               __FILE__, __LINE__);
+                       _("File %s has mode %o, changing to %o. (%s %d)\n"),
+# ifdef HAVE_STATX
+                       fullname, stat_buf.stx_mode,
+# else
+                       fullname, stat_buf.st_mode,
+# endif
+                       (S_IFREG | S_IRUSR | S_IWUSR), __FILE__, __LINE__);
          if (chmod(fullname, (S_IRUSR | S_IWUSR)) == -1)
          {
             (void)fprintf(stdout,
@@ -413,7 +454,12 @@ check_permissions(void)
          {
             (void)strcat(ptr, "0");
          }
+#ifdef HAVE_STATX
+         if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                   STATX_MODE, &stat_buf) == -1)
+#else
          if (stat(fullname, &stat_buf) == -1)
+#endif
          {
             if (errno != ENOENT)
             {
@@ -423,11 +469,19 @@ check_permissions(void)
          }
          else
          {
+#ifdef HAVE_STATX
+            if (stat_buf.stx_mode != logdir[i].full_mode)
+#else
             if (stat_buf.st_mode != logdir[i].full_mode)
+#endif
             {
                (void)fprintf(stdout,
                              _("File %s has mode %o, changing to %o. (%s %d)\n"),
+#ifdef HAVE_STATX
+                             fullname, stat_buf.stx_mode, logdir[i].full_mode,
+#else
                              fullname, stat_buf.st_mode, logdir[i].full_mode,
+#endif
                              __FILE__, __LINE__);
                if (chmod(fullname, logdir[i].mode) == -1)
                {

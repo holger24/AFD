@@ -1,6 +1,6 @@
 /*
  *  fax2gts.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2006 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -169,26 +169,52 @@ fax2gts(char *path, char* filename, int fax_format)
             }
             else
             {
+#ifdef HAVE_STATX
+               struct statx stat_buf;
+#else
                struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+               if (statx(from_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                         STATX_SIZE, &stat_buf) == -1)
+#else
                if (fstat(from_fd, &stat_buf) == -1)
+#endif
                {
                   receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
+#ifdef HAVE_STATX
+                              _("Failed to statx() `%s' : %s"),
+#else
                               _("Failed to fstat() `%s' : %s"),
+#endif
                               fullname, strerror(errno));
                   ret = INCORRECT;
                }
                else
                {
+#ifdef HAVE_STATX
+                  if (stat_buf.stx_size > 0)
+#else
                   if (stat_buf.st_size > 0)
+#endif
                   {
                      char *buffer;
 
+#ifdef HAVE_STATX
+                     if ((buffer = malloc(stat_buf.stx_blksize)) == NULL)
+#else
                      if ((buffer = malloc(stat_buf.st_blksize)) == NULL)
+#endif
                      {
                         receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                     _("Failed to malloc() %d bytes : %s"),
-                                    stat_buf.st_blksize, strerror(errno));
+#ifdef HAVE_STATX
+                                    stat_buf.stx_blksize,
+#else
+                                    stat_buf.st_blksize,
+#endif
+                                    strerror(errno));
                         ret = INCORRECT;
                      }
                      else
@@ -197,12 +223,21 @@ fax2gts(char *path, char* filename, int fax_format)
 
                         do
                         {
+#ifdef HAVE_STATX
+                           if ((bytes_buffered = read(from_fd, buffer,
+                                                      stat_buf.stx_blksize)) == -1)
+#else
                            if ((bytes_buffered = read(from_fd, buffer,
                                                       stat_buf.st_blksize)) == -1)
+#endif
                            {
                               receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                           _("Failed to read() %d bytes from `%s' : %s"),
+#ifdef HAVE_STATX
+                                          stat_buf.stx_blksize, fullname,
+#else
                                           stat_buf.st_blksize, fullname,
+#endif
                                           strerror(errno));
                               ret = INCORRECT;
                               break;
@@ -219,7 +254,11 @@ fax2gts(char *path, char* filename, int fax_format)
                                  break;
                               }
                            }
+#ifdef HAVE_STATX
+                        } while (bytes_buffered == stat_buf.stx_blksize);
+#else
                         } while (bytes_buffered == stat_buf.st_blksize);
+#endif
                         free(buffer);
 
                         if (ret != INCORRECT)
@@ -236,7 +275,11 @@ fax2gts(char *path, char* filename, int fax_format)
                            }
                            else
                            {
+#ifdef HAVE_STATX
+                              bytes_written = 33 + stat_buf.stx_size + 4;
+#else
                               bytes_written = 33 + stat_buf.st_size + 4;
+#endif
                            }
                         }
                      }

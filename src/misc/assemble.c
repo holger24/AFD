@@ -1,6 +1,6 @@
 /*
  *  assemble.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -112,19 +112,23 @@ assemble(char         *source_dir,
          int          *files_to_send,
          off_t        *file_size)
 {
-   int         buffer_size = 0,
-               counter_fd,
-               fd,
-               have_sohetx = YES,
-               i,
-               length,
-               source_length,
-               to_fd = -1;
-   char        *buffer = NULL,
-               *p_dest,
-               *p_src,
-               temp_dest_file[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+   int          buffer_size = 0,
+                counter_fd,
+                fd,
+                have_sohetx = YES,
+                i,
+                length,
+                source_length,
+                to_fd = -1;
+   char         *buffer = NULL,
+                *p_dest,
+                *p_src,
+                temp_dest_file[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    source_length = strlen(source_dir);
    if (source_length > (MAX_PATH_LENGTH - 1))
@@ -172,20 +176,40 @@ assemble(char         *source_dir,
       }
       else
       {
+#ifdef HAVE_STATX
+         if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &stat_buf) == -1)
+#else
          if (fstat(fd, &stat_buf) == -1)
+#endif
          {
             receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
+#ifdef HAVE_STATX
+#else
+#endif
                         _("Failed to fstat() `%s' : %s"),
                         source_dir, strerror(errno));
             (void)close(fd);
          }
          else
          {
+#ifdef HAVE_STATX
+            if (stat_buf.stx_size > 0)
+#else
             if (stat_buf.st_size > 0)
+#endif
             {
+#ifdef HAVE_STATX
+               if (buffer_size < stat_buf.stx_size)
+#else
                if (buffer_size < stat_buf.st_size)
+#endif
                {
+#ifdef HAVE_STATX
+                  if ((buffer = realloc(buffer, stat_buf.stx_size)) == NULL)
+#else
                   if ((buffer = realloc(buffer, stat_buf.st_size)) == NULL)
+#endif
                   {
                      receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                  _("realloc() error : %s"), strerror(errno));
@@ -194,11 +218,19 @@ assemble(char         *source_dir,
                   }
                   else
                   {
+#ifdef HAVE_STATX
+                     buffer_size = stat_buf.stx_size;
+#else
                      buffer_size = stat_buf.st_size;
+#endif
                   }
                }
 
+#ifdef HAVE_STATX
+               if (read(fd, buffer, stat_buf.stx_size) != stat_buf.stx_size)
+#else
                if (read(fd, buffer, stat_buf.st_size) != stat_buf.st_size)
+#endif
                {
                   receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                               _("Failed to read() `%s' : %s"),
@@ -246,8 +278,11 @@ assemble(char         *source_dir,
                      }
                   }
 
-                  if ((buffer[0] == 1) &&
-                      (buffer[stat_buf.st_size - 1] == 3))
+#ifdef HAVE_STATX
+                  if ((buffer[0] == 1) && (buffer[stat_buf.stx_size - 1] == 3))
+#else
+                  if ((buffer[0] == 1) && (buffer[stat_buf.st_size - 1] == 3))
+#endif
                   {
                      have_sohetx = YES;
                      if (nnn_length > 0)
@@ -264,7 +299,11 @@ assemble(char         *source_dir,
                   {
                      if ((length = write_length_indicator(to_fd,
                                                           type, have_sohetx,
+#ifdef HAVE_STATX
+                                                          stat_buf.stx_size,
+#else
                                                           stat_buf.st_size,
+#endif
                                                           nnn_length,
                                                           counter_fd)) < 0)
                      {
@@ -304,8 +343,13 @@ assemble(char         *source_dir,
                   }
 
                   /* Write data */
+#ifdef HAVE_STATX
+                  if (writen(to_fd, &buffer[offset], stat_buf.stx_size - offset,
+                             stat_buf.stx_blksize) != (stat_buf.stx_size - offset))
+#else
                   if (writen(to_fd, &buffer[offset], stat_buf.st_size - offset,
                              stat_buf.st_blksize) != (stat_buf.st_size - offset))
+#endif
                   {
                       receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                   _("Failed to writen() data part : %s"),
@@ -313,13 +357,21 @@ assemble(char         *source_dir,
                   }
                   else
                   {
+#ifdef HAVE_STATX
+                     *file_size += stat_buf.stx_size;
+#else
                      *file_size += stat_buf.st_size;
+#endif
                   }
                   if (type == FOUR_BYTE_DWD)
                   {
                      if ((length = write_length_indicator(to_fd,
                                                           type, NO,
+#ifdef HAVE_STATX
+                                                          stat_buf.stx_size,
+#else
                                                           stat_buf.st_size,
+#endif
                                                           0, -1)) < 0)
                      {
                         if (length == -1)

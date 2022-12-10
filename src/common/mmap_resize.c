@@ -1,6 +1,6 @@
 /*
  *  mmap_resize.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -50,6 +50,9 @@ DESCR__E_M3
 #include <string.h>
 #include <unistd.h>     /* lseek(), write(), ftruncate()                 */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>     /* Definition of AT_* constants                  */
+#endif
 #include <sys/stat.h>
 #include <sys/mman.h>   /* mmap(), msync(), munmap()                     */
 #include <errno.h>
@@ -59,29 +62,59 @@ DESCR__E_M3
 void *
 mmap_resize(int fd, void *area, size_t new_size)
 {
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__,
-                 _("fstat() error : %s"), strerror(errno));
+#ifdef HAVE_STATX
+                 _("statx() error : %s"),
+#else
+                 _("fstat() error : %s"),
+#endif
+                 strerror(errno));
       return((void *)-1);
    }
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size == new_size)
+#else
    if (stat_buf.st_size == new_size)
+#endif
    {
       return(area);
    }
 
    /* Always unmap from current mmapped area. */
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size > 0)
+#else
    if (stat_buf.st_size > 0)
+#endif
    {
+#ifdef HAVE_STATX
+      if (msync(area, stat_buf.stx_size, MS_SYNC) == -1)
+#else
       if (msync(area, stat_buf.st_size, MS_SYNC) == -1)
+#endif
       {
          system_log(FATAL_SIGN, __FILE__, __LINE__,
                     _("msync() error : %s"), strerror(errno));
          return((void *)-1);
       }
+#ifdef HAVE_STATX
+      if (munmap(area, stat_buf.stx_size) == -1)
+#else
       if (munmap(area, stat_buf.st_size) == -1)
+#endif
       {
          system_log(FATAL_SIGN, __FILE__, __LINE__,
                     _("munmap() error : %s"), strerror(errno));
@@ -89,7 +122,11 @@ mmap_resize(int fd, void *area, size_t new_size)
       }
    }
 
+#ifdef HAVE_STATX
+   if (new_size > stat_buf.stx_size)
+#else
    if (new_size > stat_buf.st_size)
+#endif
    {
       int  i,
            loops,
@@ -97,13 +134,21 @@ mmap_resize(int fd, void *area, size_t new_size)
            write_size;
       char buffer[4096];
 
+#ifdef HAVE_STATX
+      if (lseek(fd, stat_buf.stx_size, SEEK_SET) == -1)
+#else
       if (lseek(fd, stat_buf.st_size, SEEK_SET) == -1)
+#endif
       {
          system_log(FATAL_SIGN, __FILE__, __LINE__,
                     _("lseek() error : %s"), strerror(errno));
          return((void *)-1);
       }
+#ifdef HAVE_STATX
+      write_size = new_size - stat_buf.stx_size;
+#else
       write_size = new_size - stat_buf.st_size;
+#endif
       (void)memset(buffer, 0, 4096);
       loops = write_size / 4096;
       rest = write_size % 4096;
@@ -126,7 +171,11 @@ mmap_resize(int fd, void *area, size_t new_size)
          }
       }
    }
+#ifdef HAVE_STATX
+   else if (new_size < stat_buf.stx_size)
+#else
    else if (new_size < stat_buf.st_size)
+#endif
         {
            if (ftruncate(fd, new_size) == -1)
            {

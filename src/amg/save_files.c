@@ -145,9 +145,19 @@ save_files(char                   *src_path,
                 file_size_saved = 0;
    char         *p_src,
                 *p_dest;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+   if ((statx(0, dest_path, AT_STATX_SYNC_AS_STAT,
+              STATX_SIZE | STATX_MODE, &stat_buf) < 0) ||
+       (S_ISDIR(stat_buf.stx_mode) == 0))
+#else
    if ((stat(dest_path, &stat_buf) < 0) || (S_ISDIR(stat_buf.st_mode) == 0))
+#endif
    {
       /*
        * Only the AFD may read and write in this directory!
@@ -311,7 +321,12 @@ save_files(char                   *src_path,
                {
                   if (p_de->flag & RENAME_ONE_JOB_ONLY)
                   {
+#ifdef HAVE_STATX
+                     if (statx(0, dest_path, AT_STATX_SYNC_AS_STAT,
+                               STATX_SIZE, &stat_buf) != -1)
+#else
                      if (stat(dest_path, &stat_buf) != -1)
+#endif
                      {
                         if (unlink(dest_path) == -1)
                         {
@@ -322,7 +337,11 @@ save_files(char                   *src_path,
                         else
                         {
                            files_deleted++;
+#ifdef HAVE_STATX
+                           file_size_deleted += stat_buf.stx_size;
+#else
                            file_size_deleted += stat_buf.st_size;
+#endif
                         }
                      }
                      if ((retstat = rename(src_path, dest_path)) == -1)
@@ -389,7 +408,12 @@ try_copy_file:
                            {
                               off_t del_file_size = 0;
 
+#ifdef HAVE_STATX
+                              if (statx(0, dest_path, AT_STATX_SYNC_AS_STAT,
+                                        STATX_SIZE, &stat_buf) == -1)
+#else
                               if (stat(dest_path, &stat_buf) == -1)
+#endif
                               {
                                  system_log(WARN_SIGN, __FILE__, __LINE__,
                                             "Failed to stat() %s : %s",
@@ -397,7 +421,11 @@ try_copy_file:
                               }
                               else
                               {
+#ifdef HAVE_STATX
+                                 del_file_size = stat_buf.stx_size;
+#else
                                  del_file_size = stat_buf.st_size;
+#endif
                               }
 
                               /*
@@ -471,10 +499,20 @@ try_copy_file:
                else
                {
                   if ((time_job == NO) &&
-                      (stat(dest_path, &stat_buf) == 0))
+#ifdef HAVE_STATX
+                      (statx(0, dest_path, AT_STATX_SYNC_AS_STAT,
+                             STATX_SIZE, &stat_buf) == 0)
+#else
+                      (stat(dest_path, &stat_buf) == 0)
+#endif
+                     )
                   {
                      files_deleted++;
+#ifdef HAVE_STATX
+                     file_size_deleted += stat_buf.stx_size;
+#else
                      file_size_deleted += stat_buf.st_size;
+#endif
                   }
 cross_link_error:
                   if ((retstat = copy_file(src_path, dest_path, NULL)) < 0)

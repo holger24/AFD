@@ -77,12 +77,16 @@ get_display_data(SSL  *ssl,
                  int  show_time,
                  int  file_no)
 {
-   int         from_fd = -1,
-               length;
-   size_t      hunk,
-               left;
-   char        *buffer;
-   struct stat stat_buf;
+   int          from_fd = -1,
+                length;
+   size_t       hunk,
+                left;
+   char         *buffer;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    /* Open source file. */
    length = strlen(search_file);
@@ -90,13 +94,22 @@ get_display_data(SSL  *ssl,
 
    if (start_line != NOT_SET)
    {
+#ifdef HAVE_STATX
+      if (statx(0, search_file, AT_STATX_SYNC_AS_STAT,
+                STATX_INO | STATX_SIZE, &stat_buf) != 0)
+#else
       if (stat(search_file, &stat_buf) != 0)
+#endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "Failed to stat() %s : %s", search_file, strerror(errno));
+                    "Failed to access %s : %s", search_file, strerror(errno));
          return(INCORRECT);
       }
+#ifdef HAVE_STATX
+      if (stat_buf.stx_ino == fc[log_number].st_ino)
+#else
       if (stat_buf.st_ino == fc[log_number].st_ino)
+#endif
       {
          from_fd = fc[log_number].fd;
       }
@@ -128,19 +141,32 @@ get_display_data(SSL  *ssl,
       if (start_line != NOT_SET)
       {
          fc[log_number].fd = from_fd;
+#ifdef HAVE_STATX
+         fc[log_number].st_ino = stat_buf.stx_ino;
+#else
          fc[log_number].st_ino = stat_buf.st_ino;
+#endif
       }
       else
       {
+#ifdef HAVE_STATX
+         if (statx(from_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &stat_buf) != 0)
+#else
          if (fstat(from_fd, &stat_buf) != 0)
+#endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "Failed to fstat() %s : %s",
+                       "Failed to access %s : %s",
                        search_file, strerror(errno));
             (void)close(from_fd);
             return(INCORRECT);
          }
+#ifdef HAVE_STATX
+         else if (stat_buf.stx_size == 0)
+#else
          else if (stat_buf.st_size == 0)
+#endif
               {
                  (void)command(ssl, "500 File %s is empty.", search_file);
                  (void)close(from_fd);
@@ -149,7 +175,11 @@ get_display_data(SSL  *ssl,
       }
    }
 
+#ifdef HAVE_STATX
+   left = hunk = stat_buf.stx_size;
+#else
    left = hunk = stat_buf.st_size;
+#endif
 
    if (hunk > HUNK_MAX)
    {

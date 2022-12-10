@@ -1,6 +1,6 @@
 /*
  *  remove_dir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,6 +52,9 @@ DESCR__E_M3
 #include <string.h>             /* strcpy(), strlen()                    */
 #include <unistd.h>             /* rmdir(), unlink()                     */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>             /* Definition of AT_* constants          */
+#endif
 #include <sys/stat.h>           /* stat()                                */
 #include <dirent.h>             /* opendir(), readdir(), closedir()      */
 #include <errno.h>
@@ -162,17 +165,34 @@ try_again:
 
                  if (errno == EPERM)
                  {
+#ifdef HAVE_STATX
+                    struct statx stat_buf;
+#else
                     struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+                    if (statx(0, dirname, AT_STATX_SYNC_AS_STAT,
+                              STATX_MODE, &stat_buf) == -1)
+#else
                     if (stat(dirname, &stat_buf) == -1)
+#endif
                     {
                        system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                                  _("Failed to statx() `%s' : %s"),
+#else
                                   _("Failed to stat() `%s' : %s"),
+#endif
                                   dirname, strerror(errno));
                     }
                     else
                     {
+#ifdef HAVE_STATX
+                       if (S_ISDIR(stat_buf.stx_mode))
+#else
                        if (S_ISDIR(stat_buf.st_mode))
+#endif
                        {
                           ret = FILE_IS_DIR;
                        }

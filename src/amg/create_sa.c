@@ -1,6 +1,6 @@
 /*
  *  create_sa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2006 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -76,12 +76,16 @@ create_sa(int no_of_dirs)
    /* created, notify AFD that we are done.     */
    if (first_time == YES)
    {
-      int         afd_cmd_fd;
+      int          afd_cmd_fd;
 #ifdef WITHOUT_FIFO_RW_SUPPORT
-      int         afd_cmd_readfd;
+      int          afd_cmd_readfd;
 #endif
-      char        afd_cmd_fifo[MAX_PATH_LENGTH];
-      struct stat stat_buf;
+      char         afd_cmd_fifo[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
+      struct stat  stat_buf;
+#endif
 
       (void)strcpy(afd_cmd_fifo, p_work_dir);
       (void)strcat(afd_cmd_fifo, FIFO_DIR);
@@ -90,7 +94,13 @@ create_sa(int no_of_dirs)
       /*
        * Check if fifos have been created. If not create and open them.
        */
-      if ((stat(afd_cmd_fifo, &stat_buf) < 0) || (!S_ISFIFO(stat_buf.st_mode)))
+#ifdef HAVE_STATX
+      if ((statx(0, afd_cmd_fifo, AT_STATX_SYNC_AS_STAT,
+                 STATX_MODE, &stat_buf) == -1) ||
+          (!S_ISFIFO(stat_buf.stx_mode)))
+#else
+      if ((stat(afd_cmd_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+#endif
       {
          if (make_fifo(afd_cmd_fifo) < 0)
          {

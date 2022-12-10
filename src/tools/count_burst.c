@@ -1,6 +1,6 @@
 /*
  *  count_burst.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2012 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2002 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -61,7 +61,11 @@ main(int argc, char *argv[])
    char         *file_buf,
                 *ptr,
                 str_num[25];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
 
    if (argc != 2)
    {
@@ -74,18 +78,31 @@ main(int argc, char *argv[])
                     argv[1], strerror(errno));
       exit(1);
    }
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
-      (void)fprintf(stderr, "Failed to fstat() %s : %s\n",
+      (void)fprintf(stderr, "Failed to access %s : %s\n",
                     argv[1], strerror(errno));
       exit(1);
    }
+#ifdef HAVE_STATX
+   if ((file_buf = malloc(stat_buf.stx_size + 1)) == NULL)
+#else
    if ((file_buf = malloc(stat_buf.st_size + 1)) == NULL)
+#endif
    {
       (void)fprintf(stderr, "malloc() error : %s\n", strerror(errno));
       exit(1);
    }
+#ifdef HAVE_STATX
+   if (read(fd, file_buf, stat_buf.stx_size) != stat_buf.stx_size)
+#else
    if (read(fd, file_buf, stat_buf.st_size) != stat_buf.st_size)
+#endif
    {
       (void)fprintf(stderr, "Failed to read() %s : %s\n",
                     argv[1], strerror(errno));
@@ -96,7 +113,11 @@ main(int argc, char *argv[])
       (void)fprintf(stderr, "Failed to close() %s : %s\n",
                     argv[1], strerror(errno));
    }
+#ifdef HAVE_STATX
+   file_buf[stat_buf.stx_size] = '\0';
+#else
    file_buf[stat_buf.st_size] = '\0';
+#endif
    ptr = file_buf;
    while ((ptr = posi(ptr, "[BURST")) != NULL)
    {

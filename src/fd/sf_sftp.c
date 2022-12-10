@@ -894,10 +894,41 @@ main(int argc, char *argv[])
 #  endif
                     YES, YES) == YES))
          {
+            time_t       file_mtime;
+#  ifdef HAVE_STATX
+            struct statx stat_buf;
+#  else
+            struct stat  stat_buf;
+#  endif
+
             now = time(NULL);
+            if (file_mtime_buffer == NULL)
+            {
+#  ifdef HAVE_STATX
+               if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                         STATX_MTIME, &stat_buf) == -1)
+#  else
+               if (stat(fullname, &stat_buf) == -1)
+#  endif
+               {
+                  file_mtime = now;
+               }
+               else
+               {
+#  ifdef HAVE_STATX
+                  file_mtime = stat_buf.stx_mtime.tv_sec;
+#  else
+                  file_mtime = stat_buf.st_mtime;
+#  endif
+               }
+            }
+            else
+            {
+               file_mtime = *p_file_mtime_buffer;
+            }
             handle_dupcheck_delete(SEND_FILE_SFTP, fsa->host_alias, fullname,
                                    p_file_name_buffer, *p_file_size_buffer,
-                                   *p_file_mtime_buffer, now);
+                                   file_mtime, now);
             if (db.dup_check_flag & DC_DELETE)
             {
                local_file_size += *p_file_size_buffer;
@@ -1001,14 +1032,14 @@ main(int argc, char *argv[])
             }
             if (append_file_number != -1)
             {
-               struct stat stat_buf;
+               struct stat rdir_stat_buf;
 
                if (simulation_mode == YES)
                {
-                  stat_buf.st_size = *p_file_size_buffer;
+                  rdir_stat_buf.st_size = *p_file_size_buffer;
                }
                if ((status = sftp_stat(initial_filename,
-                                       &stat_buf)) != SUCCESS)
+                                       &rdir_stat_buf)) != SUCCESS)
                {
                   trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, msg_str,
                             "Failed to stat() file `%s' (%d).",
@@ -1020,7 +1051,7 @@ main(int argc, char *argv[])
                }
                else
                {
-                  append_offset = stat_buf.st_size;
+                  append_offset = rdir_stat_buf.st_size;
                   if (fsa->debug > NORMAL_MODE)
                   {
                      trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
@@ -1030,7 +1061,7 @@ main(int argc, char *argv[])
                                   "Remote size of `%s' is %lld.",
 #endif
                                   initial_filename,
-                                  (pri_off_t)stat_buf.st_size);
+                                  (pri_off_t)rdir_stat_buf.st_size);
                   }
                }
                if (append_offset > 0)
@@ -1488,14 +1519,14 @@ main(int argc, char *argv[])
 
             if (fsa->debug > NORMAL_MODE)
             {
-               struct stat stat_buf;
+               struct stat rdir_stat_buf;
 
                if (simulation_mode == YES)
                {
-                  stat_buf.st_size = *p_file_size_buffer;
+                  rdir_stat_buf.st_size = *p_file_size_buffer;
                }
                if ((status = sftp_stat(initial_filename,
-                                       &stat_buf)) != SUCCESS)
+                                       &rdir_stat_buf)) != SUCCESS)
                {
                   trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
                             "Failed to stat() remote file `%s' (%d).",
@@ -1515,7 +1546,7 @@ main(int argc, char *argv[])
 #endif
                                p_final_filename,
                                (pri_off_t)(no_of_bytes + append_offset + additional_length),
-                               (pri_off_t)stat_buf.st_size);
+                               (pri_off_t)rdir_stat_buf.st_size);
                }
             }
          } /* if (append_offset < p_file_size_buffer) */
@@ -1537,10 +1568,10 @@ main(int argc, char *argv[])
          if ((fsa->protocol_options & CHECK_SIZE) ||
              (db.special_flag & MATCH_REMOTE_SIZE))
          {
-            struct stat stat_buf;
+            struct stat rdir_stat_buf;
 
             if ((status = sftp_stat(initial_filename,
-                                    &stat_buf)) != SUCCESS)
+                                    &rdir_stat_buf)) != SUCCESS)
             {
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                          "Failed to stat() remote file `%s' (%d). Cannot validate remote size.",
@@ -1552,10 +1583,10 @@ main(int argc, char *argv[])
             }
             if (simulation_mode == YES)
             {
-               stat_buf.st_size = *p_file_size_buffer;
+               rdir_stat_buf.st_size = *p_file_size_buffer;
             }
 
-            if (stat_buf.st_size != (no_of_bytes + append_offset + additional_length))
+            if (rdir_stat_buf.st_size != (no_of_bytes + append_offset + additional_length))
             {
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
 #if SIZEOF_OFF_T == 4
@@ -1564,7 +1595,7 @@ main(int argc, char *argv[])
                          "Local file size %lld does not match remote size %lld for file `%s'",
 #endif
                          (pri_off_t)(no_of_bytes + append_offset + additional_length),
-                         (pri_off_t)stat_buf.st_size, initial_filename);
+                         (pri_off_t)rdir_stat_buf.st_size, initial_filename);
 #ifdef WITH_DUP_CHECK
                if (db.dup_check_timeout > 0)
                {

@@ -1,6 +1,6 @@
 /*
  *  convert.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -106,6 +106,17 @@ DESCR__E_M3
 
 /* Macro definition that clears things when we call return(). */
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+#define CONVERT_CLEAN_UP()                                  \
+        {                                                   \
+           (void)close(from_fd);                            \
+           (void)munmap((void *)src_ptr, stat_buf.stx_size);\
+           if (nnn_length > 0)                              \
+           {                                                \
+              close_counter_file(counter_fd, &counter);     \
+           }                                                \
+        }
+# else
 #define CONVERT_CLEAN_UP()                                  \
         {                                                   \
            (void)close(from_fd);                            \
@@ -115,6 +126,7 @@ DESCR__E_M3
               close_counter_file(counter_fd, &counter);     \
            }                                                \
         }
+# endif
 #else
 #define CONVERT_CLEAN_UP()                              \
         {                                               \
@@ -186,11 +198,15 @@ convert(char         *file_path,
         }
         else
         {
-           int         add_nnn_length,
-                       from_fd,
-                       to_fd;
-           char        *src_ptr;
-           struct stat stat_buf;
+           int          add_nnn_length,
+                        from_fd,
+                        to_fd;
+           char         *src_ptr;
+#ifdef HAVE_STATX
+           struct statx stat_buf;
+#else
+           struct stat  stat_buf;
+#endif
 
            if ((from_fd = open(fullname, O_RDONLY)) < 0)
            {
@@ -200,10 +216,21 @@ convert(char         *file_path,
               return(INCORRECT);
            }
 
-           if (fstat(from_fd, &stat_buf) < 0)   /* need size of input file */
+           /* Need size of input file. */
+#ifdef HAVE_STATX
+           if (statx(from_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE | STATX_MODE , &stat_buf) == -1)
+#else
+           if (fstat(from_fd, &stat_buf) == -1)
+#endif
            {
               receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                          _("fstat() error : %s"), strerror(errno));
+#ifdef HAVE_STATX
+                          _("statx() error : %s"),
+#else
+                          _("fstat() error : %s"),
+#endif
+                          strerror(errno));
               (void)close(from_fd);
               return(INCORRECT);
            }
@@ -212,21 +239,34 @@ convert(char         *file_path,
             * If the size of the file is less then 10 forget it. There can't
             * be a WMO bulletin in it.
             */
+#ifdef HAVE_STATX
+           if (stat_buf.stx_size < 10)
+#else
            if (stat_buf.st_size < 10)
+#endif
            {
               receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                          _("Got a file for converting that is %ld bytes long!"),
-                          stat_buf.st_size);
+                          _("Got a file for converting that is less then 10 bytes long!"));
               (void)close(from_fd);
               return(INCORRECT);
            }
 
 #ifdef HAVE_MMAP
-           if ((src_ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+           if ((src_ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                               stat_buf.stx_size, PROT_READ,
+# else
+                               stat_buf.st_size, PROT_READ,
+# endif
                                (MAP_FILE | MAP_SHARED),
                                from_fd, 0)) == (caddr_t) -1)
 #else
-           if ((src_ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
+           if ((src_ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                   stat_buf.stx_size, PROT_READ,
+# else
+                                   stat_buf.st_size, PROT_READ,
+# endif
                                    (MAP_FILE | MAP_SHARED),
                                    fullname, 0)) == (caddr_t) -1)
 #endif
@@ -252,7 +292,11 @@ convert(char         *file_path,
                              counter_file);
                  (void)close(from_fd);
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+                 (void)munmap((void *)src_ptr, stat_buf.stx_size);
+# else
                  (void)munmap((void *)src_ptr, stat_buf.st_size);
+# endif
 #else
                  (void)munmap_emu((void *)src_ptr);
 #endif
@@ -269,13 +313,21 @@ convert(char         *file_path,
            switch (type)
            {
               case SOHETX :
-                 if ((*src_ptr != 1) &&
-                     (*(src_ptr + stat_buf.st_size - 1) != 3))
+#ifdef HAVE_STATX
+                 if ((*src_ptr != 1) && (*(src_ptr + stat_buf.stx_size - 1) != 3))
+#else
+                 if ((*src_ptr != 1) && (*(src_ptr + stat_buf.st_size - 1) != 3))
+#endif
                  {
                     char buffer[4];
 
+#ifdef HAVE_STATX
+                    if ((to_fd = open(new_name, (O_RDWR | O_CREAT | O_TRUNC),
+                                      stat_buf.stx_mode)) == -1)
+#else
                     if ((to_fd = open(new_name, (O_RDWR | O_CREAT | O_TRUNC),
                                       stat_buf.st_mode)) == -1)
+#endif
                     {
                        receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                    _("Failed to open() %s : %s"),
@@ -319,8 +371,13 @@ convert(char         *file_path,
                        *file_size += add_length;
                     }
 
+#ifdef HAVE_STATX
+                    if (writen(to_fd, src_ptr, stat_buf.stx_size,
+                               stat_buf.stx_blksize) != stat_buf.stx_size)
+#else
                     if (writen(to_fd, src_ptr, stat_buf.st_size,
                                stat_buf.st_blksize) != stat_buf.st_size)
+#endif
                     {
                        receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                    _("Failed to writen() to `%s' : %s"),
@@ -329,7 +386,11 @@ convert(char         *file_path,
                        (void)close(to_fd);
                        return(INCORRECT);
                     }
+#ifdef HAVE_STATX
+                    *file_size += stat_buf.stx_size;
+#else
                     *file_size += stat_buf.st_size;
+#endif
 
                     buffer[0] = 13;
                     buffer[2] = 10;
@@ -347,7 +408,11 @@ convert(char         *file_path,
                  }
                  else
                  {
+#ifdef HAVE_STATX
+                    *file_size += stat_buf.stx_size;
+#else
                     *file_size += stat_buf.st_size;
+#endif
                     no_change = YES;
                  }
                  break;
@@ -358,8 +423,13 @@ convert(char         *file_path,
                     off_t size;
                     char  length_indicator[10];
 
+#ifdef HAVE_STATX
+                    if ((to_fd = open(new_name, (O_RDWR | O_CREAT | O_TRUNC),
+                                      stat_buf.stx_mode)) == -1)
+#else
                     if ((to_fd = open(new_name, (O_RDWR | O_CREAT | O_TRUNC),
                                       stat_buf.st_mode)) == -1)
+#endif
                     {
                        receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                    _("Failed to open() %s : %s"),
@@ -372,17 +442,33 @@ convert(char         *file_path,
                         (*(src_ptr + 1) == 13) &&
                         (*(src_ptr + 2) == 13) &&
                         (*(src_ptr + 3) == 10) &&
+#ifdef HAVE_STATX
+                        (*(src_ptr + stat_buf.stx_size - 4) == 13) &&
+                        (*(src_ptr + stat_buf.stx_size - 3) == 13) &&
+                        (*(src_ptr + stat_buf.stx_size - 2) == 10) &&
+                        (*(src_ptr + stat_buf.stx_size - 1) == 3)
+#else
                         (*(src_ptr + stat_buf.st_size - 4) == 13) &&
                         (*(src_ptr + stat_buf.st_size - 3) == 13) &&
                         (*(src_ptr + stat_buf.st_size - 2) == 10) &&
-                        (*(src_ptr + stat_buf.st_size - 1) == 3))
+                        (*(src_ptr + stat_buf.st_size - 1) == 3)
+#endif
+                       )
                     {
                        offset = 4;
+#ifdef HAVE_STATX
+                       size = stat_buf.stx_size - 8 + add_nnn_length;
+#else
                        size = stat_buf.st_size - 8 + add_nnn_length;
+#endif
                     }
                     else
                     {
+#ifdef HAVE_STATX
+                       size = stat_buf.stx_size + add_nnn_length;
+#else
                        size = stat_buf.st_size + add_nnn_length;
+#endif
                        offset = 0;
                     }
                     if (size > 99999999)
@@ -438,8 +524,13 @@ convert(char         *file_path,
                        *file_size += add_length;
                     }
 
+#ifdef HAVE_STATX
+                    if (writen(to_fd, (src_ptr + offset), size,
+                               stat_buf.stx_blksize) != size)
+#else
                     if (writen(to_fd, (src_ptr + offset), size,
                                stat_buf.st_blksize) != size)
+#endif
                     {
                        receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                    _("Failed to writen() to `%s' : %s"),
@@ -461,8 +552,13 @@ convert(char         *file_path,
                            write_length;
                     char   length_indicator[14];
 
+#ifdef HAVE_STATX
+                    if ((to_fd = open(new_name, (O_RDWR | O_CREAT | O_TRUNC),
+                                      stat_buf.stx_mode)) == -1)
+#else
                     if ((to_fd = open(new_name, (O_RDWR | O_CREAT | O_TRUNC),
                                       stat_buf.st_mode)) == -1)
+#endif
                     {
                        receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                    _("Failed to open() %s : %s"),
@@ -473,7 +569,12 @@ convert(char         *file_path,
 
                     if (*src_ptr != 1)
                     {
-                       if ((stat_buf.st_size > 10) &&
+                       if (
+#ifdef HAVE_STATX
+                           (stat_buf.stx_size > 10) &&
+#else
+                           (stat_buf.st_size > 10) &&
+#endif
                            (isdigit((int)*src_ptr)) &&
                            (isdigit((int)*(src_ptr + 1))) &&
                            (isdigit((int)*(src_ptr + 2))) &&
@@ -495,7 +596,11 @@ convert(char         *file_path,
                           length_indicator[7] = *(src_ptr + 7);
                           length_indicator[8] = '\0';
                           length = (size_t)strtoul(length_indicator, NULL, 10);
+#ifdef HAVE_STATX
+                          if (stat_buf.stx_size == (length + 10))
+#else
                           if (stat_buf.st_size == (length + 10))
+#endif
                           {
                              if (*(src_ptr + 10) == 1)
                              {
@@ -604,19 +709,31 @@ convert(char         *file_path,
                                     additional_length = 4;
                                  }
                     }
+#ifdef HAVE_STATX
+                    if (*(src_ptr + stat_buf.stx_size - 1) != 3)
+#else
                     if (*(src_ptr + stat_buf.st_size - 1) != 3)
+#endif
                     {
                        end_offset = 0;
                        additional_length += 4;
                     }
                     else
                     {
+#ifdef HAVE_STATX
+                       if (*(src_ptr + stat_buf.stx_size - 2) != 10)
+#else
                        if (*(src_ptr + stat_buf.st_size - 2) != 10)
+#endif
                        {
                           end_offset = 1;
                           additional_length += 4;
                        }
+#ifdef HAVE_STATX
+                       else if (*(src_ptr + stat_buf.stx_size - 3) != 13)
+#else
                        else if (*(src_ptr + stat_buf.st_size - 3) != 13)
+#endif
                             {
                                end_offset = 2;
                                additional_length += 4;
@@ -626,7 +743,11 @@ convert(char         *file_path,
                                end_offset = 0;
                             }
                     }
+#ifdef HAVE_STATX
+                    if ((stat_buf.stx_size - front_offset - end_offset + additional_length + add_nnn_length) > 99999999)
+#else
                     if ((stat_buf.st_size - front_offset - end_offset + additional_length + add_nnn_length) > 99999999)
+#endif
                     {
                        (void)strcpy(length_indicator, "99999999");
                        receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
@@ -635,17 +756,32 @@ convert(char         *file_path,
 #else
                                    "Data length (%lld) greater then what is possible in WMO header size, inserting maximum possible 99999999.",
 #endif
-                                   (pri_off_t)(stat_buf.st_size - front_offset - end_offset + additional_length));
+#ifdef HAVE_STATX
+                                   (pri_off_t)(stat_buf.stx_size - front_offset - end_offset + additional_length)
+#else
+                                   (pri_off_t)(stat_buf.st_size - front_offset - end_offset + additional_length)
+#endif
+                                  );
                     }
                     else
                     {
+#ifdef HAVE_STATX
+                       (void)snprintf(length_indicator, 14, "%08lu",
+                                      (unsigned long)stat_buf.stx_size - front_offset - end_offset + additional_length + add_nnn_length);
+#else
                        (void)snprintf(length_indicator, 14, "%08lu",
                                       (unsigned long)stat_buf.st_size - front_offset - end_offset + additional_length + add_nnn_length);
+#endif
                     }
                     length_indicator[8] = '0';
                     length_indicator[9] = '0';
+#ifdef HAVE_STATX
+                    if (writen(to_fd, length_indicator, length,
+                               stat_buf.stx_blksize) != length)
+#else
                     if (writen(to_fd, length_indicator, length,
                                stat_buf.st_blksize) != length)
+#endif
                     {
                        receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                    _("Failed to writen() to `%s' : %s"),
@@ -677,9 +813,15 @@ convert(char         *file_path,
                        *file_size += add_length;
                     }
 
+#ifdef HAVE_STATX
+                    write_length = stat_buf.stx_size - (front_offset + end_offset);
+                    if (writen(to_fd, src_ptr + front_offset, write_length,
+                               stat_buf.stx_blksize) != write_length)
+#else
                     write_length = stat_buf.st_size - (front_offset + end_offset);
                     if (writen(to_fd, src_ptr + front_offset, write_length,
                                stat_buf.st_blksize) != write_length)
+#endif
                     {
                        receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                    _("Failed to writen() to `%s' : %s"),
@@ -690,9 +832,15 @@ convert(char         *file_path,
                     }
                     *file_size += write_length;
 
+#ifdef HAVE_STATX
+                    if ((*(src_ptr + stat_buf.stx_size - 1) != 3) ||
+                        (*(src_ptr + stat_buf.stx_size - 2) != 10) ||
+                        (*(src_ptr + stat_buf.stx_size - 3) != 13))
+#else
                     if ((*(src_ptr + stat_buf.st_size - 1) != 3) ||
                         (*(src_ptr + stat_buf.st_size - 2) != 10) ||
                         (*(src_ptr + stat_buf.st_size - 3) != 13))
+#endif
                     {
                        length_indicator[10] = 13;
                        length_indicator[11] = 13;
@@ -721,8 +869,13 @@ convert(char         *file_path,
                            *ptr,
                            *ptr_start;
 
+#ifdef HAVE_STATX
+                    if ((to_fd = open(new_name, (O_RDWR | O_CREAT | O_TRUNC),
+                                      stat_buf.stx_mode)) == -1)
+#else
                     if ((to_fd = open(new_name, (O_RDWR | O_CREAT | O_TRUNC),
                                       stat_buf.st_mode)) == -1)
+#endif
                     {
                        receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                    _("Failed to open() %s : %s"),
@@ -738,14 +891,24 @@ convert(char         *file_path,
                        /* first.                                        */
                        do
                        {
+#ifdef HAVE_STATX
+                          while ((*ptr != 1) &&
+                                 ((ptr - src_ptr + 1) < stat_buf.stx_size))
+#else
                           while ((*ptr != 1) &&
                                  ((ptr - src_ptr + 1) < stat_buf.st_size))
+#endif
                           {
                              ptr++;
                           }
                           if (*ptr == 1)
                           {
-                             if (((ptr - src_ptr + 3) < stat_buf.st_size) &&
+                             if (
+#ifdef HAVE_STATX
+                                 ((ptr - src_ptr + 3) < stat_buf.stx_size) &&
+#else
+                                 ((ptr - src_ptr + 3) < stat_buf.st_size) &&
+#endif
                                  ((*(ptr + 1) == 10) || (*(ptr + 3) == 10) ||
                                   (*(ptr + 2) == 10)))
                              {
@@ -756,7 +919,11 @@ convert(char         *file_path,
                                 ptr++;
                              }
                           }
+#ifdef HAVE_STATX
+                       } while ((ptr - src_ptr + 1) < stat_buf.stx_size);
+#else
                        } while ((ptr - src_ptr + 1) < stat_buf.st_size);
+#endif
 
                        /* Now lets cut out the message. */
                        if (*ptr == 1)
@@ -768,7 +935,11 @@ convert(char         *file_path,
                           }
                           else
                           {
+#ifdef HAVE_STATX
+                             if ((ptr + 1 - src_ptr + 3) < stat_buf.stx_size)
+#else
                              if ((ptr + 1 - src_ptr + 3) < stat_buf.st_size)
+#endif
                              {
                                 if (*(ptr + 1) == 10)
                                 {
@@ -804,8 +975,13 @@ convert(char         *file_path,
                           ptr_start = ptr;
                           do
                           {
+#ifdef HAVE_STATX
+                             while ((*ptr != 3) &&
+                                    ((ptr - src_ptr + 1) < stat_buf.stx_size))
+#else
                              while ((*ptr != 3) &&
                                     ((ptr - src_ptr + 1) < stat_buf.st_size))
+#endif
                              {
                                 ptr++;
                              }
@@ -821,7 +997,11 @@ convert(char         *file_path,
                                    ptr++;
                                 }
                              }
+#ifdef HAVE_STATX
+                          } while ((ptr - src_ptr + 1) < stat_buf.stx_size);
+#else
                           } while ((ptr - src_ptr + 1) < stat_buf.st_size);
+#endif
 
                           if (*ptr == 3)
                           {
@@ -940,9 +1120,15 @@ convert(char         *file_path,
                                 }
                                 *file_size += add_length;
                              }
+#ifdef HAVE_STATX
+                             if (writen(to_fd, ptr_start + add_offset,
+                                       length - add_offset,
+                                        stat_buf.stx_blksize) != (length - add_offset))
+#else
                              if (writen(to_fd, ptr_start + add_offset,
                                        length - add_offset,
                                         stat_buf.st_blksize) != (length - add_offset))
+#endif
                              {
                                 receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                             _("Failed to writen() to `%s' : %s"),
@@ -971,27 +1157,45 @@ convert(char         *file_path,
                              *file_size += (start_length + length + end_length);
                           }
                        }
+#ifdef HAVE_STATX
+                    } while ((ptr - src_ptr + 1) < stat_buf.stx_size);
+#else
                     } while ((ptr - src_ptr + 1) < stat_buf.st_size);
+#endif
                  }
                  break;
 
               case MRZ2WMO :
+#ifdef HAVE_STATX
+                 if ((to_fd = open(new_name, (O_RDWR | O_CREAT | O_TRUNC),
+                                   stat_buf.stx_mode)) == -1)
+#else
                  if ((to_fd = open(new_name, (O_RDWR | O_CREAT | O_TRUNC),
                                    stat_buf.st_mode)) == -1)
+#endif
                  {
                     receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                 _("Failed to open() %s : %s"),
                                 new_name, strerror(errno));
                     (void)close(from_fd);
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+                    (void)munmap((void *)src_ptr, stat_buf.stx_size);
+# else
                     (void)munmap((void *)src_ptr, stat_buf.st_size);
+# endif
 #else
                     (void)munmap_emu((void *)src_ptr);
 #endif
                     return(INCORRECT);
                  }
 
-                 if ((*file_size = bin_file_convert(src_ptr, stat_buf.st_size,
+                 if ((*file_size = bin_file_convert(src_ptr,
+#ifdef HAVE_STATX
+                                                    stat_buf.stx_size,
+#else
+                                                    stat_buf.st_size,
+#endif
                                                     to_fd, file_name,
                                                     job_id)) < 0)
                  {
@@ -1006,8 +1210,13 @@ convert(char         *file_path,
                  {
                     char *dst;
 
+#ifdef HAVE_STATX
+                    if ((to_fd = open(new_name, (O_RDWR | O_CREAT | O_TRUNC),
+                                      stat_buf.stx_mode)) == -1)
+#else
                     if ((to_fd = open(new_name, (O_RDWR | O_CREAT | O_TRUNC),
                                       stat_buf.st_mode)) == -1)
+#endif
                     {
                        receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                    _("Failed to open() %s : %s"),
@@ -1016,7 +1225,11 @@ convert(char         *file_path,
                        return(INCORRECT);
                     }
 
+#ifdef HAVE_STATX
+                    if ((dst = malloc((stat_buf.stx_size * 3))) == NULL)
+#else
                     if ((dst = malloc((stat_buf.st_size * 3))) == NULL)
+#endif
                     {
                        receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                    _("malloc() error : %s"),
@@ -1025,8 +1238,13 @@ convert(char         *file_path,
                        (void)close(to_fd);
                        return(INCORRECT);
                     }
+#ifdef HAVE_STATX
+                    if ((*file_size = iso8859_2ascii(src_ptr, dst,
+                                                     stat_buf.stx_size)) < 0)
+#else
                     if ((*file_size = iso8859_2ascii(src_ptr, dst,
                                                      stat_buf.st_size)) < 0)
+#endif
                     {
                        receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                                    _("Failed to convert ISO8859 file `%s' to ASCII."),
@@ -1035,8 +1253,13 @@ convert(char         *file_path,
                     }
                     else
                     {
+#ifdef HAVE_STATX
+                       if (writen(to_fd, dst, *file_size,
+                                  stat_buf.stx_blksize) != *file_size)
+#else
                        if (writen(to_fd, dst, *file_size,
                                   stat_buf.st_blksize) != *file_size)
+#endif
                        {
                           receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                       _("Failed to writen() to `%s' : %s"),
@@ -1059,7 +1282,11 @@ convert(char         *file_path,
            }
 
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+           if (munmap((void *)src_ptr, stat_buf.stx_size) == -1)
+# else
            if (munmap((void *)src_ptr, stat_buf.st_size) == -1)
+# endif
 #else
            if (munmap_emu((void *)src_ptr) == -1)
 #endif

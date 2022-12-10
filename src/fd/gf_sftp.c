@@ -710,7 +710,11 @@ main(int argc, char *argv[])
                                     i;
                off_t                bytes_done;
                char                 *buffer;
+#ifdef HAVE_STATX
+               struct statx         stat_buf;
+#else
                struct stat          stat_buf;
+#endif
                struct retrieve_list tmp_rl;
 
                /* Allocate buffer to read data from the source file. */
@@ -790,7 +794,12 @@ main(int argc, char *argv[])
                      }
                      if (fsa->file_size_offset != -1)
                      {
+#ifdef HAVE_STATX
+                        if (statx(0, local_tmp_file, AT_STATX_SYNC_AS_STAT,
+                                  STATX_SIZE, &stat_buf) == -1)
+#else
                         if (stat(local_tmp_file, &stat_buf) == -1)
+#endif
                         {
                            if (fra->stupid_mode == APPEND_ONLY)
                            {
@@ -803,7 +812,11 @@ main(int argc, char *argv[])
                         }
                         else
                         {
+#ifdef HAVE_STATX
+                           offset = stat_buf.stx_size;
+#else
                            offset = stat_buf.st_size;
+#endif
                            prev_download_exists = YES;
                         }
                      }
@@ -1401,9 +1414,10 @@ main(int argc, char *argv[])
                            old_time.actime = time(NULL);
                            if (tmp_rl.got_date != YES)
                            {
-                              struct stat stat_buf;
+                              struct stat rdir_stat_buf;
 
-                              if (sftp_stat(tmp_rl.file_name, &stat_buf) != SUCCESS)
+                              if (sftp_stat(tmp_rl.file_name,
+                                            &rdir_stat_buf) != SUCCESS)
                               {
                                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                            "Failed to stat() file `%s' (%d).",
@@ -1416,7 +1430,7 @@ main(int argc, char *argv[])
                               }
                               else
                               {
-                                 old_time.modtime = stat_buf.st_mtime;
+                                 old_time.modtime = rdir_stat_buf.st_mtime;
                               }
                            }
                            else

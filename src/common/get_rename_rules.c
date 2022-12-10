@@ -1,6 +1,6 @@
 /*
  *  get_rename_rules.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -73,6 +73,9 @@ DESCR__E_M3
 #include <string.h>          /* strcpy(), strerror()                     */
 #include <stdlib.h>          /* calloc(), free()                         */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>          /* Definition of AT_* constants             */
+#endif
 #include <sys/stat.h>
 #include <unistd.h>          /* eaccess(), F_OK                          */
 #include <errno.h>
@@ -100,7 +103,11 @@ get_rename_rules(int verbose)
                  read_size = 1024,
                  total_no_of_rules = 0;
    time_t        current_times = 0;
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
 
    if (config_file == NULL)
    {
@@ -116,18 +123,31 @@ get_rename_rules(int verbose)
       (void)snprintf(config_file, count, "%s%s%s",
                      p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
    }
+#ifdef HAVE_STATX
+   if (statx(0, config_file, AT_STATX_SYNC_AS_STAT,
+             STATX_MTIME, &stat_buf) == -1)
+#else
    if (stat(config_file, &stat_buf) == -1)
+#endif
    {
       if (errno != ENOENT)
       {
          system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                    _("Failed to statx() `%s' : %s"),
+#else
                     _("Failed to stat() `%s' : %s"),
+#endif
                     config_file, strerror(errno));
       }
    }
    else
    {
+#ifdef HAVE_STATX
+      if (stat_buf.stx_mtime.tv_sec != last_afd_config_read)
+#else
       if (stat_buf.st_mtime != last_afd_config_read)
+#endif
       {
          char *buffer;
 
@@ -243,7 +263,11 @@ get_rename_rules(int verbose)
             }
 
             free(buffer);
+#ifdef HAVE_STATX
+            last_afd_config_read = stat_buf.stx_mtime.tv_sec;
+#else
             last_afd_config_read = stat_buf.st_mtime;
+#endif
          }
       }
    }
@@ -266,7 +290,12 @@ get_rename_rules(int verbose)
 
    for (count = 0; count < no_of_rename_rule_files; count++)
    {
+#ifdef HAVE_STATX
+      if (statx(0, rule_file[count], AT_STATX_SYNC_AS_STAT,
+                STATX_MTIME, &stat_buf) == -1)
+#else
       if (stat(rule_file[count], &stat_buf) == -1)
+#endif
       {
          if (errno == ENOENT)
          {
@@ -291,17 +320,29 @@ get_rename_rules(int verbose)
          else
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                       _("Failed to statx() `%s' : %s"),
+#else
                        _("Failed to stat() `%s' : %s"),
+#endif
                        rule_file[count], strerror(errno));
          }
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_blksize > read_size)
+         {
+            read_size = stat_buf.stx_blksize;
+         }
+         current_times += stat_buf.stx_mtime.tv_sec;
+#else
          if (stat_buf.st_blksize > read_size)
          {
             read_size = stat_buf.st_blksize;
          }
          current_times += stat_buf.st_mtime;
+#endif
       }
    }
 

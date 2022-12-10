@@ -1,6 +1,6 @@
 /*
  *  check_afd_heartbeat.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -77,11 +77,21 @@ static void kill_jobs(off_t);
 int
 check_afd_heartbeat(long wait_time, int remove_process)
 {
-   int         afd_active = 0;
-   struct stat stat_buf;
+   int          afd_active = 0;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+   if ((statx(0, afd_active_file, AT_STATX_SYNC_AS_STAT,
+              STATX_SIZE, &stat_buf) == 0) &&
+       (stat_buf.stx_size > (((NO_OF_PROCESS + 1) * sizeof(pid_t)) + sizeof(unsigned int))))
+#else
    if ((stat(afd_active_file, &stat_buf) == 0) &&
        (stat_buf.st_size > (((NO_OF_PROCESS + 1) * sizeof(pid_t)) + sizeof(unsigned int))))
+#endif
    {
       int afd_active_fd;
 
@@ -103,7 +113,11 @@ check_afd_heartbeat(long wait_time, int remove_process)
          char         *buffer,
                       *pid_list;
 
+#ifdef HAVE_STATX
+         if ((buffer = malloc(stat_buf.stx_size)) == NULL)
+#else
          if ((buffer = malloc(stat_buf.st_size)) == NULL)
+#endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        _("malloc() error : %s"), strerror(errno));
@@ -112,7 +126,11 @@ check_afd_heartbeat(long wait_time, int remove_process)
          }
 
          /* First read  pid's to check if these process are still alive. */
+#ifdef HAVE_STATX
+         if ((n = read(afd_active_fd, buffer, stat_buf.stx_size)) != stat_buf.stx_size)
+#else
          if ((n = read(afd_active_fd, buffer, stat_buf.st_size)) != stat_buf.st_size)
+#endif
          {
             if (n != 0)
             {
@@ -238,7 +256,11 @@ check_afd_heartbeat(long wait_time, int remove_process)
          }
          if ((afd_active == 0) && (remove_process == YES))
          {
+#ifdef HAVE_STATX
+            kill_jobs(stat_buf.stx_size);
+#else
             kill_jobs(stat_buf.st_size);
+#endif
          }
          if (elapsed_time > wait_time)
          {

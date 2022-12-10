@@ -1,6 +1,6 @@
 /*
  *  count_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2004 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,6 +49,9 @@ DESCR__E_M3
 #include <string.h>             /* strcpy(), strlen()                    */
 #include <unistd.h>
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>             /* Definition of AT_* constants          */
+#endif
 #include <sys/stat.h>           /* stat(), S_ISDIR()                     */
 #include <dirent.h>             /* opendir(), readdir(), closedir()      */
 #include <errno.h>
@@ -71,7 +74,11 @@ count_files(char *dirname, unsigned int *files, off_t *bytes)
    {
       char          *ptr,
                     fullname[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+      struct statx  stat_buf;
+#else
       struct stat   stat_buf;
+#endif
       struct dirent *p_dir;
 
       (void)strcpy(fullname, dirname);
@@ -84,7 +91,12 @@ count_files(char *dirname, unsigned int *files, off_t *bytes)
          if (p_dir->d_name[0] != '.')
          {
             (void)strcpy(ptr, p_dir->d_name);
+#ifdef HAVE_STATX
+            if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                      STATX_MODE | STATX_SIZE, &stat_buf) == -1)
+#else
             if (stat(fullname, &stat_buf) == -1)
+#endif
             {
                if (errno != ENOENT)
                {
@@ -96,9 +108,17 @@ count_files(char *dirname, unsigned int *files, off_t *bytes)
             else
             {
                /* Sure it is a normal file? */
+#ifdef HAVE_STATX
+               if (S_ISREG(stat_buf.stx_mode))
+#else
                if (S_ISREG(stat_buf.st_mode))
+#endif
                {
+#ifdef HAVE_STATX
+                  (*bytes) += stat_buf.stx_size;
+#else
                   (*bytes) += stat_buf.st_size;
+#endif
                   (*files)++;
                }
             }

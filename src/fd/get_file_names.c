@@ -109,7 +109,11 @@ extern struct delete_log          dl;
 #if defined (_DELETE_LOG) || defined (_OUTPUT_LOG)
 /* Local function prototypes. */
 static void                       log_data(char *,
+#ifdef HAVE_STATX
+                                           struct statx *,
+#else
                                            struct stat *,
+#endif
 # ifdef WITH_DUP_CHECK
                                            int,
 # endif
@@ -141,7 +145,11 @@ get_file_names(char *file_path, off_t *file_size_to_send)
                  *p_del_file_name,
                  *p_file_name,
                  *p_source_file;
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
    struct dirent *p_dir;
    DIR           *dp;
 
@@ -325,17 +333,33 @@ get_file_names(char *file_path, off_t *file_size_to_send)
          continue;
       }
       (void)strcpy(p_source_file, p_dir->d_name);
-      if (stat(fullname, &stat_buf) < 0)
+#ifdef HAVE_STATX
+      if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+# ifndef LINUX
+                STATX_MODE |
+# endif
+                STATX_SIZE | STATX_MTIME, &stat_buf) == -1)
+#else
+      if (stat(fullname, &stat_buf) == -1)
+#endif
       {
          system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                    "Can't statx() file `%s' : %s #%x",
+#else
                     "Can't stat() file `%s' : %s #%x",
+#endif
                     fullname, strerror(errno), db.id.job);
          continue;
       }
 
 #ifndef LINUX
       /* Sure it is a normal file? */
+# ifdef HAVE_STATX
+      if (S_ISREG(stat_buf.stx_mode))
+# else
       if (S_ISREG(stat_buf.st_mode))
+# endif
 #endif
       {
 #ifdef WITH_DUP_CHECK
@@ -343,13 +367,21 @@ get_file_names(char *file_path, off_t *file_size_to_send)
 #endif
          int remove_file = NO;
 
+#ifdef HAVE_STATX
+         if (now < stat_buf.stx_mtime.tv_sec)
+#else
          if (now < stat_buf.st_mtime)
+#endif
          {
             diff_time = 0L;
          }
          else
          {
+#ifdef HAVE_STATX
+            diff_time = now - stat_buf.stx_mtime.tv_sec;
+#else
             diff_time = now - stat_buf.st_mtime;
+#endif
          }
 
          /* Don't send files older then age_limit! */
@@ -369,7 +401,11 @@ get_file_names(char *file_path, off_t *file_size_to_send)
 # ifdef FAST_SF_DUPCHECK
                  ((db.special_flag & OLD_ERROR_JOB) == 0) &&
                  (((is_duplicate = isdup(fullname, p_dir->d_name,
+#  ifdef HAVE_STATX
+                                         stat_buf.stx_size,
+#  else
                                          stat_buf.st_size,
+#  endif
                                          db.crc_id,
                                          db.dup_check_timeout,
                                          db.dup_check_flag,
@@ -382,7 +418,11 @@ get_file_names(char *file_path, off_t *file_size_to_send)
                    (db.dup_check_flag & DC_STORE)))
 # else
                  (((is_duplicate = isdup(fullname, p_dir->d_name,
+#  ifdef HAVE_STATX
+                                         stat_buf.stx_size,
+#  else
                                          stat_buf.st_size,
+#  endif
                                          db.crc_id,
                                          0,
                                          db.dup_check_flag,
@@ -423,7 +463,11 @@ get_file_names(char *file_path, off_t *file_size_to_send)
                    if (tmp_filename[0] != '\0')
                    {
                       if (((is_duplicate = isdup(fullname, tmp_filename,
+# ifdef HAVE_STATX
+                                                 stat_buf.stx_size,
+# else
                                                  stat_buf.st_size,
+# endif
                                                  db.crc_id,
                                                  db.trans_dup_check_timeout,
                                                  db.trans_dup_check_flag,
@@ -478,7 +522,11 @@ get_file_names(char *file_path, off_t *file_size_to_send)
             if (is_duplicate == YES)
             {
                dup_counter++;
+# ifdef HAVE_STATX
+               dup_counter_size += stat_buf.stx_size;
+# else
                dup_counter_size += stat_buf.st_size;
+# endif
                if (db.dup_check_flag & DC_WARN)
                {
                   trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -543,7 +591,11 @@ get_file_names(char *file_path, off_t *file_size_to_send)
                   }
                }
                files_not_send++;
+# ifdef HAVE_STATX
+               file_size_not_send += stat_buf.stx_size;
+# else
                file_size_not_send += stat_buf.st_size;
+# endif
             }
             else
             {
@@ -618,7 +670,11 @@ get_file_names(char *file_path, off_t *file_size_to_send)
                   }
 
                   files_not_send++;
+#ifdef HAVE_STATX
+                  file_size_not_send += stat_buf.stx_size;
+#else
                   file_size_not_send += stat_buf.st_size;
+#endif
                }
 #ifdef WITH_DUP_CHECK
             }
@@ -686,7 +742,12 @@ get_file_names(char *file_path, off_t *file_size_to_send)
             /* Sort the files, newest must be last (FIFO). */
             if ((fsa->protocol_options & SORT_FILE_NAMES) &&
                 (files_to_send > 1) &&
-                (*(p_file_mtime - 1) > stat_buf.st_mtime))
+#ifdef HAVE_STATX
+                (*(p_file_mtime - 1) > stat_buf.stx_mtime.tv_sec)
+#else
+                (*(p_file_mtime - 1) > stat_buf.st_mtime)
+#endif
+               )
             {
                int    i;
                off_t  *sp_file_size = p_file_size - 1;
@@ -695,7 +756,11 @@ get_file_names(char *file_path, off_t *file_size_to_send)
 
                for (i = files_to_send; i > 0; i--)
                {
+#ifdef HAVE_STATX
+                  if (*sp_mtime <= stat_buf.stx_mtime.tv_sec)
+#else
                   if (*sp_mtime <= stat_buf.st_mtime)
+#endif
                   {
                      break;
                   }
@@ -704,10 +769,18 @@ get_file_names(char *file_path, off_t *file_size_to_send)
                }
                (void)memmove(sp_mtime + 2, sp_mtime + 1,
                              (files_to_send - i) * sizeof(time_t));
+#ifdef HAVE_STATX
+               *(sp_mtime + 1) = stat_buf.stx_mtime.tv_sec;
+#else
                *(sp_mtime + 1) = stat_buf.st_mtime;
+#endif
                (void)memmove(sp_file_size + 2, sp_file_size + 1,
                              (files_to_send - i) * sizeof(off_t));
+#ifdef HAVE_STATX
+               *(sp_file_size + 1) = stat_buf.stx_size;
+#else
                *(sp_file_size + 1) = stat_buf.st_size;
+#endif
                (void)memmove(sp_file_name + (2 * MAX_FILENAME_LENGTH),
                              sp_file_name + MAX_FILENAME_LENGTH,
                              (files_to_send - i) * MAX_FILENAME_LENGTH);
@@ -717,17 +790,29 @@ get_file_names(char *file_path, off_t *file_size_to_send)
             else
             {
                (void)strcpy(p_file_name, p_dir->d_name);
+#ifdef HAVE_STATX
+               *p_file_size = stat_buf.stx_size;
+#else
                *p_file_size = stat_buf.st_size;
+#endif
                if (file_mtime_buffer != NULL)
                {
+#ifdef HAVE_STATX
+                  *p_file_mtime = stat_buf.stx_mtime.tv_sec;
+#else
                   *p_file_mtime = stat_buf.st_mtime;
+#endif
                }
             }
             p_file_name += MAX_FILENAME_LENGTH;
             p_file_size++;
             p_file_mtime++;
             files_to_send++;
+#ifdef HAVE_STATX
+            *file_size_to_send += stat_buf.stx_size;
+#else
             *file_size_to_send += stat_buf.st_size;
+#endif
          }
       }
       errno = 0;
@@ -897,15 +982,19 @@ get_file_names(char *file_path, off_t *file_size_to_send)
 #if defined (_DELETE_LOG) || defined (_OUTPUT_LOG)
 /*++++++++++++++++++++++++++++++ log_data() +++++++++++++++++++++++++++++*/
 static void
-log_data(char        *d_name,
-         struct stat *stat_buf,
+log_data(char         *d_name,
+#ifdef HAVE_STATX
+         struct statx *stat_buf,
+#else
+         struct stat  *stat_buf,
+#endif
 # ifdef WITH_DUP_CHECK
-         int         is_duplicate,
+         int          is_duplicate,
 # endif
 # ifdef _OUTPUT_LOG
-         char        output_type,
+         char         output_type,
 # endif
-         time_t      now)
+         time_t       now)
 {
 # ifdef _DELETE_LOG
    int    prog_name_length;
@@ -1060,7 +1149,11 @@ log_data(char        *d_name,
          ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
          ol_file_name[*ol_file_name_length + 1] = '\0';
          (*ol_file_name_length)++;
+#  ifdef HAVE_STATX
+         *ol_file_size = stat_buf->stx_size;
+#  else
          *ol_file_size = stat_buf->st_size;
+#  endif
          *ol_job_number = db.id.job;
          *ol_retries = db.retries;
          *ol_unl = db.unl;
@@ -1090,7 +1183,11 @@ log_data(char        *d_name,
 #  else
                   AGE_OUTPUT);
 #  endif
+#  ifdef HAVE_STATX
+   *dl.file_size = stat_buf->stx_size;
+#  else
    *dl.file_size = stat_buf->st_size;
+#  endif
    *dl.job_id = db.id.job;
    *dl.dir_id = 0;
    *dl.input_time = db.creation_time;
@@ -1106,13 +1203,21 @@ log_data(char        *d_name,
    {
       time_t diff_time;
 
+#   ifdef HAVE_STATX
+      if (now < stat_buf->stx_mtime.tv_sec)
+#   else
       if (now < stat_buf->st_mtime)
+#   endif
       {
          diff_time = 0L;
       }
       else
       {
+#   ifdef HAVE_STATX
+         diff_time = now - stat_buf->stx_mtime.tv_sec;
+#   else
          diff_time = now - stat_buf->st_mtime;
+#   endif
       }
 #  endif
       (void)snprintf(str_diff_time,
@@ -1123,7 +1228,12 @@ log_data(char        *d_name,
                      "%c>%lld [now=%lld file_mtime=%lld] (%s %d)",
 #  endif
                      SEPARATOR_CHAR, (pri_time_t)diff_time, (pri_time_t)now,
-                     (pri_time_t)stat_buf->st_mtime, __FILE__, __LINE__);
+#  ifdef HAVE_STATX
+                     (pri_time_t)stat_buf->stx_mtime.tv_sec,
+#  else
+                     (pri_time_t)stat_buf->st_mtime,
+#  endif
+                     __FILE__, __LINE__);
 #  ifdef WITH_DUP_CHECK
    }
 #  endif

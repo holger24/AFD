@@ -1,6 +1,6 @@
 /*
  *  rec_rmdir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -53,6 +53,9 @@ DESCR__E_M3
 #include <string.h>             /* strcpy(), strlen()                    */
 #include <unistd.h>             /* unlink(), rmdir()                     */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>             /* Definition of AT_* constants          */
+#endif
 #include <sys/stat.h>           /* lstat(), S_ISDIR()                    */
 #include <dirent.h>             /* opendir(), readdir(), closedir()      */
 #include <errno.h>
@@ -63,17 +66,30 @@ int
 rec_rmdir(char *dirname)
 {
    char          *ptr;
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
    struct dirent *dirp;
    DIR           *dp;
    int           ret = 0;
 
+#ifdef HAVE_STATX
+   if (statx(0, dirname, AT_STATX_SYNC_AS_STAT | AT_SYMLINK_NOFOLLOW,
+             STATX_MODE, &stat_buf) == -1)
+#else
    if (lstat(dirname, &stat_buf) == -1)
+#endif
    {
       if (errno != ENOENT)
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                    _("Failed to statx() `%s' : %s"), dirname, strerror(errno));
+#else
                     _("Failed to lstat() `%s' : %s"), dirname, strerror(errno));
+#endif
          return(INCORRECT);
       }
       else
@@ -84,7 +100,11 @@ rec_rmdir(char *dirname)
    }
 
    /* Make sure it is NOT a directory. */
+#ifdef HAVE_STATX
+   if (S_ISDIR(stat_buf.stx_mode) == 0)
+#else
    if (S_ISDIR(stat_buf.st_mode) == 0)
+#endif
    {
       if (unlink(dirname) < 0)
       {

@@ -1,6 +1,6 @@
 /*
  *  check_create_path.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -65,6 +65,9 @@ DESCR__E_M3
 
 #include <string.h>
 #include <stdlib.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>                     /* Definition of AT_* constants */
+#endif
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -158,9 +161,18 @@ check_create_path(char   *path,
 
          if (permissions == 0)
          {
-            struct stat stat_buf;
+#ifdef HAVE_STATX
+            struct statx stat_buf;
+#else
+            struct stat  stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+            if (statx(0, path, AT_STATX_SYNC_AS_STAT,
+                      STATX_MODE | STATX_UID | STATX_GID, &stat_buf) == -1)
+#else
             if (stat(path, &stat_buf) == -1)
+#endif
             {
                if (ii > 0)
                {
@@ -175,9 +187,15 @@ check_create_path(char   *path,
                free(dir_ptr);
                return(STAT_ERROR);
             }
+#ifdef HAVE_STATX
+            permissions = stat_buf.stx_mode;
+            owner = stat_buf.stx_uid;
+            group = stat_buf.stx_gid;
+#else
             permissions = stat_buf.st_mode;
             owner = stat_buf.st_uid;
             group = stat_buf.st_gid;
+#endif
             do_chown = YES;
          }
 

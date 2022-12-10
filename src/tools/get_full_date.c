@@ -1,6 +1,6 @@
 /*
  *  get_full_date.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2009 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -47,6 +47,9 @@ DESCR__E_M1
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>           /* Definition of AT_* constants            */
+#endif
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
@@ -60,17 +63,31 @@ main(int argc, char *argv[])
 
    if (argc == 2)
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+      if ((status = statx(0, argv[1], AT_STATX_SYNC_AS_STAT,
+                          STATX_MTIME, &stat_buf)) == -1)
+#else
       if ((status = stat(argv[1], &stat_buf)) == -1)
+#endif
       {
-         (void)fprintf(stderr, _("Failed to stat() `%s' : %s\n"),
+         (void)fprintf(stderr, _("Failed to access `%s' : %s\n"),
                        argv[1], strerror(errno));
       }
       else
       {
+#ifdef HAVE_STATX
+         (void)fprintf(stdout, "%s --> %s",
+                        argv[1], ctime(&stat_buf.stx_mtime.tv_sec));
+#else
          (void)fprintf(stdout, "%s --> %s",
                         argv[1], ctime(&stat_buf.st_mtime));
+#endif
       }
    }
    else

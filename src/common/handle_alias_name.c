@@ -1,6 +1,6 @@
 /*
  *  handle_alias_name.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2009 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2009 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -57,6 +57,9 @@ DESCR__E_M3
 #include <string.h>          /* strcpy(), strerror()                     */
 #include <stdlib.h>          /* malloc(), free()                         */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>          /* Definition of AT_* constants             */
+#endif
 #include <sys/stat.h>
 #include <errno.h>
 
@@ -84,11 +87,20 @@ get_alias_names(void)
    static time_t last_read = 0;
    static int    first_time = YES;
    char          alias_file[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
 
    (void)snprintf(alias_file, MAX_PATH_LENGTH, "%s%s/%s",
                   p_work_dir, ETC_DIR, ALIAS_NAME_FILE);
+#ifdef HAVE_STATX
+   if (statx(0, alias_file, AT_STATX_SYNC_AS_STAT,
+             STATX_MTIME, &stat_buf) == -1)
+#else
    if (stat(alias_file, &stat_buf) == -1)
+#endif
    {
       if (errno == ENOENT)
       {
@@ -106,13 +118,21 @@ get_alias_names(void)
       else
       {
          system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                    _("Failed to statx() `%s' : %s"),
+#else
                     _("Failed to stat() `%s' : %s"),
+#endif
                     alias_file, strerror(errno));
       }
    }
    else
    {
+#ifdef HAVE_STATX
+      if (stat_buf.stx_mtime.tv_sec != last_read)
+#else
       if (stat_buf.st_mtime != last_read)
+#endif
       {
          off_t file_size;
          char  *last_ptr,
@@ -135,7 +155,11 @@ get_alias_names(void)
             an = NULL;
             no_of_alias_names = 0;
          }
+#ifdef HAVE_STATX
+         last_read = stat_buf.stx_mtime.tv_sec;
+#else
          last_read = stat_buf.st_mtime;
+#endif
 
          if (((file_size = read_file_no_cr(alias_file, &buffer, YES,
                                            __FILE__, __LINE__)) != INCORRECT) &&

@@ -1,6 +1,6 @@
 /*
  *  alda.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -549,21 +549,34 @@ main(int argc, char *argv[])
          (void)sleep(1L);
          if (data_printed == NO)
          {
-            int         rotate = NO;
-            struct stat stat_buf;
+            int          rotate = NO;
+#ifdef HAVE_STATX
+            struct statx stat_buf;
+#else
+            struct stat  stat_buf;
+#endif
 
 #ifdef _INPUT_LOG
             if (input.fp != NULL)
             {
+# ifdef HAVE_STATX
+               if (statx(0, input.log_dir, AT_STATX_SYNC_AS_STAT,
+                         STATX_INO, &stat_buf) == -1)
+# else
                if (stat(input.log_dir, &stat_buf) == -1)
+# endif
                {
-                  (void)fprintf(stderr, "Failed to stat() `%s' : %s (%s %d)\n",
+                  (void)fprintf(stderr, "Failed to access `%s' : %s (%s %d)\n",
                                 input.log_dir, strerror(errno),
                                 __FILE__, __LINE__);
                }
                else
                {
+# ifdef HAVE_STATX
+                  if (stat_buf.stx_ino != input.inode_number)
+# else
                   if (stat_buf.st_ino != input.inode_number)
+# endif
                   {
                      if (fclose(input.fp) == EOF)
                      {
@@ -582,15 +595,24 @@ main(int argc, char *argv[])
 #ifdef _DISTRIBUTION_LOG
             if (distribution.fp != NULL)
             {
+# ifdef HAVE_STATX
+               if (statx(0, distribution.log_dir, AT_STATX_SYNC_AS_STAT,
+                         STATX_INO, &stat_buf) == -1)
+# else
                if (stat(distribution.log_dir, &stat_buf) == -1)
+# endif
                {
-                  (void)fprintf(stderr, "Failed to stat() `%s' : %s (%s %d)\n",
+                  (void)fprintf(stderr, "Failed to access `%s' : %s (%s %d)\n",
                                 distribution.log_dir, strerror(errno),
                                 __FILE__, __LINE__);
                }
                else
                {
+# ifdef HAVE_STATX
+                  if (stat_buf.stx_ino != distribution.inode_number)
+# else
                   if (stat_buf.st_ino != distribution.inode_number)
+# endif
                   {
                      if (fclose(distribution.fp) == EOF)
                      {
@@ -609,15 +631,24 @@ main(int argc, char *argv[])
 #ifdef _PRODUCTION_LOG
             if (production.fp != NULL)
             {
+# ifdef HAVE_STATX
+               if (statx(0, production.log_dir, AT_STATX_SYNC_AS_STAT,
+                         STATX_INO, &stat_buf) == -1)
+# else
                if (stat(production.log_dir, &stat_buf) == -1)
+# endif
                {
-                  (void)fprintf(stderr, "Failed to stat() `%s' : %s (%s %d)\n",
+                  (void)fprintf(stderr, "Failed to access `%s' : %s (%s %d)\n",
                                 production.log_dir, strerror(errno),
                                 __FILE__, __LINE__);
                }
                else
                {
+# ifdef HAVE_STATX
+                  if (stat_buf.stx_ino != production.inode_number)
+# else
                   if (stat_buf.st_ino != production.inode_number)
+# endif
                   {
                      if (fclose(production.fp) == EOF)
                      {
@@ -636,15 +667,24 @@ main(int argc, char *argv[])
 #ifdef _OUTPUT_LOG
             if (output.fp != NULL)
             {
+# ifdef HAVE_STATX
+               if (statx(0, output.log_dir, AT_STATX_SYNC_AS_STAT,
+                         STATX_INO, &stat_buf) == -1)
+# else
                if (stat(output.log_dir, &stat_buf) == -1)
+# endif
                {
-                  (void)fprintf(stderr, "Failed to stat() `%s' : %s (%s %d)\n",
+                  (void)fprintf(stderr, "Failed to access `%s' : %s (%s %d)\n",
                                 output.log_dir, strerror(errno),
                                 __FILE__, __LINE__);
                }
                else
                {
+# ifdef HAVE_STATX
+                  if (stat_buf.stx_ino != output.inode_number)
+# else
                   if (stat_buf.st_ino != output.inode_number)
+# endif
                   {
                      if (fclose(output.fp) == EOF)
                      {
@@ -663,15 +703,24 @@ main(int argc, char *argv[])
 #ifdef _DELETE_LOG
             if (delete.fp != NULL)
             {
+# ifdef HAVE_STATX
+               if (statx(0, delete.log_dir, AT_STATX_SYNC_AS_STAT,
+                         STATX_INO, &stat_buf) == -1)
+# else
                if (stat(delete.log_dir, &stat_buf) == -1)
+# endif
                {
-                  (void)fprintf(stderr, "Failed to stat() `%s' : %s (%s %d)\n",
+                  (void)fprintf(stderr, "Failed to access `%s' : %s (%s %d)\n",
                                 delete.log_dir, strerror(errno),
                                 __FILE__, __LINE__);
                }
                else
                {
+# ifdef HAVE_STATX
+                  if (stat_buf.stx_ino != delete.inode_number)
+# else
                   if (stat_buf.st_ino != delete.inode_number)
+# endif
                   {
                      if (fclose(delete.fp) == EOF)
                      {
@@ -2625,18 +2674,31 @@ check_input_log(char         *search_afd,
             if ((mode & ALDA_CONTINUOUS_MODE) ||
                 (mode & ALDA_CONTINUOUS_DAEMON_MODE))
             {
+#ifdef HAVE_STATX
+               struct statx stat_buf;
+#else
                struct stat stat_buf;
+#endif
 
                input.fd = fileno(input.fp);
+#ifdef HAVE_STATX
+               if (statx(input.fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                         STATX_INO, &stat_buf) == -1)
+#else
                if (fstat(input.fd, &stat_buf) == -1)
+#endif
                {
-                  (void)fprintf(stderr, "Failed to fstat() `%s' : %s (%s %d)\n",
+                  (void)fprintf(stderr, "Failed to access `%s' : %s (%s %d)\n",
                                 input.log_dir, strerror(errno),
                                 __FILE__, __LINE__);
                }
                else
                {
+#ifdef HAVE_STATX
+                  input.inode_number = stat_buf.stx_ino;
+#else
                   input.inode_number = stat_buf.st_ino;
+#endif
                }
                if (mode & ALDA_CONTINUOUS_DAEMON_MODE)
                {
@@ -2859,19 +2921,33 @@ check_distribution_log(char         *search_afd,
          }
          else
          {
+#ifdef HAVE_STATX
+            struct statx stat_buf;
+#else
             struct stat stat_buf;
+#endif
 
             distribution.bytes_read = 0;
             distribution.fd = fileno(distribution.fp);
+#ifdef HAVE_STATX
+            if (statx(distribution.fd, "",
+                      AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                      STATX_INO | STATX_MTIME, &stat_buf) == -1)
+#else
             if (fstat(distribution.fd, &stat_buf) == -1)
+#endif
             {
-               (void)fprintf(stderr, "Failed to fstat() `%s' : %s (%s %d)\n",
+               (void)fprintf(stderr, "Failed to access `%s' : %s (%s %d)\n",
                              distribution.log_dir, strerror(errno),
                              __FILE__, __LINE__);
             }
             else
             {
+#ifdef HAVE_STATX
+               distribution.inode_number = stat_buf.stx_ino;
+#else
                distribution.inode_number = stat_buf.st_ino;
+#endif
             }
             if (mode & ALDA_CONTINUOUS_DAEMON_MODE)
             {
@@ -2924,7 +3000,11 @@ check_distribution_log(char         *search_afd,
                      reshuffel_cache_data(__LINE__);
                   }
                }
+#ifdef HAVE_STATX
+               ucache[distribution.current_file_no].last_entry = stat_buf.stx_mtime.tv_sec;
+#else
                ucache[distribution.current_file_no].last_entry = stat_buf.st_mtime;
+#endif
             }
          }
       }
@@ -3018,19 +3098,33 @@ check_distribution_log(char         *search_afd,
                   }
                   else
                   {
+#ifdef HAVE_STATX
+                     struct statx stat_buf;
+#else
                      struct stat stat_buf;
+#endif
 
                      distribution.fd = fileno(distribution.fp);
+#ifdef HAVE_STATX
+                     if (statx(distribution.fd, "",
+                               AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                               STATX_INO | STATX_MTIME, &stat_buf) == -1)
+#else
                      if (fstat(distribution.fd, &stat_buf) == -1)
+#endif
                      {
                         (void)fprintf(stderr,
-                                      "Failed to fstat() `%s' : %s (%s %d)\n",
+                                      "Failed to access `%s' : %s (%s %d)\n",
                                       distribution.log_dir, strerror(errno),
                                       __FILE__, __LINE__);
                      }
                      else
                      {
+#ifdef HAVE_STATX
+                        distribution.inode_number = stat_buf.stx_ino;
+#else
                         distribution.inode_number = stat_buf.st_ino;
+#endif
                         if (ucache[distribution.current_file_no].inode == 0)
                         {
                            ucache[distribution.current_file_no].inode = distribution.inode_number;
@@ -3042,7 +3136,11 @@ check_distribution_log(char         *search_afd,
                               reshuffel_cache_data(__LINE__);
                            }
                         }
+#ifdef HAVE_STATX
+                        ucache[distribution.current_file_no].last_entry = stat_buf.stx_mtime.tv_sec;
+#else
                         ucache[distribution.current_file_no].last_entry = stat_buf.st_mtime;
+#endif
                      }
                   }
                }
@@ -3499,19 +3597,32 @@ check_production_log(char         *search_afd,
          }
          else
          {
+#ifdef HAVE_STATX
+            struct statx stat_buf;
+#else
             struct stat stat_buf;
+#endif
 
             production.bytes_read = 0;
             production.fd = fileno(production.fp);
+#ifdef HAVE_STATX
+            if (statx(production.fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                      STATX_INO | STATX_MTIME, &stat_buf) == -1)
+#else
             if (fstat(production.fd, &stat_buf) == -1)
+#endif
             {
-               (void)fprintf(stderr, "Failed to fstat() `%s' : %s (%s %d)\n",
+               (void)fprintf(stderr, "Failed to access `%s' : %s (%s %d)\n",
                              production.log_dir, strerror(errno),
                              __FILE__, __LINE__);
             }
             else
             {
+#ifdef HAVE_STATX
+               production.inode_number = stat_buf.stx_ino;
+#else
                production.inode_number = stat_buf.st_ino;
+#endif
             }
             if (mode & ALDA_CONTINUOUS_DAEMON_MODE)
             {
@@ -3564,7 +3675,11 @@ check_production_log(char         *search_afd,
                      reshuffel_cache_data(__LINE__);
                   }
                }
+#ifdef HAVE_STATX
+               pcache[production.current_file_no].last_entry = stat_buf.stx_mtime.tv_sec;
+#else
                pcache[production.current_file_no].last_entry = stat_buf.st_mtime;
+#endif
             }
          }
       }
@@ -3657,19 +3772,33 @@ check_production_log(char         *search_afd,
                   }
                   else
                   {
+#ifdef HAVE_STATX
+                     struct statx stat_buf;
+#else
                      struct stat stat_buf;
+#endif
 
                      production.fd = fileno(production.fp);
+#ifdef HAVE_STATX
+                     if (statx(production.fd, "",
+                               AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                               STATX_INO | STATX_MTIME, &stat_buf) == -1)
+#else
                      if (fstat(production.fd, &stat_buf) == -1)
+#endif
                      {
                         (void)fprintf(stderr,
-                                      "Failed to fstat() `%s' : %s (%s %d)\n",
+                                      "Failed to access `%s' : %s (%s %d)\n",
                                       production.log_dir, strerror(errno),
                                       __FILE__, __LINE__);
                      }
                      else
                      {
+#ifdef HAVE_STATX
+                        production.inode_number = stat_buf.stx_ino;
+#else
                         production.inode_number = stat_buf.st_ino;
+#endif
                         if (pcache[production.current_file_no].inode == 0)
                         {
                            pcache[production.current_file_no].inode = production.inode_number;
@@ -3681,7 +3810,11 @@ check_production_log(char         *search_afd,
                               reshuffel_cache_data(__LINE__);
                            }
                         }
+#ifdef HAVE_STATX
+                        pcache[production.current_file_no].last_entry = stat_buf.stx_mtime.tv_sec;
+#else
                         pcache[production.current_file_no].last_entry = stat_buf.st_mtime;
+#endif
                      }
                   }
                }
@@ -4143,19 +4276,32 @@ check_output_log(char         *search_afd,
          }
          else
          {
+#ifdef HAVE_STATX
+            struct statx stat_buf;
+#else
             struct stat stat_buf;
+#endif
 
             output.bytes_read = 0;
             output.fd = fileno(output.fp);
+#ifdef HAVE_STATX
+            if (statx(output.fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                      STATX_INO | STATX_MTIME, &stat_buf) == -1)
+#else
             if (fstat(output.fd, &stat_buf) == -1)
+#endif
             {
-               (void)fprintf(stderr, "Failed to fstat() `%s' : %s (%s %d)\n",
+               (void)fprintf(stderr, "Failed to access `%s' : %s (%s %d)\n",
                              output.log_dir, strerror(errno),
                              __FILE__, __LINE__);
             }
             else
             {
+#ifdef HAVE_STATX
+               output.inode_number = stat_buf.stx_ino;
+#else
                output.inode_number = stat_buf.st_ino;
+#endif
             }
             if (mode & ALDA_CONTINUOUS_DAEMON_MODE)
             {
@@ -4208,7 +4354,11 @@ check_output_log(char         *search_afd,
                      reshuffel_cache_data(__LINE__);
                   }
                }
+#ifdef HAVE_STATX
+               ocache[output.current_file_no].last_entry = stat_buf.stx_mtime.tv_sec;
+#else
                ocache[output.current_file_no].last_entry = stat_buf.st_mtime;
+#endif
             }
          }
       }
@@ -4327,19 +4477,33 @@ check_output_log(char         *search_afd,
                   }
                   else
                   {
+#ifdef HAVE_STATX
+                     struct statx stat_buf;
+#else
                      struct stat stat_buf;
+#endif
 
                      output.fd = fileno(output.fp);
+#ifdef HAVE_STATX
+                     if (statx(output.fd, "",
+                               AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                               STATX_INO | STATX_MTIME, &stat_buf) == -1)
+#else
                      if (fstat(output.fd, &stat_buf) == -1)
+#endif
                      {
                         (void)fprintf(stderr,
-                                      "Failed to fstat() `%s' : %s (%s %d)\n",
+                                      "Failed to access `%s' : %s (%s %d)\n",
                                       output.log_dir, strerror(errno),
                                       __FILE__, __LINE__);
                      }
                      else
                      {
+#ifdef HAVE_STATX
+                        output.inode_number = stat_buf.stx_ino;
+#else
                         output.inode_number = stat_buf.st_ino;
+#endif
                         if (ocache[output.current_file_no].inode == 0)
                         {
                            ocache[output.current_file_no].inode = output.inode_number;
@@ -4351,7 +4515,11 @@ check_output_log(char         *search_afd,
                               reshuffel_cache_data(__LINE__);
                            }
                         }
+#ifdef HAVE_STATX
+                        ocache[output.current_file_no].last_entry = stat_buf.stx_mtime.tv_sec;
+#else
                         ocache[output.current_file_no].last_entry = stat_buf.st_mtime;
+#endif
                      }
                   }
                }
@@ -4805,19 +4973,32 @@ check_delete_log(char         *search_afd,
          }
          else
          {
+#ifdef HAVE_STATX
+            struct statx stat_buf;
+#else
             struct stat stat_buf;
+#endif
 
             delete.bytes_read = 0;
             delete.fd = fileno(delete.fp);
+#ifdef HAVE_STATX
+            if (statx(delete.fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                      STATX_INO | STATX_MTIME, &stat_buf) == -1)
+#else
             if (fstat(delete.fd, &stat_buf) == -1)
+#endif
             {
-               (void)fprintf(stderr, "Failed to fstat() `%s' : %s (%s %d)\n",
+               (void)fprintf(stderr, "Failed to access `%s' : %s (%s %d)\n",
                              delete.log_dir, strerror(errno),
                              __FILE__, __LINE__);
             }
             else
             {
+#ifdef HAVE_STATX
+               delete.inode_number = stat_buf.stx_ino;
+#else
                delete.inode_number = stat_buf.st_ino;
+#endif
             }
             if (mode & ALDA_CONTINUOUS_DAEMON_MODE)
             {
@@ -4870,7 +5051,11 @@ check_delete_log(char         *search_afd,
                      reshuffel_cache_data(__LINE__);
                   }
                }
+#ifdef HAVE_STATX
+               dcache[delete.current_file_no].last_entry = stat_buf.stx_mtime.tv_sec;
+#else
                dcache[delete.current_file_no].last_entry = stat_buf.st_mtime;
+#endif
             }
          }
       }
@@ -4962,19 +5147,33 @@ check_delete_log(char         *search_afd,
                   }
                   else
                   {
+#ifdef HAVE_STATX
+                     struct statx stat_buf;
+#else
                      struct stat stat_buf;
+#endif
 
                      delete.fd = fileno(delete.fp);
+#ifdef HAVE_STATX
+                     if (statx(delete.fd, "",
+                               AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                               STATX_INO | STATX_MTIME, &stat_buf) == -1)
+#else
                      if (fstat(delete.fd, &stat_buf) == -1)
+#endif
                      {
                         (void)fprintf(stderr,
-                                      "Failed to fstat() `%s' : %s (%s %d)\n",
+                                      "Failed to access `%s' : %s (%s %d)\n",
                                       delete.log_dir, strerror(errno),
                                       __FILE__, __LINE__);
                      }
                      else
                      {
+#ifdef HAVE_STATX
+                        delete.inode_number = stat_buf.stx_ino;
+#else
                         delete.inode_number = stat_buf.st_ino;
+#endif
                         if (dcache[delete.current_file_no].inode == 0)
                         {
                            dcache[delete.current_file_no].inode = delete.inode_number;
@@ -4986,7 +5185,11 @@ check_delete_log(char         *search_afd,
                               reshuffel_cache_data(__LINE__);
                            }
                         }
+#ifdef HAVE_STATX
+                        dcache[delete.current_file_no].last_entry = stat_buf.stx_mtime.tv_sec;
+#else
                         dcache[delete.current_file_no].last_entry = stat_buf.st_mtime;
+#endif
                      }
                   }
                }
@@ -5329,7 +5532,11 @@ init_file_data(time_t start_time,
                char   *search_afd)
 {
    int                  no_of_log_files;
+#ifdef HAVE_STATX
+   struct statx         stat_buf;
+#else
    struct stat          stat_buf;
+#endif
    struct log_file_data *p_data;
 
    switch (log_type)
@@ -5523,9 +5730,20 @@ init_file_data(time_t start_time,
       for (i = 0; i < no_of_log_files; i++)
       {
          (void)sprintf(p_data->p_log_number, "%d", i);
+#ifdef HAVE_STATX
+         if (statx(0, p_data->log_dir, AT_STATX_SYNC_AS_STAT,
+                   STATX_MTIME, &stat_buf) == 0)
+#else
          if (stat(p_data->log_dir, &stat_buf) == 0)
+#endif
          {
-            if ((stat_buf.st_mtime >= start_time) || (p_data->start_file_no == -1))
+#ifdef HAVE_STATX
+            if ((stat_buf.stx_mtime.tv_sec >= start_time) ||
+                (p_data->start_file_no == -1))
+#else
+            if ((stat_buf.st_mtime >= start_time) ||
+                (p_data->start_file_no == -1))
+#endif
             {
                p_data->start_file_no = i;
             }
@@ -5533,8 +5751,13 @@ init_file_data(time_t start_time,
             {
                p_data->end_file_no = i;
             }
+#ifdef HAVE_STATX
+            else if ((stat_buf.stx_mtime.tv_sec >= end_time) ||
+                     (p_data->end_file_no == -1))
+#else
             else if ((stat_buf.st_mtime >= end_time) ||
                      (p_data->end_file_no == -1))
+#endif
                   {
                      p_data->end_file_no = i;
                   }

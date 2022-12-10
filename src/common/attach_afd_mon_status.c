@@ -1,7 +1,7 @@
 /*
  *  attach_afd_mon_status.c - Part of AFD, an automatic file distribution
  *                            program.
- *  Copyright (c) 2005 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -70,11 +70,15 @@ extern struct afd_mon_status *p_afd_mon_status;
 int
 attach_afd_mon_status(void)
 {
-   int         fd,
-               loop_counter;
-   char        *ptr,
-               afd_mon_status_file[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+   int          fd,
+                loop_counter;
+   char         *ptr,
+                afd_mon_status_file[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    (void)strcpy(afd_mon_status_file, p_work_dir);
    (void)strcat(afd_mon_status_file, FIFO_DIR);
@@ -92,19 +96,38 @@ attach_afd_mon_status(void)
          return(INCORRECT);
       }
    }
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                 _("Failed to statx() `%s' : %s"),
+#else
                  _("Failed to fstat() `%s' : %s"),
+#endif
                  afd_mon_status_file, strerror(errno));
       (void)close(fd);
       return(INCORRECT);
    }
 #ifdef HAVE_MMAP
-   if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE), MAP_SHARED,
+   if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                   stat_buf.stx_size, (PROT_READ | PROT_WRITE), MAP_SHARED,
+# else
+                   stat_buf.st_size, (PROT_READ | PROT_WRITE), MAP_SHARED,
+# endif
                    fd, 0)) == (caddr_t) -1)
 #else
-   if ((ptr = mmap_emu(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE), MAP_SHARED,
+   if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                       stat_buf.stx_size, (PROT_READ | PROT_WRITE), MAP_SHARED,
+# else
+                       stat_buf.st_size, (PROT_READ | PROT_WRITE), MAP_SHARED,
+# endif
                        afd_mon_status_file, 0)) == (caddr_t) -1)
 #endif
    {

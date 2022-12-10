@@ -1,6 +1,6 @@
 /*
  *  init_dir_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -236,7 +236,11 @@ init_dir_check(int    argc,
                *ptr,
                receive_log_fifo[MAX_PATH_LENGTH],
                udc_reply_name[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat stat_buf;
+#endif
    FILE        *udc_reply_fp = NULL;
 
    /* Get call-up parameters. */
@@ -491,8 +495,13 @@ init_dir_check(int    argc,
    }
 
    /* Open receive log fifo. */
-   if ((stat(receive_log_fifo, &stat_buf) < 0) ||
+#ifdef HAVE_STATX
+   if ((statx(0, receive_log_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
+   if ((stat(receive_log_fifo, &stat_buf) == -1) ||
        (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(receive_log_fifo) < 0)
       {
@@ -515,8 +524,12 @@ init_dir_check(int    argc,
 
 #ifdef WITH_ONETIME
    /* Open onetime command fifo. */
-   if ((stat(ot_job_fifo, &stat_buf) < 0) ||
-       (!S_ISFIFO(stat_buf.st_mode)))
+# ifdef HAVE_STATX
+   if ((statx(0, ot_job_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+# else
+   if ((stat(ot_job_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+# endif
    {
       if (make_fifo(ot_job_fifo) < 0)
       {
@@ -540,8 +553,12 @@ init_dir_check(int    argc,
 
    /* Check if the queue list fifos exist, if not create them. */
    (void)strcpy(p_other_fifo, QUEUE_LIST_READY_FIFO);
-   if ((stat(other_fifo, &stat_buf) < 0) ||
-       (!S_ISFIFO(stat_buf.st_mode)))
+#ifdef HAVE_STATX
+   if ((statx(0, other_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
+   if ((stat(other_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(other_fifo) < 0)
       {
@@ -551,8 +568,12 @@ init_dir_check(int    argc,
       }
    }
    (void)strcpy(p_other_fifo, QUEUE_LIST_DONE_FIFO);
-   if ((stat(other_fifo, &stat_buf) < 0) ||
-       (!S_ISFIFO(stat_buf.st_mode)))
+#ifdef HAVE_STATX
+   if ((statx(0, other_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
+   if ((stat(other_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(other_fifo) < 0)
       {
@@ -616,7 +637,12 @@ init_dir_check(int    argc,
     * The child will tell the parent when it is finished via
     * this fifo.
     */
+#ifdef HAVE_STATX
+   if ((statx(0, fin_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
    if ((stat(fin_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(fin_fifo) < 0)
       {
@@ -635,7 +661,13 @@ init_dir_check(int    argc,
                  "Could not open fifo %s : %s", fin_fifo, strerror(errno));
       exit(INCORRECT);
    }
-   if ((stat(del_time_job_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+#ifdef HAVE_STATX
+   if ((statx(0, del_time_job_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
+   if ((stat(del_time_job_fifo, &stat_buf) == -1) ||
+       (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(del_time_job_fifo) < 0)
       {
@@ -874,7 +906,13 @@ init_dir_check(int    argc,
    }
 
 #ifdef _INPUT_LOG
-   if ((stat(input_log_fifo, &stat_buf) < 0) || (!S_ISFIFO(stat_buf.st_mode)))
+# ifdef HAVE_STATX
+   if ((statx(0, input_log_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+# else
+   if ((stat(input_log_fifo, &stat_buf) == -1) ||
+       (!S_ISFIFO(stat_buf.st_mode)))
+# endif
    {
       if (make_fifo(input_log_fifo) < 0)
       {
@@ -886,7 +924,8 @@ init_dir_check(int    argc,
    if ((il_fd = coe_open(input_log_fifo, O_RDWR)) < 0)
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__,
-                "Could not open fifo %s : %s", input_log_fifo, strerror(errno));
+                "Could not open fifo %s : %s",
+                input_log_fifo, strerror(errno));
       exit(INCORRECT);
    }
 #endif

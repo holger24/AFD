@@ -1,6 +1,6 @@
 /*
  *  handle_options.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -3641,9 +3641,18 @@ handle_options(int          position,
                      }
                      else
                      {
+#ifdef HAVE_STATX
+                        struct statx stat_buf;
+#else
                         struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+                        if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                                  STATX_SIZE, &stat_buf) == -1)
+#else
                         if (stat(fullname, &stat_buf) == -1)
+#endif
                         {
                            receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                                        "Can't access file `%s' : %s #%x",
@@ -3652,7 +3661,11 @@ handle_options(int          position,
                         }
                         else
                         {
+#ifdef HAVE_STATX
+                           *file_size = *file_size - stat_buf.stx_size;
+#else
                            *file_size = *file_size - stat_buf.st_size;
+#endif
                         }
                         (*files_to_send)--;
                      }
@@ -3691,9 +3704,18 @@ handle_options(int          position,
                      }
                      else
                      {
+#ifdef HAVE_STATX
+                        struct statx stat_buf;
+#else
                         struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+                        if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                                  STATX_SIZE, &stat_buf) == -1)
+#else
                         if (stat(fullname, &stat_buf) == -1)
+#endif
                         {
                            receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                                        "Can't access file `%s' : %s #%x",
@@ -3702,7 +3724,11 @@ handle_options(int          position,
                         }
                         else
                         {
+#ifdef HAVE_STATX
+                           *file_size = *file_size - stat_buf.stx_size;
+#else
                            *file_size = *file_size - stat_buf.st_size;
+#endif
                         }
                         (*files_to_send)--;
                      }
@@ -4630,7 +4656,11 @@ recount_files(char *file_path, off_t *file_size, int position)
    {
       char          *ptr,
                     fullname[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+      struct statx  stat_buf;
+#else
       struct stat   stat_buf;
+#endif
       struct dirent *p_dir;
 
       (void)strcpy(fullname, file_path);
@@ -4646,8 +4676,47 @@ recount_files(char *file_path, off_t *file_size, int position)
          {
             continue;
          }
+#ifdef LINUX
+         if (p_dir->d_type == DT_REG)
+         {
+            (void)strcpy(ptr, p_dir->d_name);
+# ifdef HAVE_STATX
+            if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                      STATX_SIZE, &stat_buf) == -1)
+# else
+            if (stat(fullname, &stat_buf) == -1)
+# endif
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Can't access file `%s' : %s",
+                          fullname, strerror(errno));
+            }
+            else
+            {
+# ifdef HAVE_STATX
+               *file_size += stat_buf.stx_size;
+# else
+               *file_size += stat_buf.st_size;
+# endif
+               file_counter++;
+            }
+         }
+         else if p_dir->d_type == DT_DIR)
+              {
+                 (void)strcpy(ptr, p_dir->d_name);
+                 receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
+                             "Currently unable to handle directories in job directories. Removing `%s'. #%x",
+                             fullname, db[position].job_id);
+                 (void)rec_rmdir(fullname);
+              }
+#else
          (void)strcpy(ptr, p_dir->d_name);
+# ifdef HAVE_STATX
+         if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                   STATX_SIZE | STATX_MODE, &stat_buf) == -1)
+# else
          if (stat(fullname, &stat_buf) == -1)
+# endif
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
                        "Can't access file `%s' : %s",
@@ -4656,12 +4725,24 @@ recount_files(char *file_path, off_t *file_size, int position)
          else
          {
             /* Sure it is a normal file? */
+# ifdef HAVE_STATX
+            if (S_ISREG(stat_buf.stx_mode))
+# else
             if (S_ISREG(stat_buf.st_mode))
+# endif
             {
+# ifdef HAVE_STATX
+               *file_size += stat_buf.stx_size;
+# else
                *file_size += stat_buf.st_size;
+# endif
                file_counter++;
             }
+# ifdef HAVE_STATX
+            else if (S_ISDIR(stat_buf.stx_mode))
+# else
             else if (S_ISDIR(stat_buf.st_mode))
+# endif
                  {
                     receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                                 "Currently unable to handle directories in job directories. Removing `%s'. #%x",
@@ -4669,6 +4750,7 @@ recount_files(char *file_path, off_t *file_size, int position)
                     (void)rec_rmdir(fullname);
                  }
          }
+#endif
          errno = 0;
       }
       if (errno)
@@ -4718,7 +4800,21 @@ delete_all_files(char         *file_path,
       int           rename_unlink_ret;
       char          *ptr,
                     fullname[MAX_PATH_LENGTH];
+#ifdef LINUX
+# ifdef _DELETE_LOG
+#  ifdef HAVE_STATX
+      struct statx  stat_buf;
+#  else
       struct stat   stat_buf;
+#  endif
+# endif
+#else
+# ifdef HAVE_STATX
+      struct statx  stat_buf;
+# else
+      struct stat   stat_buf;
+# endif
+#endif
       struct dirent *p_dir;
 
       (void)strcpy(fullname, file_path);
@@ -4735,7 +4831,129 @@ delete_all_files(char         *file_path,
             continue;
          }
          (void)strcpy(ptr, p_dir->d_name);
+#ifdef LINUX
+         if (p_dir->d_type == DT_DIR)
+         {
+               (void)rec_rmdir(fullname);
+         }
+         else
+         {
+            if (p_save_file == NULL)
+            {
+               rename_unlink_ret = unlink(fullname);
+            }
+            else
+            {
+               (void)strcpy(p_save_file, p_dir->d_name);
+               if (on_error_delete_all == YES)
+               {
+                  rename_unlink_ret = rename(fullname, save_orig_file);
+               }
+               else
+               {
+                  rename_unlink_ret = copy_file(fullname, save_orig_file,
+                                                NULL);
+               }
+            }
+            if (rename_unlink_ret == -1)
+            {
+               if (p_save_file == NULL)
+               {
+                  receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
+                              "Failed to unlink() `%s' : %s #%x",
+                              fullname, strerror(errno),
+                              db[position].job_id);
+               }
+               else
+               {
+                  if (on_error_delete_all == YES)
+                  {
+                     receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
+                                 "Failed to rename() `%s' to `%s' : %s #%x",
+                                 fullname, save_orig_file, strerror(errno),
+                                 db[position].job_id);
+                  }
+                  else
+                  {
+                     receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
+                                 "Failed to copy `%s' to `%s' #%x",
+                                 fullname, save_orig_file,
+                                 db[position].job_id);
+                  }
+               }
+            }
+# ifdef _DELETE_LOG
+            else
+            {
+               if (on_error_delete_all == YES)
+               {
+#  ifdef HAVE_STATX
+                  if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                            STATX_SIZE, &stat_buf) == -1)
+#  else
+                  if (stat(fullname, &stat_buf) == -1)
+#  endif
+                  {
+                     system_log(WARN_SIGN, __FILE__, __LINE__,
+                                "Can't access file `%s' : %s",
+                                fullname, strerror(errno));
+                  }
+                  else
+                  {
+                     size_t dl_real_size;
+
+                     (void)strcpy(dl.file_name, p_dir->d_name);
+                     (void)snprintf(dl.host_name,
+                                    MAX_HOSTNAME_LENGTH + 4 + 1,
+                                    "%-*s %03x", MAX_HOSTNAME_LENGTH,
+                                    db[position].host_alias,
+                                    (p_save_file == NULL) ? EXEC_FAILED_DEL : EXEC_FAILED_STORED);
+#  ifdef HAVE_STATX
+                     *dl.file_size = stat_buf.stx_size;
+#  else
+                     *dl.file_size = stat_buf.st_size;
+#  endif
+                     *dl.job_id = db[position].job_id;
+                     *dl.dir_id = db[position].dir_id;
+                     *dl.input_time = creation_time;
+                     *dl.split_job_counter = split_job_counter;
+                     *dl.unique_number = unique_number;
+                     *dl.file_name_length = strlen(p_dir->d_name);
+                     if (p_save_file == NULL)
+                     {
+                        dl_real_size = *dl.file_name_length + dl.size +
+                                       snprintf((dl.file_name + *dl.file_name_length + 1),
+                                                MAX_FILENAME_LENGTH + 1,
+                                                "%s%creturn code = %d (%s %d)",
+                                                DIR_CHECK, SEPARATOR_CHAR, ret,
+                                                __FILE__, __LINE__);
+                     }
+                     else
+                     {
+                        dl_real_size = *dl.file_name_length + dl.size +
+                                       snprintf((dl.file_name + *dl.file_name_length + 1),
+                                                MAX_FILENAME_LENGTH + 1,
+                                                "%s%creturn code = %d (%s)",
+                                                DIR_CHECK, SEPARATOR_CHAR, ret,
+                                                save_orig_file);
+                     }
+                     if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
+                     {
+                        system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                   "write() error : %s", strerror(errno));
+                     }
+                  }
+               }
+            }
+# endif
+         }
+#else
+# ifdef HAVE_STATX
+         if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                   STATX_SIZE | STATX_MODE, &stat_buf) == -1)
+# else
          if (stat(fullname, &stat_buf) == -1)
+# endif
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
                        "Can't access file `%s' : %s",
@@ -4743,7 +4961,11 @@ delete_all_files(char         *file_path,
          }
          else
          {
+# ifdef HAVE_STATX
+            if (S_ISDIR(stat_buf.stx_mode))
+# else
             if (S_ISDIR(stat_buf.st_mode))
+# endif
             {
                (void)rec_rmdir(fullname);
             }
@@ -4793,7 +5015,7 @@ delete_all_files(char         *file_path,
                      }
                   }
                }
-#ifdef _DELETE_LOG
+# ifdef _DELETE_LOG
                else
                {
                   if (on_error_delete_all == YES)
@@ -4806,7 +5028,11 @@ delete_all_files(char         *file_path,
                                     "%-*s %03x", MAX_HOSTNAME_LENGTH,
                                     db[position].host_alias,
                                     (p_save_file == NULL) ? EXEC_FAILED_DEL : EXEC_FAILED_STORED);
+#  ifdef HAVE_STATX
+                     *dl.file_size = stat_buf.stx_size;
+#  else
                      *dl.file_size = stat_buf.st_size;
+#  endif
                      *dl.job_id = db[position].job_id;
                      *dl.dir_id = db[position].dir_id;
                      *dl.input_time = creation_time;
@@ -4838,9 +5064,10 @@ delete_all_files(char         *file_path,
                      }
                   }
                }
-#endif
+# endif
             }
          }
+#endif
          errno = 0;
       }
       if (errno)
@@ -4905,7 +5132,11 @@ check_changes(time_t         creation_time,
                     *new_file_name_buffer = NULL;
       static char   *old_file_name_buffer = NULL;
       static off_t  *old_file_size_buffer = NULL;
+#ifdef HAVE_STATX
+      struct statx  stat_buf;
+#else
       struct stat   stat_buf;
+#endif
       struct dirent *p_dir;
 
       p_new_file_name = new_file_name_buffer;
@@ -4924,16 +5155,22 @@ check_changes(time_t         creation_time,
             continue;
          }
          (void)strcpy(ptr, p_dir->d_name);
-         if (stat(fullname, &stat_buf) == -1)
+#ifdef LINUX
+         /* Sure it is a normal file? */
+         if (p_dir->d_type == DT_REG)
          {
-            system_log(WARN_SIGN, __FILE__, __LINE__,
-                       "Can't access file `%s' : %s",
-                       fullname, strerror(errno));
-         }
-         else
-         {
-            /* Sure it is a normal file? */
-            if (S_ISREG(stat_buf.st_mode))
+# ifdef HAVE_STATX
+            if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                      STATX_SIZE, &stat_buf) == -1)
+# else
+            if (stat(fullname, &stat_buf) == -1)
+# endif
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Can't access file `%s' : %s",
+                          fullname, strerror(errno));
+            }
+            else
             {
                if ((file_counter % FILE_NAME_STEP_SIZE) == 0)
                {
@@ -4974,12 +5211,99 @@ check_changes(time_t         creation_time,
                   }
                }
                (void)strcpy(p_new_file_name, p_dir->d_name);
+# ifdef HAVE_STATX
+               new_file_size_buffer[file_counter] = stat_buf.stx_size;
+               *file_size += stat_buf.stx_size;
+# else
                new_file_size_buffer[file_counter] = stat_buf.st_size;
-               p_new_file_name += MAX_FILENAME_LENGTH;
                *file_size += stat_buf.st_size;
+# endif
+               p_new_file_name += MAX_FILENAME_LENGTH;
                file_counter++;
             }
+         }
+         else if (p_dir->d_type == DT_DIR)
+              {
+                 receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
+                             "Currently unable to handle directories in job directories. Removing `%s'. #%x",
+                             fullname, db[position].job_id);
+                 (void)rec_rmdir(fullname);
+              }
+#else
+# ifdef HAVE_STATX
+         if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                   STATX_SIZE | STATX_MODE, &stat_buf) == -1)
+# else
+         if (stat(fullname, &stat_buf) == -1)
+# endif
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       "Can't access file `%s' : %s",
+                       fullname, strerror(errno));
+         }
+         else
+         {
+            /* Sure it is a normal file? */
+# ifdef HAVE_STATX
+            if (S_ISREG(stat_buf.stx_mode))
+# else
+            if (S_ISREG(stat_buf.st_mode))
+# endif
+            {
+               if ((file_counter % FILE_NAME_STEP_SIZE) == 0)
+               {
+                  int    offset;
+                  size_t new_size;
+
+                  /* Calculate new size of file name buffer. */
+                  new_size = ((file_counter / FILE_NAME_STEP_SIZE) + 1) *
+                             FILE_NAME_STEP_SIZE * MAX_FILENAME_LENGTH;
+
+                  /* Increase the space for the file name buffer. */
+                  offset = p_new_file_name - new_file_name_buffer;
+                  if ((new_file_name_buffer = realloc(new_file_name_buffer,
+                                                      new_size)) == NULL)
+                  {
+                     system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                "Could not realloc() memory [%d bytes] : %s",
+                                new_size, strerror(errno));
+                     exit(INCORRECT);
+                  }
+
+                  /* After realloc, don't forget to position */
+                  /* pointer correctly.                      */
+                  p_new_file_name = new_file_name_buffer + offset;
+
+                  /* Calculate new size of file size buffer. */
+                  new_size = ((file_counter / FILE_NAME_STEP_SIZE) + 1) *
+                             FILE_NAME_STEP_SIZE * sizeof(off_t);
+
+                  /* Increase the space for the file size buffer. */
+                  if ((new_file_size_buffer = realloc(new_file_size_buffer,
+                                                      new_size)) == NULL)
+                  {
+                     system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                "Could not realloc() memory [%d bytes] : %s",
+                                new_size, strerror(errno));
+                     exit(INCORRECT);
+                  }
+               }
+               (void)strcpy(p_new_file_name, p_dir->d_name);
+# ifdef HAVE_STATX
+               new_file_size_buffer[file_counter] = stat_buf.stx_size;
+               *file_size += stat_buf.stx_size;
+# else
+               new_file_size_buffer[file_counter] = stat_buf.st_size;
+               *file_size += stat_buf.st_size;
+# endif
+               p_new_file_name += MAX_FILENAME_LENGTH;
+               file_counter++;
+            }
+# ifdef HAVE_STATX
+            else if (S_ISDIR(stat_buf.stx_mode))
+# else
             else if (S_ISDIR(stat_buf.st_mode))
+# endif
                  {
                     receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                                 "Currently unable to handle directories in job directories. Removing `%s'. #%x",
@@ -4987,6 +5311,7 @@ check_changes(time_t         creation_time,
                     (void)rec_rmdir(fullname);
                  }
          }
+#endif
          errno = 0;
       }
       if (errno)
@@ -5327,7 +5652,11 @@ restore_files(char *file_path, off_t *file_size, int position)
    {
       char          *ptr,
                     fullname[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+      struct statx  stat_buf;
+#else
       struct stat   stat_buf;
+#endif
       struct dirent *p_dir;
 
       if (file_name_buffer != NULL)
@@ -5356,16 +5685,22 @@ restore_files(char *file_path, off_t *file_size, int position)
             continue;
          }
          (void)strcpy(ptr, p_dir->d_name);
-         if (stat(fullname, &stat_buf) == -1)
+#ifdef LINUX
+         /* Sure it is a normal file? */
+         if (p_dir->d_type == DT_REG)
          {
-            system_log(WARN_SIGN, __FILE__, __LINE__,
-                       "Can't access file `%s' : %s",
-                       fullname, strerror(errno));
-         }
-         else
-         {
-            /* Sure it is a normal file? */
-            if (S_ISREG(stat_buf.st_mode))
+# ifdef HAVE_STATX
+            if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                      STATX_SIZE, &stat_buf) == -1)
+# else
+            if (stat(fullname, &stat_buf) == -1)
+# endif
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Can't access file `%s' : %s",
+                          fullname, strerror(errno));
+            }
+            else
             {
                if ((file_counter % FILE_NAME_STEP_SIZE) == 0)
                {
@@ -5406,12 +5741,99 @@ restore_files(char *file_path, off_t *file_size, int position)
                   }
                }
                (void)strcpy(p_file_name, p_dir->d_name);
+# ifdef HAVE_STATX
+               file_size_buffer[file_counter] = stat_buf.stx_size;
+               *file_size += stat_buf.stx_size;
+# else
                file_size_buffer[file_counter] = stat_buf.st_size;
-               p_file_name += MAX_FILENAME_LENGTH;
                *file_size += stat_buf.st_size;
+# endif
+               p_file_name += MAX_FILENAME_LENGTH;
                file_counter++;
             }
+         }
+         else if (p_dir->d_type == DT_DIR)
+              {
+                 receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
+                             "Currently unable to handle directories in job directories. Removing `%s'. #%x",
+                             fullname, db[position].job_id);
+                 (void)rec_rmdir(fullname);
+              }
+#else
+# ifdef HAVE_STATX
+         if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                   STATX_SIZE | STATX_MODE, &stat_buf) == -1)
+# else
+         if (stat(fullname, &stat_buf) == -1)
+# endif
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       "Can't access file `%s' : %s",
+                       fullname, strerror(errno));
+         }
+         else
+         {
+            /* Sure it is a normal file? */
+# ifdef HAVE_STATX
+            if (S_ISREG(stat_buf.stx_mode))
+# else
+            if (S_ISREG(stat_buf.st_mode))
+# endif
+            {
+               if ((file_counter % FILE_NAME_STEP_SIZE) == 0)
+               {
+                  int    offset;
+                  size_t new_size;
+
+                  /* Calculate new size of file name buffer. */
+                  new_size = ((file_counter / FILE_NAME_STEP_SIZE) + 1) * FILE_NAME_STEP_SIZE *
+                             MAX_FILENAME_LENGTH;
+
+                  /* Increase the space for the file name buffer. */
+                  offset = p_file_name - file_name_buffer;
+                  if ((file_name_buffer = realloc(file_name_buffer,
+                                                  new_size)) == NULL)
+                  {
+                     system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                "Could not realloc() memory [%d bytes] : %s",
+                                new_size, strerror(errno));
+                     exit(INCORRECT);
+                  }
+
+                  /* After realloc, don't forget to position */
+                  /* pointer correctly.                      */
+                  p_file_name = file_name_buffer + offset;
+
+                  /* Calculate new size of file size buffer. */
+                  new_size = ((file_counter / FILE_NAME_STEP_SIZE) + 1) * FILE_NAME_STEP_SIZE *
+                             sizeof(off_t);
+
+                  /* Increase the space for the file size buffer. */
+                  if ((file_size_buffer = realloc(file_size_buffer,
+                                                  new_size)) == NULL)
+                  {
+                     system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                "Could not realloc() memory [%d bytes] : %s",
+                                new_size, strerror(errno));
+                     exit(INCORRECT);
+                  }
+               }
+               (void)strcpy(p_file_name, p_dir->d_name);
+# ifdef HAVE_STATX
+               file_size_buffer[file_counter] = stat_buf.stx_size;
+               *file_size += stat_buf.stx_size;
+# else
+               file_size_buffer[file_counter] = stat_buf.st_size;
+               *file_size += stat_buf.st_size;
+# endif
+               p_file_name += MAX_FILENAME_LENGTH;
+               file_counter++;
+            }
+# ifdef HAVE_STATX
+            else if (S_ISDIR(stat_buf.stx_mode))
+# else
             else if (S_ISDIR(stat_buf.st_mode))
+# endif
                  {
                     receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                                 "Currently unable to handle directories in job directories. Removing `%s'. #%x",
@@ -5419,6 +5841,7 @@ restore_files(char *file_path, off_t *file_size, int position)
                     (void)rec_rmdir(fullname);
                  }
          }
+#endif
          errno = 0;
       }
       if (errno)

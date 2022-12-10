@@ -1,6 +1,6 @@
 /*
  *  init_afd_worker.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2017 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2017 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -125,7 +125,11 @@ main(int argc, char *argv[])
                   *p_afd_action_dir,
                   work_dir[MAX_PATH_LENGTH];
    struct timeval timeout;
+#ifdef HAVE_STATX
+   struct statx   stat_buf;
+#else
    struct stat    stat_buf;
+#endif
 
    CHECK_FOR_VERSION(argc, argv);
 
@@ -277,7 +281,12 @@ main(int argc, char *argv[])
       if (now > action_dir_check_time)
       {
          *p_afd_action_dir = '\0';
+#ifdef HAVE_STATX
+         if (statx(0, afd_action_dir, AT_STATX_SYNC_AS_STAT,
+                   STATX_MODE, &stat_buf) == -1)
+#else
          if (stat(afd_action_dir, &stat_buf) == -1)
+#endif
          {
             if (errno != ENOENT)
             {
@@ -288,7 +297,11 @@ main(int argc, char *argv[])
          }
          else
          {
+#ifdef HAVE_STATX
+            if (S_ISDIR(stat_buf.stx_mode))
+#else
             if (S_ISDIR(stat_buf.st_mode))
+#endif
             {
                char *p_script;
 
@@ -297,7 +310,12 @@ main(int argc, char *argv[])
                                    MAX_PATH_LENGTH - (p_afd_action_dir - afd_action_dir),
                                    "%s%s/",
                                    ACTION_TARGET_DIR, ACTION_SUCCESS_DIR);
+#ifdef HAVE_STATX
+               if (statx(0, afd_action_dir, AT_STATX_SYNC_AS_STAT,
+                         STATX_MODE | STATX_MTIME, &stat_buf) == -1)
+#else
                if (stat(afd_action_dir, &stat_buf) == -1)
+#endif
                {
                   if (errno != ENOENT)
                   {
@@ -308,10 +326,19 @@ main(int argc, char *argv[])
                }
                else
                {
+#ifdef HAVE_STATX
+                  if ((S_ISDIR(stat_buf.stx_mode)) &&
+                      (last_action_success_dir_time < stat_buf.stx_mtime.tv_sec))
+#else
                   if ((S_ISDIR(stat_buf.st_mode)) &&
                       (last_action_success_dir_time < stat_buf.st_mtime))
+#endif
                   {
+#ifdef HAVE_STATX
+                     last_action_success_dir_time = stat_buf.stx_mtime.tv_sec;
+#else
                      last_action_success_dir_time = stat_buf.st_mtime;
+#endif
                      for (i = 0; i < no_of_hosts; i++)
                      {
                         (void)strcpy(p_script, fsa[i].host_alias);

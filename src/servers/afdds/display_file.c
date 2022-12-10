@@ -72,12 +72,21 @@ display_file(SSL *ssl)
    }
    else
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+      if (statx(from_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) != 0)
+#else
       if (fstat(from_fd, &stat_buf) != 0)
+#endif
       {
          system_log(WARN_SIGN, __FILE__, __LINE__,
-                    "Failed to fstat() %s : %s", p_work_dir, strerror(errno));
+                    "Failed to access %s : %s", p_work_dir, strerror(errno));
       }
       else
       {
@@ -85,7 +94,11 @@ display_file(SSL *ssl)
                 left;
          char   *buffer;
 
+#ifdef HAVE_STATX
+         left = hunk = stat_buf.stx_size;
+#else
          left = hunk = stat_buf.st_size;
+#endif
 
          if (hunk > HUNK_MAX)
          {

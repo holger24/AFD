@@ -3185,10 +3185,19 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
                         if (((qb[exec_qb_pos].special_flag & FETCH_JOB) == 0) &&
                             (qb[exec_qb_pos].special_flag & QUEUED_FOR_BURST))
                         {
+# ifdef HAVE_STATX
+                           struct statx stat_buf;
+# else
                            struct stat stat_buf;
+# endif
 
                            (void)strcpy(p_file_dir, qb[exec_qb_pos].msg_name);
+# ifdef HAVE_STATX
+                           if (statx(0, file_dir, AT_STATX_SYNC_AS_STAT,
+                                     0, &stat_buf) == 0)
+# else
                            if (stat(file_dir, &stat_buf) == 0)
+# endif
                            {
                               system_log(DEBUG_SIGN, __FILE__, __LINE__,
                                          "Job terminated but directory still exists %s. Assume it is a burst miss.",
@@ -4162,10 +4171,18 @@ check_zombie_queue(time_t now, int qb_pos)
          if (((qb[qb_pos].special_flag & FETCH_JOB) == 0) &&
              (qb[qb_pos].special_flag & QUEUED_FOR_BURST))
          {
+# ifdef HAVE_STATX
+            struct statx stat_buf;
+# else
             struct stat stat_buf;
+# endif
 
             (void)strcpy(p_file_dir, qb[qb_pos].msg_name);
+# ifdef HAVE_STATX
+            if (statx(0, file_dir, AT_STATX_SYNC_AS_STAT, 0, &stat_buf) == 0)
+# else
             if (stat(file_dir, &stat_buf) == 0)
+# endif
             {
                system_log(DEBUG_SIGN, __FILE__, __LINE__,
                           "Job terminated but directory still exists %s. Assume it is a burst miss.",
@@ -4271,10 +4288,19 @@ check_zombie_queue(time_t now, int qb_pos)
                   if (((qb[tmp_qb_pos].special_flag & FETCH_JOB) == 0) &&
                       (qb[tmp_qb_pos].special_flag & QUEUED_FOR_BURST))
                   {
+# ifdef HAVE_STATX
+                     struct statx stat_buf;
+# else
                      struct stat stat_buf;
+# endif
 
                      (void)strcpy(p_file_dir, qb[tmp_qb_pos].msg_name);
+# ifdef HAVE_STATX
+                     if (statx(0, file_dir, AT_STATX_SYNC_AS_STAT,
+                               0, &stat_buf) == 0)
+# else
                      if (stat(file_dir, &stat_buf) == 0)
+# endif
                      {
                         system_log(DEBUG_SIGN, __FILE__, __LINE__,
                                    "Job terminated but directory still exists %s. Assume it is a burst miss.",
@@ -5935,19 +5961,38 @@ static void
 get_local_interface_names(void)
 {
    char          interface_file[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
    static time_t interface_file_time = 0;
 
    (void)snprintf(interface_file, MAX_PATH_LENGTH, "%s%s%s",
                   p_work_dir, ETC_DIR, AFD_LOCAL_INTERFACE_FILE);
+#ifdef HAVE_STATX
+   if ((statx(0, interface_file, AT_STATX_SYNC_AS_STAT,
+              STATX_SIZE | STATX_MTIME, &stat_buf) == -1) && (errno != ENOENT))
+#else
    if ((stat(interface_file, &stat_buf) == -1) && (errno != ENOENT))
+#endif
    {
       system_log(WARN_SIGN, __FILE__, __LINE__,
-                 "Failed to stat() `%s' : %s", interface_file, strerror(errno));
+#ifdef HAVE_STATX
+                 "Failed to statx() `%s' : %s",
+#else
+                 "Failed to stat() `%s' : %s",
+#endif
+                 interface_file, strerror(errno));
    }
    else
    {
+#ifdef HAVE_STATX
+      if ((stat_buf.stx_mtime.tv_sec > interface_file_time) &&
+          (stat_buf.stx_size > 0))
+#else
       if ((stat_buf.st_mtime > interface_file_time) && (stat_buf.st_size > 0))
+#endif
       {
          char *buffer = NULL;
 
@@ -5964,9 +6009,14 @@ get_local_interface_names(void)
                local_interface_names = NULL;
             }
             no_of_local_interfaces = 0;
-            interface_file_time = stat_buf.st_mtime;
             ptr = buffer;
+#ifdef HAVE_STATX
+            interface_file_time = stat_buf.stx_mtime.tv_sec;
+            p_end = buffer + stat_buf.stx_size;
+#else
+            interface_file_time = stat_buf.st_mtime;
             p_end = buffer + stat_buf.st_size;
+#endif
             while (ptr < p_end)
             {
                if (*ptr == '#')
@@ -6217,7 +6267,11 @@ static void
 fd_exit(void)
 {
    register int i, j;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
 
    if ((connection == NULL) || (qb == NULL) || (mdb == NULL))
    {
@@ -6276,13 +6330,18 @@ fd_exit(void)
                   {
                      if (connection[i].fra_pos == -1)
                      {
-                        char        file_dir[MAX_PATH_LENGTH];
-                        struct stat stat_buf;
+                        char file_dir[MAX_PATH_LENGTH];
 
                         (void)snprintf(file_dir, MAX_PATH_LENGTH, "%s%s%s/%s",
                                        p_work_dir, AFD_FILE_DIR, OUTGOING_DIR,
                                        qb[qb_pos].msg_name);
-                        if ((stat(file_dir, &stat_buf) == -1) && (errno == ENOENT))
+#ifdef HAVE_STATX
+                        if ((statx(0, file_dir, AT_STATX_SYNC_AS_STAT,
+                                   0, &stat_buf) == -1) && (errno == ENOENT))
+#else
+                        if ((stat(file_dir, &stat_buf) == -1) &&
+                            (errno == ENOENT))
+#endif
                         {
                            /* Process was in disconnection phase, so we */
                            /* can remove the message from the queue.    */
@@ -6361,13 +6420,18 @@ fd_exit(void)
                      {
                         if ((qb[qb_pos].special_flag & FETCH_JOB) == 0)
                         {
-                           char        file_dir[MAX_PATH_LENGTH];
-                           struct stat stat_buf;
+                           char file_dir[MAX_PATH_LENGTH];
 
                            (void)snprintf(file_dir, MAX_PATH_LENGTH, "%s%s%s/%s",
                                           p_work_dir, AFD_FILE_DIR, OUTGOING_DIR,
                                           qb[qb_pos].msg_name);
-                           if ((stat(file_dir, &stat_buf) == -1) && (errno == ENOENT))
+#ifdef HAVE_STATX
+                           if ((statx(0, file_dir, AT_STATX_SYNC_AS_STAT,
+                                      0, &stat_buf) == -1) && (errno == ENOENT))
+#else
+                           if ((stat(file_dir, &stat_buf) == -1) &&
+                               (errno == ENOENT))
+#endif
                            {
                               /* Process was in disconnection phase, so we */
                               /* can remove the message from the queue.    */
@@ -6410,23 +6474,41 @@ fd_exit(void)
    }
 
    /* Unmap message queue buffer. */
+#ifdef HAVE_STATX
+   if (statx(qb_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(qb_fd, &stat_buf) == -1)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "fstat() error : %s", strerror(errno));
+#ifdef HAVE_STATX
+                 "statx() error : %s",
+#else
+                 "fstat() error : %s",
+#endif
+                 strerror(errno));
    }
    else
    {
       char *ptr = (char *)qb - AFD_WORD_OFFSET;
 
+#ifdef HAVE_STATX
+      if (msync(ptr, stat_buf.stx_size, MS_SYNC) == -1)
+#else
       if (msync(ptr, stat_buf.st_size, MS_SYNC) == -1)
+#endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                     "msync() error : %s", strerror(errno));
       }
       if (crash == NO)
       {
+#ifdef HAVE_STATX
+         if (munmap(ptr, stat_buf.stx_size) == -1)
+#else
          if (munmap(ptr, stat_buf.st_size) == -1)
+#endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        "munmap() error : %s", strerror(errno));
@@ -6444,23 +6526,41 @@ fd_exit(void)
    }
 
    /* Unmap message cache buffer. */
+#ifdef HAVE_STATX
+   if (statx(mdb_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(mdb_fd, &stat_buf) == -1)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "fstat() error : %s", strerror(errno));
+#ifdef HAVE_STATX
+                 "statx() error : %s",
+#else
+                 "fstat() error : %s",
+#endif
+                 strerror(errno));
    }
    else
    {
       char *ptr = (char *)mdb - AFD_WORD_OFFSET;
 
+#ifdef HAVE_STATX
+      if (msync(ptr, stat_buf.stx_size, MS_SYNC) == -1)
+#else
       if (msync(ptr, stat_buf.st_size, MS_SYNC) == -1)
+#endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                     "msync() error : %s", strerror(errno));
       }
       if (crash == NO)
       {
+#ifdef HAVE_STATX
+         if (munmap(ptr, stat_buf.stx_size) == -1)
+#else
          if (munmap(ptr, stat_buf.st_size) == -1)
+#endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        "munmap() error : %s", strerror(errno));

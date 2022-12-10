@@ -1,6 +1,6 @@
 /*
  *  show_job_list.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -75,27 +75,44 @@ show_job_list(FILE *p_data)
    }
    else
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(fd, &stat_buf) == -1)
+#endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    _("Failed to fstat() `%s' : %s"), fullname, strerror(errno));
+                    _("Failed to access `%s' : %s"), fullname, strerror(errno));
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > AFD_WORD_OFFSET)
+#else
          if (stat_buf.st_size > AFD_WORD_OFFSET)
+#endif
          {
             off_t job_id_db_size;
             char  *ptr;
 
-#ifdef HAVE_MMAP
-            job_id_db_size = stat_buf.st_size;
-            if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
-                            MAP_SHARED, fd, 0)) == (caddr_t)-1)
+#ifdef HAVE_STATX
+            job_id_db_size = stat_buf.stx_size;
 #else
-            if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
-                                MAP_SHARED, fullname, 0)) == (caddr_t)-1)
+            job_id_db_size = stat_buf.st_size;
+#endif
+#ifdef HAVE_MMAP
+            if ((ptr = mmap(NULL, job_id_db_size, PROT_READ,
+                            MAP_SHARED, fd, 0)) == (caddr_t) -1)
+#else
+            if ((ptr = mmap_emu(NULL, job_id_db_size, PROT_READ,
+                                MAP_SHARED, fullname, 0)) == (caddr_t) -1)
 #endif
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -122,22 +139,42 @@ show_job_list(FILE *p_data)
                }
                else
                {
+#ifdef HAVE_STATX
+                  if (statx(cml_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                            STATX_SIZE, &stat_buf) == -1)
+#else
                   if (fstat(cml_fd, &stat_buf) == -1)
+#endif
                   {
                      system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                _("Failed to fstat() `%s' : %s"),
+                                _("Failed to access `%s' : %s"),
                                 fullname, strerror(errno));
                   }
                   else
                   {
+#ifdef HAVE_STATX
+                     if (stat_buf.stx_size > sizeof(int))
+#else
                      if (stat_buf.st_size > sizeof(int))
+#endif
                      {
 #ifdef HAVE_MMAP
-                        if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
-                                        MAP_SHARED, cml_fd, 0)) == (caddr_t)-1)
+                        if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                        stat_buf.stx_size, PROT_READ,
+# else
+                                        stat_buf.st_size, PROT_READ,
+# endif
+                                        MAP_SHARED, cml_fd, 0)) == (caddr_t) -1)
 #else
-                        if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
-                                            MAP_SHARED, fullname, 0)) == (caddr_t)-1)
+                        if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                            stat_buf.stx_size, PROT_READ,
+# else
+                                            stat_buf.st_size, PROT_READ,
+# endif
+                                            MAP_SHARED, fullname,
+                                            0)) == (caddr_t) -1)
 #endif
                         {
                            system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -300,7 +337,11 @@ show_job_list(FILE *p_data)
                               (void)fflush(p_data);
                            }
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+                           if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
                            if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
                            if (munmap_emu(ptr) == -1)
 #endif

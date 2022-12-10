@@ -1,6 +1,6 @@
 /*
  *  get_dir_alias.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2010 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2010 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -78,20 +78,43 @@ get_dir_alias(unsigned int job_id, char *dir_alias)
    }
    else
    {
-      struct stat stat_buf;
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
+      struct stat  stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(fd, &stat_buf) == -1)
+#endif
       {
          system_log(WARN_SIGN, __FILE__, __LINE__,
-                    "Failed to fstat() `%s' : %s", fullname, strerror(errno));
+#ifdef HAVE_STATX
+                    "Failed to statx() `%s' : %s",
+#else
+                    "Failed to fstat() `%s' : %s",
+#endif
+                    fullname, strerror(errno));
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > 0)
+#else
          if (stat_buf.st_size > 0)
+#endif
          {
             char *ptr;
 
-            if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+            if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                            stat_buf.stx_size, PROT_READ,
+#else
+                            stat_buf.st_size, PROT_READ,
+#endif
                             MAP_SHARED, fd, 0)) == (caddr_t) -1)
             {
                system_log(WARN_SIGN, __FILE__, __LINE__,
@@ -129,7 +152,11 @@ get_dir_alias(unsigned int job_id, char *dir_alias)
                }
 
                /* Don't forget to unmap from job_id_data structure. */
+#ifdef HAVE_STATX
+               if (munmap(ptr, stat_buf.stx_size) == -1)
+#else
                if (munmap(ptr, stat_buf.st_size) == -1)
+#endif
                {
                   system_log(WARN_SIGN, __FILE__, __LINE__,
                              "munmap() error : %s", strerror(errno));

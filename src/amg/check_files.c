@@ -100,6 +100,7 @@ DESCR__S_M3
  **   20.05.2013 H.Kiehl Simplified code by deleting lots of duplicate code.
  **   21.08.2021 H.Kiehl When all host are disabled and 'do not remove' is
  **                      set, don't delete the files for local dirs.
+ **   27.11.2022 H.Kiehl Use statx() when available.
  **
  */
 DESCR__E_M3
@@ -217,7 +218,11 @@ check_files(struct directory_entry *p_de,
    char          fullname[MAX_PATH_LENGTH],
                  *ptr = NULL,
                  *work_ptr;
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
    DIR           *dp;
    struct dirent *p_dir;
 #ifdef _INPUT_LOG
@@ -251,8 +256,14 @@ check_files(struct directory_entry *p_de,
          *ptr = '\0';
 
          /* If remote paused directory does not exist, create it. */
+#ifdef HAVE_STATX
+         if ((statx(0, tmp_file_dir, AT_STATX_SYNC_AS_STAT,
+                    STATX_MODE, &stat_buf) == -1) ||
+             (S_ISDIR(stat_buf.stx_mode) == 0))
+#else
          if ((stat(tmp_file_dir, &stat_buf) < 0) ||
              (S_ISDIR(stat_buf.st_mode) == 0))
+#endif
          {
             /*
              * Only the AFD may read and write in this directory!
@@ -343,12 +354,30 @@ check_files(struct directory_entry *p_de,
              ((alfc < 1) || ((check_additional_lock_filters(p_dir->d_name)) == 0)))
          {
             (void)strcpy(work_ptr, p_dir->d_name);
+#ifdef HAVE_STATX
+            if (statx(0, fullname,
+                      AT_STATX_SYNC_AS_STAT,
+                      STATX_SIZE |
+# if defined (_POSIX_SAVED_IDS) || !defined (LINUX)
+                      STATX_MODE |
+# endif
+# ifdef _POSIX_SAVED_IDS
+                      STATX_UID | STATX_ATIME |
+# endif
+                      STATX_MTIME,
+                      &stat_buf) == -1)
+#else
             if (stat(fullname, &stat_buf) < 0)
+#endif
             {
                if (errno != ENOENT)
                {
                   system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                             _("Failed to statx() `%s' : %s"),
+#else
                              _("Failed to stat() `%s' : %s"),
+#endif
                              fullname, strerror(errno));
                }
                continue;
@@ -357,23 +386,47 @@ check_files(struct directory_entry *p_de,
             if ((fra[p_de->fra_pos].ignore_file_time != 0) &&
                 (fra[p_de->fra_pos].fsa_pos == -1))
             {
+#ifdef HAVE_STATX
+               diff_time = current_time - stat_buf.stx_mtime.tv_sec;
+#else
                diff_time = current_time - stat_buf.st_mtime;
+#endif
             }
 
 #ifndef LINUX
             /* Sure it is a normal file? */
+# ifdef HAVE_STATX
+            if (S_ISREG(stat_buf.stx_mode))
+# else
             if (S_ISREG(stat_buf.st_mode))
+# endif
             {
 #endif
                dummy_files_in_dir++;
+#ifdef HAVE_STATX
+               dummy_bytes_in_dir += stat_buf.stx_size;
+#else
                dummy_bytes_in_dir += stat_buf.st_size;
+#endif
                if (((fra[p_de->fra_pos].ignore_size == -1) ||
                     ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_EQUAL) &&
+#ifdef HAVE_STATX
+                     (fra[p_de->fra_pos].ignore_size != stat_buf.stx_size)) ||
+#else
                      (fra[p_de->fra_pos].ignore_size != stat_buf.st_size)) ||
+#endif
                     ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_LESS_THEN) &&
+#ifdef HAVE_STATX
+                     (fra[p_de->fra_pos].ignore_size < stat_buf.stx_size)) ||
+#else
                      (fra[p_de->fra_pos].ignore_size < stat_buf.st_size)) ||
+#endif
                     ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_GREATER_THEN) &&
+#ifdef HAVE_STATX
+                     (fra[p_de->fra_pos].ignore_size > stat_buf.stx_size))) &&
+#else
                      (fra[p_de->fra_pos].ignore_size > stat_buf.st_size))) &&
+#endif
                    ((fra[p_de->fra_pos].ignore_file_time == 0) ||
                     (fra[p_de->fra_pos].fsa_pos != -1) || /* Time+size check only local dirs! */
                      ((fra[p_de->fra_pos].gt_lt_sign & IFTIME_EQUAL) &&
@@ -384,11 +437,19 @@ check_files(struct directory_entry *p_de,
                      (fra[p_de->fra_pos].ignore_file_time > diff_time))))
                {
 #ifdef _POSIX_SAVED_IDS
+# ifdef HAVE_STATX
+                  if ((stat_buf.stx_mode & S_IROTH) ||
+                      ((stat_buf.stx_gid == afd_gid) && (stat_buf.stx_mode & S_IRGRP)) ||
+                      ((stat_buf.stx_uid == afd_uid) && (stat_buf.stx_mode & S_IRUSR)) ||
+                      ((stat_buf.stx_mode & S_IRGRP) && (no_of_sgids > 0) &&
+                       (check_sgids(stat_buf.stx_gid) == YES)))
+# else
                   if ((stat_buf.st_mode & S_IROTH) ||
                       ((stat_buf.st_gid == afd_gid) && (stat_buf.st_mode & S_IRGRP)) ||
                       ((stat_buf.st_uid == afd_uid) && (stat_buf.st_mode & S_IRUSR)) ||
                       ((stat_buf.st_mode & S_IRGRP) && (no_of_sgids > 0) &&
                        (check_sgids(stat_buf.st_gid) == YES)))
+# endif
 #else
                   if ((eaccess(fullname, R_OK) == 0))
 #endif
@@ -397,7 +458,12 @@ check_files(struct directory_entry *p_de,
                                        p_dir->d_name, &current_time)) == 0)
                      {
                         if ((fra[p_de->fra_pos].end_character == -1) ||
-                            (fra[p_de->fra_pos].end_character == get_last_char(fullname, stat_buf.st_size)))
+#ifdef HAVE_STATX
+                            (fra[p_de->fra_pos].end_character == get_last_char(fullname, stat_buf.stx_size))
+#else
+                            (fra[p_de->fra_pos].end_character == get_last_char(fullname, stat_buf.st_size))
+#endif
+                           )
                         {
                            gotcha = YES;
                         }
@@ -453,12 +519,30 @@ check_files(struct directory_entry *p_de,
              ((alfc < 1) || ((check_additional_lock_filters(p_dir->d_name)) == 0)))
          {
             (void)strcpy(work_ptr, p_dir->d_name);
+#ifdef HAVE_STATX
+            if (statx(0, fullname,
+                      AT_STATX_SYNC_AS_STAT,
+                      STATX_SIZE |
+# if defined (_POSIX_SAVED_IDS) || !defined (LINUX)
+                      STATX_MODE |
+# endif
+# ifdef _POSIX_SAVED_IDS
+                      STATX_UID | STATX_ATIME |
+# endif
+                      STATX_MTIME,
+                      &stat_buf) == -1)
+#else
             if (stat(fullname, &stat_buf) < 0)
+#endif
             {
                if (errno != ENOENT)
                {
                   system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                             _("Failed to statx() `%s' : %s"),
+#else
                              _("Failed to stat() `%s' : %s"),
+#endif
                              fullname, strerror(errno));
                }
                continue;
@@ -467,23 +551,47 @@ check_files(struct directory_entry *p_de,
             if ((fra[p_de->fra_pos].ignore_file_time != 0) &&
                 (fra[p_de->fra_pos].fsa_pos == -1))
             {
+#ifdef HAVE_STATX
+               diff_time = current_time - stat_buf.stx_mtime.tv_sec;
+#else
                diff_time = current_time - stat_buf.st_mtime;
+#endif
             }
 
 #ifndef LINUX
             /* Sure it is a normal file? */
+# ifdef HAVE_STATX
+            if (S_ISREG(stat_buf.stx_mode))
+# else
             if (S_ISREG(stat_buf.st_mode))
+# endif
             {
 #endif
                dummy_files_in_dir++;
+#ifdef HAVE_STATX
+               dummy_bytes_in_dir += stat_buf.stx_size;
+#else
                dummy_bytes_in_dir += stat_buf.st_size;
+#endif
                if (((fra[p_de->fra_pos].ignore_size == -1) ||
                     ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_EQUAL) &&
+#ifdef HAVE_STATX
+                     (fra[p_de->fra_pos].ignore_size != stat_buf.stx_size)) ||
+#else
                      (fra[p_de->fra_pos].ignore_size != stat_buf.st_size)) ||
+#endif
                     ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_LESS_THEN) &&
+#ifdef HAVE_STATX
+                     (fra[p_de->fra_pos].ignore_size < stat_buf.stx_size)) ||
+#else
                      (fra[p_de->fra_pos].ignore_size < stat_buf.st_size)) ||
+#endif
                     ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_GREATER_THEN) &&
+#ifdef HAVE_STATX
+                     (fra[p_de->fra_pos].ignore_size > stat_buf.stx_size))) &&
+#else
                      (fra[p_de->fra_pos].ignore_size > stat_buf.st_size))) &&
+#endif
                    ((fra[p_de->fra_pos].ignore_file_time == 0) ||
                     (fra[p_de->fra_pos].fsa_pos != -1) || /* Time+size check only local dirs! */
                      ((fra[p_de->fra_pos].gt_lt_sign & IFTIME_EQUAL) &&
@@ -494,11 +602,19 @@ check_files(struct directory_entry *p_de,
                      (fra[p_de->fra_pos].ignore_file_time > diff_time))))
                {
 #ifdef _POSIX_SAVED_IDS
+# ifdef HAVE_STATX
+                  if ((stat_buf.stx_mode & S_IROTH) ||
+                      ((stat_buf.stx_gid == afd_gid) && (stat_buf.stx_mode & S_IRGRP)) ||
+                      ((stat_buf.stx_uid == afd_uid) && (stat_buf.stx_mode & S_IRUSR)) ||
+                      ((stat_buf.stx_mode & S_IRGRP) && (no_of_sgids > 0) &&
+                       (check_sgids(stat_buf.stx_gid) == YES)))
+# else
                   if ((stat_buf.st_mode & S_IROTH) ||
                       ((stat_buf.st_gid == afd_gid) && (stat_buf.st_mode & S_IRGRP)) ||
                       ((stat_buf.st_uid == afd_uid) && (stat_buf.st_mode & S_IRUSR)) ||
                       ((stat_buf.st_mode & S_IRGRP) && (no_of_sgids > 0) &&
                        (check_sgids(stat_buf.st_gid) == YES)))
+# endif
 #else
                   if ((eaccess(fullname, R_OK) == 0))
 #endif
@@ -511,7 +627,12 @@ check_files(struct directory_entry *p_de,
                             (check_list(p_de, p_dir->d_name, &stat_buf) > -1))
                         {
                            if ((fra[p_de->fra_pos].end_character == -1) ||
-                               (fra[p_de->fra_pos].end_character == get_last_char(fullname, stat_buf.st_size)))
+#ifdef HAVE_STATX
+                               (fra[p_de->fra_pos].end_character == get_last_char(fullname, stat_buf.stx_size))
+#else
+                               (fra[p_de->fra_pos].end_character == get_last_char(fullname, stat_buf.st_size))
+#endif
+                              )
                            {
                               if (fra[p_de->fra_pos].accumulate != 0)
                               {
@@ -519,7 +640,11 @@ check_files(struct directory_entry *p_de,
                               }
                               if (fra[p_de->fra_pos].accumulate_size != 0)
                               {
+#ifdef HAVE_STATX
+                                 accumulate_size += stat_buf.stx_size;
+#else
                                  accumulate_size += stat_buf.st_size;
+#endif
                               }
                               if (((fra[p_de->fra_pos].accumulate != 0) &&
                                    (accumulate >= fra[p_de->fra_pos].accumulate)) ||
@@ -549,7 +674,11 @@ check_files(struct directory_entry *p_de,
                         }
                         else
                         {
+#ifdef HAVE_STATX
+                           pmatch_time = stat_buf.stx_mtime.tv_sec;
+#else
                            pmatch_time = stat_buf.st_mtime;
+#endif
                         }
                         for (i = 0; i < p_de->nfg; i++)
                         {
@@ -564,7 +693,12 @@ check_files(struct directory_entry *p_de,
                                      (check_list(p_de, p_dir->d_name, &stat_buf) > -1))
                                  {
                                     if ((fra[p_de->fra_pos].end_character == -1) ||
-                                        (fra[p_de->fra_pos].end_character == get_last_char(fullname, stat_buf.st_size)))
+#ifdef HAVE_STATX
+                                        (fra[p_de->fra_pos].end_character == get_last_char(fullname, stat_buf.stx_size))
+#else
+                                        (fra[p_de->fra_pos].end_character == get_last_char(fullname, stat_buf.st_size))
+#endif
+                                       )
                                     {
                                        if (fra[p_de->fra_pos].accumulate != 0)
                                        {
@@ -572,7 +706,11 @@ check_files(struct directory_entry *p_de,
                                        }
                                        if (fra[p_de->fra_pos].accumulate_size != 0)
                                        {
+#ifdef HAVE_STATX
+                                          accumulate_size += stat_buf.stx_size;
+#else
                                           accumulate_size += stat_buf.st_size;
+#endif
                                        }
                                        if ((accumulate >= fra[p_de->fra_pos].accumulate) ||
                                            (accumulate_size >= fra[p_de->fra_pos].accumulate_size))
@@ -644,12 +782,27 @@ check_files(struct directory_entry *p_de,
       }
 
       (void)strcpy(work_ptr, p_dir->d_name);
+#ifdef HAVE_STATX
+      if (statx(0, fullname,
+                AT_STATX_SYNC_AS_STAT,
+                STATX_SIZE | STATX_MODE |
+# ifdef _POSIX_SAVED_IDS
+                STATX_UID |
+# endif
+                STATX_ATIME | STATX_MTIME,
+                &stat_buf) == -1)
+#else
       if (stat(fullname, &stat_buf) < 0)
+#endif
       {
          if (errno != ENOENT)
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                       _("Failed to statx() `%s' : %s"),
+#else
                        _("Failed to stat() `%s' : %s"),
+#endif
                        fullname, strerror(errno));
          }
          errno = 0;
@@ -659,27 +812,51 @@ check_files(struct directory_entry *p_de,
       if ((fra[p_de->fra_pos].ignore_file_time != 0) &&
           (fra[p_de->fra_pos].fsa_pos == -1))
       {
+#ifdef HAVE_STATX
+         diff_time = current_time - stat_buf.stx_mtime.tv_sec;
+#else
          diff_time = current_time - stat_buf.st_mtime;
+#endif
       }
 
 #ifndef LINUX
       /* Sure it is a normal file? */
+# ifdef HAVE_STATX
+      if (S_ISREG(stat_buf.stx_mode))
+# else
       if (S_ISREG(stat_buf.st_mode))
+# endif
 #endif
       {
          size_t file_name_length = strlen(p_dir->d_name);
 
          files_in_dir++;
+#ifdef HAVE_STATX
+         bytes_in_dir += stat_buf.stx_size;
+#else
          bytes_in_dir += stat_buf.st_size;
+#endif
          if ((count_files == NO) || /* Paused dir. */
              (fra[p_de->fra_pos].fsa_pos != -1) || /* Time+size check only local dirs! */
              (((fra[p_de->fra_pos].ignore_size == -1) ||
                ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_EQUAL) &&
+#ifdef HAVE_STATX
+                (fra[p_de->fra_pos].ignore_size != stat_buf.stx_size)) ||
+#else
                 (fra[p_de->fra_pos].ignore_size != stat_buf.st_size)) ||
+#endif
                ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_LESS_THEN) &&
+#ifdef HAVE_STATX
+                (fra[p_de->fra_pos].ignore_size < stat_buf.stx_size)) ||
+#else
                 (fra[p_de->fra_pos].ignore_size < stat_buf.st_size)) ||
+#endif
                ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_GREATER_THEN) &&
+#ifdef HAVE_STATX
+                (fra[p_de->fra_pos].ignore_size > stat_buf.stx_size))) &&
+#else
                 (fra[p_de->fra_pos].ignore_size > stat_buf.st_size))) &&
+#endif
               ((fra[p_de->fra_pos].ignore_file_time == 0) ||
                 ((fra[p_de->fra_pos].gt_lt_sign & IFTIME_EQUAL) &&
                  (fra[p_de->fra_pos].ignore_file_time != diff_time)) ||
@@ -689,11 +866,19 @@ check_files(struct directory_entry *p_de,
                 (fra[p_de->fra_pos].ignore_file_time > diff_time)))))
          {
 #ifdef _POSIX_SAVED_IDS
+# ifdef HAVE_STATX
+            if ((stat_buf.stx_mode & S_IROTH) ||
+                ((stat_buf.stx_gid == afd_gid) && (stat_buf.stx_mode & S_IRGRP)) ||
+                ((stat_buf.stx_uid == afd_uid) && (stat_buf.stx_mode & S_IRUSR)) ||
+                ((stat_buf.stx_mode & S_IRGRP) && (no_of_sgids > 0) &&
+                 (check_sgids(stat_buf.stx_gid) == YES)))
+# else
             if ((stat_buf.st_mode & S_IROTH) ||
                 ((stat_buf.st_gid == afd_gid) && (stat_buf.st_mode & S_IRGRP)) ||
                 ((stat_buf.st_uid == afd_uid) && (stat_buf.st_mode & S_IRUSR)) ||
                 ((stat_buf.st_mode & S_IRGRP) && (no_of_sgids > 0) &&
                  (check_sgids(stat_buf.st_gid) == YES)))
+# endif
 #else
             if ((eaccess(fullname, R_OK) == 0))
 #endif
@@ -727,7 +912,11 @@ check_files(struct directory_entry *p_de,
                         dummy_proc_cycles = 0;
                         dis_log(DISABLED_DIS_TYPE, current_time, p_de->dir_id,
                                 0, p_dir->d_name, file_name_length,
+# ifdef HAVE_STATX
+                                stat_buf.stx_size, 1, &p_dummy_job_id,
+# else
                                 stat_buf.st_size, 1, &p_dummy_job_id,
+# endif
                                 &dummy_proc_cycles, 1);
 #endif
 #ifdef _DELETE_LOG
@@ -738,7 +927,11 @@ check_files(struct directory_entry *p_de,
                                        "%-*s %03x",
                                        MAX_HOSTNAME_LENGTH, "-",
                                        DELETE_HOST_DISABLED);
+# ifdef HAVE_STATX
+                        *dl.file_size = stat_buf.stx_size;
+# else
                         *dl.file_size = stat_buf.st_size;
+# endif
                         *dl.dir_id = p_de->dir_id;
                         *dl.job_id = 0;
                         *dl.input_time = current_time;
@@ -759,7 +952,11 @@ check_files(struct directory_entry *p_de,
                         }
 #endif
                         files_in_dir--;
+#ifdef HAVE_STATX
+                        bytes_in_dir -= stat_buf.stx_size;
+#else
                         bytes_in_dir -= stat_buf.st_size;
+#endif
                      }
                   }
                }
@@ -783,7 +980,11 @@ check_files(struct directory_entry *p_de,
                      }
                      else
                      {
+#ifdef HAVE_STATX
+                        pmatch_time = stat_buf.stx_mtime.tv_sec;
+#else
                         pmatch_time = stat_buf.st_mtime;
+#endif
                      }
                      for (i = 0; i < p_de->nfg; i++)
                      {
@@ -821,7 +1022,11 @@ check_files(struct directory_entry *p_de,
                                                 /* checked again!!!       */
                          (fra[p_de->fra_pos].dup_check_timeout == 0L) ||
                          (((is_duplicate = isdup(fullname, NULL,
+# ifdef HAVE_STATX
+                                                 stat_buf.stx_size,
+# else
                                                  stat_buf.st_size,
+# endif
                                                  p_de->dir_id,
                                                  fra[p_de->fra_pos].dup_check_timeout,
                                                  fra[p_de->fra_pos].dup_check_flag,
@@ -847,7 +1052,12 @@ check_files(struct directory_entry *p_de,
                          ((rl_pos = check_list(p_de, p_dir->d_name, &stat_buf)) > -1))
                      {
                         if ((fra[p_de->fra_pos].end_character == -1) ||
-                            (fra[p_de->fra_pos].end_character == get_last_char(fullname, stat_buf.st_size)))
+#ifdef HAVE_STATX
+                            (fra[p_de->fra_pos].end_character == get_last_char(fullname, stat_buf.stx_size))
+#else
+                            (fra[p_de->fra_pos].end_character == get_last_char(fullname, stat_buf.st_size))
+#endif
+                           )
                         {
                            int what_done;
 
@@ -1087,7 +1297,11 @@ check_files(struct directory_entry *p_de,
                                   (is_duplicate == NO))
                               {
                                  (void)isdup(fullname, NULL,
+# ifdef HAVE_STATX
+                                             stat_buf.stx_size,
+# else
                                              stat_buf.st_size,
+# endif
                                              p_de->dir_id,
                                              fra[p_de->fra_pos].dup_check_timeout,
                                              fra[p_de->fra_pos].dup_check_flag,
@@ -1116,8 +1330,13 @@ check_files(struct directory_entry *p_de,
                               (void)memcpy(file_name_pool[files_copied],
                                            p_dir->d_name,
                                            (size_t)(file_length_pool[files_copied] + 1));
+#ifdef HAVE_STATX
+                              file_mtime_pool[files_copied] = stat_buf.stx_mtime.tv_sec;
+                              file_size_pool[files_copied] = stat_buf.stx_size;
+#else
                               file_mtime_pool[files_copied] = stat_buf.st_mtime;
                               file_size_pool[files_copied] = stat_buf.st_size;
+#endif
 
 #ifdef _INPUT_LOG
                               if ((count_files == YES) ||
@@ -1126,7 +1345,11 @@ check_files(struct directory_entry *p_de,
                                  /* Log the file name in the input log. */
                                  (void)memcpy(il_file_name, p_dir->d_name,
                                               (size_t)(file_length_pool[files_copied] + 1));
+# ifdef HAVE_STATX
+                                 *il_file_size = stat_buf.stx_size;
+# else
                                  *il_file_size = stat_buf.st_size;
+# endif
                                  *il_time = current_time;
                                  *il_dir_number = p_de->dir_id;
                                  *il_unique_number = *unique_number;
@@ -1145,7 +1368,11 @@ check_files(struct directory_entry *p_de,
                               }
 #endif
 
+#ifdef HAVE_STATX
+                              *total_file_size += stat_buf.stx_size;
+#else
                               *total_file_size += stat_buf.st_size;
+#endif
                               if ((++files_copied >= fra[p_de->fra_pos].max_copied_files) ||
                                   (*total_file_size >= fra[p_de->fra_pos].max_copied_file_size))
                               {
@@ -1174,7 +1401,11 @@ check_files(struct directory_entry *p_de,
                            {
                               /* Log the file name in the input log. */
                               (void)strcpy(il_file_name, p_dir->d_name);
+# ifdef HAVE_STATX
+                              *il_file_size = stat_buf.stx_size;
+# else
                               *il_file_size = stat_buf.st_size;
+# endif
                               *il_time = current_time;
                               *il_dir_number = p_de->dir_id;
                               *il_unique_number = *unique_number;
@@ -1216,7 +1447,11 @@ check_files(struct directory_entry *p_de,
                                  dis_log(DUPCHECK_DIS_TYPE, current_time,
                                          p_de->dir_id, *unique_number,
                                          p_dir->d_name, file_name_length,
+#  ifdef HAVE_STATX
+                                         stat_buf.stx_size, 1, &p_dummy_job_id,
+#  else
                                          stat_buf.st_size, 1, &p_dummy_job_id,
+#  endif
                                          &dummy_proc_cycles, 1);
 # endif
 # ifdef _DELETE_LOG
@@ -1227,7 +1462,11 @@ check_files(struct directory_entry *p_de,
                                                 "%-*s %03x",
                                                 MAX_HOSTNAME_LENGTH, "-",
                                                 DUP_INPUT);
+#  ifdef HAVE_STATX
+                                 *dl.file_size = stat_buf.stx_size;
+#  else
                                  *dl.file_size = stat_buf.st_size;
+#  endif
                                  *dl.dir_id = p_de->dir_id;
                                  *dl.job_id = 0;
                                  *dl.input_time = current_time;
@@ -1248,7 +1487,11 @@ check_files(struct directory_entry *p_de,
                                  }
 # endif
                                  files_in_dir--;
+# ifdef HAVE_STATX
+                                 bytes_in_dir -= stat_buf.stx_size;
+# else
                                  bytes_in_dir -= stat_buf.st_size;
+# endif
                               }
                            }
                            else if (fra[p_de->fra_pos].dup_check_flag & DC_STORE)
@@ -1282,7 +1525,11 @@ check_files(struct directory_entry *p_de,
                                       }
                                    }
                                    files_in_dir--;
+# ifdef HAVE_STATX
+                                   bytes_in_dir -= stat_buf.stx_size;
+# else
                                    bytes_in_dir -= stat_buf.st_size;
+# endif
                                 }
                            if (fra[p_de->fra_pos].dup_check_flag & DC_WARN)
                            {
@@ -1298,7 +1545,11 @@ check_files(struct directory_entry *p_de,
                   {
                      if (fra[p_de->fra_pos].delete_files_flag & UNKNOWN_FILES)
                      {
+#ifdef HAVE_STATX
+                        diff_time = current_time - stat_buf.stx_mtime.tv_sec;
+#else
                         diff_time = current_time - stat_buf.st_mtime;
+#endif
                         if ((fra[p_de->fra_pos].unknown_file_time == -2) ||
 #ifdef WITH_INOTIFY
                             (fra[p_de->fra_pos].dir_flag & INOTIFY_NEEDS_SCAN) ||
@@ -1327,7 +1578,11 @@ check_files(struct directory_entry *p_de,
                                              "%-*s %03x",
                                              MAX_HOSTNAME_LENGTH, "-",
                                              (fra[p_de->fra_pos].in_dc_flag & UNKNOWN_FILES_IDC) ?  DEL_UNKNOWN_FILE : DEL_UNKNOWN_FILE_GLOB);
+# ifdef HAVE_STATX
+                              *dl.file_size = stat_buf.stx_size;
+# else
                               *dl.file_size = stat_buf.st_size;
+# endif
                               *dl.dir_id = p_de->dir_id;
                               *dl.job_id = 0;
                               *dl.input_time = 0L;
@@ -1369,7 +1624,11 @@ check_files(struct directory_entry *p_de,
                               }
 #endif
                               files_in_dir--;
+#ifdef HAVE_STATX
+                              bytes_in_dir -= stat_buf.stx_size;
+#else
                               bytes_in_dir -= stat_buf.st_size;
+#endif
                            }
                         }
                      }
@@ -1384,7 +1643,12 @@ check_files(struct directory_entry *p_de,
                  ((fra[p_de->fra_pos].ignore_file_time != 0) &&
                   ((fra[p_de->fra_pos].gt_lt_sign & IFTIME_GREATER_THEN) ||
                    (fra[p_de->fra_pos].gt_lt_sign & IFTIME_EQUAL)))) &&
-                ((current_time - stat_buf.st_mtime) > fra[p_de->fra_pos].unknown_file_time))
+#ifdef HAVE_STATX
+                ((current_time - stat_buf.stx_mtime.tv_sec) > fra[p_de->fra_pos].unknown_file_time)
+#else
+                ((current_time - stat_buf.st_mtime) > fra[p_de->fra_pos].unknown_file_time)
+#endif
+               )
             {
                if (unlink(fullname) == -1)
                {
@@ -1403,7 +1667,11 @@ check_files(struct directory_entry *p_de,
                                  "%-*s %03x",
                                  MAX_HOSTNAME_LENGTH, "-",
                                  (fra[p_de->fra_pos].in_dc_flag & UNKNOWN_FILES_IDC) ?  DEL_UNKNOWN_FILE : DEL_UNKNOWN_FILE_GLOB);
+# ifdef HAVE_STATX
+                  *dl.file_size = stat_buf.stx_size;
+# else
                   *dl.file_size = stat_buf.st_size;
+# endif
                   *dl.dir_id = p_de->dir_id;
                   *dl.job_id = 0;
                   *dl.input_time = 0L;
@@ -1419,7 +1687,11 @@ check_files(struct directory_entry *p_de,
                                           "%s%c>%lld (%s %d)",
 # endif
                                           DIR_CHECK, SEPARATOR_CHAR,
+# ifdef HAVE_STATX
+                                          (pri_time_t)(current_time - stat_buf.stx_mtime.tv_sec),
+# else
                                           (pri_time_t)(current_time - stat_buf.st_mtime),
+# endif
                                           __FILE__, __LINE__);
                   if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
                   {
@@ -1428,7 +1700,11 @@ check_files(struct directory_entry *p_de,
                   }
 #endif
                   files_in_dir--;
+#ifdef HAVE_STATX
+                  bytes_in_dir -= stat_buf.stx_size;
+#else
                   bytes_in_dir -= stat_buf.st_size;
+#endif
                }
             }
             else if (((fra[p_de->fra_pos].ignore_file_time != 0) &&
@@ -1439,7 +1715,12 @@ check_files(struct directory_entry *p_de,
                      ((fra[p_de->fra_pos].ignore_size != -1) &&
                       ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_LESS_THEN) ||
                        (fra[p_de->fra_pos].gt_lt_sign & ISIZE_EQUAL)) &&
-                      (stat_buf.st_size < fra[p_de->fra_pos].ignore_size)))
+#ifdef HAVE_STATX
+                      (stat_buf.stx_size < fra[p_de->fra_pos].ignore_size)
+#else
+                      (stat_buf.st_size < fra[p_de->fra_pos].ignore_size)
+#endif
+                     ))
                  {
                     *rescan_dir = YES;
                  }

@@ -1,7 +1,7 @@
 /*
  *  truncate_old_year_stat.c - Part of AFD, an automatic file distribution
  *                             program.
- *  Copyright (c) 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2020 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -81,12 +81,16 @@ const char      *sys_log_name = SYSTEM_LOG_FIFO;
 int
 main(int argc, char *argv[])
 {
-   int         fd;
-   char        new_file[MAX_PATH_LENGTH],
-               *ptr,
-               tmp_char,
-               work_dir[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+   int          fd;
+   char         new_file[MAX_PATH_LENGTH],
+                *ptr,
+                tmp_char,
+                work_dir[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    CHECK_FOR_VERSION(argc, argv);
 
@@ -172,15 +176,24 @@ main(int argc, char *argv[])
            exit(INCORRECT);
         }
 
-   if ((stat(new_file, &stat_buf) < 0) || (stat_buf.st_size == 0))
+#ifdef HAVE_STATX
+   if ((statx(0, new_file, AT_STATX_SYNC_AS_STAT,
+              STATX_SIZE, &stat_buf) == -1) || (stat_buf.stx_size == 0))
+#else
+   if ((stat(new_file, &stat_buf) == -1) || (stat_buf.st_size == 0))
+#endif
    {
+#ifdef HAVE_STATX
+      if (stat_buf.stx_size == 0)
+#else
       if (stat_buf.st_size == 0)
+#endif
       {
          (void)fprintf(stderr, "File is empty.\n");
       }
       else
       {
-         (void)fprintf(stderr, "Failed to stat() %s : %s\n",
+         (void)fprintf(stderr, "Failed to access %s : %s\n",
                        new_file, strerror(errno));
       }
       exit(INCORRECT);
@@ -192,7 +205,12 @@ main(int argc, char *argv[])
       exit(INCORRECT);
    }
 #ifdef HAVE_MMAP
-   if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+   if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                   stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                   stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                    (MAP_FILE | MAP_SHARED), fd, 0)) == (caddr_t) -1)
    {
       (void)fprintf(stderr,
@@ -202,13 +220,21 @@ main(int argc, char *argv[])
       exit(INCORRECT);
    }
 #else
+# ifdef HAVE_STATX
+   if ((ptr = malloc(stat_buf.stx_size)) == NULL)
+# else
    if ((ptr = malloc(stat_buf.st_size)) == NULL)
+# endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  "malloc() error : %s", strerror(errno));
       exit(INCORRECT);
    }
+# ifdef HAVE_STATX
+   if (read(fd, ptr, stat_buf.stx_size) != stat_buf.stx_size)
+# else
    if (read(fd, ptr, stat_buf.st_size) != stat_buf.st_size)
+# endif
    {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                  "Failed to read() %s : %s",
@@ -226,18 +252,31 @@ main(int argc, char *argv[])
          exit(INCORRECT);
       }
       stat_db = (struct afdstat *)(ptr + AFD_WORD_OFFSET);
+#ifdef HAVE_STATX
+      no_of_hosts = (stat_buf.stx_size - AFD_WORD_OFFSET) /
+                    sizeof(struct afdstat);
+#else
       no_of_hosts = (stat_buf.st_size - AFD_WORD_OFFSET) /
                     sizeof(struct afdstat);
+#endif
 
       save_old_output_year(-1);
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
       if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
       {
          (void)fprintf(stderr, "Failed to munmap() %s : %s\n",
                        new_file, strerror(errno));
       }
 #else
+# ifdef HAVE_STATX
+      if (write(fd, ptr, stat_buf.stx_size) != stat_buf.stx_size)
+# else
       if (write(fd, ptr, stat_buf.st_size) != stat_buf.st_size)
+# endif
       {
          (void)fprintf(stderr, "Could not write() to %s : %s\n",
                        new_file, strerror(errno));
@@ -264,18 +303,31 @@ main(int argc, char *argv[])
          exit(INCORRECT);
       }
       istat_db = (struct afdistat *)(ptr + AFD_WORD_OFFSET);
+#ifdef HAVE_STATX
+      no_of_dirs = (stat_buf.stx_size - AFD_WORD_OFFSET) /
+                   sizeof(struct afdistat);
+#else
       no_of_dirs = (stat_buf.st_size - AFD_WORD_OFFSET) /
                    sizeof(struct afdistat);
+#endif
 
       save_old_input_year(-1);
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
       if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
       {
          (void)fprintf(stderr, "Failed to munmap() %s : %s\n",
                        new_file, strerror(errno));
       }
 #else
+# ifdef HAVE_STATX
+      if (write(fd, ptr, stat_buf.stx_size) != stat_buf.stx_size)
+# else
       if (write(fd, ptr, stat_buf.st_size) != stat_buf.st_size)
+# endif
       {
          (void)fprintf(stderr, "Could not write() to %s : %s\n",
                        new_file, strerror(errno));

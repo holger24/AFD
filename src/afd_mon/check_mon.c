@@ -1,6 +1,6 @@
 /*
  *  check_mon.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -64,7 +64,11 @@ DESCR__E_M3
 #include "mondefs.h"
 
 /* Local global variables */
+#ifdef HAVE_STATX
+static struct statx stat_buf;
+#else
 static struct stat stat_buf;
+#endif
 
 /* External global variables */
 extern char *p_work_dir,
@@ -80,9 +84,18 @@ static void kill_jobs(void);
 int
 check_mon(long wait_time)
 {
+#ifdef HAVE_STATX
+   struct statx stat_buf_fifo;
+#else
    struct stat stat_buf_fifo;
+#endif
 
+#ifdef HAVE_STATX
+   if (statx(0, mon_active_file, AT_STATX_SYNC_AS_STAT,
+             STATX_SIZE, &stat_buf) == 0)
+#else
    if (stat(mon_active_file, &stat_buf) == 0)
+#endif
    {
       int            readfd,
 #ifdef WITHOUT_FIFO_RW_SUPPORT
@@ -124,8 +137,14 @@ check_mon(long wait_time)
          int val,
              tmp_val;
 
+#ifdef HAVE_STATX
+         if ((statx(0, probe_only_fifo, AT_STATX_SYNC_AS_STAT,
+                    STATX_MODE, &stat_buf_fifo) == -1) ||
+             (!S_ISFIFO(stat_buf_fifo.stx_mode)))
+#else
          if ((stat(probe_only_fifo, &stat_buf_fifo) == -1) ||
              (!S_ISFIFO(stat_buf_fifo.st_mode)))
+#endif
          {
             if (make_fifo(probe_only_fifo) < 0)
             {
@@ -316,14 +335,22 @@ kill_jobs(void)
       exit(INCORRECT);
    }
 
+#ifdef HAVE_STATX
+   if ((buffer = calloc(stat_buf.stx_size, sizeof(char))) == NULL)
+#else
    if ((buffer = calloc(stat_buf.st_size, sizeof(char))) == NULL)
+#endif
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__,
                  "calloc() error : %s", strerror(errno));
       exit(INCORRECT);
    }
 
+#ifdef HAVE_STATX
+   if (read(read_fd, buffer, stat_buf.stx_size) != stat_buf.stx_size)
+#else
    if (read(read_fd, buffer, stat_buf.st_size) != stat_buf.st_size)
+#endif
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__,
                  "read() error : %s", strerror(errno));

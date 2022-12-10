@@ -1,7 +1,7 @@
 /*
  *  reread_host_config.c - Part of AFD, an automatic file distribution
  *                         program.
- *  Copyright (c) 1998 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -66,6 +66,9 @@ DESCR__E_M3
 #include <string.h>              /* strerror(), memset(), strcmp(),      */
                                  /* memcpy()                             */
 #include <stdlib.h>              /* malloc(), free()                     */
+#ifdef HAVE_STATX
+# include <fcntl.h>              /* Definition of AT_* constants         */
+#endif
 #include <sys/stat.h>
 #include <sys/wait.h>            /* WNOHANG                              */
 #include <unistd.h>
@@ -94,10 +97,19 @@ reread_host_config(time_t           *hc_old_time,
                    int              inform_fd)
 {
    int         ret = NO_CHANGE_IN_HOST_CONFIG;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat stat_buf;
+#endif
 
    /* Get the size of the database file. */
+#ifdef HAVE_STATX
+   if (statx(0, host_config_file, AT_STATX_SYNC_AS_STAT,
+             STATX_MTIME, &stat_buf) == -1)
+#else
    if (stat(host_config_file, &stat_buf) < 0)
+#endif
    {
       if (errno == ENOENT)
       {
@@ -116,7 +128,11 @@ reread_host_config(time_t           *hc_old_time,
    }
 
    /* Check if HOST_CONFIG has changed. */
+#ifdef HAVE_STATX
+   if (*hc_old_time < stat_buf.stx_mtime.tv_sec)
+#else
    if (*hc_old_time < stat_buf.st_mtime)
+#endif
    {
       int              dir_check_stopped = NO,
                        dummy_1,
@@ -152,7 +168,11 @@ reread_host_config(time_t           *hc_old_time,
       system_log(INFO_SIGN, NULL, 0, "Rereading HOST_CONFIG...");
 
       /* Now store the new time. */
+#ifdef HAVE_STATX
+      *hc_old_time = stat_buf.stx_mtime.tv_sec;
+#else
       *hc_old_time = stat_buf.st_mtime;
+#endif
 
       /* Reread HOST_CONFIG file. */
       if (hl != NULL)

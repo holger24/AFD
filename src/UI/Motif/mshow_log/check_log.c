@@ -53,6 +53,9 @@ DESCR__E_M1
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>                     /* Definition of AT_* constants */
+#endif
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -379,8 +382,12 @@ check_log(Widget w)
          (total_length > max_logfile_size))) &&
        (current_log_number == 0))
    {
-      char        log_file[MAX_PATH_LENGTH + 1 + MAX_FILENAME_LENGTH + 2];
-      struct stat stat_buf;
+      char         log_file[MAX_PATH_LENGTH + 1 + MAX_FILENAME_LENGTH + 2];
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
+      struct stat  stat_buf;
+#endif
 
       /*
        * When disk is full the process system_log/transfer_log will not
@@ -390,8 +397,14 @@ check_log(Widget w)
        * know that the log process has failed to create a new log file.
        */
       (void)sprintf(log_file, "%s/%s0", log_dir, log_name);
+#ifdef HAVE_STATX
+      if ((statx(0, log_file, AT_STATX_SYNC_AS_STAT,
+                 STATX_INO, &stat_buf) != -1) &&
+          (stat_buf.stx_ino != current_inode_no))
+#else
       if ((stat(log_file, &stat_buf) != -1) &&
           (stat_buf.st_ino != current_inode_no))
+#endif
       {
          /* Yup, time to change the log file! */
          if (p_log_file != NULL)
@@ -413,7 +426,11 @@ check_log(Widget w)
             XmTextSetString(w, NULL);  /* Clears all old entries. */
             (void)sprintf(str_line, "%*d", MAX_LINE_COUNTER_DIGITS, 0);
             XmTextSetString(counterbox, str_line);
+#ifdef HAVE_STATX
+            current_inode_no = stat_buf.stx_ino;
+#else
             current_inode_no = stat_buf.st_ino;
+#endif
          }
       }
    }

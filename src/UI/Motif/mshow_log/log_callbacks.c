@@ -1,6 +1,6 @@
 /*
  *  log_callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,6 +45,9 @@ DESCR__E_M3
 #include <stdlib.h>                 /* exit()                            */
 #include <ctype.h>                  /* isxdigit()                        */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>                 /* Definition of AT_* constants      */
+#endif
 #include <sys/stat.h>
 #include <unistd.h>
 #include <X11/Xlib.h>
@@ -384,16 +387,30 @@ update_button(Widget w, XtPointer client_data, XtPointer call_data)
           (log_type_flag != RECEIVE_LOG_TYPE) &&
           (current_log_number == 0))
       {
+#ifdef HAVE_STATX
+         struct statx stat_buf;
+#else
          struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+         if (statx(fileno(p_log_file), "",
+                   AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_INO, &stat_buf) == -1)
+#else
          if (fstat(fileno(p_log_file), &stat_buf) == -1)
+#endif
          {
             (void)fprintf(stderr,
-                          "ERROR   : Could not fstat() %s : %s (%s %d)\n",
+                          "ERROR   : Could not access %s : %s (%s %d)\n",
                           log_file, strerror(errno), __FILE__, __LINE__);
             exit(INCORRECT);
          }
+#ifdef HAVE_STATX
+         current_inode_no = stat_buf.stx_ino;
+#else
          current_inode_no = stat_buf.st_ino;
+#endif
       }
    }
    line_counter = 0;

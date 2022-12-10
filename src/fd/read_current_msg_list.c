@@ -1,7 +1,7 @@
 /*
  *  read_current_msg_list.c - Part of AFD, an automatic file distribution
  *                            program.
- *  Copyright (c) 2004 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -70,12 +70,16 @@ extern struct afd_status *p_afd_status;
 int
 read_current_msg_list(unsigned int **cml, int *no_of_current_msg)
 {
-   int         fd,
-               sleep_counter;
-   size_t      size;
-   ssize_t     bytes_read;
-   char        current_msg_list_file[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+   int          fd,
+                sleep_counter;
+   size_t       size;
+   ssize_t      bytes_read;
+   char         current_msg_list_file[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    (void)strcpy(current_msg_list_file, p_work_dir);
    (void)strcat(current_msg_list_file, FIFO_DIR);
@@ -109,20 +113,43 @@ read_current_msg_list(unsigned int **cml, int *no_of_current_msg)
       }
    }
 
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
-      system_log(FATAL_SIGN, __FILE__, __LINE__, "Failed to fstat() `%s' : %s",
+      system_log(FATAL_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                 "Failed to statx() `%s' : %s",
+#else
+                 "Failed to fstat() `%s' : %s",
+#endif
                  current_msg_list_file, strerror(errno));
       exit(INCORRECT);
    }
    sleep_counter = 0;
+#ifdef HAVE_STATX
+   while (stat_buf.stx_size == 0)
+#else
    while (stat_buf.st_size == 0)
+#endif
    {
       (void)sleep(1);
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(fd, &stat_buf) == -1)
+#endif
       {
          system_log(FATAL_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                    "Failed to statx() `%s' : %s",
+#else
                     "Failed to fstat() `%s' : %s",
+#endif
                     current_msg_list_file, strerror(errno));
          exit(INCORRECT);
       }

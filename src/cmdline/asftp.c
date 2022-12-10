@@ -117,23 +117,27 @@ static void          asftp_exit(void),
 int
 main(int argc, char *argv[])
 {
-   int         buffer_offset,
-               exit_status = SUCCESS,
-               fd = -1,
-               status,
-               no_of_files_done = 0;
-   off_t       file_size_done = 0,
-               file_size_to_retrieve,
-               local_file_size,
-               no_of_bytes;
-   char        *ascii_buffer = NULL,
-               append_count = 0,
-               *buffer,
-               *created_path = NULL,
-               *file_ptr,
-               initial_filename[MAX_FILENAME_LENGTH],
-               final_filename[MAX_FILENAME_LENGTH];
-   struct stat stat_buf;
+   int          buffer_offset,
+                exit_status = SUCCESS,
+                fd = -1,
+                status,
+                no_of_files_done = 0;
+   off_t        file_size_done = 0,
+                file_size_to_retrieve,
+                local_file_size,
+                no_of_bytes;
+   char         *ascii_buffer = NULL,
+                append_count = 0,
+                *buffer,
+                *created_path = NULL,
+                *file_ptr,
+                initial_filename[MAX_FILENAME_LENGTH],
+                final_filename[MAX_FILENAME_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
 #ifdef HAVE_GETTEXT
    (void)setlocale(LC_ALL, "");
@@ -264,20 +268,38 @@ main(int argc, char *argv[])
             (void)strcpy(&local_file[1], rl[i].file_name);
             if (db.append == YES)
             {
+#ifdef HAVE_STATX
+               if (statx(0, rl[i].file_name, AT_STATX_SYNC_AS_STAT,
+                         STATX_SIZE, &stat_buf) == -1)
+#else
                if (stat(rl[i].file_name, &stat_buf) == -1)
+#endif
                {
+#ifdef HAVE_STATX
+                  if (statx(0, local_file, AT_STATX_SYNC_AS_STAT,
+                            STATX_SIZE, &stat_buf) == -1)
+#else
                   if (stat(local_file, &stat_buf) == -1)
+#endif
                   {
                      offset = 0;
                   }
                   else
                   {
+#ifdef HAVE_STATX
+                     offset = stat_buf.stx_size;
+#else
                      offset = stat_buf.st_size;
+#endif
                   }
                }
                else
                {
+#ifdef HAVE_STATX
+                  offset = stat_buf.stx_size;
+#else
                   offset = stat_buf.st_size;
+#endif
                   if (offset > 0)
                   {
                      if (rename(rl[i].file_name, local_file) == -1)
@@ -289,13 +311,22 @@ main(int argc, char *argv[])
             }
             else
             {
+#ifdef HAVE_STATX
+               if (statx(0, local_file, AT_STATX_SYNC_AS_STAT,
+                         STATX_SIZE, &stat_buf) == -1)
+#else
                if (stat(local_file, &stat_buf) == -1)
+#endif
                {
                   offset = 0;
                }
                else
                {
+#ifdef HAVE_STATX
+                  offset = stat_buf.stx_size;
+#else
                   offset = stat_buf.st_size;
+#endif
                }
             }
             if ((status = sftp_open_file(SFTP_READ_FILE, rl[i].file_name,
@@ -562,12 +593,17 @@ main(int argc, char *argv[])
                continue;
             }
 
+#ifdef HAVE_STATX
+            if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                      STATX_SIZE | STATX_MODE, &stat_buf) == -1)
+#else
             if (fstat(fd, &stat_buf) == -1)
+#endif
             {
                if (db.verbose == YES)
                {
                   trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            _("Failed to fstat() local file %s"),
+                            _("Failed to access local file %s"),
                             db.filename[files_send]);
                }
                WHAT_DONE("send", file_size_done, no_of_files_done);
@@ -576,7 +612,11 @@ main(int argc, char *argv[])
             }
             else
             {
+#ifdef HAVE_STATX
+               if (!S_ISREG(stat_buf.stx_mode))
+#else
                if (!S_ISREG(stat_buf.st_mode))
+#endif
                {
                   if (db.verbose == YES)
                   {
@@ -591,7 +631,11 @@ main(int argc, char *argv[])
                   continue;
                }
             }
+#ifdef HAVE_STATX
+            local_file_size = stat_buf.stx_size;
+#else
             local_file_size = stat_buf.st_size;
+#endif
             if (db.verbose == YES)
             {
                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -606,9 +650,10 @@ main(int argc, char *argv[])
             append_offset = 0;
             if (db.append == YES)
             {
-               struct stat stat_buf;
+               struct stat rdir_stat_buf;
 
-               if ((status = sftp_stat(initial_filename, &stat_buf)) != SUCCESS)
+               if ((status = sftp_stat(initial_filename,
+                                       &rdir_stat_buf)) != SUCCESS)
                {
                   trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, msg_str,
                             _("Failed to stat() file %s (%d)."),
@@ -620,7 +665,7 @@ main(int argc, char *argv[])
                }
                else
                {
-                  append_offset = stat_buf.st_size;
+                  append_offset = rdir_stat_buf.st_size;
                   if (db.verbose == YES)
                   {
                      trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
@@ -629,7 +674,8 @@ main(int argc, char *argv[])
 #else
                                _("Remote size of %s is %lld."),
 #endif
-                               initial_filename, (pri_off_t)stat_buf.st_size);
+                               initial_filename,
+                               (pri_off_t)rdir_stat_buf.st_size);
                   }
                }
                if (append_offset > 0)
@@ -750,9 +796,18 @@ main(int argc, char *argv[])
              * AFD not in dot notation, lets check here if this is really
              * the EOF.
              */
+#ifdef HAVE_STATX
+            if (statx(0, db.filename[files_send], AT_STATX_SYNC_AS_STAT,
+                      STATX_SIZE, &stat_buf) == 0)
+#else
             if (stat(db.filename[files_send], &stat_buf) == 0)
+#endif
             {
+#ifdef HAVE_STATX
+               if (stat_buf.stx_size != local_file_size)
+#else
                if (stat_buf.st_size != local_file_size)
+#endif
                {
                   /*
                    * Give a warning, so some action can be taken against
@@ -766,7 +821,11 @@ main(int argc, char *argv[])
 #endif
                             db.filename[files_send],
                             (pri_off_t)local_file_size,
+#ifdef HAVE_STATX
+                            (pri_off_t)stat_buf.stx_size,
+#else
                             (pri_off_t)stat_buf.st_size,
+#endif
                             __FILE__, __LINE__);
                }
             }
@@ -901,10 +960,10 @@ main(int argc, char *argv[])
 
          if (db.verbose == YES)
          {
-            struct stat stat_buf;
+            struct stat rdir_stat_buf;
 
             if ((status = sftp_stat(initial_filename,
-                                    &stat_buf)) != SUCCESS)
+                                    &rdir_stat_buf)) != SUCCESS)
             {
                trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
                          _("Failed to stat() remote file %s (%d)."),
@@ -922,7 +981,7 @@ main(int argc, char *argv[])
 #else
                          _("Local file size of %s is %lld"),
 #endif
-                         final_filename, (pri_off_t)stat_buf.st_size);
+                         final_filename, (pri_off_t)rdir_stat_buf.st_size);
             }
          }
 
@@ -968,7 +1027,12 @@ main(int argc, char *argv[])
 #else
                    _("Send %s [%lld bytes]"),
 #endif
-                   final_filename, (pri_off_t)stat_buf.st_size);
+#ifdef HAVE_STATX
+                   final_filename, (pri_off_t)stat_buf.stx_size
+#else
+                   final_filename, (pri_off_t)stat_buf.st_size
+#endif
+                  );
 
          if ((db.remove == YES) && (db.exec_mode == TRANSFER_MODE))
          {

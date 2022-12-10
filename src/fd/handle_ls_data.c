@@ -118,9 +118,13 @@ attach_ls_data(struct fileretrieve_status *fra,
 #endif /* DO_NOT_PARALLELIZE_ALL_FETCH */
       if (rl_fd == -1)
       {
-         time_t      *create_time;
-         char        *ptr;
-         struct stat stat_buf;
+         time_t       *create_time;
+         char         *ptr;
+#ifdef HAVE_STATX
+         struct statx stat_buf;
+#else
+         struct stat  stat_buf;
+#endif
 
          if (rl != NULL)
          {
@@ -163,14 +167,27 @@ attach_ls_data(struct fileretrieve_status *fra,
             }
             return(INCORRECT);
          }
+#ifdef HAVE_STATX
+         if (statx(rl_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &stat_buf) == -1)
+#else
          if (fstat(rl_fd, &stat_buf) == -1)
+#endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                       "Failed to statx() `%s' : %s",
+#else
                        "Failed to fstat() `%s' : %s",
+#endif
                        list_file, strerror(errno));
             return(INCORRECT);
          }
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size == 0)
+#else
          if (stat_buf.st_size == 0)
+#endif
          {
             rl_size = (RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
                       AFD_WORD_OFFSET;
@@ -191,7 +208,11 @@ attach_ls_data(struct fileretrieve_status *fra,
          }
          else
          {
+#ifdef HAVE_STATX
+            rl_size = stat_buf.stx_size;
+#else
             rl_size = stat_buf.st_size;
+#endif
          }
 #ifdef HAVE_MMAP
          if ((ptr = mmap(NULL, rl_size, (PROT_READ | PROT_WRITE),
@@ -211,7 +232,11 @@ attach_ls_data(struct fileretrieve_status *fra,
          create_time = (time_t *)(ptr + SIZEOF_INT + 4);
          ptr += AFD_WORD_OFFSET;
          rl = (struct retrieve_list *)ptr;
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size == 0)
+#else
          if (stat_buf.st_size == 0)
+#endif
          {
             no_of_listed_files = *(int *)((char *)rl - AFD_WORD_OFFSET)  = 0;
             *(ptr - AFD_WORD_OFFSET + SIZEOF_INT) = 0;         /* Not used. */
@@ -370,7 +395,11 @@ attach_ls_data(struct fileretrieve_status *fra,
                      }
                      ptr -= 8;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+                     if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
                      if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
                      if (munmap_emu(ptr) == -1)
 #endif
@@ -532,7 +561,11 @@ attach_ls_data(struct fileretrieve_status *fra,
                           }
                           ptr -= 8;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+                          if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
                           if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
                           if (munmap_emu(ptr) == -1)
 #endif
@@ -608,7 +641,11 @@ attach_ls_data(struct fileretrieve_status *fra,
 #else
                                         "Hmm, LS data file %s has incorrect size (%lld != %lld, %lld, %lld), removing it.",
 #endif
+#ifdef HAVE_STATX
+                                        list_file, (pri_off_t)stat_buf.stx_size,
+#else
                                         list_file, (pri_off_t)stat_buf.st_size,
+#endif
                                         (pri_off_t)calc_size,
                                         (pri_off_t)old_calc_size,
                                         (pri_off_t)old_int_calc_size);

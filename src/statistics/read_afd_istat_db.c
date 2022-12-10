@@ -85,7 +85,11 @@ read_afd_istat_db(int no_of_dirs)
    char            *old_ptr = NULL, /* silence compiler */
                    *ptr;
    struct afdistat *old_istat_db;
+#ifdef HAVE_STATX
+   struct statx    stat_buf;
+#else
    struct stat     stat_buf;
+#endif
    struct tm       *p_ts;
 
    /*
@@ -101,9 +105,18 @@ read_afd_istat_db(int no_of_dirs)
        * statistics file. If it does not exist, don't bother, since
        * we only need to initialize all values to zero.
        */
-      if ((stat(istatistic_file, &stat_buf) < 0) || (stat_buf.st_size == 0))
+#ifdef HAVE_STATX
+      if ((statx(0, istatistic_file, AT_STATX_SYNC_AS_STAT,
+                 STATX_SIZE, &stat_buf) == -1) || (stat_buf.stx_size == 0))
+#else
+      if ((stat(istatistic_file, &stat_buf) == -1) || (stat_buf.st_size == 0))
+#endif
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size == 0)
+#else
          if (stat_buf.st_size == 0)
+#endif
          {
             system_log(DEBUG_SIGN, __FILE__, __LINE__,
                        "Hmm..., old input statistic file is empty.");
@@ -138,7 +151,12 @@ read_afd_istat_db(int no_of_dirs)
          }
 
 #ifdef HAVE_MMAP
-         if ((old_ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+         if ((old_ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                             stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                             stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                              (MAP_FILE | MAP_SHARED),
                              old_status_fd, 0)) == (caddr_t) -1)
          {
@@ -149,13 +167,21 @@ read_afd_istat_db(int no_of_dirs)
             exit(INCORRECT);
          }
 #else
+# ifdef HAVE_STATX
+         if ((old_ptr = malloc(stat_buf.stx_size)) == NULL)
+# else
          if ((old_ptr = malloc(stat_buf.st_size)) == NULL)
+# endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        "malloc() error : %s", strerror(errno));
             exit(INCORRECT);
          }
+# ifdef HAVE_STATX
+         if (read(old_status_fd, old_ptr, stat_buf.stx_size) != stat_buf.stx_size)
+# else
          if (read(old_status_fd, old_ptr, stat_buf.st_size) != stat_buf.st_size)
+# endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        "Failed to read() %s : %s",
@@ -166,7 +192,11 @@ read_afd_istat_db(int no_of_dirs)
          }
 #endif
          old_istat_db = (struct afdistat *)(old_ptr + AFD_WORD_OFFSET);
+#ifdef HAVE_STATX
+         old_istat_db_size = stat_buf.stx_size;
+#else
          old_istat_db_size = stat_buf.st_size;
+#endif
          no_of_old_dirs = (old_istat_db_size - AFD_WORD_OFFSET) /
                           sizeof(struct afdistat);
       }

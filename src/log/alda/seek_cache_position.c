@@ -1,6 +1,6 @@
 /*
  *  seek_cache_position.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2009, 2010 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2009 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,6 +42,9 @@ DESCR__E_M3
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>                      /* Definition of AT_* constants */
+#endif
 #include <sys/stat.h>
 #ifdef HAVE_MMAP
 # include <sys/mman.h>                   /* mmap(), munmap()             */
@@ -60,10 +63,19 @@ extern int cache_step_size;
 void
 seek_cache_position(struct log_file_data *log, time_t search_time)
 {
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat stat_buf;
+#endif
 
    search_time -= 1;
+#ifdef HAVE_STATX
+   if (statx(log->cache_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == 0)
+#else
    if (fstat(log->cache_fd, &stat_buf) == 0)
+#endif
    {
       int   left,
             no_of_entries,
@@ -72,11 +84,19 @@ seek_cache_position(struct log_file_data *log, time_t search_time)
       off_t pos;
 
       read_size = cache_step_size + cache_step_size;
+#ifdef HAVE_STATX
+      no_of_entries = stat_buf.stx_size / read_size;
+#else
       no_of_entries = stat_buf.st_size / read_size;
+#endif
       left = 1;
       right = no_of_entries;
 
+#ifdef HAVE_STATX
+      if (stat_buf.stx_size > MAX_ALDA_CACHE_READ_SIZE)
+#else
       if (stat_buf.st_size > MAX_ALDA_CACHE_READ_SIZE)
+#endif
       {
          char   buffer[128];
          time_t *time_val;
@@ -132,10 +152,20 @@ seek_cache_position(struct log_file_data *log, time_t search_time)
          off_t  *offset_val;
 
 #ifdef HAVE_MMAP
-         if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ, MAP_SHARED,
+         if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                         stat_buf.stx_size, PROT_READ, MAP_SHARED,
+# else
+                         stat_buf.st_size, PROT_READ, MAP_SHARED,
+# endif
                          log->cache_fd, 0)) == (caddr_t) -1)
 #else
-         if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ, MAP_SHARED,
+         if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                             stat_buf.stx_size, PROT_READ, MAP_SHARED,
+# else
+                             stat_buf.st_size, PROT_READ, MAP_SHARED,
+# endif
                              log->log_cache_dir, 0)) == (caddr_t) -1)
 #endif
          {
@@ -174,7 +204,11 @@ seek_cache_position(struct log_file_data *log, time_t search_time)
             log->bytes_read = *offset_val;
          }
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+         if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
          if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
          if (munmap_emu(ptr) == -1)
 #endif

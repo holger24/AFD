@@ -1,7 +1,7 @@
 /*
  *  eval_bul_rep_config.c - Part of AFD, an automatic file distribution
  *                          program.
- *  Copyright (c) 2011 - 2013 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2011 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -75,9 +75,16 @@ eval_bul_rep_config(char *bul_file, char *rep_file, int verbose)
    static time_t last_read_bul = 0,
                  last_read_rep = 0;
    static int    first_time = YES;
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+
+   if (statx(0, bul_file, AT_STATX_SYNC_AS_STAT,
+             STATX_SIZE | STATX_MTIME, &stat_buf) == -1)
+#else
    struct stat   stat_buf;
 
    if (stat(bul_file, &stat_buf) == -1)
+#endif
    {
       if (errno == ENOENT)
       {
@@ -97,17 +104,28 @@ eval_bul_rep_config(char *bul_file, char *rep_file, int verbose)
       else
       {
          system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                    _("Failed to statx() `%s' : %s"),
+#else
                     _("Failed to stat() `%s' : %s"),
+#endif
                     bul_file, strerror(errno));
       }
    }
    else
    {
-      char        *rep_buffer = NULL,
-                  *rep_header_end;
-      struct stat stat_buf2;
+      char         *rep_buffer = NULL,
+                   *rep_header_end;
+#ifdef HAVE_STATX
+      struct statx stat_buf2;
+
+      if (statx(0, rep_file, AT_STATX_SYNC_AS_STAT,
+                STATX_SIZE | STATX_MTIME, &stat_buf2) == -1)
+#else
+      struct stat  stat_buf2;
 
       if (stat(rep_file, &stat_buf2) == -1)
+#endif
       {
          if (errno != ENOENT)
          {
@@ -118,12 +136,20 @@ eval_bul_rep_config(char *bul_file, char *rep_file, int verbose)
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf2.stx_mtime.tv_sec != last_read_rep)
+#else
          if (stat_buf2.st_mtime != last_read_rep)
+#endif
          {
             int fd;
 
             /* Allocate memory to store file. */
+#ifdef HAVE_STATX
+            if ((rep_buffer = malloc(stat_buf2.stx_size + 1)) == NULL)
+#else
             if ((rep_buffer = malloc(stat_buf2.st_size + 1)) == NULL)
+#endif
             {
                system_log(FATAL_SIGN, __FILE__, __LINE__,
                           _("malloc() error : %s"), strerror(errno));
@@ -141,7 +167,11 @@ eval_bul_rep_config(char *bul_file, char *rep_file, int verbose)
             }
 
             /* Read file into buffer. */
+#ifdef HAVE_STATX
+            if (read(fd, &rep_buffer[0], stat_buf2.stx_size) != stat_buf2.stx_size)
+#else
             if (read(fd, &rep_buffer[0], stat_buf2.st_size) != stat_buf2.st_size)
+#endif
             {
                system_log(FATAL_SIGN, __FILE__, __LINE__,
                           _("Failed to read() `%s' : %s"),
@@ -155,7 +185,11 @@ eval_bul_rep_config(char *bul_file, char *rep_file, int verbose)
                system_log(DEBUG_SIGN, __FILE__, __LINE__,
                           _("close() error : %s"), strerror(errno));
             }
+#ifdef HAVE_STATX
+            rep_buffer[stat_buf2.stx_size] = '\0';
+#else
             rep_buffer[stat_buf2.st_size] = '\0';
+#endif
             rep_header_end = rep_buffer;
             while ((*rep_header_end != '\0') &&
                    (*rep_header_end != '\n') &&
@@ -176,11 +210,19 @@ eval_bul_rep_config(char *bul_file, char *rep_file, int verbose)
                           _("Found %d report rules in `%s'."),
                           no_of_rc_entries, rep_file);
             }
+#ifdef HAVE_STATX
+            last_read_rep = stat_buf2.stx_mtime.tv_sec;
+#else
             last_read_rep = stat_buf2.st_mtime;
+#endif
          } /* if (stat_buf2.st_mtime != last_read_rep) */
       }
 
+#ifdef HAVE_STATX
+      if (stat_buf.stx_mtime.tv_sec != last_read_bul)
+#else
       if (stat_buf.st_mtime != last_read_bul)
+#endif
       {
          register int i;
          int          fd;
@@ -215,7 +257,11 @@ eval_bul_rep_config(char *bul_file, char *rep_file, int verbose)
          }
 
          /* Allocate memory to store file. */
+#ifdef HAVE_STATX
+         if ((buffer = malloc(stat_buf.stx_size + 1)) == NULL)
+#else
          if ((buffer = malloc(stat_buf.st_size + 1)) == NULL)
+#endif
          {
             system_log(FATAL_SIGN, __FILE__, __LINE__,
                        _("malloc() error : %s"), strerror(errno));
@@ -235,7 +281,11 @@ eval_bul_rep_config(char *bul_file, char *rep_file, int verbose)
          }
 
          /* Read file into buffer. */
+#ifdef HAVE_STATX
+         if (read(fd, &buffer[0], stat_buf.stx_size) != stat_buf.stx_size)
+#else
          if (read(fd, &buffer[0], stat_buf.st_size) != stat_buf.st_size)
+#endif
          {
             system_log(FATAL_SIGN, __FILE__, __LINE__,
                        _("Failed to read() `%s' : %s"),
@@ -250,8 +300,13 @@ eval_bul_rep_config(char *bul_file, char *rep_file, int verbose)
             system_log(DEBUG_SIGN, __FILE__, __LINE__,
                        _("close() error : %s"), strerror(errno));
          }
+#ifdef HAVE_STATX
+         buffer[stat_buf.stx_size] = '\0';
+         last_read_bul = stat_buf.stx_mtime.tv_sec;
+#else
          buffer[stat_buf.st_size] = '\0';
          last_read_bul = stat_buf.st_mtime;
+#endif
 
          /*
           * Now that we have the contents in the buffer lets first see

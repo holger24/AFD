@@ -1,6 +1,6 @@
 /*
  *  check_msg_time.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -42,6 +42,9 @@ DESCR__S_M3
  */
 DESCR__E_M3
 
+#ifdef HAVE_STATX
+# include <fcntl.h>           /* Definition of AT_* constants */
+#endif
 #include <sys/stat.h>
 #include <unistd.h>
 #include "fddefs.h"
@@ -58,18 +61,36 @@ void
 check_msg_time(void)
 {
    register int i;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
 
    for (i = 0; i < *no_msg_cached; i++)
    {
       (void)snprintf(p_msg_dir, MAX_PATH_LENGTH - (p_msg_dir - msg_dir),
                      "%x", mdb[i].job_id);
+#ifdef HAVE_STATX
+      if (statx(0, msg_dir, AT_STATX_SYNC_AS_STAT,
+                STATX_SIZE | STATX_MTIME, &stat_buf) != -1)
+#else
       if (stat(msg_dir, &stat_buf) != -1)
+#endif
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_mtime.tv_sec > mdb[i].msg_time)
+#else
          if (stat_buf.st_mtime > mdb[i].msg_time)
+#endif
          {
+#ifdef HAVE_STATX
+            (void)get_job_data(mdb[i].job_id, i,
+                               stat_buf.stx_mtime.tv_sec, stat_buf.stx_size);
+#else
             (void)get_job_data(mdb[i].job_id, i,
                                stat_buf.st_mtime, stat_buf.st_size);
+#endif
          }
       }
    }

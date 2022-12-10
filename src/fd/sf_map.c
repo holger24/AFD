@@ -317,10 +317,41 @@ main(int argc, char *argv[])
 #  endif
                  YES, YES) == YES))
       {
+         time_t       file_mtime;
+#  ifdef HAVE_STATX
+         struct statx stat_buf;
+#  else
+         struct stat  stat_buf;
+#  endif
+
          now = time(NULL);
-         handle_dupcheck_delete(SEND_FILE_SFTP, fsa->host_alias, fullname,
+         if (file_mtime_buffer == NULL)
+         {
+#  ifdef HAVE_STATX
+            if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                      STATX_MTIME, &stat_buf) == -1)
+#  else
+            if (stat(fullname, &stat_buf) == -1)
+#  endif
+            {
+               file_mtime = now;
+            }
+            else
+            {
+#  ifdef HAVE_STATX
+               file_mtime = stat_buf.stx_mtime.tv_sec;
+#  else
+               file_mtime = stat_buf.st_mtime;
+#  endif
+            }
+         }
+         else
+         {
+            file_mtime = *p_file_mtime_buffer;
+         }
+         handle_dupcheck_delete(SEND_FILE_MAP, fsa->host_alias, fullname,
                                 p_file_name_buffer, *p_file_size_buffer,
-                                *p_file_mtime_buffer, now);
+                                file_mtime, now);
          if (db.dup_check_flag & DC_DELETE)
          {
             local_file_size += *p_file_size_buffer;

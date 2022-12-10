@@ -1,6 +1,6 @@
 /*
  *  format_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -181,7 +181,11 @@ format_output_info(char **text, int pos)
                          no_of_jobs;
       off_t              jd_size;
       char               fullname[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+      struct statx       stat_buf;
+#else
       struct stat        stat_buf;
+#endif
       struct job_id_data *jd;
       struct dir_options d_o;
 
@@ -194,18 +198,32 @@ format_output_info(char **text, int pos)
                     fullname, strerror(errno), __FILE__, __LINE__);
          return;
       }
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(fd, &stat_buf) == -1)
+#endif
       {
-         (void)xrec(ERROR_DIALOG, "Failed to fstat() %s : %s (%s %d)",
+         (void)xrec(ERROR_DIALOG, "Failed to access %s : %s (%s %d)",
                     fullname, strerror(errno), __FILE__, __LINE__);
          (void)close(fd);
          return;
       }
+#ifdef HAVE_STATX
+      if (stat_buf.stx_size > 0)
+#else
       if (stat_buf.st_size > 0)
+#endif
       {
          char *ptr;
 
-         if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+         if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                         stat_buf.stx_size, PROT_READ,
+#else
+                         stat_buf.st_size, PROT_READ,
+#endif
                          MAP_SHARED, fd, 0)) == (caddr_t) -1)
          {
             (void)xrec(ERROR_DIALOG, "Failed to mmap() to %s : %s (%s %d)",
@@ -221,7 +239,11 @@ format_output_info(char **text, int pos)
             (void)close(fd);
             return;
          }
+#ifdef HAVE_STATX
+         jd_size = stat_buf.stx_size;
+#else
          jd_size = stat_buf.st_size;
+#endif
          no_of_jobs = *(int *)ptr;
          ptr += AFD_WORD_OFFSET;
          jd = (struct job_id_data *)ptr;
@@ -260,16 +282,30 @@ format_output_info(char **text, int pos)
                        fullname, strerror(errno), __FILE__, __LINE__);
             return;
          }
+#ifdef HAVE_STATX
+         if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &stat_buf) == -1)
+#else
          if (fstat(fd, &stat_buf) == -1)
+#endif
          {
-            (void)xrec(ERROR_DIALOG, "Failed to fstat() <%s> : %s (%s %d)",
+            (void)xrec(ERROR_DIALOG, "Failed to access <%s> : %s (%s %d)",
                        fullname, strerror(errno), __FILE__, __LINE__);
             (void)close(fd);
             return;
          }
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > 0)
+#else
          if (stat_buf.st_size > 0)
+#endif
          {
-            if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+            if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                            stat_buf.stx_size, PROT_READ,
+#else
+                            stat_buf.st_size, PROT_READ,
+#endif
                             MAP_SHARED, fd, 0)) == (caddr_t) -1)
             {
                (void)xrec(ERROR_DIALOG, "Failed to mmap() to <%s> : %s (%s %d)",
@@ -277,7 +313,11 @@ format_output_info(char **text, int pos)
                (void)close(fd);
                return;
             }
+#ifdef HAVE_STATX
+            dnb_size = stat_buf.stx_size;
+#else
             dnb_size = stat_buf.st_size;
+#endif
             ptr += AFD_WORD_OFFSET;
             dnb = (struct dir_name_buf *)ptr;
             (void)close(fd);
@@ -538,7 +578,11 @@ format_input_info(char **text, int pos)
    char                fullname[MAX_PATH_LENGTH],
                        *p_begin_underline = NULL,
                        **p_array = NULL;
+#ifdef HAVE_STATX
+   struct statx        stat_buf;
+#else
    struct stat         stat_buf;
+#endif
    struct dir_name_buf *dnb;
 
    if ((*text = malloc(MAX_INPUT_INFO_SIZE)) == NULL)
@@ -582,18 +626,32 @@ format_input_info(char **text, int pos)
                  fullname, strerror(errno), __FILE__, __LINE__);
       return;
    }
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
-      (void)xrec(ERROR_DIALOG, "Failed to fstat() <%s> : %s (%s %d)",
+      (void)xrec(ERROR_DIALOG, "Failed to access <%s> : %s (%s %d)",
                  fullname, strerror(errno), __FILE__, __LINE__);
       (void)close(fd);
       return;
    }
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size > 0)
+#else
    if (stat_buf.st_size > 0)
+#endif
    {
       char *ptr;
 
-      if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+      if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                      stat_buf.stx_size, PROT_READ,
+#else
+                      stat_buf.st_size, PROT_READ,
+#endif
                       MAP_SHARED, fd, 0)) == (caddr_t) -1)
       {
          (void)xrec(ERROR_DIALOG, "Failed to mmap() to <%s> : %s (%s %d)",
@@ -601,7 +659,11 @@ format_input_info(char **text, int pos)
          (void)close(fd);
          return;
       }
+#ifdef HAVE_STATX
+      dnb_size = stat_buf.stx_size;
+#else
       dnb_size = stat_buf.st_size;
+#endif
       ptr += AFD_WORD_OFFSET;
       dnb = (struct dir_name_buf *)ptr;
       (void)close(fd);
@@ -680,18 +742,32 @@ format_input_info(char **text, int pos)
                     fullname, strerror(errno), __FILE__, __LINE__);
          return;
       }
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(fd, &stat_buf) == -1)
+#endif
       {
-         (void)xrec(ERROR_DIALOG, "Failed to fstat() %s : %s (%s %d)",
+         (void)xrec(ERROR_DIALOG, "Failed to access %s : %s (%s %d)",
                     fullname, strerror(errno), __FILE__, __LINE__);
          (void)close(fd);
          return;
       }
+#ifdef HAVE_STATX
+      if (stat_buf.stx_size > 0)
+#else
       if (stat_buf.st_size > 0)
+#endif
       {
          char *ptr;
 
-         if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+         if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                         stat_buf.stx_size, PROT_READ,
+#else
+                         stat_buf.st_size, PROT_READ,
+#endif
                          MAP_SHARED, fd, 0)) == (caddr_t) -1)
          {
             (void)xrec(ERROR_DIALOG, "Failed to mmap() to %s : %s (%s %d)",
@@ -707,7 +783,11 @@ format_input_info(char **text, int pos)
             (void)close(fd);
             return;
          }
+#ifdef HAVE_STATX
+         jd_size = stat_buf.stx_size;
+#else
          jd_size = stat_buf.st_size;
+#endif
          no_of_jobs = *(int *)ptr;
          ptr += AFD_WORD_OFFSET;
          jd = (struct job_id_data *)ptr;
@@ -997,7 +1077,11 @@ format_retrieve_info(char **text, int pos)
                        length;
    off_t               dnb_size;
    char                fullname[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx        stat_buf;
+#else
    struct stat         stat_buf;
+#endif
    struct dir_name_buf *dnb;
 
    /* Map to directory name buffer. */
@@ -1009,18 +1093,32 @@ format_retrieve_info(char **text, int pos)
                  fullname, strerror(errno), __FILE__, __LINE__);
       return;
    }
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
-      (void)xrec(ERROR_DIALOG, "Failed to fstat() <%s> : %s (%s %d)",
+      (void)xrec(ERROR_DIALOG, "Failed to access <%s> : %s (%s %d)",
                  fullname, strerror(errno), __FILE__, __LINE__);
       (void)close(fd);
       return;
    }
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size > 0)
+#else
    if (stat_buf.st_size > 0)
+#endif
    {
       char *ptr;
 
-      if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+      if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                      stat_buf.stx_size, PROT_READ,
+#else
+                      stat_buf.st_size, PROT_READ,
+#endif
                       MAP_SHARED, fd, 0)) == (caddr_t) -1)
       {
          (void)xrec(ERROR_DIALOG, "Failed to mmap() to <%s> : %s (%s %d)",
@@ -1028,7 +1126,11 @@ format_retrieve_info(char **text, int pos)
          (void)close(fd);
          return;
       }
+#ifdef HAVE_STATX
+      dnb_size = stat_buf.stx_size;
+#else
       dnb_size = stat_buf.st_size;
+#endif
       ptr += AFD_WORD_OFFSET;
       dnb = (struct dir_name_buf *)ptr;
       (void)close(fd);

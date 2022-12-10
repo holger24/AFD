@@ -1,6 +1,6 @@
 /*
  *  input_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -128,7 +128,11 @@ main(int argc, char *argv[])
                   *work_dir;
    fd_set         rset;
    struct timeval timeout;
+#ifdef HAVE_STATX
+   struct statx   stat_buf;
+#else
    struct stat    stat_buf;
+#endif
 
    CHECK_FOR_VERSION(argc, argv);
 
@@ -259,9 +263,18 @@ main(int argc, char *argv[])
    next_file_time = (time(NULL) / SWITCH_FILE_TIME) * SWITCH_FILE_TIME + SWITCH_FILE_TIME;
 
    /* Is current log file already too old? */
+#ifdef HAVE_STATX
+   if (statx(0, current_log_file, AT_STATX_SYNC_AS_STAT,
+             STATX_MTIME, &stat_buf) == 0)
+#else
    if (stat(current_log_file, &stat_buf) == 0)
+#endif
    {
+#ifdef HAVE_STATX
+      if (stat_buf.stx_mtime.tv_sec < (next_file_time - SWITCH_FILE_TIME))
+#else
       if (stat_buf.st_mtime < (next_file_time - SWITCH_FILE_TIME))
+#endif
       {
          if (log_number < (max_input_log_files - 1))
          {

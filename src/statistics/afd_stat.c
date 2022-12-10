@@ -132,7 +132,11 @@ main(int argc, char *argv[])
                   istatistic_file_name[MAX_FILENAME_LENGTH],
                   statistic_file_name[MAX_FILENAME_LENGTH];
    struct timeval timeout;
+#ifdef HAVE_STATX
+   struct statx   stat_buf;
+#else
    struct stat    stat_buf;
+#endif
    struct tm      *p_ts;
 
    CHECK_FOR_VERSION(argc, argv);
@@ -211,7 +215,14 @@ main(int argc, char *argv[])
 
       /* If the process AFD has not yet created the */
       /* system log fifo create it now.             */
-      if ((stat(sys_log_fifo, &stat_buf) < 0) || (!S_ISFIFO(stat_buf.st_mode)))
+#ifdef HAVE_STATX
+      if ((statx(0, sys_log_fifo, AT_STATX_SYNC_AS_STAT,
+                 STATX_MODE, &stat_buf) == -1) ||
+          (!S_ISFIFO(stat_buf.stx_mode)))
+#else
+      if ((stat(sys_log_fifo, &stat_buf) == -1) ||
+          (!S_ISFIFO(stat_buf.st_mode)))
+#endif
       {
          if (make_fifo(sys_log_fifo) < 0)
          {

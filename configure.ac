@@ -1757,7 +1757,7 @@ AC_CHECK_FUNC([mmap],
 AC_CHECK_FUNCS(fdatasync gai_strerror getline getaddrinfo gethostname memcpy\
                mkdir mkfifo mktime rmdir select setpriority seteuid setreuid\
                socket strcasestr strerror strtod strtol strtoll strtoul\
-               strtoull unsetenv)
+               strtoull unsetenv statx)
 
 AM_GNU_GETTEXT([external])
 if test "x$LIBINTL" != "x"

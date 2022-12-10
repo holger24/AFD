@@ -1,6 +1,6 @@
 /*
  *  handle_xor_crypt.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -226,18 +226,35 @@ init_xor_key(void)
       }
       else
       {
+# ifdef HAVE_STATX
+         struct statx stat_buf;
+# else
          struct stat stat_buf;
+# endif
 
+# ifdef HAVE_STATX
+         if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &stat_buf) == -1)
+# else
          if (fstat(fd, &stat_buf) == -1)
+# endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
+# ifdef HAVE_STATX
+                       "Failed to statx() %s : %s",
+# else
                        "Failed to fstat() %s : %s",
+# endif
                        key_file, strerror(errno));
             ret = INCORRECT;
          }
          else
          {
+# ifdef HAVE_STATX
+            if (stat_buf.stx_size == 0)
+# else
             if (stat_buf.st_size == 0)
+# endif
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           "File %s is empty", key_file);
@@ -245,7 +262,11 @@ init_xor_key(void)
             }
             else
             {
+# ifdef HAVE_STATX
+               if ((xor_key = malloc(stat_buf.stx_size + 1)) == NULL)
+# else
                if ((xor_key = malloc(stat_buf.st_size + 1)) == NULL)
+# endif
                {
                   system_log(ERROR_SIGN, __FILE__, __LINE__,
                              "malloc() error : %s", strerror(errno));
@@ -253,8 +274,11 @@ init_xor_key(void)
                }
                else
                {
-                  if (read(fd, xor_key,
-                           stat_buf.st_size) != stat_buf.st_size)
+# ifdef HAVE_STATX
+                  if (read(fd, xor_key, stat_buf.stx_size) != stat_buf.stx_size)
+# else
+                  if (read(fd, xor_key, stat_buf.st_size) != stat_buf.st_size)
+# endif
                   {
                      system_log(ERROR_SIGN, __FILE__, __LINE__,
                                 "read() error : %s", strerror(errno));
@@ -262,6 +286,26 @@ init_xor_key(void)
                   }
                   else
                   {
+# ifdef HAVE_STATX
+                     if (xor_key[stat_buf.stx_size - 1] == 10)
+                     {
+                        if (xor_key[stat_buf.stx_size - 2] == 13)
+                        {
+                           xor_key[stat_buf.stx_size - 2] = '\0';
+                           xor_key_length = stat_buf.stx_size - 3;
+                        }
+                        else
+                        {
+                           xor_key[stat_buf.stx_size - 1] = '\0';
+                           xor_key_length = stat_buf.stx_size - 2;
+                        }
+                     }
+                     else
+                     {
+                        xor_key[stat_buf.stx_size] = '\0';
+                        xor_key_length = stat_buf.stx_size - 1;
+                     }
+# else
                      if (xor_key[stat_buf.st_size - 1] == 10)
                      {
                         if (xor_key[stat_buf.st_size - 2] == 13)
@@ -280,6 +324,7 @@ init_xor_key(void)
                         xor_key[stat_buf.st_size] = '\0';
                         xor_key_length = stat_buf.st_size - 1;
                      }
+# endif
                      ret = SUCCESS;
                   }
                }

@@ -1,6 +1,6 @@
 /*
  *  amg_zombie_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -51,6 +51,9 @@ DESCR__E_M3
 #include <stdio.h>                    /* rename()                        */
 #include <string.h>                   /* strerror()                      */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>                   /* Definition of AT_* constants    */
+#endif
 #include <sys/stat.h>
 #include <sys/wait.h>                 /* waitpid()                       */
 #include <time.h>
@@ -98,11 +101,20 @@ amg_zombie_check(pid_t *proc_id, int option)
 
               if (no_of_saved_cores < NO_OF_SAVED_CORE_FILES)
               {
-                 char        core_file[MAX_PATH_LENGTH];
-                 struct stat stat_buf;
+                 char         core_file[MAX_PATH_LENGTH];
+# ifdef HAVE_STATX
+                 struct statx stat_buf;
+# else
+                 struct stat  stat_buf;
+# endif
 
                  (void)snprintf(core_file, MAX_PATH_LENGTH, "%s/core", p_work_dir);
+# ifdef HAVE_STATX
+                 if (statx(0, core_file, AT_STATX_SYNC_AS_STAT,
+                           0, &stat_buf) != -1)
+# else
                  if (stat(core_file, &stat_buf) != -1)
+# endif
                  {
                     char new_core_file[MAX_PATH_LENGTH + 43];
 

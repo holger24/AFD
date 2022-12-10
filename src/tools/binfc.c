@@ -63,32 +63,40 @@ main(int argc, char *argv[])
 static int
 get_number_of_fields(char *bin_file)
 {
-  int         counter[3],
-              fd,
-              message_length,
-              total_length,
-              total_message_length = 0,
-              type;
-  char        *buffer,
-              *ptr;
-  struct stat stat_buf;
+  int          counter[3],
+               fd,
+               message_length,
+               total_length,
+               total_message_length = 0,
+               type;
+  char         *buffer,
+               *ptr;
+#ifdef HAVE_STATX
+  struct statx stat_buf;
+#else
+  struct stat  stat_buf;
+#endif
 
   counter[0] = counter[1] = counter[2] = 0;
 
+#ifdef HAVE_STATX
+  if (statx(0, bin_file, AT_STATX_SYNC_AS_STAT, STATX_SIZE, &stat_buf) != 0)
+#else
   if (stat(bin_file, &stat_buf) != 0)
+#endif
    {
       if (errno == ENOENT)
       {
          /*
           * If the file is not there, why should we bother?
           */
-         (void)fprintf(stderr, "stat() error on %s : %s (%s %d)\n",
+         (void)fprintf(stderr, "Failed to access %s : %s (%s %d)\n",
                        bin_file, strerror(errno), __FILE__, __LINE__);
          return(SUCCESS);
       }
       else
       {
-         (void)rec(sys_log_fd, ERROR_SIGN, "Failed to stat() %s : %s (%s %d)\n",
+         (void)rec(sys_log_fd, ERROR_SIGN, "Failed to access %s : %s (%s %d)\n",
                    bin_file, strerror(errno), __FILE__, __LINE__);
          return(INCORRECT);
       }
@@ -98,7 +106,11 @@ get_number_of_fields(char *bin_file)
     * If the size of the file is less then 10 forget it. There must be
     * something really wrong.
     */
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size < 10)
+#else
    if (stat_buf.st_size < 10)
+#endif
    {
       return(INCORRECT);
    }
@@ -109,10 +121,19 @@ get_number_of_fields(char *bin_file)
       return(INCORRECT);
    }
 
+#ifdef HAVE_STATX
+   if ((buffer = malloc(stat_buf.stx_size)) == NULL)
+#else
    if ((buffer = malloc(stat_buf.st_size)) == NULL)
+#endif
    {
       (void)rec(sys_log_fd, ERROR_SIGN, "malloc() error (size = %d) : %s (%s %d)\n",
-                stat_buf.st_size, strerror(errno), __FILE__, __LINE__);
+#ifdef HAVE_STATX
+                stat_buf.stx_size,
+#else
+                stat_buf.st_size,
+#endif
+                strerror(errno), __FILE__, __LINE__);
       (void)close(fd);
       return(INCORRECT);
    }
@@ -121,7 +142,11 @@ get_number_of_fields(char *bin_file)
     * Read the hole file in one go. We can do this here since the
     * files in question are not larger then appr. 500KB.
     */
+#ifdef HAVE_STATX
+   if (read(fd, buffer, stat_buf.stx_size) != stat_buf.stx_size)
+#else
    if (read(fd, buffer, stat_buf.st_size) != stat_buf.st_size)
+#endif
    {
       (void)rec(sys_log_fd, ERROR_SIGN, "read() error : %s (%s %d)\n",
                 strerror(errno), __FILE__, __LINE__);
@@ -136,7 +161,11 @@ get_number_of_fields(char *bin_file)
       (void)rec(sys_log_fd, DEBUG_SIGN, "close() error : %s (%s %d)\n",
                 strerror(errno), __FILE__, __LINE__);
    }
+#ifdef HAVE_STATX
+   total_length = stat_buf.stx_size;
+#else
    total_length = stat_buf.st_size;
+#endif
 
    ptr = buffer;
 

@@ -1,7 +1,7 @@
 /*
  *  send_afdmon_start.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2021 Deutscher Wetterdienst (DWD),
- *                     Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2021, 2022 Deutscher Wetterdienst (DWD),
+ *                           Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -82,7 +82,11 @@ send_afdmon_start(void)
 #endif
    fd_set         rset;
    struct timeval timeout;
+#ifdef HAVE_STATX
+   struct statx   stat_buf_fifo;
+#else
    struct stat    stat_buf_fifo;
+#endif
 
 #ifdef WITHOUT_FIFO_RW_SUPPORT
    if (open_fifo_rw(mon_cmd_fifo, &mon_cmd_readfd, &mon_cmd_fd) == -1)
@@ -99,8 +103,14 @@ send_afdmon_start(void)
       int val,
           tmp_val;
 
+#ifdef HAVE_STATX
+      if ((statx(0, probe_only_fifo, AT_STATX_SYNC_AS_STAT,
+                 STATX_MODE, &stat_buf_fifo) == -1) ||
+          (!S_ISFIFO(stat_buf_fifo.stx_mode)))
+#else
       if ((stat(probe_only_fifo, &stat_buf_fifo) == -1) ||
           (!S_ISFIFO(stat_buf_fifo.st_mode)))
+#endif
       {
          if (make_fifo(probe_only_fifo) < 0)
          {

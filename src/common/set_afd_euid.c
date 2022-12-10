@@ -1,6 +1,6 @@
 /*
  *  set_afd_euid.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,9 @@ DESCR__E_M3
 
 #include <string.h>            /* strerror()                             */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>            /* Definition of AT_* constants           */
+#endif
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
@@ -55,29 +58,55 @@ DESCR__E_M3
 void
 set_afd_euid(char *work_dir)
 {
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+   if (statx(0, work_dir, AT_STATX_SYNC_AS_STAT, STATX_UID, &stat_buf) == -1)
+#else
    if (stat(work_dir, &stat_buf) == -1)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 _("Failed to stat() `%s' : %s"), work_dir, strerror(errno));
+#ifdef HAVE_STATX
+                 _("Failed to statx() `%s' : %s"),
+#else
+                 _("Failed to stat() `%s' : %s"),
+#endif
+                 work_dir, strerror(errno));
    }
    else
    {
       uid_t euid;
 
       euid = geteuid();
+#ifdef HAVE_STATX
+      if (euid != stat_buf.stx_uid)
+#else
       if (euid != stat_buf.st_uid)
+#endif
       {
 #ifdef _HPUX
          if (setreuid(-1, stat_buf.st_uid) == -1)
 #else
+# ifdef HAVE_STATX
+         if (seteuid(stat_buf.stx_uid) == -1)
+# else
          if (seteuid(stat_buf.st_uid) == -1)
+# endif
 #endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        _("Failed to seteuid() to %d : %s"),
-                       stat_buf.st_uid, strerror(errno));
+#ifdef HAVE_STATX
+                       stat_buf.stx_uid, strerror(errno)
+#else
+                       stat_buf.st_uid, strerror(errno)
+#endif
+                      );
          }
       }
    }

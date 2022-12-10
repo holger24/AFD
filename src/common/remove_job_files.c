@@ -60,6 +60,9 @@ DESCR__E_M3
 #include <string.h>                /* strcpy(), strerror()               */
 #include <unistd.h>                /* rmdir(), unlink()                  */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>                /* Definition of AT_* constants       */
+#endif
 #include <sys/stat.h>              /* struct stat                        */
 #include <dirent.h>                /* opendir(), closedir(), readdir(),  */
                                    /* DIR, struct dirent                 */
@@ -91,7 +94,11 @@ remove_job_files(char           *del_dir,
    char                       *ptr;
    DIR                        *dp;
    struct dirent              *p_dir;
+#ifdef HAVE_STATX
+   struct statx               stat_buf;
+#else
    struct stat                stat_buf;
+#endif
    struct filetransfer_status *p_fsa;
 
    if ((dp = opendir(del_dir)) == NULL)
@@ -151,12 +158,24 @@ remove_job_files(char           *del_dir,
 #endif
       (void)strcpy(ptr, p_dir->d_name);
 
+#ifdef HAVE_STATX
+      if (statx(0, del_dir, AT_STATX_SYNC_AS_STAT,
+# ifndef LINUX
+                STATX_MODE |
+# endif
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (stat(del_dir, &stat_buf) == -1)
+#endif
       {
          if (errno != ENOENT)
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                       _("Failed to statx() `%s' : %s [%s %d]"),
+#else
                        _("Failed to stat() `%s' : %s [%s %d]"),
+#endif
                        del_dir, strerror(errno), caller_file, caller_line);
             if (unlink(del_dir) == -1)
             {
@@ -169,7 +188,11 @@ remove_job_files(char           *del_dir,
       else
       {
 #ifndef LINUX
+# ifdef HAVE_STATX
+         if (!S_ISDIR(stat_buf.stx_mode))
+# else
          if (!S_ISDIR(stat_buf.st_mode))
+# endif
          {
 #endif
             if (unlink(del_dir) == -1)
@@ -185,7 +208,11 @@ remove_job_files(char           *del_dir,
 #endif
 
                number_deleted++;
+#ifdef HAVE_STATX
+               file_size_deleted += stat_buf.stx_size;
+#else
                file_size_deleted += stat_buf.st_size;
+#endif
 #ifdef _DELETE_LOG
                (void)strcpy(dl.file_name, p_dir->d_name);
                (void)snprintf(dl.host_name, MAX_HOSTNAME_LENGTH + 4 + 1,
@@ -193,7 +220,11 @@ remove_job_files(char           *del_dir,
                               MAX_HOSTNAME_LENGTH,
                               (fsa_pos > -1) ? p_fsa->host_alias : "-",
                               reason);
+# ifdef HAVE_STATX
+               *dl.file_size = stat_buf.stx_size;
+# else
                *dl.file_size = stat_buf.st_size;
+# endif
                *dl.job_id = job_id;
                *dl.dir_id = 0;
                /* NOTE: input_time, split_job_counter and unique_number */

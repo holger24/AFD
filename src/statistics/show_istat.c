@@ -149,7 +149,11 @@ main(int argc, char *argv[])
                 statistic_file[MAX_PATH_LENGTH  + FIFO_DIR_LENGTH + MAX_FILENAME_LENGTH + 1 + MAX_INT_LENGTH],
                 work_dir[MAX_PATH_LENGTH];
    struct tm    *p_ts;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
 
    CHECK_FOR_VERSION(argc, argv);
 
@@ -271,13 +275,22 @@ main(int argc, char *argv[])
       }
    }
 
+#ifdef HAVE_STATX
+   if (statx(0, statistic_file, AT_STATX_SYNC_AS_STAT,
+             STATX_SIZE, &stat_buf) != 0)
+#else
    if (stat(statistic_file, &stat_buf) != 0)
+#endif
    {
-      (void)fprintf(stderr, "ERROR   : Failed to stat() %s : %s (%s %d)\n",
+      (void)fprintf(stderr, "ERROR   : Failed to access %s : %s (%s %d)\n",
                     statistic_file, strerror(errno), __FILE__, __LINE__);
       exit(INCORRECT);
    }
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size > 0)
+#else
    if (stat_buf.st_size > 0)
+#endif
    {
       register int j;
       int          no_of_stat_entries,
@@ -302,7 +315,12 @@ main(int argc, char *argv[])
          struct afd_year_istat *afd_istat;
 
 #ifdef HAVE_MMAP
-         if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+         if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                         stat_buf.stx_size, PROT_READ,
+# else
+                         stat_buf.st_size, PROT_READ,
+# endif
                          (MAP_FILE | MAP_SHARED),
                          stat_fd, 0)) == (caddr_t) -1)
          {
@@ -313,7 +331,11 @@ main(int argc, char *argv[])
             exit(INCORRECT);
          }
 #else
+# ifdef HAVE_STATX
+         if ((ptr = malloc(stat_buf.stx_size)) == NULL)
+# else
          if ((ptr = malloc(stat_buf.st_size)) == NULL)
+# endif
          {
             (void)fprintf(stderr,
                           "ERROR   : Failed to allocate memory : %s (%s %d)\n",
@@ -322,7 +344,11 @@ main(int argc, char *argv[])
             exit(INCORRECT);
          }
 
+# ifdef HAVE_STATX
+         if (read(stat_fd, ptr, stat_buf.stx_size) != stat_buf.stx_size)
+# else
          if (read(stat_fd, ptr, stat_buf.st_size) != stat_buf.st_size)
+# endif
          {
             (void)fprintf(stderr,
                           "ERROR   : Failed to read() %s : %s (%s %d)\n",
@@ -334,8 +360,13 @@ main(int argc, char *argv[])
 #endif /* HAVE_MMAP */
          afd_istat = (struct afd_year_istat *)(ptr + AFD_WORD_OFFSET);
 
+#ifdef HAVE_STATX
+         no_of_stat_entries = (stat_buf.stx_size - AFD_WORD_OFFSET) /
+                              sizeof(struct afd_year_istat);
+#else
          no_of_stat_entries = (stat_buf.st_size - AFD_WORD_OFFSET) /
                               sizeof(struct afd_year_istat);
+#endif
          if ((show_index = malloc(no_of_stat_entries * sizeof(int))) == NULL)
          {
             (void)fprintf(stderr,
@@ -811,7 +842,11 @@ main(int argc, char *argv[])
          }
 
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+         if (munmap(ptr, stat_buf.stx_size) < 0)
+# else
          if (munmap(ptr, stat_buf.st_size) < 0)
+# endif
          {
             (void)fprintf(stderr,
                           "ERROR   : Could not munmap() file %s : %s (%s %d)\n",
@@ -827,7 +862,12 @@ main(int argc, char *argv[])
          char            *ptr;
 
 #ifdef HAVE_MMAP
-         if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+         if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                         stat_buf.stx_size, PROT_READ,
+# else
+                         stat_buf.st_size, PROT_READ,
+# endif
                          (MAP_FILE | MAP_SHARED), stat_fd, 0)) == (caddr_t) -1)
          {
             (void)fprintf(stderr,
@@ -837,7 +877,11 @@ main(int argc, char *argv[])
             exit(INCORRECT);
          }
 #else
+# ifdef HAVE_STATX
+         if ((ptr = malloc(stat_buf.stx_size)) == NULL)
+# else
          if ((ptr = malloc(stat_buf.st_size)) == NULL)
+# endif
          {
             (void)fprintf(stderr,
                           "ERROR   : Failed to allocate memory : %s (%s %d)\n",
@@ -846,7 +890,11 @@ main(int argc, char *argv[])
             exit(INCORRECT);
          }
 
+# ifdef HAVE_STATX
+         if (read(stat_fd, ptr, stat_buf.stx_size) != stat_buf.stx_size)
+# else
          if (read(stat_fd, ptr, stat_buf.st_size) != stat_buf.st_size)
+# endif
          {
             (void)fprintf(stderr,
                           "ERROR   : Failed to read() %s : %s (%s %d)\n",
@@ -857,8 +905,13 @@ main(int argc, char *argv[])
          }
 #endif /* HAVE_MMAP */
          afd_istat = (struct afdistat *)(ptr + AFD_WORD_OFFSET);
+#ifdef HAVE_STATX
+         no_of_stat_entries = (stat_buf.stx_size - AFD_WORD_OFFSET) /
+                              sizeof(struct afdistat);
+#else
          no_of_stat_entries = (stat_buf.st_size - AFD_WORD_OFFSET) /
                               sizeof(struct afdistat);
+#endif
          if ((show_index = malloc(no_of_stat_entries * sizeof(int))) == NULL)
          {
             (void)fprintf(stderr,
@@ -1068,7 +1121,11 @@ main(int argc, char *argv[])
                  }
 
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+            if (munmap(ptr, stat_buf.stx_size) < 0)
+# else
             if (munmap(ptr, stat_buf.st_size) < 0)
+# endif
             {
                (void)fprintf(stderr,
                              "ERROR   : Could not munmap() file %s : %s (%s %d)\n",
@@ -2285,7 +2342,11 @@ main(int argc, char *argv[])
          }
 
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+         if (munmap(ptr, stat_buf.stx_size) < 0)
+# else
          if (munmap(ptr, stat_buf.st_size) < 0)
+# endif
          {
             (void)fprintf(stderr,
                           "ERROR   : Could not munmap() file %s : %s (%s %d)\n",

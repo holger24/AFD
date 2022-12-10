@@ -103,7 +103,11 @@ check_logs(time_t now)
    static time_t last_log_write_time;
    char          buffer[2 + 1 + MAX_LONG_LONG_LENGTH + 1 + MAX_INT_LENGTH + 3],
                  line[MAX_LINE_LENGTH + 1];
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
 
    /* Initialize some variables. */
    chars_buffered_log = 0;
@@ -137,10 +141,15 @@ check_logs(time_t now)
                }
                else
                {
+#ifdef HAVE_STATX
+                  if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                            STATX_SIZE, &stat_buf) == -1)
+#else
                   if (fstat(fd, &stat_buf) == -1)
+#endif
                   {
                      system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                _("Failed to fstat() `%s' : %s"),
+                                _("Failed to access `%s' : %s"),
                                 log_dir, strerror(errno));
                      (void)close(fd);
                   }
@@ -148,9 +157,17 @@ check_logs(time_t now)
                   {
                      off_t seek_offset;
 
+#ifdef HAVE_STATX
+                     if (stat_buf.stx_size < ld[i].offset)
+#else
                      if (stat_buf.st_size < ld[i].offset)
+#endif
                      {
+#ifdef HAVE_STATX
+                        seek_offset = stat_buf.stx_size;
+#else
                         seek_offset = stat_buf.st_size;
+#endif
                      }
                      else
                      {
@@ -249,9 +266,18 @@ check_logs(time_t now)
                   (void)strcpy(p_log_dir, ld[i].log_name);
                   *(p_log_dir + ld[i].log_name_length) = '0';
                   *(p_log_dir + ld[i].log_name_length + 1) = '\0';
+#ifdef HAVE_STATX
+                  if (statx(0, log_dir, AT_STATX_SYNC_AS_STAT,
+                            STATX_INO, &stat_buf) == 0)
+#else
                   if (stat(log_dir, &stat_buf) == 0)
+#endif
                   {
+#ifdef HAVE_STATX
+                     if (stat_buf.stx_ino != ld[i].current_log_inode)
+#else
                      if (stat_buf.st_ino != ld[i].current_log_inode)
+#endif
                      {
                         if (fclose(ld[i].fp) == EOF)
                         {
@@ -267,7 +293,11 @@ check_logs(time_t now)
                         }
                         else
                         {
+#ifdef HAVE_STATX
+                           ld[i].current_log_inode = stat_buf.stx_ino;
+#else
                            ld[i].current_log_inode = stat_buf.st_ino;
+#endif
                            length = snprintf(buffer,
                                              2 + 1 + MAX_LONG_LONG_LENGTH + 1 + MAX_INT_LENGTH + 3,
 #if SIZEOF_INO_T == 4
@@ -276,7 +306,12 @@ check_logs(time_t now)
                                              "%s %lld 0\r\n",
 #endif
                                              ld[i].log_inode_cmd,
-                                             (pri_ino_t)stat_buf.st_ino);
+#ifdef HAVE_STATX
+                                             (pri_ino_t)stat_buf.stx_ino
+#else
+                                             (pri_ino_t)stat_buf.st_ino
+#endif
+                                            );
                            if (length > (2 + 1 + MAX_LONG_LONG_LENGTH + 1 + MAX_INT_LENGTH + 3))
                            {
                               system_log(WARN_SIGN, __FILE__, __LINE__,
@@ -299,7 +334,12 @@ check_logs(time_t now)
                                       "W-> %s %lld 0",
 # endif
                                       ld[i].log_inode_cmd,
-                                      (pri_ino_t)stat_buf.st_ino);
+# ifdef HAVE_STATX
+                                      (pri_ino_t)stat_buf.stx_ino
+# else
+                                      (pri_ino_t)stat_buf.st_ino
+# endif
+                                     );
 #endif
                         }
                      }
@@ -324,10 +364,16 @@ check_logs(time_t now)
                                     ld[i].current_log_no);
                      if ((ld[i].fp = fopen(log_dir, "r")) != NULL)
                      {
+#ifdef HAVE_STATX
+                        if (statx(fileno(ld[i].fp), "",
+                                  AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                                  STATX_INO, &stat_buf) == -1)
+#else
                         if (fstat(fileno(ld[i].fp), &stat_buf) == -1)
+#endif
                         {
                            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                      _("Failed to fstat() `%s' : %s"),
+                                      _("Failed to access `%s' : %s"),
                                       log_dir, strerror(errno));
                            if (fclose(ld[i].fp) == EOF)
                            {
@@ -339,7 +385,11 @@ check_logs(time_t now)
                         }
                         else
                         {
+#ifdef HAVE_STATX
+                           ld[i].current_log_inode = stat_buf.stx_ino;
+#else
                            ld[i].current_log_inode = stat_buf.st_ino;
+#endif
                            length = snprintf(buffer,
                                              2 + 1 + MAX_LONG_LONG_LENGTH + 1 + MAX_INT_LENGTH + 3,
 #if SIZEOF_INO_T == 4
@@ -348,7 +398,11 @@ check_logs(time_t now)
                                              "%s %lld %d\r\n",
 #endif
                                              ld[i].log_inode_cmd,
+#ifdef HAVE_STATX
+                                             (pri_ino_t)stat_buf.stx_ino,
+#else
                                              (pri_ino_t)stat_buf.st_ino,
+#endif
                                              ld[i].current_log_no);
                            if (length > (2 + 1 + MAX_LONG_LONG_LENGTH + 1 + MAX_INT_LENGTH + 3))
                            {
@@ -372,7 +426,11 @@ check_logs(time_t now)
                                       "W-> %s %lld %d",
 # endif
                                       ld[i].log_inode_cmd,
+# ifdef HAVE_STATX
+                                      (pri_ino_t)stat_buf.stx_ino,
+# else
                                       (pri_ino_t)stat_buf.st_ino,
+# endif
                                       ld[i].current_log_no);
 #endif
                         }
@@ -462,7 +520,11 @@ get_log_inode(char  *log_dir,
       }
       else
       {
+#ifdef HAVE_STATX
+         struct statx  stat_buf;
+#else
          struct stat   stat_buf;
+#endif
          struct dirent *p_dir;
 
          errno = 0;
@@ -473,7 +535,12 @@ get_log_inode(char  *log_dir,
                if (strncmp(p_dir->d_name, log_name, log_name_length) == 0)
                {
                   (void)strcpy(p_log_dir, p_dir->d_name);
-                  if (stat(log_dir, &stat_buf) < 0)
+#ifdef HAVE_STATX
+                  if (statx(0, log_dir, AT_STATX_SYNC_AS_STAT,
+                            STATX_MODE | STATX_INO, &stat_buf) == -1)
+#else
+                  if (stat(log_dir, &stat_buf) == -1)
+#endif
                   {
                      if (errno != ENOENT)
                      {
@@ -485,9 +552,17 @@ get_log_inode(char  *log_dir,
                   else
                   {
                      /* Sure it is a normal file? */
+#ifdef HAVE_STATX
+                     if (S_ISREG(stat_buf.stx_mode))
+#else
                      if (S_ISREG(stat_buf.st_mode))
+#endif
                      {
+#ifdef HAVE_STATX
+                        if (stat_buf.stx_ino == current_inode)
+#else
                         if (stat_buf.st_ino == current_inode)
+#endif
                         {
                            char *ptr;
 
@@ -546,12 +621,21 @@ get_log_inode(char  *log_dir,
 
    if ((*inode_in_use == 0) || (*current_log_no == -1))
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
       (void)strcpy(p_log_dir, log_name);
       *(p_log_dir + log_name_length) = '0';
       *(p_log_dir + log_name_length + 1) = '\0';
-      if (stat(log_dir, &stat_buf) < 0)
+#ifdef HAVE_STATX
+      if (statx(0, log_dir, AT_STATX_SYNC_AS_STAT,
+                STATX_INO, &stat_buf) == -1)
+#else
+      if (stat(log_dir, &stat_buf) == -1)
+#endif
       {
          if (errno == ENOENT)
          {
@@ -572,17 +656,26 @@ get_log_inode(char  *log_dir,
             }
             else
             {
-               if (fstat(fileno(fp), &stat_buf) < 0)
+#ifdef HAVE_STATX
+               if (statx(fileno(fp), "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                         STATX_INO, &stat_buf) == -1)
+#else
+               if (fstat(fileno(fp), &stat_buf) == -1)
+#endif
                {
                   system_log(FATAL_SIGN, __FILE__, __LINE__,
-                             _("Failed to fstat() `%s' : %s"),
+                             _("Failed to access `%s' : %s"),
                              log_dir, strerror(errno));
                   (void)fclose(fp);
                   return(INCORRECT);
                }
                else
                {
+#ifdef HAVE_STATX
+                  *inode_in_use = stat_buf.stx_ino;
+#else
                   *inode_in_use = stat_buf.st_ino;
+#endif
                   *current_log_no = 0;
                }
                if (fclose(fp) == EOF)
@@ -603,7 +696,11 @@ get_log_inode(char  *log_dir,
       }
       else
       {
+#ifdef HAVE_STATX
+         *inode_in_use = stat_buf.stx_ino;
+#else
          *inode_in_use = stat_buf.st_ino;
+#endif
          *offset = 0;
          *current_log_no = 0;
       }

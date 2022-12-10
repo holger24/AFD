@@ -97,7 +97,11 @@ main(int argc, char *argv[])
    char               new_statistic_file_name[MAX_PATH_LENGTH],
                       old_statistic_file_name[MAX_PATH_LENGTH],
                       work_dir[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx       stat_buf;
+#else
    struct stat        stat_buf;
+#endif
    struct tm          *p_ts;
    struct old_afdstat *old_stat_db = NULL;
    struct afdstat     *stat_db = NULL;
@@ -142,9 +146,14 @@ main(int argc, char *argv[])
                     __FILE__, __LINE__);
       exit(INCORRECT);
    }
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
-      (void)fprintf(stderr, "ERROR   : Failed to fstat() %s : %s (%s %d)\n",
+      (void)fprintf(stderr, "ERROR   : Failed to access %s : %s (%s %d)\n",
                     old_statistic_file_name, strerror(errno),
                     __FILE__, __LINE__);
       exit(INCORRECT);
@@ -156,20 +165,32 @@ main(int argc, char *argv[])
                     __FILE__, __LINE__);
       exit(INCORRECT);
    }
+#ifdef HAVE_STATX
+   if ((old_stat_db = malloc(stat_buf.stx_size + 1)) == NULL)
+#else
    if ((old_stat_db = malloc(stat_buf.st_size + 1)) == NULL)
+#endif
    {
       (void)fprintf(stderr, "ERROR   : malloc() error : %s (%s %d)\n",
                     strerror(errno), __FILE__, __LINE__);
       exit(INCORRECT);
    }
+#ifdef HAVE_STATX
+   if (read(fd, old_stat_db, stat_buf.stx_size) != stat_buf.stx_size)
+#else
    if (read(fd, old_stat_db, stat_buf.st_size) != stat_buf.st_size)
+#endif
    {
       (void)fprintf(stderr, "ERROR   : Failed to read() %s : %s (%s %d)\n",
                     old_statistic_file_name, strerror(errno),
                     __FILE__, __LINE__);
       exit(INCORRECT);
    }
+#ifdef HAVE_STATX
+   no_of_hosts = stat_buf.stx_size / sizeof(struct old_afdstat);
+#else
    no_of_hosts = stat_buf.st_size / sizeof(struct old_afdstat);
+#endif
    if (close(fd) == -1)
    {
       (void)fprintf(stderr, "WARNING : close() error : %s (%s %d)\n",

@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -157,14 +157,18 @@ static void            check_log_updates(Widget),
 void
 get_data(void)
 {
-   int         end_file_no = -1,
-               i,
-               j,
-               start_file_no = -1;
-   time_t      end;
-   char        status_message[MAX_MESSAGE_LENGTH];
-   struct stat stat_buf;
-   XmString    xstr;
+   int          end_file_no = -1,
+                i,
+                j,
+                start_file_no = -1;
+   time_t       end;
+   char         status_message[MAX_MESSAGE_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
+   XmString     xstr;
 
    /* At start always reset these values. */
    if (interval_id_set == YES)
@@ -198,11 +202,22 @@ get_data(void)
    for (i = 0; i < no_of_log_files; i++)
    {
       (void)sprintf(p_log_file, "%d", i);
+#ifdef HAVE_STATX
+      if (statx(0, log_file, AT_STATX_SYNC_AS_STAT,
+                STATX_SIZE | STATX_MTIME, &stat_buf) == 0)
+#else
       if (stat(log_file, &stat_buf) == 0)
+#endif
       {
+#ifdef HAVE_STATX
+         if ((start_file_no == - 1) ||
+             ((stat_buf.stx_size > 0) &&
+              (get_first_time(log_file) > local_start_time)))
+#else
          if ((start_file_no == - 1) ||
              ((stat_buf.st_size > 0) &&
               (get_first_time(log_file) > local_start_time)))
+#endif
          {
             start_file_no = i;
          }
@@ -213,7 +228,12 @@ get_data(void)
                end_file_no = i;
             }
          }
+#ifdef HAVE_STATX
+         else if ((stat_buf.stx_mtime.tv_sec >= local_end_time) ||
+                  (end_file_no == -1))
+#else
          else if ((stat_buf.st_mtime >= local_end_time) || (end_file_no == -1))
+#endif
               {
                  end_file_no = i;
               }
@@ -402,10 +422,19 @@ extract_data(char *current_log_file, int file_no, int log_no)
    char          *src,
                  *tmp_ptr,
                  *ptr_end;
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
 
    /* Check if file is there and get its size. */
-   if (stat(current_log_file, &stat_buf) < 0)
+#ifdef HAVE_STATX
+   if (statx(0, current_log_file, AT_STATX_SYNC_AS_STAT,
+             STATX_SIZE | STATX_INO, &stat_buf) == -1)
+#else
+   if (stat(current_log_file, &stat_buf) == -1)
+#endif
    {
       if (errno == ENOENT)
       {
@@ -414,7 +443,7 @@ extract_data(char *current_log_file, int file_no, int log_no)
       }
       else
       {
-         (void)xrec(WARN_DIALOG, "Failed to stat() %s : %s (%s %d)",
+         (void)xrec(WARN_DIALOG, "Failed to access %s : %s (%s %d)",
                     current_log_file, strerror(errno), __FILE__, __LINE__);
       }
       return;
@@ -440,25 +469,43 @@ extract_data(char *current_log_file, int file_no, int log_no)
                     current_log_file, strerror(errno), __FILE__, __LINE__);
          return;
       }
+#ifdef HAVE_STATX
+      if (lseek(log_fd, stat_buf.stx_size, SEEK_SET) == (off_t)-1)
+#else
       if (lseek(log_fd, stat_buf.st_size, SEEK_SET) == (off_t)-1)
+#endif
       {
          (void)xrec(FATAL_DIALOG, "Failed to lssek() in %s : %s (%s %d)",
                     current_log_file, strerror(errno), __FILE__, __LINE__);
          return;
       }
+#ifdef HAVE_STATX
+      log_offset = stat_buf.stx_size;
+      log_inode = stat_buf.stx_ino;
+#else
       log_offset = stat_buf.st_size;
       log_inode = stat_buf.st_ino;
+#endif
       last_file_no = file_no;
    }
 
    /* Make sure there is data in the log file. */
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size == 0)
+#else
    if (stat_buf.st_size == 0)
+#endif
    {
       return;
    }
 
 #ifdef HAVE_MMAP
-   if ((src = mmap(NULL, stat_buf.st_size, PROT_READ,
+   if ((src = mmap(NULL,
+# ifdef HAVE_STATX
+                   stat_buf.stx_size, PROT_READ,
+# else
+                   stat_buf.st_size, PROT_READ,
+# endif
                    (MAP_FILE | MAP_SHARED), fd, 0)) == (caddr_t) -1)
    {
       (void)xrec(FATAL_DIALOG, "Failed to mmap() %s : %s (%s %d)",
@@ -467,14 +514,22 @@ extract_data(char *current_log_file, int file_no, int log_no)
       return;
    }
 #else
+# ifdef HAVE_STATX
+   if ((src = malloc(stat_buf.stx_size)) == NULL)
+# else
    if ((src = malloc(stat_buf.st_size)) == NULL)
+# endif
    {
       (void)xrec(FATAL_DIALOG, "malloc() error : %s (%s %d)",
                  strerror(errno), __FILE__, __LINE__);
       (void)close(fd);
       return;
    }
+# ifdef HAVE_STATX
+   if (read(fd, src, stat_buf.stx_size) != stat_buf.stx_size)
+# else
    if (read(fd, src, stat_buf.st_size) != stat_buf.st_size)
+# endif
    {
       (void)xrec(FATAL_DIALOG, "Failed to read() from %s : %s (%s %d)",
                  current_log_file, strerror(errno), __FILE__, __LINE__);
@@ -498,7 +553,11 @@ extract_data(char *current_log_file, int file_no, int log_no)
     */
 
    /* Get latest entry. */
+#ifdef HAVE_STATX
+   tmp_ptr = src + stat_buf.stx_size - 2;
+#else
    tmp_ptr = src + stat_buf.st_size - 2;
+#endif
    while ((*tmp_ptr != '\n') && (src != tmp_ptr))
    {
       tmp_ptr--;
@@ -523,8 +582,13 @@ extract_data(char *current_log_file, int file_no, int log_no)
    {
       ptr_start = src;
 
+#ifdef HAVE_STATX
+      ptr_end = search_time(src, local_end_time, earliest_entry,
+                            latest_entry, stat_buf.stx_size);
+#else
       ptr_end = search_time(src, local_end_time, earliest_entry,
                             latest_entry, stat_buf.st_size);
+#endif
    }
    else
    {
@@ -539,19 +603,33 @@ extract_data(char *current_log_file, int file_no, int log_no)
       }
       else
       {
+#ifdef HAVE_STATX
+         ptr_start = search_time(src, local_start_time, earliest_entry,
+                                 latest_entry, stat_buf.stx_size);
+#else
          ptr_start = search_time(src, local_start_time, earliest_entry,
                                  latest_entry, stat_buf.st_size);
+#endif
       }
 
+#ifdef HAVE_STATX
+      ptr_end = search_time(src, local_end_time, earliest_entry,
+                            latest_entry, stat_buf.stx_size);
+#else
       ptr_end = search_time(src, local_end_time, earliest_entry,
                             latest_entry, stat_buf.st_size);
+#endif
    }
 
    if (ptr_start == ptr_end)
    {
       /* Free all memory we have allocated. */
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      if (munmap(src, stat_buf.stx_size) < 0)
+# else
       if (munmap(src, stat_buf.st_size) < 0)
+# endif
       {
          (void)xrec(ERROR_DIALOG, "munmap() error : %s (%s %d)",
                     strerror(errno), __FILE__, __LINE__);
@@ -570,7 +648,11 @@ extract_data(char *current_log_file, int file_no, int log_no)
 
    /* Free all memory we have allocated. */
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+   if (munmap(src, stat_buf.stx_size) < 0)
+# else
    if (munmap(src, stat_buf.st_size) < 0)
+# endif
    {
       (void)xrec(ERROR_DIALOG, "munmap() error : %s (%s %d)",
                  strerror(errno), __FILE__, __LINE__);
@@ -1146,27 +1228,62 @@ check_log_updates(Widget w)
 
    if ((end_time_val == -1) || (time(NULL) < end_time_val))
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+      if (statx(0, log_file, AT_STATX_SYNC_AS_STAT,
+                STATX_SIZE | STATX_INO, &stat_buf) == -1)
+#else
       if (stat(log_file, &stat_buf) == -1)
+#endif
       {
-         (void)xrec(FATAL_DIALOG, "Failed to stat() `%s' : %s (%s %d)\n",
+         (void)xrec(FATAL_DIALOG, "Failed to access `%s' : %s (%s %d)\n",
                     log_file, strerror(errno), __FILE__, __LINE__);
       }
+#ifdef HAVE_STATX
+      if (log_inode != stat_buf.stx_ino)
+#else
       if (log_inode != stat_buf.st_ino)
+#endif
       {
+#ifdef HAVE_STATX
+         struct statx old_stat_buf;
+#else
          struct stat old_stat_buf;
+#endif
 
          /* Don't switch log to early. There might be some last data */
          /* in the old file.                                         */
+#ifdef HAVE_STATX
+         if (statx(log_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &old_stat_buf) == -1)
+#else
          if (fstat(log_fd, &old_stat_buf) == -1)
+#endif
          {
-            (void)xrec(FATAL_DIALOG, "fstat() error : %s (%s %d)\n",
+            (void)xrec(FATAL_DIALOG,
+#ifdef HAVE_STATX
+                       "statx() error : %s (%s %d)\n",
+#else
+                       "fstat() error : %s (%s %d)\n",
+#endif
                        strerror(errno), __FILE__, __LINE__);
          }
+#ifdef HAVE_STATX
+         if (old_stat_buf.stx_size > log_offset)
+#else
          if (old_stat_buf.st_size > log_offset)
+#endif
          {
+#ifdef HAVE_STATX
+            stat_buf.stx_size = old_stat_buf.stx_size;
+#else
             stat_buf.st_size = old_stat_buf.st_size;
+#endif
          }
          else
          {
@@ -1178,13 +1295,21 @@ check_log_updates(Widget w)
             return;
          }
       }
+#ifdef HAVE_STATX
+      if (stat_buf.stx_size > log_offset)
+#else
       if (stat_buf.st_size > log_offset)
+#endif
       {
          off_t diff_size;
          char  *ptr_start,
                *ptr_end;
 
+#ifdef HAVE_STATX
+         diff_size = stat_buf.stx_size - log_offset;
+#else
          diff_size = stat_buf.st_size - log_offset;
+#endif
          if ((ptr_start = malloc(diff_size)) == NULL)
          {
 #if SIZEOF_OFF_T == 4
@@ -1205,7 +1330,11 @@ check_log_updates(Widget w)
          search_data(ptr_start, ptr_end, last_file_no, ptr_start, log_offset);
 
          free(ptr_start);
+#ifdef HAVE_STATX
+         log_offset = stat_buf.stx_size;
+#else
          log_offset = stat_buf.st_size;
+#endif
          XtVaSetValues(outputbox_w, XmNcursorPosition, wpr_position, NULL);
          XmTextShowPosition(outputbox_w, wpr_position);
       }

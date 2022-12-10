@@ -567,7 +567,11 @@ get_data(void)
    time_t       end,
                 start;
    char         status_message[MAX_MESSAGE_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
    XmString     xstr;
 
    /* Prepare log file name. */
@@ -582,10 +586,20 @@ get_data(void)
    for (i = 0; i < no_of_log_files; i++)
    {
       (void)sprintf(p_log_file, "%d", i);
+#ifdef HAVE_STATX
+      if (statx(0, log_file, AT_STATX_SYNC_AS_STAT,
+                STATX_MTIME, &stat_buf) == 0)
+#else
       if (stat(log_file, &stat_buf) == 0)
+#endif
       {
+#ifdef HAVE_STATX
+         if (((stat_buf.stx_mtime.tv_sec + SWITCH_FILE_TIME) >= local_start_time) ||
+             (start_file_no == -1))
+#else
          if (((stat_buf.st_mtime + SWITCH_FILE_TIME) >= local_start_time) ||
              (start_file_no == -1))
+#endif
          {
             start_file_no = i;
          }
@@ -596,7 +610,12 @@ get_data(void)
                end_file_no = i;
             }
          }
+#ifdef HAVE_STATX
+         else if ((stat_buf.stx_mtime.tv_sec >= local_end_time) ||
+                  (end_file_no == -1))
+#else
          else if ((stat_buf.st_mtime >= local_end_time) || (end_file_no == -1))
+#endif
               {
                  end_file_no = i;
               }
@@ -712,10 +731,19 @@ extract_data(char *current_log_file, int file_no)
    char          *src,
                  *tmp_ptr,
                  *ptr_end;
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
 
    /* Check if file is there and get its size. */
-   if (stat(current_log_file, &stat_buf) < 0)
+#ifdef HAVE_STATX
+   if (statx(0, current_log_file, AT_STATX_SYNC_AS_STAT,
+             STATX_SIZE, &stat_buf) == -1)
+#else
+   if (stat(current_log_file, &stat_buf) == -1)
+#endif
    {
       if (errno == ENOENT)
       {
@@ -725,14 +753,18 @@ extract_data(char *current_log_file, int file_no)
       }
       else
       {
-         (void)xrec(WARN_DIALOG, "Failed to stat() %s : %s (%s %d)",
+         (void)xrec(WARN_DIALOG, "Failed to access %s : %s (%s %d)",
                     current_log_file, strerror(errno), __FILE__, __LINE__);
          return;
       }
    }
 
    /* Make sure there is data in the log file. */
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size == 0)
+#else
    if (stat_buf.st_size == 0)
+#endif
    {
       return;
    }
@@ -750,7 +782,12 @@ extract_data(char *current_log_file, int file_no)
       return;
    }
 #ifdef HAVE_MMAP
-   if ((src = mmap(NULL, stat_buf.st_size, PROT_READ,
+   if ((src = mmap(NULL,
+# ifdef HAVE_STATX
+                   stat_buf.stx_size, PROT_READ,
+# else
+                   stat_buf.st_size, PROT_READ,
+# endif
                    (MAP_FILE | MAP_SHARED), fd, 0)) == (caddr_t) -1)
    {
       (void)xrec(FATAL_DIALOG, "Failed to mmap() %s : %s (%s %d)",
@@ -759,14 +796,22 @@ extract_data(char *current_log_file, int file_no)
       return;
    }
 #else
+# ifdef HAVE_STATX
+   if ((src = malloc(stat_buf.stx_size)) == NULL)
+# else
    if ((src = malloc(stat_buf.st_size)) == NULL)
+# endif
    {
       (void)xrec(FATAL_DIALOG, "malloc() error : %s (%s %d)",
                  strerror(errno), __FILE__, __LINE__);
       (void)close(fd);
       return;
    }
+# ifdef HAVE_STATX
+   if (read(fd, src, stat_buf.stx_size) != stat_buf.stx_size)
+# else
    if (read(fd, src, stat_buf.st_size) != stat_buf.st_size)
+# endif
    {
       (void)xrec(FATAL_DIALOG, "Failed to read() from %s : %s (%s %d)",
                  current_log_file, strerror(errno), __FILE__, __LINE__);
@@ -787,7 +832,11 @@ extract_data(char *current_log_file, int file_no)
     */
 
    /* Get latest entry. */
+#ifdef HAVE_STATX
+   tmp_ptr = src + stat_buf.stx_size - 2;
+#else
    tmp_ptr = src + stat_buf.st_size - 2;
+#endif
    do
    {
       while ((*tmp_ptr != '\n') && (src != tmp_ptr))
@@ -808,7 +857,11 @@ extract_data(char *current_log_file, int file_no)
          {
             /* Free all memory we have allocated. */
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+            if (munmap(src, stat_buf.stx_size) < 0)
+# else
             if (munmap(src, stat_buf.st_size) < 0)
+# endif
             {
                (void)xrec(ERROR_DIALOG, "munmap() error : %s (%s %d)",
                           strerror(errno), __FILE__, __LINE__);
@@ -826,7 +879,11 @@ extract_data(char *current_log_file, int file_no)
    {
       /* Free all memory we have allocated. */
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      if (munmap(src, stat_buf.stx_size) < 0)
+# else
       if (munmap(src, stat_buf.st_size) < 0)
+# endif
       {
          (void)xrec(ERROR_DIALOG, "munmap() error : %s (%s %d)",
                     strerror(errno), __FILE__, __LINE__);
@@ -844,11 +901,19 @@ extract_data(char *current_log_file, int file_no)
    {
       while (*ptr != '\n')
       {
+#ifdef HAVE_STATX
+         if (ptr == (src + stat_buf.stx_size))
+#else
          if (ptr == (src + stat_buf.st_size))
+#endif
          {
             /* Free all memory we have allocated. */
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+            if (munmap(src, stat_buf.stx_size) < 0)
+# else
             if (munmap(src, stat_buf.st_size) < 0)
+# endif
             {
                (void)xrec(ERROR_DIALOG, "munmap() error : %s (%s %d)",
                           strerror(errno), __FILE__, __LINE__);
@@ -868,8 +933,13 @@ extract_data(char *current_log_file, int file_no)
    {
       ptr_start = src;
 
+#ifdef HAVE_STATX
+      ptr_end = search_time(src, local_end_time, earliest_entry,
+                            latest_entry, stat_buf.stx_size);
+#else
       ptr_end = search_time(src, local_end_time, earliest_entry,
                             latest_entry, stat_buf.st_size);
+#endif
    }
    else
    {
@@ -884,19 +954,33 @@ extract_data(char *current_log_file, int file_no)
       }
       else
       {
+#ifdef HAVE_STATX
+         ptr_start = search_time(src, local_start_time, earliest_entry,
+                                 latest_entry, stat_buf.stx_size);
+#else
          ptr_start = search_time(src, local_start_time, earliest_entry,
                                  latest_entry, stat_buf.st_size);
+#endif
       }
 
+#ifdef HAVE_STATX
+      ptr_end = search_time(src, local_end_time, earliest_entry,
+                            latest_entry, stat_buf.stx_size);
+#else
       ptr_end = search_time(src, local_end_time, earliest_entry,
                             latest_entry, stat_buf.st_size);
+#endif
    }
 
    if (ptr_start == ptr_end)
    {
       /* Free all memory we have allocated. */
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      if (munmap(src, stat_buf.stx_size) < 0)
+# else
       if (munmap(src, stat_buf.st_size) < 0)
+# endif
       {
          (void)xrec(ERROR_DIALOG, "munmap() error : %s (%s %d)",
                     strerror(errno), __FILE__, __LINE__);
@@ -962,7 +1046,11 @@ extract_data(char *current_log_file, int file_no)
    /* Free all memory we have allocated. */
    get_info_free();
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+   if (munmap(src, stat_buf.stx_size) < 0)
+# else
    if (munmap(src, stat_buf.st_size) < 0)
+# endif
    {
       (void)xrec(ERROR_DIALOG, "munmap() error : %s (%s %d)",
                  strerror(errno), __FILE__, __LINE__);

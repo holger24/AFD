@@ -1,6 +1,6 @@
 /*
  *  convert_jid.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -97,7 +97,11 @@ main(int argc, char *argv[])
                           *ptr,
                           new_job_id_data_file[MAX_PATH_LENGTH],
                           work_dir[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx           stat_buf;
+#else
    struct stat            stat_buf;
+#endif
    struct job_id_data     *new_jd;
    struct old_job_id_data *old_jd;
 
@@ -119,15 +123,29 @@ main(int argc, char *argv[])
                     old_job_id_data_file, strerror(errno), __FILE__, __LINE__);
       exit(INCORRECT);
    }
+#ifdef HAVE_STATX
+   if (statx(old_jd_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(old_jd_fd, &stat_buf) == -1)
+#endif
    {
-      (void)fprintf(stderr, "Failed to fstat() %s : %s (%s %d)\n",
+      (void)fprintf(stderr, "Failed to access %s : %s (%s %d)\n",
                     old_job_id_data_file, strerror(errno), __FILE__, __LINE__);
       exit(INCORRECT);
    }
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size > 0)
+#else
    if (stat_buf.st_size > 0)
+#endif
    {
-      if ((ptr = mmap(0, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+      if ((ptr = mmap(0,
+#ifdef HAVE_STATX
+                      stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+#else
+                      stat_buf.st_size, (PROT_READ | PROT_WRITE),
+#endif
                       MAP_SHARED, old_jd_fd, 0)) == (caddr_t) -1)
       {
          (void)fprintf(stderr, "Failed to mmap() to %s : %s (%s %d)\n",
@@ -227,7 +245,11 @@ main(int argc, char *argv[])
    }
    ptr = (char *)old_jd;
    ptr -= AFD_WORD_OFFSET;
+#ifdef HAVE_STATX
+   if (munmap(ptr, stat_buf.stx_size) == -1)
+#else
    if (munmap(ptr, stat_buf.st_size) == -1)
+#endif
    {
       (void)fprintf(stderr, "Failed to munmap() to %s : %s (%s %d)\n",
                     old_job_id_data_file, strerror(errno), __FILE__, __LINE__);

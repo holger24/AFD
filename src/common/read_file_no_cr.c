@@ -1,6 +1,6 @@
 /*
  *  read_file_no_cr.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -68,17 +68,21 @@ read_file_no_cr(char *filename,
                 char *sfile,
                 int  sline)
 {
-   int         fd;
-   off_t       bytes_buffered;
+   int          fd;
+   off_t        bytes_buffered;
 #ifdef HAVE_GETLINE
-   ssize_t     n;
-   size_t      line_buffer_length;
+   ssize_t      n;
+   size_t       line_buffer_length;
 #else
-   size_t      n;
+   size_t       n;
 #endif
-   char        *read_ptr;
-   FILE        *fp;
-   struct stat stat_buf;
+   char         *read_ptr;
+   FILE         *fp;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    /* Open file. */
    if ((fd = open(filename, O_RDONLY)) == -1)
@@ -90,17 +94,30 @@ read_file_no_cr(char *filename,
    }
 
    /* Get the size we need for the buffer. */
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                 _("Could not statx() `%s' : %s [%s %d]"),
+#else
                  _("Could not fstat() `%s' : %s [%s %d]"),
+#endif
                  filename, strerror(errno), sfile, sline);
       (void)close(fd);
       return(INCORRECT);
    }
 
    /* Allocate enough memory for the contents of the file. */
+#ifdef HAVE_STATX
+   if ((*buffer = malloc(1 + stat_buf.stx_size + 1)) == NULL)
+#else
    if ((*buffer = malloc(1 + stat_buf.st_size + 1)) == NULL)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  _("Could not malloc() memory : %s [%s %d]"),
@@ -132,7 +149,11 @@ read_file_no_cr(char *filename,
 
    /* Read file into buffer. */
 #ifdef HAVE_GETLINE
+# ifdef HAVE_STATX
+   line_buffer_length = stat_buf.stx_size + 1;
+# else
    line_buffer_length = stat_buf.st_size + 1;
+# endif
    while ((n = getline(&read_ptr, &line_buffer_length, fp)) != -1)
 #else
    while (fgets(read_ptr, MAX_LINE_LENGTH, fp) != NULL)

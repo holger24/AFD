@@ -753,11 +753,15 @@ convert_fra(int           old_fra_fd,
             unsigned char old_version,
             unsigned char new_version)
 {
-   int         i,
-               pagesize;
-   size_t      new_size;
-   char        *ptr;
-   struct stat stat_buf;
+   int          i,
+                pagesize;
+   size_t       new_size;
+   char         *ptr;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    if ((pagesize = (int)sysconf(_SC_PAGESIZE)) == -1)
    {
@@ -773,23 +777,46 @@ convert_fra(int           old_fra_fd,
       struct fileretrieve_status_1 *new_fra;
 
       /* Get the size of the old FRA file. */
-      if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+      if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
+      if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "Failed to fstat() %s : %s", old_fra_stat, strerror(errno));
+#ifdef HAVE_STATX
+                    "Failed to statx() %s : %s",
+#else
+                    "Failed to fstat() %s : %s",
+#endif
+                    old_fra_stat, strerror(errno));
          *old_fra_size = -1;
          return(NULL);
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > 0)
+#else
          if (stat_buf.st_size > 0)
+#endif
          {
 #ifdef HAVE_MMAP
-            if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+            if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                            stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                            stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                             MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-            if ((ptr = mmap_emu(NULL, stat_buf.st_size,
-                                (PROT_READ | PROT_WRITE),
+            if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                 MAP_SHARED, old_fra_stat, 0)) == (caddr_t) -1)
 #endif
             {
@@ -821,7 +848,11 @@ convert_fra(int           old_fra_fd,
          ptr = (char *)old_fra;
          ptr -= AFD_WORD_OFFSET_0;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+         if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
          if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
          if (munmap_emu(ptr) == -1)
 #endif
@@ -881,7 +912,8 @@ convert_fra(int           old_fra_fd,
        * the new structure into it. Then update the FRA version
        * number.
        */
-      if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_1)) == (caddr_t) -1)
+      if ((ptr = mmap_resize(old_fra_fd, ptr,
+                             new_size + AFD_WORD_OFFSET_1)) == (caddr_t) -1)
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                     "Failed to mmap_resize() %s : %s",
@@ -905,24 +937,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_2 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -955,7 +1009,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_1;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -1029,7 +1087,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_2)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_2)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -1060,24 +1119,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_3 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -1110,7 +1191,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_1;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -1190,7 +1275,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_3)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_3)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -1221,24 +1307,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_4 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -1271,7 +1379,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_1;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -1355,7 +1467,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_4)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_4)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -1386,24 +1499,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_2 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -1436,7 +1571,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_0;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -1510,7 +1649,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_2)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_2)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -1542,24 +1682,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_3 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -1592,7 +1754,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_0;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -1671,7 +1837,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_3)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_3)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -1703,24 +1870,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_4 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -1753,7 +1942,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_0;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -1836,7 +2029,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_4)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_4)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -1868,24 +2062,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_3 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -1918,7 +2134,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_2;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -2007,7 +2227,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_3)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_3)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -2038,24 +2259,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_4 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -2088,7 +2331,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_2;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -2181,7 +2428,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_4)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_4)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -2212,24 +2460,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_4 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -2262,7 +2532,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_3;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -2355,7 +2629,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_4)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_4)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -2386,24 +2661,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_5 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -2436,7 +2733,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_0;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -2521,7 +2822,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_5)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_5)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -2553,24 +2855,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_5 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -2603,7 +2927,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_1;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -2689,7 +3017,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_5)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_5)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -2720,24 +3049,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_5 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -2770,7 +3121,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_2;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -2864,7 +3219,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_5)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_5)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -2895,24 +3251,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_5 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -2945,7 +3323,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_3;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -3039,7 +3421,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_5)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_5)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -3070,24 +3453,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_5 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -3120,7 +3525,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_4;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -3209,7 +3618,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_5)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_5)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -3239,24 +3649,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_6 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -3289,7 +3721,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_0;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -3380,7 +3816,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_6)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_6)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -3412,24 +3849,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_6 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -3462,7 +3921,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_1;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -3554,7 +4017,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_6)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_6)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -3585,24 +4049,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_6 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -3635,7 +4121,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_2;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -3735,7 +4225,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_6)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_6)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -3766,24 +4257,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_6 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -3816,7 +4329,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_3;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -3916,7 +4433,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_6)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_6)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -3947,24 +4465,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_6 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -3997,7 +4537,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_4;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -4092,7 +4636,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_6)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_6)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -4122,24 +4667,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_6 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -4172,7 +4739,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_5;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -4268,7 +4839,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_6)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_6)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -4298,24 +4870,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_7 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -4348,7 +4942,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_0;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -4440,7 +5038,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_7)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_7)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -4472,24 +5071,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_7 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -4522,7 +5143,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_1;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -4615,7 +5240,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_7)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_7)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -4646,24 +5272,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_7 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -4696,7 +5344,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_2;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -4797,7 +5449,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_7)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_7)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -4828,24 +5481,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_7 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -4878,7 +5553,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_3;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -4979,7 +5658,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_7)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_7)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -5010,24 +5690,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_7 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -5060,7 +5762,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_4;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -5156,7 +5862,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_7)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_7)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -5186,24 +5893,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_7 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -5236,7 +5965,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_5;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -5333,7 +6066,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_7)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_7)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -5363,24 +6097,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_7 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -5413,7 +6169,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_6;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -5510,7 +6270,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_7)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_7)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -5540,24 +6301,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_8 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -5590,7 +6373,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_0;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -5683,7 +6470,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_8)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_8)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -5715,24 +6503,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_8 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -5765,7 +6575,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_1;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -5859,7 +6673,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_8)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_8)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -5890,24 +6705,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_8 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -5940,7 +6777,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_2;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -6042,7 +6883,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_8)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_8)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -6073,24 +6915,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_8 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -6123,7 +6987,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_3;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -6225,7 +7093,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_8)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_8)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -6256,24 +7125,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_8 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -6306,7 +7197,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_4;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -6403,7 +7298,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_8)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_8)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -6433,24 +7329,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_8 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -6483,7 +7401,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_5;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -6581,7 +7503,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_8)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_8)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -6611,24 +7534,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_8 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -6661,7 +7606,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_6;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -6760,7 +7709,8 @@ convert_fra(int           old_fra_fd,
             * the new structure into it. Then update the FRA version
             * number.
             */
-           if ((ptr = mmap_resize(old_fra_fd, ptr, new_size + AFD_WORD_OFFSET_8)) == (caddr_t) -1)
+           if ((ptr = mmap_resize(old_fra_fd, ptr,
+                                  new_size + AFD_WORD_OFFSET_8)) == (caddr_t) -1)
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
                          "Failed to mmap_resize() %s : %s",
@@ -6790,24 +7740,46 @@ convert_fra(int           old_fra_fd,
            struct fileretrieve_status_8 *new_fra;
 
            /* Get the size of the old FRA file. */
-           if (fstat(old_fra_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE,&stat_buf) == -1)
+#else
+           if (fstat(old_fra_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_fra_stat, strerror(errno));
               *old_fra_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size,
-                                 (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_fra_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
                                      (PROT_READ | PROT_WRITE), MAP_SHARED,
                                      old_fra_stat, 0)) == (caddr_t) -1)
 #endif
@@ -6840,7 +7812,11 @@ convert_fra(int           old_fra_fd,
               ptr = (char *)old_fra;
               ptr -= AFD_WORD_OFFSET_7;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif

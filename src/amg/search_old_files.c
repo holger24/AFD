@@ -1,6 +1,6 @@
 /*
  *  search_old_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -67,6 +67,9 @@ DESCR__E_M3
 #include <string.h>                /* strcpy(), strerror()               */
 #include <time.h>                  /* time()                             */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>                /* Definition of AT_* constants       */
+#endif
 #include <sys/stat.h>              /* stat(), S_ISREG()                  */
 #include <dirent.h>                /* opendir(), closedir(), readdir(),  */
                                    /* DIR, struct dirent                 */
@@ -109,7 +112,11 @@ search_old_files(time_t current_time)
                  tmp_dir[MAX_PATH_LENGTH];
    off_t         queued_size_deleted,
                  file_size;
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
    DIR           *dp;
    struct dirent *p_dir;
 
@@ -153,7 +160,13 @@ search_old_files(time_t current_time)
                }
 
                (void)strcpy(work_ptr, p_dir->d_name);
+#ifdef HAVE_STATX
+               if (statx(0, tmp_dir, AT_STATX_SYNC_AS_STAT,
+                         STATX_SIZE | STATX_MODE | STATX_MTIME,
+                         &stat_buf) == -1)
+#else
                if (stat(tmp_dir, &stat_buf) < 0)
+#endif
                {
                   /*
                    * Since this is a very low priority function lets not
@@ -164,7 +177,11 @@ search_old_files(time_t current_time)
                }
 
                /* Sure it is a normal file? */
+#ifdef HAVE_STATX
+               if (S_ISREG(stat_buf.stx_mode))
+#else
                if (S_ISREG(stat_buf.st_mode))
+#endif
                {
                   int changing_date_dir = NO;
 
@@ -173,7 +190,11 @@ search_old_files(time_t current_time)
                    * delete old files that are of zero length or have a
                    * leading dot.
                    */
+#ifdef HAVE_STATX
+                  diff_time = current_time - stat_buf.stx_mtime.tv_sec;
+#else
                   diff_time = current_time - stat_buf.st_mtime;
+#endif
                   if (diff_time < 0)
                   {
                      diff_time = 0;
@@ -247,7 +268,11 @@ search_old_files(time_t current_time)
                               }
                               else
                               {
+#ifdef HAVE_STATX
+                                 pmatch_time = stat_buf.stx_mtime.tv_sec;
+#else
                                  pmatch_time = stat_buf.st_mtime;
+#endif
                               }
                               for (j = 0; j < de[i].nfg; j++)
                               {
@@ -286,7 +311,11 @@ search_old_files(time_t current_time)
                                              MAX_HOSTNAME_LENGTH + 4 + 1,
                                              "%-*s %03x",
                                              MAX_HOSTNAME_LENGTH, "-", reason);
+# ifdef HAVE_STATX
+                              *dl.file_size = stat_buf.stx_size;
+# else
                               *dl.file_size = stat_buf.st_size;
+# endif
                               *dl.dir_id = de[i].dir_id;
                               *dl.job_id = 0;
                               *dl.input_time = 0L;
@@ -312,7 +341,11 @@ search_old_files(time_t current_time)
                               }
 #endif
                               file_counter++;
+#ifdef HAVE_STATX
+                              file_size += stat_buf.stx_size;
+#else
                               file_size += stat_buf.st_size;
+#endif
 
                               if ((fra[de[i].fra_pos].delete_files_flag & UNKNOWN_FILES) == 0)
                               {
@@ -325,7 +358,11 @@ search_old_files(time_t current_time)
                                 if ((fra[de[i].fra_pos].dir_flag & DIR_STOPPED) == 0)
                                 {
                                    file_counter++;
+#ifdef HAVE_STATX
+                                   file_size += stat_buf.stx_size;
+#else
                                    file_size += stat_buf.st_size;
+#endif
                                 }
                              }
                      }
@@ -334,7 +371,11 @@ search_old_files(time_t current_time)
                              if ((fra[de[i].fra_pos].dir_flag & DIR_STOPPED) == 0)
                              {
                                 file_counter++;
+#ifdef HAVE_STATX
+                                file_size += stat_buf.stx_size;
+#else
                                 file_size += stat_buf.st_size;
+#endif
                              }
                              delete_file = NO;
                           }
@@ -369,7 +410,11 @@ search_old_files(time_t current_time)
                                        "%-*s %03x",
                                        MAX_HOSTNAME_LENGTH, "-",
                                        (fra[de[i].fra_pos].in_dc_flag & QUEUED_FILES_IDC) ?  DEL_QUEUED_FILE : DEL_QUEUED_FILE_GLOB);
+# ifdef HAVE_STATX
+                        *dl.file_size = stat_buf.stx_size;
+# else
                         *dl.file_size = stat_buf.st_size;
+# endif
                         *dl.dir_id = de[i].dir_id;
                         *dl.job_id = 0;
                         *dl.input_time = 0L;
@@ -395,7 +440,11 @@ search_old_files(time_t current_time)
                         }
 #endif
                         queued_files++;
+#ifdef HAVE_STATX
+                        queued_size_deleted += stat_buf.stx_size;
+#else
                         queued_size_deleted += stat_buf.st_size;
+#endif
                      }
                   }
                }
@@ -404,7 +453,12 @@ search_old_files(time_t current_time)
                      */
                else if ((fra[de[i].fra_pos].delete_files_flag & QUEUED_FILES) &&
                         (p_dir->d_name[0] == '.') &&
-                        (S_ISDIR(stat_buf.st_mode)))
+#ifdef HAVE_STATX
+                        (S_ISDIR(stat_buf.stx_mode))
+#else
+                        (S_ISDIR(stat_buf.st_mode))
+#endif
+                       )
                     {
                        int pos;
 
@@ -441,7 +495,13 @@ search_old_files(time_t current_time)
                                 }
 
                                 (void)strcpy(work_ptr_2, p_dir->d_name);
+#ifdef HAVE_STATX
+                                if (statx(0, tmp_dir, AT_STATX_SYNC_AS_STAT,
+                                          STATX_SIZE | STATX_MODE | STATX_MTIME,
+                                          &stat_buf) == -1)
+#else
                                 if (stat(tmp_dir, &stat_buf) < 0)
+#endif
                                 {
                                    /*
                                     * Since this is a very low priority function lets not
@@ -452,9 +512,17 @@ search_old_files(time_t current_time)
                                 }
 
                                 /* Sure it is a normal file? */
+#ifdef HAVE_STATX
+                                if (S_ISREG(stat_buf.stx_mode))
+#else
                                 if (S_ISREG(stat_buf.st_mode))
+#endif
                                 {
+#ifdef HAVE_STATX
+                                   diff_time = current_time - stat_buf.stx_mtime.tv_sec;
+#else
                                    diff_time = current_time - stat_buf.st_mtime;
+#endif
                                    if (diff_time < 0)
                                    {
                                       diff_time = 0;
@@ -479,7 +547,11 @@ search_old_files(time_t current_time)
                                                         MAX_HOSTNAME_LENGTH,
                                                         fsa[pos].host_alias,
                                                         (fra[de[i].fra_pos].in_dc_flag & QUEUED_FILES_IDC) ?  DEL_QUEUED_FILE : DEL_QUEUED_FILE_GLOB);
+# ifdef HAVE_STATX
+                                         *dl.file_size = stat_buf.stx_size;
+# else
                                          *dl.file_size = stat_buf.st_size;
+# endif
                                          *dl.dir_id = de[i].dir_id;
                                          *dl.job_id = 0;
                                          *dl.input_time = 0L;
@@ -506,7 +578,11 @@ search_old_files(time_t current_time)
                                          }
 #endif
                                          files_deleted++;
+#ifdef HAVE_STATX
+                                         file_size_deleted += stat_buf.stx_size;
+#else
                                          file_size_deleted += stat_buf.st_size;
+#endif
                                       }
                                    }
                                 }

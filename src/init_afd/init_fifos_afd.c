@@ -1,6 +1,6 @@
 /*
  *  init_fifos_afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -71,20 +71,24 @@ extern char *p_work_dir;
 void
 init_fifos_afd(void)
 {
-   char        afd_cmd_fifo[MAX_PATH_LENGTH],
-               afd_resp_fifo[MAX_PATH_LENGTH],
-               amg_cmd_fifo[MAX_PATH_LENGTH],
-               event_log_fifo[MAX_PATH_LENGTH],
-               fd_cmd_fifo[MAX_PATH_LENGTH],
-               ip_fin_fifo[MAX_PATH_LENGTH],
+   char         afd_cmd_fifo[MAX_PATH_LENGTH],
+                afd_resp_fifo[MAX_PATH_LENGTH],
+                amg_cmd_fifo[MAX_PATH_LENGTH],
+                event_log_fifo[MAX_PATH_LENGTH],
+                fd_cmd_fifo[MAX_PATH_LENGTH],
+                ip_fin_fifo[MAX_PATH_LENGTH],
 #ifdef _MAINTAINER_LOG
-               maintainer_log_fifo[MAX_PATH_LENGTH],
+                maintainer_log_fifo[MAX_PATH_LENGTH],
 #endif
-               probe_only_fifo[MAX_PATH_LENGTH],
-               system_log_fifo[MAX_PATH_LENGTH],
-               trans_db_log_fifo[MAX_PATH_LENGTH],
-               transfer_log_fifo[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+                probe_only_fifo[MAX_PATH_LENGTH],
+                system_log_fifo[MAX_PATH_LENGTH],
+                trans_db_log_fifo[MAX_PATH_LENGTH],
+                transfer_log_fifo[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    /* Initialise fifo names. */
    (void)strcpy(transfer_log_fifo, p_work_dir);
@@ -186,7 +190,13 @@ init_fifos_afd(void)
                     ip_fin_fifo, __FILE__, __LINE__);
       exit(INCORRECT);
    }
-   if ((stat(probe_only_fifo, &stat_buf) < 0) || (!S_ISFIFO(stat_buf.st_mode)))
+#ifdef HAVE_STATX
+   if ((statx(0, probe_only_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
+   if ((stat(probe_only_fifo, &stat_buf) == -1) ||
+       (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(probe_only_fifo) < 0)
       {

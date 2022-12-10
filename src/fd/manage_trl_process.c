@@ -1,6 +1,6 @@
 /*
  *  manage_trl_process.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -115,38 +115,64 @@ init_trl_data(void)
 
    if ((fd = coe_open(trl_filename, O_RDONLY)) != -1)
    {
-      int         i,
-                  length;
-      off_t       file_size;
-      char        *buffer,
-                  *ptr,
-                  *p_start;
-      struct stat stat_buf;
+      int          i,
+                   length;
+      off_t        file_size;
+      char         *buffer,
+                   *ptr,
+                   *p_start;
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
+      struct stat  stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE | STATX_MTIME, &stat_buf) == -1)
+#else
       if (fstat(fd, &stat_buf) == -1)
+#endif
       {
          system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                    "Failed to statx() `%s' : %s",
+#else
                     "Failed to fstat() `%s' : %s",
+#endif
                     trl_filename, strerror(errno));
          (void)close(fd);
          return;
       }
+#ifdef HAVE_STATX
+      if (stat_buf.stx_size == 0)
+#else
       if (stat_buf.st_size == 0)
+#endif
       {
          system_log(DEBUG_SIGN, __FILE__, __LINE__,
                     "Transfer rate limit file `%s' is empty.", trl_filename);
          (void)close(fd);
          return;
       }
+#ifdef HAVE_STATX
+      else if (stat_buf.stx_size > 2097152)
+#else
       else if (stat_buf.st_size > 2097152)
+#endif
            {
               system_log(WARN_SIGN, __FILE__, __LINE__,
                          "The function init_trl_process() was not made to handle large files. Ask author to change this.");
               (void)close(fd);
               return;
            }
+#ifdef HAVE_STATX
+      file_size = stat_buf.stx_size;
+      trl_file_mtime = stat_buf.stx_mtime.tv_sec;
+#else
       file_size = stat_buf.st_size;
       trl_file_mtime = stat_buf.st_mtime;
+#endif
       if ((buffer = malloc(2 + file_size + 1)) == NULL)
       {
          system_log(WARN_SIGN, __FILE__, __LINE__,
@@ -477,7 +503,11 @@ init_trl_data(void)
 void
 check_trl_file(void)
 {
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat stat_buf;
+#endif
 
    if (trl_filename == NULL)
    {
@@ -494,7 +524,12 @@ check_trl_file(void)
       (void)snprintf(trl_filename, length, "%s%s/%s",
                      p_work_dir, ETC_DIR, TRL_FILENAME);
    }
+#ifdef HAVE_STATX
+   if (statx(0, trl_filename, AT_STATX_SYNC_AS_STAT,
+             STATX_SIZE | STATX_MTIME, &stat_buf) == -1)
+#else
    if (stat(trl_filename, &stat_buf) == -1)
+#endif
    {
       if ((errno == ENOENT) && (no_of_trl_groups != 0))
       {
@@ -521,7 +556,12 @@ check_trl_file(void)
    }
    else
    {
+#ifdef HAVE_STATX
+      if ((stat_buf.stx_mtime.tv_sec != trl_file_mtime) &&
+          (stat_buf.stx_size > 0))
+#else
       if ((stat_buf.st_mtime != trl_file_mtime) && (stat_buf.st_size > 0))
+#endif
       {
          int i;
 

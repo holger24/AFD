@@ -1,6 +1,6 @@
 /*
  *  create_msa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -111,7 +111,11 @@ create_msa(void)
    struct mon_list        *ml = NULL;
    struct flock           wlock = {F_WRLCK, SEEK_SET, 0, 1},
                           ulock = {F_UNLCK, SEEK_SET, 0, 1};
+#ifdef HAVE_STATX
+   struct statx           stat_buf;
+#else
    struct stat            stat_buf;
+#endif
 
    msa_size = -1;
 
@@ -183,15 +187,24 @@ create_msa(void)
       (void)sprintf(ptr, ".%d", old_msa_id);
 
       /* Get the size of the old MSA file. */
-      if (stat(old_msa_stat, &stat_buf) < 0)
+#ifdef HAVE_STATX
+      if (statx(0, old_msa_stat, AT_STATX_SYNC_AS_STAT,
+                STATX_SIZE, &stat_buf) == -1)
+#else
+      if (stat(old_msa_stat, &stat_buf) == -1)
+#endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "Failed to stat() %s : %s", old_msa_stat, strerror(errno));
+                    "Failed to access %s : %s", old_msa_stat, strerror(errno));
          old_msa_id = -1;
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > 0)
+#else
          if (stat_buf.st_size > 0)
+#endif
          {
             if ((old_msa_fd = open(old_msa_stat, O_RDWR)) < 0)
             {
@@ -203,12 +216,23 @@ create_msa(void)
             else
             {
 #ifdef HAVE_MMAP
-               if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+               if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                               stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                               stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                MAP_SHARED, old_msa_fd, 0)) == (caddr_t) -1)
 #else
-               if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+               if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                   stat_buf.stx_size,
+# else
+                                   stat_buf.st_size,
+# endif
                                    (PROT_READ | PROT_WRITE),
-                                   MAP_SHARED, old_msa_stat, 0)) == (caddr_t) -1)
+                                   MAP_SHARED, old_msa_stat,
+                                   0)) == (caddr_t) -1)
 #endif
                {
                   system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -226,7 +250,11 @@ create_msa(void)
                   }
                   else
                   {
+#ifdef HAVE_STATX
+                     old_msa_size = stat_buf.stx_size;
+#else
                      old_msa_size = stat_buf.st_size;
+#endif
                   }
 
                   /*

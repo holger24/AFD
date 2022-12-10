@@ -1,6 +1,6 @@
 /*
  *  unmap_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -50,6 +50,9 @@ DESCR__E_M3
 #include <stdio.h>
 #include <string.h>                /* strerror()                         */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>                /* Definition of AT_* constants       */
+#endif
 #include <sys/stat.h>
 #ifdef HAVE_MMAP
 # include <sys/mman.h>             /* msync(), munmap()                  */
@@ -65,23 +68,45 @@ unmap_data(int fd, void **area)
    if (*area != NULL)
    {
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      struct statx stat_buf;
+# else
       struct stat stat_buf;
+# endif
 
+# ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+# else
       if (fstat(fd, &stat_buf) == -1)
+# endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    _("fstat() error : %s"), strerror(errno));
+# ifdef HAVE_STATX
+                    _("statx() error : %s"),
+# else
+                    _("fstat() error : %s"),
+# endif
+                    strerror(errno));
       }
       else
       {
          char *ptr = (char *)*area - AFD_WORD_OFFSET;
 
+# ifdef HAVE_STATX
+         if (msync(ptr, stat_buf.stx_size, MS_SYNC) == -1)
+# else
          if (msync(ptr, stat_buf.st_size, MS_SYNC) == -1)
+# endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        _("msync() error : %s"), strerror(errno));
          }
+# ifdef HAVE_STATX
+         if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
          if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        _("munmap() error : %s"), strerror(errno));

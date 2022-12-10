@@ -1,6 +1,6 @@
 /*
  *  msa_attach.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -92,7 +92,11 @@ msa_attach(void)
                 msa_stat_file[MAX_PATH_LENGTH];
    struct flock wlock = {F_WRLCK, SEEK_SET, 0, 1},
                 ulock = {F_UNLCK, SEEK_SET, 0, 1};
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
 
    /* Get absolute path of MSA_ID_FILE. */
    (void)strcpy(msa_id_file, p_work_dir);
@@ -242,10 +246,19 @@ msa_attach(void)
          }
       }
 
+#ifdef HAVE_STATX
+      if (statx(msa_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(msa_fd, &stat_buf) == -1)
+#endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    _("Failed to stat() `%s' : %s"),
+#ifdef HAVE_STATX
+                    _("Failed to statx() `%s' : %s"),
+#else
+                    _("Failed to fstat() `%s' : %s"),
+#endif
                     msa_stat_file, strerror(errno));
          (void)close(msa_fd);
          msa_fd = -1;
@@ -253,10 +266,20 @@ msa_attach(void)
       }
 
 #ifdef HAVE_MMAP
-      if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+      if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                      stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                      stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                       MAP_SHARED, msa_fd, 0)) == (caddr_t) -1)
 #else
-      if ((ptr = mmap_emu(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+      if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                          stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                          stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                           MAP_SHARED, msa_stat_file, 0)) == (caddr_t) -1)
 #endif
       {
@@ -278,7 +301,11 @@ msa_attach(void)
                     _("This code is compiled for of MSA version %d, but the MSA we try to attach is %d."),
                     CURRENT_MSA_VERSION, (int)(*(ptr + SIZEOF_INT + 1 + 1 + 1)));
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+         if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
          if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
          if (munmap_emu(ptr) == -1)
 #endif
@@ -294,7 +321,11 @@ msa_attach(void)
       ptr += AFD_WORD_OFFSET;
       msa = (struct mon_status_area *)ptr;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      msa_size = stat_buf.stx_size;
+# else
       msa_size = stat_buf.st_size;
+# endif
 #endif
    } while (no_of_afds <= 0);
 
@@ -314,7 +345,11 @@ msa_attach_passive(void)
                 msa_id_file[MAX_PATH_LENGTH],
                 msa_stat_file[MAX_PATH_LENGTH];
    struct flock rlock = {F_RDLCK, SEEK_SET, 0, 1};
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
 
    /* Get absolute path of MSA_ID_FILE. */
    (void)strcpy(msa_id_file, p_work_dir);
@@ -432,16 +467,29 @@ msa_attach_passive(void)
          }
       }
 
+#ifdef HAVE_STATX
+      if (statx(msa_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(msa_fd, &stat_buf) == -1)
+#endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    _("Failed to stat() `%s' : %s"),
+#ifdef HAVE_STATX
+                    _("Failed to statx() `%s' : %s"),
+#else
+                    _("Failed to fstat() `%s' : %s"),
+#endif
                     msa_stat_file, strerror(errno));
          (void)close(msa_fd);
          msa_fd = -1;
          return(INCORRECT);
       }
+#ifdef HAVE_STATX
+      if (stat_buf.stx_size < AFD_WORD_OFFSET)
+#else
       if (stat_buf.st_size < AFD_WORD_OFFSET)
+#endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                     _("MSA not large enough to contain any meaningful data."));
@@ -451,10 +499,20 @@ msa_attach_passive(void)
       }
 
 #ifdef HAVE_MMAP
-      if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+      if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                      stat_buf.stx_size, PROT_READ,
+# else
+                      stat_buf.st_size, PROT_READ,
+# endif
                       MAP_SHARED, msa_fd, 0)) == (caddr_t) -1)
 #else
-      if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
+      if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                          stat_buf.stx_size, PROT_READ,
+# else
+                          stat_buf.st_size, PROT_READ,
+# endif
                           MAP_SHARED, msa_stat_file, 0)) == (caddr_t) -1)
 #endif
       {
@@ -476,7 +534,11 @@ msa_attach_passive(void)
                  "This code is compiled for of MSA version %d, but the MSA we try to attach is %d.",
                  CURRENT_MSA_VERSION, (int)(*(ptr + SIZEOF_INT + 1 + 1 + 1)));
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+         if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
          if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
          if (munmap_emu(ptr) == -1)
 #endif
@@ -492,7 +554,11 @@ msa_attach_passive(void)
       ptr += AFD_WORD_OFFSET;
       msa = (struct mon_status_area *)ptr;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      msa_size = stat_buf.stx_size;
+# else
       msa_size = stat_buf.st_size;
+# endif
 #endif
    } while (no_of_afds <= 0);
 

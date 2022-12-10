@@ -1,6 +1,6 @@
 /*
  *  handle_time_jobs.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -50,6 +50,9 @@ DESCR__E_M3
 #include <time.h>             /* time()                                  */
 #include <ctype.h>            /* isdigit()                               */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>           /* Definition of AT_* constants            */
+#endif
 #include <sys/stat.h>         /* S_ISDIR()                               */
 #include <dirent.h>           /* opendir(), readdir(), closedir()        */
 #include <unistd.h>           /* sleep(), pipe(), close()                */
@@ -186,7 +189,11 @@ handle_time_dir(int time_job_no)
                      *p_src,
                      unique_name[MAX_PATH_LENGTH];
       struct dirent  *p_dir = NULL;
+#ifdef HAVE_STATX
+      struct statx   stat_buf;
+#else
       struct stat    stat_buf;
+#endif
 
       unique_name[0] = '/';
       p_src = time_dir + strlen(time_dir);
@@ -206,7 +213,12 @@ handle_time_dir(int time_job_no)
             }
 
             (void)strcpy(p_src, p_dir->d_name);
+#ifdef HAVE_STATX
+            if (statx(0, time_dir, AT_STATX_SYNC_AS_STAT,
+                      STATX_SIZE, &stat_buf) == -1)
+#else
             if (stat(time_dir, &stat_buf) == -1)
+#endif
             {
                if (errno != ENOENT)
                {
@@ -342,18 +354,35 @@ handle_time_dir(int time_job_no)
 
                   if (errno == ENOENT)
                   {
-                     int         tmp_errno = errno;
-                     char        tmp_char = *p_dest;
-                     struct stat tmp_stat_buf;
+                     int          tmp_errno = errno;
+                     char         tmp_char = *p_dest;
+#ifdef HAVE_STATX
+                     struct statx tmp_stat_buf;
+#else
+                     struct stat  tmp_stat_buf;
+#endif
 
                      *p_dest = '\0';
+#ifdef HAVE_STATX
+                     if ((statx(0, time_dir, AT_STATX_SYNC_AS_STAT,
+                                0, &tmp_stat_buf) == -1) &&
+                         (errno == ENOENT))
+#else
                      if ((stat(time_dir, &tmp_stat_buf) == -1) &&
                          (errno == ENOENT))
+#endif
                      {
                         (void)strcpy(reason_str, "(source missing) ");
                      }
+#ifdef HAVE_STATX
+                     else if ((statx(0, dest_file_path,
+                                     AT_STATX_SYNC_AS_STAT,
+                                     0, &tmp_stat_buf) == -1) &&
+                              (errno == ENOENT))
+#else
                      else if ((stat(dest_file_path, &tmp_stat_buf) == -1) &&
                               (errno == ENOENT))
+#endif
                           {
                              (void)strcpy(reason_str, "(destination missing) ");
                           }
@@ -406,11 +435,19 @@ handle_time_dir(int time_job_no)
                      }
                   }
                   (void)strcpy((file_name_buffer + (files_moved * MAX_FILENAME_LENGTH)), p_dir->d_name);
+# ifdef HAVE_STATX
+                  file_size_buffer[files_moved] = stat_buf.stx_size;
+# else
                   file_size_buffer[files_moved] = stat_buf.st_size;
+# endif
 #endif
                   files_handled++;
                   files_moved++;
+#ifdef HAVE_STATX
+                  file_size_moved += stat_buf.stx_size;
+#else
                   file_size_moved += stat_buf.st_size;
+#endif
                }
             }
          } /* while ((p_dir = readdir(dp)) != NULL) */

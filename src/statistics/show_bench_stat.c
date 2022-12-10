@@ -99,7 +99,11 @@ main(int argc, char *argv[])
 #endif
    char         **afd_dir,
                 **statistic_file;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
    struct tm    *p_ts;
 
    CHECK_FOR_VERSION(argc, argv);
@@ -158,8 +162,13 @@ main(int argc, char *argv[])
       do
       {
          errno = 0;
+#ifdef HAVE_STATX
+         while ((statx(0, statistic_file[i], AT_STATX_SYNC_AS_STAT,
+                       0, &stat_buf) != 0) && (errno == ENOENT))
+#else
          while ((stat(statistic_file[i], &stat_buf) != 0) &&
                 (errno == ENOENT))
+#endif
          {
             my_usleep(100000L);
          }
@@ -171,11 +180,19 @@ main(int argc, char *argv[])
                           __FILE__, __LINE__);
             exit(INCORRECT);
          }
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size == 0)
+#else
          if (stat_buf.st_size == 0)
+#endif
          {
             my_usleep(100000L);
          }
+#ifdef HAVE_STATX
+      } while (stat_buf.stx_size == 0);
+#else
       } while (stat_buf.st_size == 0);
+#endif
 
       /* Open file */
       if ((stat_fd = open(statistic_file[i], O_RDONLY)) < 0)
@@ -187,12 +204,21 @@ main(int argc, char *argv[])
       }
 
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      afdstat_size[i] = stat_buf.stx_size;
+# else
       afdstat_size[i] = stat_buf.st_size;
-      if ((p_afd_stat[i] = mmap(NULL, stat_buf.st_size,
+# endif
+      if ((p_afd_stat[i] = mmap(NULL, afdstat_size[i],
                                 PROT_READ, (MAP_FILE | MAP_SHARED),
                                 stat_fd, 0)) == (caddr_t) -1)
 #else
-      if ((p_afd_stat[i] = mmap_emu(NULL, stat_buf.st_size,
+      if ((p_afd_stat[i] = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                    stat_buf.stx_size,
+# else
+                                    stat_buf.st_size,
+# endif
                                     PROT_READ, (MAP_FILE | MAP_SHARED),
                                     statistic_file[i], 0)) == (caddr_t) -1)
 #endif
@@ -204,8 +230,13 @@ main(int argc, char *argv[])
          exit(INCORRECT);
       }
       p_afd_stat[i] = p_afd_stat[i] + AFD_WORD_OFFSET;
+# ifdef HAVE_STATX
+      no_of_hosts[i] = (stat_buf.stx_size - AFD_WORD_OFFSET) /
+                       sizeof(struct afdstat);
+# else
       no_of_hosts[i] = (stat_buf.st_size - AFD_WORD_OFFSET) /
                        sizeof(struct afdstat);
+# endif
       (void)close(stat_fd);
    }
 

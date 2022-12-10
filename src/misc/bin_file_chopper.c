@@ -1,6 +1,6 @@
 /*
  *  bin_file_chopper.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -179,7 +179,11 @@ bin_file_chopper(char         *bin_file,
                  *p_new_file,
                  date_str[16],
                  originator[MAX_FILENAME_LENGTH];
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
 #ifdef _PRODUCTION_LOG
    clock_t       start_time;
    struct tms    tval;
@@ -189,7 +193,12 @@ bin_file_chopper(char         *bin_file,
    start_time = times(&tval);
 #endif
 
+#ifdef HAVE_STATX
+   if (statx(0, bin_file, AT_STATX_SYNC_AS_STAT,
+             STATX_SIZE | STATX_MODE, &stat_buf) != 0)
+#else
    if (stat(bin_file, &stat_buf) != 0)
+#endif
    {
       if (errno == ENOENT)
       {
@@ -201,7 +210,11 @@ bin_file_chopper(char         *bin_file,
       else
       {
          receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
+#ifdef HAVE_STATX
+                     _("Failed to statx() `%s' : %s"),
+#else
                      _("Failed to stat() `%s' : %s"),
+#endif
                      bin_file, strerror(errno));
          return(INCORRECT);
       }
@@ -211,11 +224,19 @@ bin_file_chopper(char         *bin_file,
     * If the size of the file is less then 10 forget it. There must be
     * something really wrong.
     */
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size < 10)
+#else
    if (stat_buf.st_size < 10)
+#endif
    {
       return(INCORRECT);
    }
+#ifdef HAVE_STATX
+   file_mode = stat_buf.stx_mode;
+#else
    file_mode = stat_buf.st_mode;
+#endif
 
    if ((fd = open(bin_file, O_RDONLY)) < 0)
    {
@@ -225,10 +246,20 @@ bin_file_chopper(char         *bin_file,
    }
 
 #ifdef HAVE_MMAP
-   if ((buffer = mmap(NULL, stat_buf.st_size, PROT_READ,
+   if ((buffer = mmap(NULL,
+# ifdef HAVE_STATX
+                      stat_buf.stx_size, PROT_READ,
+# else
+                      stat_buf.st_size, PROT_READ,
+# endif
                       MAP_SHARED, fd, 0)) == (caddr_t) -1)
 #else
-   if ((buffer = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
+   if ((buffer = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                          stat_buf.stx_size, PROT_READ,
+# else
+                          stat_buf.st_size, PROT_READ,
+# endif
                           MAP_SHARED, bin_file, 0)) == (caddr_t) -1)
 #endif
    {
@@ -239,7 +270,11 @@ bin_file_chopper(char         *bin_file,
    }
    p_file = buffer;
 
+#ifdef HAVE_STATX
+   total_length = stat_buf.stx_size;
+#else
    total_length = stat_buf.st_size;
+#endif
 
    /* Close the file since we do not need it anymore */
    if (close(fd) == -1)
@@ -256,7 +291,11 @@ bin_file_chopper(char         *bin_file,
                  "Buffer to store file name is to small (%d < %d).",
                  MAX_PATH_LENGTH, i);
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      (void)munmap(p_file, stat_buf.stx_size);
+# else
       (void)munmap(p_file, stat_buf.st_size);
+# endif
 #else
       (void)munmap_emu(p_file);
 #endif
@@ -274,7 +313,11 @@ bin_file_chopper(char         *bin_file,
       receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                   _("Cannot determine directory where to store files!"));
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      (void)munmap(p_file, stat_buf.stx_size);
+# else
       (void)munmap(p_file, stat_buf.st_size);
+# endif
 #else
       (void)munmap_emu(p_file);
 #endif
@@ -294,7 +337,11 @@ bin_file_chopper(char         *bin_file,
       receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                   _("Cannot determine directory where to store files!"));
 # ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      (void)munmap(p_file, stat_buf.stx_size);
+# else
       (void)munmap(p_file, stat_buf.st_size);
+# endif
 # else
       (void)munmap_emu(p_file);
 # endif
@@ -318,7 +365,11 @@ bin_file_chopper(char         *bin_file,
       receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                   _("Failed to open AFD counter file."));
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      (void)munmap(p_file, stat_buf.stx_size);
+# else
       (void)munmap(p_file, stat_buf.st_size);
+# endif
 #else
       (void)munmap_emu(p_file);
 #endif
@@ -365,7 +416,11 @@ bin_file_chopper(char         *bin_file,
 # endif
                close_counter_file(counter_fd, &counter);
 # ifdef HAVE_MMAP
+#  ifdef HAVE_STATX
+               (void)munmap(p_file, stat_buf.stx_size);
+#  else
                (void)munmap(p_file, stat_buf.st_size);
+#  endif
 # else
                (void)munmap_emu(p_file);
 # endif
@@ -530,7 +585,11 @@ bin_file_chopper(char         *bin_file,
                            "Failed to get the next number.");
 #endif
 #ifdef HAVE_MMAP
+#  ifdef HAVE_STATX
+               (void)munmap(p_file, stat_buf.stx_size);
+#  else
                (void)munmap(p_file, stat_buf.st_size);
+#  endif
 #else
                (void)munmap_emu(p_file);
 #endif
@@ -585,7 +644,11 @@ bin_file_chopper(char         *bin_file,
                            new_file, strerror(errno));
 #endif
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+               (void)munmap(p_file, stat_buf.stx_size);
+# else
                (void)munmap(p_file, stat_buf.st_size);
+# endif
 #else
                (void)munmap_emu(p_file);
 #endif
@@ -612,12 +675,20 @@ bin_file_chopper(char         *bin_file,
                data_length = message_length;
             }
 
+#ifdef HAVE_STATX
+            if (writen(fd, ptr, data_length, stat_buf.stx_blksize) != data_length)
+#else
             if (writen(fd, ptr, data_length, stat_buf.st_blksize) != data_length)
+#endif
             {
                receive_log(ERROR_SIGN, __FILE__, __LINE__, tvalue,
                            _("writen() error : %s"), strerror(errno));
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+               (void)munmap(p_file, stat_buf.stx_size);
+# else
                (void)munmap(p_file, stat_buf.st_size);
+# endif
 #else
                (void)munmap_emu(p_file);
 #endif
@@ -756,7 +827,11 @@ bin_file_chopper(char         *bin_file,
    }
    else
    {
+#ifdef HAVE_STATX
+      *file_size -= stat_buf.stx_size;
+#else
       *file_size -= stat_buf.st_size;
+#endif
       (*files_to_send)--;
    }
    close_counter_file(counter_fd, &counter);
@@ -775,7 +850,11 @@ bin_file_chopper(char         *bin_file,
                         "%s%c%llx%c%s%c%llx%c0%c%s",
 # endif
                         p_file_name, SEPARATOR_CHAR,
+# ifdef HAVE_STATX
+                        (pri_off_t)stat_buf.stx_size, SEPARATOR_CHAR,
+# else
                         (pri_off_t)stat_buf.st_size, SEPARATOR_CHAR,
+# endif
                         pld[i].file_name, SEPARATOR_CHAR,
                         (pri_off_t)pld[i].size, SEPARATOR_CHAR,
                         SEPARATOR_CHAR, full_option);
@@ -786,7 +865,11 @@ bin_file_chopper(char         *bin_file,
    }
 #endif
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+   if (munmap(p_file, stat_buf.stx_size) == -1)
+# else
    if (munmap(p_file, stat_buf.st_size) == -1)
+# endif
 #else
    if (munmap_emu(p_file) == -1)
 #endif

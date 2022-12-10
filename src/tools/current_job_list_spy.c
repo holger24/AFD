@@ -1,7 +1,7 @@
 /*
  *  current_job_list_spy.c - Part of AFD, an automatic file distribution
  *                           program.
- *  Copyright (c) 1998 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -64,13 +64,17 @@ const char *sys_log_name = SYSTEM_LOG_FIFO;
 int
 main(int argc, char *argv[])
 {
-   int         fd,
-               *no_of_jobs;
-   char        file[MAX_PATH_LENGTH + FIFO_DIR_LENGTH + CURRENT_MSG_LIST_FILE_LENGTH],
-               *ptr,
-               *tmp_ptr,
-               work_dir[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+   int          fd,
+                *no_of_jobs;
+   char         file[MAX_PATH_LENGTH + FIFO_DIR_LENGTH + CURRENT_MSG_LIST_FILE_LENGTH],
+                *ptr,
+                *tmp_ptr,
+                work_dir[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    CHECK_FOR_VERSION(argc, argv);
 
@@ -89,15 +93,25 @@ main(int argc, char *argv[])
       exit(INCORRECT);
    }
 
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
       (void)fprintf(stderr,
-                    _("Failed to fstat() `%s' : %s (%s %d)\n"),
+                    _("Failed to access `%s' : %s (%s %d)\n"),
                     file, strerror(errno), __FILE__, __LINE__);
       exit(INCORRECT);
    }
 
-   if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+   if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                   stat_buf.stx_size, PROT_READ,
+#else
+                   stat_buf.st_size, PROT_READ,
+#endif
                    MAP_SHARED, fd, 0)) == (caddr_t)-1)
    {
       (void)fprintf(stderr,
@@ -126,7 +140,11 @@ main(int argc, char *argv[])
       (void)fprintf(stdout, _("No messages cached.\n"));
    }
 
+#ifdef HAVE_STATX
+   if (munmap(tmp_ptr, stat_buf.stx_size) == -1)
+#else
    if (munmap(tmp_ptr, stat_buf.st_size) == -1)
+#endif
    {
       (void)fprintf(stderr,
                     _("Failed to munmap() `%s' : %s (%s %d)\n"),

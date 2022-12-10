@@ -45,6 +45,9 @@ DESCR__E_M3
 #include <stdlib.h>                /* exit()                             */
 #include <unistd.h>                /* unlink(), write()                  */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>                /* Definition of AT_* constants       */
+#endif
 #include <sys/stat.h>              /* stat(), S_ISREG()                  */
 #include <dirent.h>                /* opendir(), closedir(), readdir(),  */
                                    /* DIR, struct dirent                 */
@@ -123,15 +126,30 @@ del_unknown_inotify_files(time_t current_time)
                   }
                   if (gotcha == NO)
                   {
-                     struct stat stat_buf;
-
+#ifdef HAVE_STATX
+                     struct statx stat_buf;
+#else
+                     struct stat  stat_buf;
+#endif
                      (void)strcpy(work_ptr, p_dir->d_name);
-                     if (stat(fullname, &stat_buf) < 0)
+#ifdef HAVE_STATX
+                     if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+# ifndef LINUX
+                               STATX_MODE |
+# endif
+                               STATX_SIZE | STATX_MTIME, &stat_buf) == -1)
+#else
+                     if (stat(fullname, &stat_buf) == -1)
+#endif
                      {
                         if (errno != ENOENT)
                         {
                            system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                                      _("Failed to statx() `%s' : %s"),
+#else
                                       _("Failed to stat() `%s' : %s"),
+#endif
                                       fullname, strerror(errno));
                         }
                      }
@@ -139,10 +157,18 @@ del_unknown_inotify_files(time_t current_time)
                      {
 #ifndef LINUX
                         /* Sure it is a normal file? */
+# ifdef HAVE_STATX
+                        if (S_ISREG(stat_buf.stx_mode))
+# else
                         if (S_ISREG(stat_buf.st_mode))
+# endif
 #endif
                         {
+#ifdef HAVE_STATX
+                           time_t diff_time = current_time - stat_buf.stx_mtime.tv_sec;
+#else
                            time_t diff_time = current_time - stat_buf.st_mtime;
+#endif
 
                            if ((diff_time > fra[de[iwl[i].de_pos].fra_pos].unknown_file_time) &&
                                (diff_time > DEFAULT_TRANSFER_TIMEOUT))
@@ -169,7 +195,11 @@ del_unknown_inotify_files(time_t current_time)
                                                 "%-*s %03x",
                                                 MAX_HOSTNAME_LENGTH, "-",
                                                 (fra[de[iwl[i].de_pos].fra_pos].in_dc_flag & UNKNOWN_FILES_IDC) ?  DEL_UNKNOWN_FILE : DEL_UNKNOWN_FILE_GLOB);
+# ifdef HAVE_STATX
+                                 *dl.file_size = stat_buf.stx_size;
+# else
                                  *dl.file_size = stat_buf.st_size;
+# endif
                                  *dl.dir_id = de[iwl[i].de_pos].dir_id;
                                  *dl.job_id = 0;
                                  *dl.input_time = 0L;

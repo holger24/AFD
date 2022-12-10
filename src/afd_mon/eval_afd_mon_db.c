@@ -1,6 +1,6 @@
 /*
  *  eval_afd_mon_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -123,20 +123,41 @@ eval_afd_mon_db(struct mon_list **nml)
    /* Read the contents of the AFD_MON_CONFIG file into a buffer. */
    if ((fd = open(afd_mon_db_file, O_RDONLY)) != -1)
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) != -1)
+#else
       if (fstat(fd, &stat_buf) != -1)
+#endif
       {
+#ifdef HAVE_STATX
+         if ((afdbase = malloc(stat_buf.stx_size + 2)) != NULL)
+#else
          if ((afdbase = malloc(stat_buf.st_size + 2)) != NULL)
+#endif
          {
+#ifdef HAVE_STATX
+            if (read(fd, &afdbase[1], stat_buf.stx_size) != stat_buf.stx_size)
+#else
             if (read(fd, &afdbase[1], stat_buf.st_size) != stat_buf.st_size)
+#endif
             {
                system_log(FATAL_SIGN, __FILE__, __LINE__,
                           "Failed to read() from `%s' : %s",
                           afd_mon_db_file, strerror(errno));
                exit(INCORRECT);
             }
+#ifdef HAVE_STATX
+            afdbase[1 + stat_buf.stx_size] = '\0';
+#else
             afdbase[1 + stat_buf.st_size] = '\0';
+#endif
          }
          else
          {
@@ -146,14 +167,19 @@ eval_afd_mon_db(struct mon_list **nml)
 #else
                        "Failed to malloc() %lld bytes : %s",
 #endif
-                       (pri_off_t)(stat_buf.st_size + 2), strerror(errno));
+#ifdef HAVE_STATX
+                       (pri_off_t)(stat_buf.stx_size + 2),
+#else
+                       (pri_off_t)(stat_buf.st_size + 2),
+#endif
+                       strerror(errno));
             exit(INCORRECT);
          }
       }
       else
       {
          system_log(FATAL_SIGN, __FILE__, __LINE__,
-                    "Failed to fstat() `%s' : %s",
+                    "Failed to access `%s' : %s",
                     afd_mon_db_file, strerror(errno));
          exit(INCORRECT);
       }

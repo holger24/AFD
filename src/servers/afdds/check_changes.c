@@ -174,18 +174,36 @@ retry_check:
    now = time(NULL);
    if (next_stat_time < now)
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
       next_stat_time = now + STAT_INTERVAL;
+#ifdef HAVE_STATX
+      if (statx(0, afd_config_file, AT_STATX_SYNC_AS_STAT,
+                STATX_MTIME, &stat_buf) == 0)
+#else
       if (stat(afd_config_file, &stat_buf) == 0)
+#endif
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_mtime.tv_sec != old_st_mtime)
+#else
          if (stat_buf.st_mtime != old_st_mtime)
+#endif
          {
             char *buffer;
 
+#ifdef HAVE_STATX
+            old_st_mtime = stat_buf.stx_mtime.tv_sec;
+#else
             old_st_mtime = stat_buf.st_mtime;
+#endif
             if ((eaccess(afd_config_file, F_OK) == 0) &&
-                (read_file_no_cr(afd_config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
+                (read_file_no_cr(afd_config_file, &buffer,
+                                 YES, __FILE__, __LINE__) != INCORRECT))
             {
                int  max_connections = 0;
                char value[MAX_INT_LENGTH];

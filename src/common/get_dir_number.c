@@ -1,6 +1,6 @@
 /*
  *  get_dir_number.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,6 +52,9 @@ DESCR__E_M3
 #include <string.h>                   /* strerror()                      */
 #include <unistd.h>                   /* mkdir(), pathconf()             */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>                   /* Definition of AT_* constants */
+#endif
 #include <sys/stat.h>                 /* stat()                          */
 #include <errno.h>
 
@@ -63,10 +66,14 @@ static long link_max = 0L;
 int
 get_dir_number(char *directory, unsigned int id, long *dirs_left)
 {
-   int         i;
-   size_t      length;
-   char        fulldir[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+   int          i;
+   size_t       length;
+   char         fulldir[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    if (link_max == 0L)
    {
@@ -94,14 +101,27 @@ get_dir_number(char *directory, unsigned int id, long *dirs_left)
    {
       (void)snprintf(&fulldir[length], MAX_PATH_LENGTH - length,
                      "%x/%x", id, i);
+#ifdef HAVE_STATX
+      if (statx(0, fulldir, AT_STATX_SYNC_AS_STAT,
+                STATX_NLINK, &stat_buf) == -1)
+#else
       if (stat(fulldir, &stat_buf) == -1)
+#endif
       {
          if (errno == ENOENT)
          {
+#ifdef HAVE_STATX
+            if (statx(0, directory, AT_STATX_SYNC_AS_STAT, 0, &stat_buf) == -1)
+#else
             if (stat(directory, &stat_buf) == -1)
+#endif
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                          _("Failed to statx() `%s' : %s"),
+#else
                           _("Failed to stat() `%s' : %s"),
+#endif
                           directory, strerror(errno));
                return(INCORRECT);
             }
@@ -109,10 +129,19 @@ get_dir_number(char *directory, unsigned int id, long *dirs_left)
             (void)snprintf(&fulldir[length], MAX_PATH_LENGTH - length,
                            "%x", id);
             errno = 0;
+#ifdef HAVE_STATX
+            if ((statx(0, fulldir, AT_STATX_SYNC_AS_STAT,
+                       0, &stat_buf) == -1) && (errno != ENOENT))
+#else
             if ((stat(fulldir, &stat_buf) == -1) && (errno != ENOENT))
+#endif
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                          _("Failed to statx() `%s' : %s"),
+#else
                           _("Failed to stat() `%s' : %s"),
+#endif
                           fulldir, strerror(errno));
                return(INCORRECT);
             }
@@ -171,16 +200,28 @@ get_dir_number(char *directory, unsigned int id, long *dirs_left)
          else
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                       _("Failed to statx() `%s' : %s"),
+#else
                        _("Failed to stat() `%s' : %s"),
+#endif
                        fulldir, strerror(errno));
             return(INCORRECT);
          }
       }
+#ifdef HAVE_STATX
+      else if (stat_buf.stx_nlink < link_max)
+#else
       else if (stat_buf.st_nlink < link_max)
+#endif
            {
               if (dirs_left != NULL)
               {
+#ifdef HAVE_STATX
+                 *dirs_left = link_max - stat_buf.stx_nlink;
+#else
                  *dirs_left = link_max - stat_buf.st_nlink;
+#endif
                  if (*dirs_left > 10000L)
                  {
                     *dirs_left = 10000L;

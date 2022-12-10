@@ -1,6 +1,6 @@
 /*
  *  daemon_init.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -106,13 +106,17 @@ daemon_init(char *process)
     */
    if (process != NULL)
    {
-      int         fd,
-                  mode;
-      time_t      current_time;
-      size_t      length;
-      char        *buffer,
-                  daemon_log[MAX_PATH_LENGTH];
-      struct stat stat_buf;
+      int          fd,
+                   mode;
+      time_t       current_time;
+      size_t       length;
+      char         *buffer,
+                   daemon_log[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
+      struct stat  stat_buf;
+#endif
 
       (void)snprintf(daemon_log, MAX_PATH_LENGTH, "%s%s", p_work_dir, LOG_DIR);
       if (check_dir(daemon_log, R_OK | W_OK | X_OK) < 0)
@@ -123,13 +127,22 @@ daemon_init(char *process)
       }
       (void)snprintf(daemon_log, MAX_PATH_LENGTH, "%s%s/DAEMON_LOG.%s",
                      p_work_dir, LOG_DIR, process);
+#ifdef HAVE_STATX
+      if (statx(0, daemon_log, AT_STATX_SYNC_AS_STAT,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (stat(daemon_log, &stat_buf) == -1)
+#endif
       {
          mode = O_CREAT | O_TRUNC | O_WRONLY;
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > 102400)
+#else
          if (stat_buf.st_size > 102400)
+#endif
          {
             mode = O_CREAT | O_TRUNC | O_WRONLY;
          }

@@ -405,7 +405,11 @@ write_host_config(int              no_of_hosts,
                  *new_name,
                  *ptr,
                  tmp_real_hostname[2][MAX_REAL_HOSTNAME_LENGTH + MAX_REAL_HOSTNAME_LENGTH];
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
 
    if ((lock_fd = lock_file(host_config_file, ON)) == INCORRECT)
    {
@@ -641,15 +645,31 @@ write_host_config(int              no_of_hosts,
    }
    free(new_name);
 
+#ifdef HAVE_STATX
+   if (statx(0, host_config_file, AT_STATX_SYNC_AS_STAT,
+# ifdef GROUP_CAN_WRITE
+             STATX_MODE |
+# endif
+             STATX_MTIME, &stat_buf) == -1)
+#else
    if (stat(host_config_file, &stat_buf) == -1)
+#endif
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                 _("Failed to statx() `%s' : %s"),
+#else
                  _("Failed to stat() `%s' : %s"),
+#endif
                  host_config_file, strerror(errno));
       exit(INCORRECT);
    }
 #ifdef GROUP_CAN_WRITE
+# ifdef HAVE_STATX
+   if (stat_buf.stx_mode != (S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP))
+# else
    if (stat_buf.st_mode != (S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP))
+# endif
    {
       if (chmod(host_config_file,
                 (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
@@ -661,7 +681,11 @@ write_host_config(int              no_of_hosts,
       }
    }
 #endif
+#ifdef HAVE_STATX
+   mod_time = stat_buf.stx_mtime.tv_sec;
+#else
    mod_time = stat_buf.st_mtime;
+#endif
 
    return(mod_time);
 }

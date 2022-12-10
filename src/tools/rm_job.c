@@ -1,6 +1,6 @@
 /*
  *  rm_job.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -242,10 +242,14 @@ main(int argc, char *argv[])
 static void
 attach_to_queue_buffer(void)
 {
-   int         fd;
-   char        file[MAX_PATH_LENGTH],
-               *ptr;
-   struct stat stat_buf;
+   int          fd;
+   char         file[MAX_PATH_LENGTH],
+                *ptr;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    (void)sprintf(file, "%s%s%s", p_work_dir, FIFO_DIR, MSG_QUEUE_FILE);
    if ((fd = open(file, O_RDWR)) == -1)
@@ -256,15 +260,25 @@ attach_to_queue_buffer(void)
       exit(INCORRECT);
    }
 
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
       (void)fprintf(stderr,
-                    "Failed to fstat() %s : %s (%s %d)\n",
+                    "Failed to access %s : %s (%s %d)\n",
                     file, strerror(errno), __FILE__, __LINE__);
       exit(INCORRECT);
    }
 
-   if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+   if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                   stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+#else
+                   stat_buf.st_size, (PROT_READ | PROT_WRITE),
+#endif
                    MAP_SHARED, fd, 0)) == (caddr_t)-1)
    {
       (void)fprintf(stderr,
@@ -285,15 +299,25 @@ attach_to_queue_buffer(void)
       exit(INCORRECT);
    }
 
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
       (void)fprintf(stderr,
-                    "Failed to fstat() %s : %s (%s %d)\n",
+                    "Failed to access %s : %s (%s %d)\n",
                     file, strerror(errno), __FILE__, __LINE__);
       exit(INCORRECT);
    }
 
-   if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+   if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                   stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+#else
+                   stat_buf.st_size, (PROT_READ | PROT_WRITE),
+#endif
                    MAP_SHARED, fd, 0)) == (caddr_t)-1)
    {
       (void)fprintf(stderr,
@@ -318,7 +342,11 @@ remove_job(char *del_dir, int fsa_pos)
    char          *ptr;
    DIR           *dp;
    struct dirent *p_dir;
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
 
    if ((dp = opendir(del_dir)) == NULL)
    {
@@ -339,10 +367,15 @@ remove_job(char *del_dir, int fsa_pos)
       }
       (void)strcpy(ptr, p_dir->d_name);
 
+#ifdef HAVE_STATX
+      if (statx(0, del_dir, AT_STATX_SYNC_AS_STAT,
+                STATX_MODE | STATX_SIZE, &stat_buf) == -1)
+#else
       if (stat(del_dir, &stat_buf) == -1)
+#endif
       {
          (void)fprintf(stderr,
-                       "Failed to stat() %s : %s (%s %d)\n",
+                       "Failed to access %s : %s (%s %d)\n",
                        del_dir, strerror(errno), __FILE__, __LINE__);
          if (unlink(del_dir) == -1)
          {
@@ -353,7 +386,11 @@ remove_job(char *del_dir, int fsa_pos)
       }
       else
       {
+#ifdef HAVE_STATX
+         if (!S_ISDIR(stat_buf.stx_mode))
+#else
          if (!S_ISDIR(stat_buf.st_mode))
+#endif
          {
             if (unlink(del_dir) == -1)
             {
@@ -364,7 +401,11 @@ remove_job(char *del_dir, int fsa_pos)
             else
             {
                number_deleted++;
+#ifdef HAVE_STATX
+               file_size_deleted += stat_buf.stx_size;
+#else
                file_size_deleted += stat_buf.st_size;
+#endif
             }
          }
       }

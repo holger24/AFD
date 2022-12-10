@@ -853,7 +853,11 @@ struct wmo_rep_list
 extern int    amg_zombie_check(pid_t *, int),
               check_full_dc_name_changes(void),
               check_group_list_mtime(void),
+#ifdef HAVE_STATX
+              check_list(struct directory_entry *, char *, struct statx *),
+#else
               check_list(struct directory_entry *, char *, struct stat *),
+#endif
               check_option(char *, FILE *),
               com(char),
               convert(char *, char *, int, int, unsigned int, unsigned int,

@@ -1,6 +1,6 @@
 /*
  *  convert_grib2wmo.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -93,17 +93,35 @@ convert_grib2wmo(char *file, off_t *file_size, char *default_CCCC)
    }
    else
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE | STATX_MODE, &stat_buf) == -1)
+#else
       if (fstat(fd, &stat_buf) == -1)
+#endif
       {
          receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                     _("Failed to fstat() `%s' : %s"), file, strerror(errno));
+#ifdef HAVE_STATX
+                     _("Failed to statx() `%s' : %s"),
+#else
+                     _("Failed to fstat() `%s' : %s"),
+#endif
+                     file, strerror(errno));
          ret = INCORRECT;
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size < 20)
+#else
          if (stat_buf.st_size < 20)
+#endif
          {
             receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                         _("File is to short to convert."));
@@ -113,7 +131,12 @@ convert_grib2wmo(char *file, off_t *file_size, char *default_CCCC)
          {
             char *buffer;
 
-            if ((buffer = mmap(NULL, stat_buf.st_size, PROT_READ,
+            if ((buffer = mmap(NULL,
+#ifdef HAVE_STATX
+                               stat_buf.stx_size, PROT_READ,
+#else
+                               stat_buf.st_size, PROT_READ,
+#endif
                                MAP_SHARED, fd, 0)) == (caddr_t) -1)
             {
                receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
@@ -127,13 +150,22 @@ convert_grib2wmo(char *file, off_t *file_size, char *default_CCCC)
                char tmp_file[13];
 
                (void)strcpy(tmp_file, ".convert.tmp");
+#ifdef HAVE_STATX
+               if ((to_fd = open(tmp_file, O_WRONLY | O_CREAT | O_TRUNC,
+                                 stat_buf.stx_mode)) == -1)
+#else
                if ((to_fd = open(tmp_file, O_WRONLY | O_CREAT | O_TRUNC,
                                  stat_buf.st_mode)) == -1)
+#endif
                {
                   receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                               _("Failed to open() `%s' : %s"),
                               tmp_file, strerror(errno));
+#ifdef HAVE_STATX
+                  if (munmap(buffer, stat_buf.stx_size) == -1)
+#else
                   if (munmap(buffer, stat_buf.st_size) == -1)
+#endif
                   {
                      receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                  _("Failed to munmap() from `%s' : %s"),
@@ -144,13 +176,21 @@ convert_grib2wmo(char *file, off_t *file_size, char *default_CCCC)
                else
                {
                   int   i;
+#ifdef HAVE_STATX
+                  off_t total_length = stat_buf.stx_size;
+#else
                   off_t total_length = stat_buf.st_size;
+#endif
                   char  header[36 + 6], /* +6 for wmoheader_from_grib() */
                         *ptr,
                         *ptr_end;
 
                   ptr = buffer;
+#ifdef HAVE_STATX
+                  ptr_end = buffer + stat_buf.stx_size;
+#else
                   ptr_end = buffer + stat_buf.st_size;
+#endif
                   while (total_length > 9)
                   {
                      unsigned int data_length = 0,
@@ -253,7 +293,11 @@ convert_grib2wmo(char *file, off_t *file_size, char *default_CCCC)
                                  tmp_file, strerror(errno));
                   }
                }
+#ifdef HAVE_STATX
+               if (munmap(buffer, stat_buf.stx_size) == -1)
+#else
                if (munmap(buffer, stat_buf.st_size) == -1)
+#endif
                {
                   receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                               _("Failed to munmap() from `%s' : %s"),

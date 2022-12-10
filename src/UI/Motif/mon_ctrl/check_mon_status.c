@@ -1,6 +1,6 @@
 /*
  *  check_mon_status.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2007 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -104,11 +104,24 @@ check_mon_status(Widget w)
    loop_timer += redraw_time_status;
    if (loop_timer > 20000)
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+      if (statx(0, mon_active_file, AT_STATX_SYNC_AS_STAT,
+                STATX_SIZE | STATX_MTIME, &stat_buf) == 0)
+#else
       if (stat(mon_active_file, &stat_buf) == 0)
+#endif
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_mtime.tv_sec != afd_mon_active_time)
+#else
          if (stat_buf.st_mtime != afd_mon_active_time)
+#endif
          {
             int fd;
 
@@ -120,7 +133,11 @@ check_mon_status(Widget w)
                (void)munmap_emu((void *)pid_list);
 #endif
             }
+#ifdef HAVE_STATX
+            afd_mon_active_time = stat_buf.stx_mtime.tv_sec;
+#else
             afd_mon_active_time = stat_buf.st_mtime;
+#endif
 
             if ((fd = open(mon_active_file, O_RDWR)) < 0)
             {
@@ -129,11 +146,21 @@ check_mon_status(Widget w)
             else
             {
 #ifdef HAVE_MMAP
-               if ((pid_list = mmap(NULL, stat_buf.st_size,
+# ifdef HAVE_STATX
+               afd_mon_active_size = stat_buf.stx_size;
+# else
+               afd_mon_active_size = stat_buf.st_size;
+# endif
+               if ((pid_list = mmap(NULL, afd_mon_active_size,
                                     (PROT_READ | PROT_WRITE), MAP_SHARED,
                                     fd, 0)) == (caddr_t) -1)
 #else
-               if ((pid_list = mmap_emu(NULL, stat_buf.st_size,
+               if ((pid_list = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                        stat_buf.stx_size,
+# else
+                                        stat_buf.st_size,
+# endif
                                         (PROT_READ | PROT_WRITE), MAP_SHARED,
                                         mon_active_file, 0)) == (caddr_t) -1)
 #endif
@@ -143,9 +170,6 @@ check_mon_status(Widget w)
                   pid_list = NULL;
                }
 
-#ifdef HAVE_MMAP
-               afd_mon_active_size = stat_buf.st_size;
-#endif
 
                if (close(fd) == -1)
                {

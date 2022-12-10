@@ -1,7 +1,7 @@
 /*
  *  inform_fd_about_fsa_change.c - Part of AFD, an automatic file
  *                                 distribution program.
- *  Copyright (c) 2002 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -67,19 +67,28 @@ inform_fd_about_fsa_change(void)
 {
    if (p_afd_status->fd == ON)
    {
-      int         cmd_fd,
-                  gotcha = NO,
-                  loops = 0,
-                  status;
+      int          cmd_fd,
+                   gotcha = NO,
+                   loops = 0,
+                   status;
 #ifdef WITHOUT_FIFO_RW_SUPPORT
-      int         readfd; /* Not used. */
+      int          readfd; /* Not used. */
 #endif
-      char        cmd_fifo[MAX_PATH_LENGTH];
-      struct stat stat_buf;
+      char         cmd_fifo[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
+      struct stat  stat_buf;
+#endif
 
       (void)snprintf(cmd_fifo, MAX_PATH_LENGTH, "%s%s%s",
                      p_work_dir, FIFO_DIR, FD_CMD_FIFO);
+#ifdef HAVE_STATX
+      if ((statx(0, cmd_fifo, AT_STATX_SYNC_AS_STAT, STATX_MODE,
+                 &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
       if ((stat(cmd_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+#endif
       {
          if (make_fifo(cmd_fifo) < 0)
          {

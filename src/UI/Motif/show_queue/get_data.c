@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -152,15 +152,19 @@ static int                        check_all_file_names(char *),
 void
 get_data(void)
 {
-   int         fd;
-   off_t       dnb_size,
-               jd_size;
-   time_t      end,
-               start;
-   char        fullname[MAX_PATH_LENGTH],
-               status_message[MAX_MESSAGE_LENGTH];
-   struct stat stat_buf;
-   XmString    xstr;
+   int          fd;
+   off_t        dnb_size,
+                jd_size;
+   time_t       end,
+                start;
+   char         fullname[MAX_PATH_LENGTH],
+                status_message[MAX_MESSAGE_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
+   XmString     xstr;
 
    /* Map to directory name buffer. */
    (void)sprintf(fullname, "%s%s%s", p_work_dir, FIFO_DIR,
@@ -171,23 +175,42 @@ get_data(void)
                  fullname, strerror(errno), __FILE__, __LINE__);
       return;
    }
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
-      (void)xrec(ERROR_DIALOG, "Failed to fstat() <%s> : %s (%s %d)",
+      (void)xrec(ERROR_DIALOG, "Failed to access <%s> : %s (%s %d)",
                  fullname, strerror(errno), __FILE__, __LINE__);
       (void)close(fd);
       return;
    }
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size > 0)
+#else
    if (stat_buf.st_size > 0)
+#endif
    {
       char *ptr;
 
 #ifdef HAVE_MMAP
-      if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+      if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                      stat_buf.stx_size, PROT_READ,
+# else
+                      stat_buf.st_size, PROT_READ,
+# endif
                       MAP_SHARED, fd, 0)) == (caddr_t) -1)
 #else
-      if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
-                      MAP_SHARED, fullname, 0)) == (caddr_t) -1)
+      if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                          stat_buf.stx_size, PROT_READ,
+# else
+                          stat_buf.st_size, PROT_READ,
+# endif
+                          MAP_SHARED, fullname, 0)) == (caddr_t) -1)
 #endif
       {
          (void)xrec(ERROR_DIALOG, "Failed to mmap() to <%s> : %s (%s %d)",
@@ -195,7 +218,11 @@ get_data(void)
          (void)close(fd);
          return;
       }
+#ifdef HAVE_STATX
+      dnb_size = stat_buf.stx_size;
+#else
       dnb_size = stat_buf.st_size;
+#endif
       no_of_dnb_dirs = *(int *)ptr;
       ptr += AFD_WORD_OFFSET;
       dnb = (struct dir_name_buf *)ptr;
@@ -218,23 +245,42 @@ get_data(void)
                  fullname, strerror(errno), __FILE__, __LINE__);
       return;
    }
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
-      (void)xrec(ERROR_DIALOG, "Failed to fstat() %s : %s (%s %d)",
+      (void)xrec(ERROR_DIALOG, "Failed to access %s : %s (%s %d)",
                  fullname, strerror(errno), __FILE__, __LINE__);
       (void)close(fd);
       return;
    }
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size > 0)
+#else
    if (stat_buf.st_size > 0)
+#endif
    {
       char *ptr;
 
 #ifdef HAVE_MMAP
-      if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+      if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                      stat_buf.stx_size, PROT_READ,
+# else
+                      stat_buf.st_size, PROT_READ,
+# endif
                       MAP_SHARED, fd, 0)) == (caddr_t) -1)
 #else
-      if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
-                      MAP_SHARED, fullname, 0)) == (caddr_t) -1)
+      if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                          stat_buf.stx_size, PROT_READ,
+# else
+                          stat_buf.st_size, PROT_READ,
+# endif
+                          MAP_SHARED, fullname, 0)) == (caddr_t) -1)
 #endif
       {
          (void)xrec(ERROR_DIALOG, "Failed to mmap() to %s : %s (%s %d)",
@@ -249,7 +295,11 @@ get_data(void)
          (void)close(fd);
          return;
       }
+#ifdef HAVE_STATX
+      jd_size = stat_buf.stx_size;
+#else
       jd_size = stat_buf.st_size;
+#endif
       no_of_jobs = *(int *)ptr;
       ptr += AFD_WORD_OFFSET;
       jd = (struct job_id_data *)ptr;
@@ -419,27 +469,48 @@ get_output_files(void)
    }
    else
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(fd, &stat_buf) == -1)
+#endif
       {
-         (void)xrec(FATAL_DIALOG, "Failed to fstat() <%s> : %s (%s %d)",
+         (void)xrec(FATAL_DIALOG, "Failed to access <%s> : %s (%s %d)",
                     fullname, strerror(errno), __FILE__, __LINE__);
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > 0)
+#else
          if (stat_buf.st_size > 0)
+#endif
          {
             char *buffer;
 
+#ifdef HAVE_STATX
+            if ((buffer = malloc(stat_buf.stx_size)) == NULL)
+#else
             if ((buffer = malloc(stat_buf.st_size)) == NULL)
+#endif
             {
                (void)xrec(FATAL_DIALOG, "malloc() error : %s (%s %d)",
                           strerror(errno), __FILE__, __LINE__);
             }
             else
             {
+#ifdef HAVE_STATX
+               if (read(fd, buffer, stat_buf.stx_size) != stat_buf.stx_size)
+#else
                if (read(fd, buffer, stat_buf.st_size) != stat_buf.st_size)
+#endif
                {
                   (void)xrec(FATAL_DIALOG, "Failed to read() <%s> : %s (%s %d)",
                              fullname, strerror(errno), __FILE__, __LINE__);
@@ -615,27 +686,48 @@ get_retrieve_jobs(void)
    }
    else
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(fd, &stat_buf) == -1)
+#endif
       {
-         (void)xrec(FATAL_DIALOG, "Failed to fstat() <%s> : %s (%s %d)",
+         (void)xrec(FATAL_DIALOG, "Failed to access <%s> : %s (%s %d)",
                     fullname, strerror(errno), __FILE__, __LINE__);
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > 0)
+#else
          if (stat_buf.st_size > 0)
+#endif
          {
             char *buffer;
 
+#ifdef HAVE_STATX
+            if ((buffer = malloc(stat_buf.stx_size)) == NULL)
+#else
             if ((buffer = malloc(stat_buf.st_size)) == NULL)
+#endif
             {
                (void)xrec(FATAL_DIALOG, "malloc() error : %s (%s %d)",
                           strerror(errno), __FILE__, __LINE__);
             }
             else
             {
+#ifdef HAVE_STATX
+               if (read(fd, buffer, stat_buf.stx_size) != stat_buf.stx_size)
+#else
                if (read(fd, buffer, stat_buf.st_size) != stat_buf.st_size)
+#endif
                {
                   (void)xrec(FATAL_DIALOG, "Failed to read() <%s> : %s (%s %d)",
                              fullname, strerror(errno), __FILE__, __LINE__);
@@ -864,7 +956,11 @@ get_input_files(void)
    size_t        dir_name_length;
    DIR           *dp;
    struct dirent *p_dir;
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
 
    for (i = 0; ((i < no_of_dnb_dirs) && (limit_reached == NO)); i++)
    {
@@ -931,8 +1027,14 @@ get_input_files(void)
                      p_file = queue_dir + sprintf(queue_dir, "%s/%s/",
                                                   dnb[i].dir_name,
                                                   p_dir->d_name);
+#ifdef HAVE_STATX
+                     if ((statx(0, queue_dir, AT_STATX_SYNC_AS_STAT,
+                                STATX_MODE, &stat_buf) != -1) &&
+                         (S_ISDIR(stat_buf.stx_mode)))
+#else
                      if ((stat(queue_dir, &stat_buf) != -1) &&
                          (S_ISDIR(stat_buf.st_mode)))
+#endif
                      {
                         int gotcha;
 
@@ -1106,7 +1208,11 @@ get_all_time_jobs(void)
                  *p_queue;
    DIR           *dp;
    struct dirent *p_dir;
+# ifdef HAVE_STATX
+   struct statx  stat_buf;
+# else
    struct stat   stat_buf;
+# endif
 
    p_queue = fullname + sprintf(fullname, "%s%s%s/",
                                 p_work_dir, AFD_FILE_DIR, AFD_TIME_DIR);
@@ -1118,8 +1224,15 @@ get_all_time_jobs(void)
          if (p_dir->d_name[0] != '.')
          {
             p_file = p_queue + sprintf(p_queue, "%s", p_dir->d_name);
+# ifdef HAVE_STATX
+            if ((statx(0, fullname,
+                       AT_STATX_SYNC_AS_STAT | AT_SYMLINK_NOFOLLOW,
+                       STATX_MODE, &stat_buf) != -1) &&
+                (S_ISLNK(stat_buf.stx_mode)))
+# else
             if ((lstat(fullname, &stat_buf) != -1) &&
                 (S_ISLNK(stat_buf.st_mode)))
+# endif
             {
                get_time_jobs(fullname, p_file, p_dir->d_name);
             }
@@ -1155,7 +1268,11 @@ get_time_jobs(void)
 #endif
    DIR           *dp;
    struct dirent *p_dir;
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
 
 #ifdef MULTI_FS_SUPPORT
    *p_queue = '/';
@@ -1185,8 +1302,14 @@ get_time_jobs(void)
          if (p_dir->d_name[0] != '.')
          {
             p_file = p_queue + sprintf(p_queue, "%s/", p_dir->d_name);
+#ifdef HAVE_STATX
+            if ((statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                       STATX_MODE, &stat_buf) != -1) &&
+                (S_ISDIR(stat_buf.stx_mode)))
+#else
             if ((stat(fullname, &stat_buf) != -1) &&
                 (S_ISDIR(stat_buf.st_mode)))
+#endif
             {
                unsigned int job_id;
 
@@ -1460,8 +1583,12 @@ insert_file(char         *queue_dir,
             unsigned int files_to_send,
             int          fra_pos)
 {
-   DIR         *dpfile;
-   struct stat stat_buf;
+   DIR          *dpfile;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    if ((dpfile = opendir(queue_dir)) != NULL)
    {
@@ -1476,16 +1603,41 @@ insert_file(char         *queue_dir,
             if (check_all_file_names(dirp->d_name) != -1)
             {
                (void)strcpy(ptr_file, dirp->d_name);
+#ifdef HAVE_STATX
+               if ((statx(0, queue_dir, AT_STATX_SYNC_AS_STAT,
+                          STATX_MODE | STATX_MTIME | STATX_SIZE,
+                          &stat_buf) != -1) && (!S_ISDIR(stat_buf.stx_mode)))
+#else
                if ((stat(queue_dir, &stat_buf) != -1) &&
                    (!S_ISDIR(stat_buf.st_mode)))
+#endif
                {
                   /* If necessary check if its in the time span. */
+#ifdef HAVE_STATX
+                  if (((start_time_val == -1) ||
+                       (stat_buf.stx_mtime.tv_sec >= start_time_val)) &&
+                      ((end_time_val == -1) ||
+                       (stat_buf.stx_mtime.tv_sec <= end_time_val)))
+#else
                   if (((start_time_val == -1) ||
                        (stat_buf.st_mtime >= start_time_val)) &&
                       ((end_time_val == -1) ||
                        (stat_buf.st_mtime <= end_time_val)))
+#endif
                   {
                      /* If necessary check the file size. */
+#ifdef HAVE_STATX
+                     if ((search_file_size == -1) ||
+                         ((search_file_size != -1) &&
+                          (((gt_lt_sign == GREATER_THEN_SIGN) &&
+                            (stat_buf.stx_size > search_file_size)) ||
+                           ((gt_lt_sign == LESS_THEN_SIGN) &&
+                            (stat_buf.stx_size < search_file_size)) ||
+                           ((gt_lt_sign == NOT_SIGN) &&
+                            (stat_buf.stx_size != search_file_size)) ||
+                           ((gt_lt_sign == EQUAL_SIGN) &&
+                            (stat_buf.stx_size == search_file_size)))))
+#else
                      if ((search_file_size == -1) ||
                          ((search_file_size != -1) &&
                           (((gt_lt_sign == GREATER_THEN_SIGN) &&
@@ -1496,6 +1648,7 @@ insert_file(char         *queue_dir,
                             (stat_buf.st_size != search_file_size)) ||
                            ((gt_lt_sign == EQUAL_SIGN) &&
                             (stat_buf.st_size == search_file_size)))))
+#endif
                      {
                         /* Finally we got a file. */
                         if ((total_no_files % 50) == 0)
@@ -1542,8 +1695,13 @@ insert_file(char         *queue_dir,
                         qfl[total_no_files].pos = -1;
                         qfl[total_no_files].job_id = job_id;
                         qfl[total_no_files].dir_id = dir_id;
+#ifdef HAVE_STATX
+                        qfl[total_no_files].size = stat_buf.stx_size;
+                        qfl[total_no_files].mtime = stat_buf.stx_mtime.tv_sec;
+#else
                         qfl[total_no_files].size = stat_buf.st_size;
                         qfl[total_no_files].mtime = stat_buf.st_mtime;
+#endif
                         qfl[total_no_files].dir_id_pos = dir_id_pos;
                         qfl[total_no_files].queue_type = queue_type;
                         qfl[total_no_files].priority = priority;
@@ -1618,7 +1776,11 @@ insert_file(char         *queue_dir,
                            qfl[total_no_files].queue_tmp_buf_pos = -1;
                         }
                         total_no_files++;
+#ifdef HAVE_STATX
+                        total_file_size += stat_buf.stx_size;
+#else
                         total_file_size += stat_buf.st_size;
+#endif
 
                         if ((perm.list_limit > 0) &&
                             (total_no_files > perm.list_limit))

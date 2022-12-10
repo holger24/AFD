@@ -1,6 +1,6 @@
 /*
  *  check_paused_dir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -64,6 +64,9 @@ DESCR__E_M3
 #include <stdio.h>                 /* NULL                               */
 #include <string.h>                /* strlen(), strcpy(), strerror()     */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>                /* Definition of AT_* constants       */
+#endif
 #include <sys/stat.h>              /* stat(), S_ISREG()                  */
 #include <dirent.h>                /* opendir(), readdir(), closedir()   */
 #include <unistd.h>
@@ -103,11 +106,24 @@ check_paused_dir(struct directory_entry *p_de,
    {
       if ((fsa[fra[p_de->fra_pos].fsa_pos].host_status & PAUSE_QUEUE_STAT) == 0)
       {
-         struct stat stat_buf;
+#ifdef HAVE_STATX
+         struct statx stat_buf;
+#else
+         struct stat  stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+         if (statx(0, p_de->paused_dir, AT_STATX_SYNC_AS_STAT,
+                   STATX_MODE, &stat_buf) == 0)
+#else
          if (stat(p_de->paused_dir, &stat_buf) == 0)
+#endif
          {
+#ifdef HAVE_STATX
+            if (S_ISDIR(stat_buf.stx_mode))
+#else
             if (S_ISDIR(stat_buf.st_mode))
+#endif
             {
                if (fsa[fra[p_de->fra_pos].fsa_pos].special_flag & HOST_DISABLED)
                {
@@ -156,11 +172,24 @@ check_paused_dir(struct directory_entry *p_de,
                 (fsa[db[p_de->fme[i].pos[j]].position].host_status & AUTO_PAUSE_QUEUE_STAT) ||
                 (fsa[db[p_de->fme[i].pos[j]].position].host_status & DANGER_PAUSE_QUEUE_STAT)))))
          {
-            struct stat stat_buf;
+#ifdef HAVE_STATX
+            struct statx stat_buf;
+#else
+            struct stat  stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+            if (statx(0, db[p_de->fme[i].pos[j]].paused_dir,
+                      AT_STATX_SYNC_AS_STAT, STATX_MODE, &stat_buf) == 0)
+#else
             if (stat(db[p_de->fme[i].pos[j]].paused_dir, &stat_buf) == 0)
+#endif
             {
+#ifdef HAVE_STATX
+               if (S_ISDIR(stat_buf.stx_mode))
+#else
                if (S_ISDIR(stat_buf.st_mode))
+#endif
                {
                   if (fsa[db[p_de->fme[i].pos[j]].position].special_flag & HOST_DISABLED)
                   {
@@ -225,7 +254,11 @@ remove_paused_dir(char *dirname, int fra_pos)
    char          *ptr;
    struct dirent *dirp;
    DIR           *dp;
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
 
    ptr = dirname + strlen(dirname);
 
@@ -251,12 +284,21 @@ remove_paused_dir(char *dirname, int fra_pos)
          continue;
       }
       (void)strcpy(ptr, dirp->d_name);
+#ifdef HAVE_STATX
+      if (statx(0, dirname, AT_STATX_SYNC_AS_STAT, STATX_SIZE, &stat_buf) == -1)
+#else
       if (stat(dirname, &stat_buf) == -1)
+#endif
       {
          if (errno != ENOENT)
          {
             system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                       "Failed to stat() `%s' : %s", dirname, strerror(errno));
+#ifdef HAVE_STATX
+                       "Failed to statx() `%s' : %s",
+#else
+                       "Failed to stat() `%s' : %s",
+#endif
+                       dirname, strerror(errno));
          }
       }
       else
@@ -270,7 +312,11 @@ remove_paused_dir(char *dirname, int fra_pos)
          else
          {
             files_deleted++;
+#ifdef HAVE_STATX
+            file_size_deleted += stat_buf.stx_size;
+#else
             file_size_deleted += stat_buf.st_size;
+#endif
          }
       }
 

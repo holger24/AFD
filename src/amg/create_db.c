@@ -1,6 +1,6 @@
 /*
  *  create_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -76,6 +76,9 @@ DESCR__E_M3
 #include <ctype.h>                 /* isdigit()                          */
 #include <time.h>                  /* time()                             */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <sys/sysmacros.h>        /* makedev()                          */
+#endif
 #include <sys/stat.h>
 #ifdef HAVE_MMAP
 # include <sys/mman.h>             /* msync(), munmap()                  */
@@ -189,7 +192,8 @@ create_db(FILE *udc_reply_fp, int write_fd)
 #ifdef _DISTRIBUTION_LOG
    unsigned int   max_jobs_per_dir;
 #endif
-   dev_t          ldv;               /* Local device number (filesystem). */
+   dev_t          current_dir_dev,
+                  ldv;               /* Local device number (filesystem). */
    time_t         start_time;
    char           amg_data_file[MAX_PATH_LENGTH],
                   *ptr,
@@ -198,7 +202,11 @@ create_db(FILE *udc_reply_fp, int write_fd)
                   *p_loptions,
                   *p_file;
    struct p_array *p_ptr;
+#ifdef HAVE_STATX
+   struct statx   stat_buf;
+#else
    struct stat    stat_buf;
+#endif
 
    /* Check if we need to free some data. */
    if (fjd != NULL)
@@ -303,15 +311,28 @@ create_db(FILE *udc_reply_fp, int write_fd)
    }
 
    /* Get device number for working directory. */
+#ifdef HAVE_STATX
+   if (statx(0, afd_file_dir, AT_STATX_SYNC_AS_STAT, 0, &stat_buf) == -1)
+#else
    if (stat(afd_file_dir, &stat_buf) == -1)
+#endif
    {
       p_afd_status->amg_jobs ^= WRITTING_JID_STRUCT;
       p_afd_status->amg_jobs &= ~REREADING_DIR_CONFIG;
       system_log(FATAL_SIGN, __FILE__, __LINE__,
-                 "Failed to stat() `%s' : %s", afd_file_dir, strerror(errno));
+#ifdef HAVE_STATX
+                 "Failed to statx() `%s' : %s",
+#else
+                 "Failed to stat() `%s' : %s",
+#endif
+                 afd_file_dir, strerror(errno));
       exit(INCORRECT);
    }
+#ifdef HAVE_STATX
+   ldv = makedev(stat_buf.stx_dev_major, stat_buf.stx_dev_minor);
+#else
    ldv = stat_buf.st_dev;
+#endif
 
    (void)snprintf(amg_data_file, MAX_PATH_LENGTH,
                   "%s%s%s", p_work_dir, FIFO_DIR, AMG_DATA_FILE);
@@ -323,15 +344,29 @@ create_db(FILE *udc_reply_fp, int write_fd)
                  "Failed to open() `%s' : %s", amg_data_file, strerror(errno));
       exit(INCORRECT);
    }
+#ifdef HAVE_STATX
+   if (statx(amg_data_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(amg_data_fd, &stat_buf) == -1)
+#endif
    {
       p_afd_status->amg_jobs ^= WRITTING_JID_STRUCT;
       p_afd_status->amg_jobs &= ~REREADING_DIR_CONFIG;
       system_log(FATAL_SIGN, __FILE__, __LINE__,
-                 "Failed to fstat() `%s' : %s", amg_data_file, strerror(errno));
+#ifdef HAVE_STATX
+                 "Failed to statx() `%s' : %s",
+#else
+                 "Failed to fstat() `%s' : %s",
+#endif
+                 amg_data_file, strerror(errno));
       exit(INCORRECT);
    }
+#ifdef HAVE_STATX
+   amg_data_size = stat_buf.stx_size;
+#else
    amg_data_size = stat_buf.st_size;
+#endif
 #ifdef HAVE_MMAP
    if ((p_mmap = mmap(NULL, amg_data_size, (PROT_READ | PROT_WRITE),
                       MAP_SHARED, amg_data_fd, 0)) == (caddr_t) -1)
@@ -468,19 +503,36 @@ create_db(FILE *udc_reply_fp, int write_fd)
    {
       de[0].paused_dir = NULL;
    }
+#ifdef HAVE_STATX
+   if (statx(0, de[0].dir, AT_STATX_SYNC_AS_STAT, 0, &stat_buf) < 0)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__, "Failed to statx() `%s' : %s",
+                 de[0].dir, strerror(errno));
+      current_dir_dev = ldv + 1;
+   }
+   else
+   {
+      current_dir_dev = makedev(stat_buf.stx_dev_major, stat_buf.stx_dev_minor);
+   }
+#else
    if (stat(de[0].dir, &stat_buf) < 0)
    {
-      system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Failed to stat() `%s' : %s", de[0].dir, strerror(errno));
-      stat_buf.st_dev = ldv + 1;
+      system_log(ERROR_SIGN, __FILE__, __LINE__, "Failed to stat() `%s' : %s",
+                 de[0].dir, strerror(errno));
+      current_dir_dev = ldv + 1;
    }
-#ifdef MULTI_FS_SUPPORT
-   de[0].dev = stat_buf.st_dev;
+   else
+   {
+      current_dir_dev = stat_buf.st_dev;
+   }
 #endif
-   if (stat_buf.st_dev != ldv)
+#ifdef MULTI_FS_SUPPORT
+   de[0].dev = current_dir_dev;
+#endif
+   if (current_dir_dev != ldv)
    {
 #ifdef MULTI_FS_SUPPORT
-      if (check_extra_filesystem(stat_buf.st_dev, 0) == YES)
+      if (check_extra_filesystem(de[0].dev, 0) == YES)
       {
          de[0].flag |= IN_SAME_FILESYSTEM;
       }
@@ -615,20 +667,36 @@ create_db(FILE *udc_reply_fp, int write_fd)
          {
             de[dir_counter].paused_dir = NULL;
          }
+#ifdef HAVE_STATX
+         if (statx(0, db[i].dir, AT_STATX_SYNC_AS_STAT, 0, &stat_buf) < 0)
+#else
          if (stat(db[i].dir, &stat_buf) < 0)
+#endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                       "Failed to statx() `%s' (i=%d) : %s",
+#else
                        "Failed to stat() `%s' (i=%d) : %s",
+#endif
                        db[i].dir, i, strerror(errno));
-            stat_buf.st_dev = ldv + 1;
+            current_dir_dev = ldv + 1;
+         }
+         else
+         {
+#ifdef HAVE_STATX
+            current_dir_dev = makedev(stat_buf.stx_dev_major, stat_buf.stx_dev_minor);
+#else
+            current_dir_dev = stat_buf.st_dev;
+#endif
          }
 #ifdef MULTI_FS_SUPPORT
-         de[dir_counter].dev = stat_buf.st_dev;
+         de[dir_counter].dev = current_dir_dev;
 #endif
-         if (stat_buf.st_dev != ldv)
+         if (current_dir_dev != ldv)
          {
 #ifdef MULTI_FS_SUPPORT
-            if (check_extra_filesystem(stat_buf.st_dev, dir_counter) == YES)
+            if (check_extra_filesystem(current_dir_dev, dir_counter) == YES)
             {
                de[dir_counter].flag |= IN_SAME_FILESYSTEM;
             }
@@ -676,7 +744,7 @@ create_db(FILE *udc_reply_fp, int write_fd)
          db[i].lfs |= IN_SAME_FILESYSTEM;
       }
 #else
-      if (stat_buf.st_dev == ldv)
+      if (current_dir_dev == ldv)
       {
          db[i].lfs |= IN_SAME_FILESYSTEM;
       }
@@ -1496,7 +1564,11 @@ write_current_job_list(int no_of_jobs)
    unsigned int *int_buf;
    size_t       buf_size;
    char         current_msg_list_file[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
 
    (void)strcpy(current_msg_list_file, p_work_dir);
    (void)strcat(current_msg_list_file, FIFO_DIR);
@@ -1545,15 +1617,28 @@ write_current_job_list(int no_of_jobs)
                  current_msg_list_file, strerror(errno));
       exit(INCORRECT);
    }
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
       system_log(DEBUG_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                 "Failed to statx() `%s' : %s",
+#else
                  "Failed to fstat() `%s' : %s",
+#endif
                  current_msg_list_file, strerror(errno));
    }
    else
    {
+#ifdef HAVE_STATX
+      if (stat_buf.stx_size > buf_size)
+#else
       if (stat_buf.st_size > buf_size)
+#endif
       {
          if (ftruncate(fd, buf_size) == -1)
          {

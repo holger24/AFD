@@ -1,6 +1,6 @@
 /*
  *  recreate_msg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -66,7 +66,11 @@ recreate_msg(unsigned int job_id)
                       status = INCORRECT;
    char               job_id_data_file[MAX_PATH_LENGTH],
                       *ptr;
+#ifdef HAVE_STATX
+   struct statx       stat_buf;
+#else
    struct stat        stat_buf;
+#endif
    struct job_id_data *jd;
 
    (void)snprintf(job_id_data_file, MAX_PATH_LENGTH, "%s%s%s",
@@ -78,17 +82,35 @@ recreate_msg(unsigned int job_id)
                  job_id_data_file, strerror(errno));
       exit(INCORRECT);
    }
+#ifdef HAVE_STATX
+   if (statx(jd_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(jd_fd, &stat_buf) == -1)
+#endif
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                 "Failed to statx() `%s' : %s",
+#else
                  "Failed to fstat() `%s' : %s",
+#endif
                  job_id_data_file, strerror(errno));
       exit(INCORRECT);
    }
 
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size > 0)
+#else
    if (stat_buf.st_size > 0)
+#endif
    {
-      if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+      if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                      stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+#else
+                      stat_buf.st_size, (PROT_READ | PROT_WRITE),
+#endif
                       MAP_SHARED, jd_fd, 0)) == (caddr_t) -1)
       {
          system_log(FATAL_SIGN, __FILE__, __LINE__,
@@ -132,7 +154,11 @@ recreate_msg(unsigned int job_id)
 
    /* Don't forget to unmap from job_id_data structure. */
    ptr = (char *)jd - AFD_WORD_OFFSET;
+#ifdef HAVE_STATX
+   if (munmap(ptr, stat_buf.stx_size) == -1)
+#else
    if (munmap(ptr, stat_buf.st_size) == -1)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  "munmap() error : %s", strerror(errno));

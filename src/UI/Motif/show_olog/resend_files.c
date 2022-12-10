@@ -1,6 +1,6 @@
 /*
  *  resend_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -922,7 +922,11 @@ get_file(char *dest_dir, char *p_dest_dir_end, off_t *file_size)
            /* set the files will be deleted by process sf_xxx before */
            /* being send.                                            */
       {
+#ifdef HAVE_STATX
+         struct statx stat_buf;
+#else
          struct stat stat_buf;
+#endif
 
          if (utime(dest_dir, NULL) == -1)
          {
@@ -935,15 +939,24 @@ get_file(char *dest_dir, char *p_dest_dir_end, off_t *file_size)
                           dest_dir, strerror(errno), __FILE__, __LINE__);
          }
 
+#ifdef HAVE_STATX
+         if (statx(0, dest_dir, AT_STATX_SYNC_AS_STAT,
+                   STATX_SIZE, &stat_buf) == -1)
+#else
          if (stat(dest_dir, &stat_buf) == -1)
+#endif
          {
-            (void)fprintf(stdout, "Failed to stat() `%s' : %s (%s %d)\n",
+            (void)fprintf(stdout, "Failed to access `%s' : %s (%s %d)\n",
                           dest_dir, strerror(errno), __FILE__, __LINE__);
             return(INCORRECT);
          }
          else
          {
+#ifdef HAVE_STATX
+            *file_size = stat_buf.stx_size;
+#else
             *file_size = stat_buf.st_size;
+#endif
          }
       }
    }
@@ -966,11 +979,20 @@ get_file(char *dest_dir, char *p_dest_dir_end, off_t *file_size)
          }
          else
          {
+#ifdef HAVE_STATX
+            struct statx stat_buf;
+#else
             struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+            if (statx(from_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                      STATX_SIZE | STATX_MODE, &stat_buf) == -1)
+#else
             if (fstat(from_fd, &stat_buf) == -1)
+#endif
             {
-               (void)fprintf(stderr, "Failed to fstat() %s : %s (%s %d)\n",
+               (void)fprintf(stderr, "Failed to access %s : %s (%s %d)\n",
                              archive_dir, strerror(errno), __FILE__, __LINE__);
                (void)close(from_fd);
                return(INCORRECT);
@@ -980,8 +1002,13 @@ get_file(char *dest_dir, char *p_dest_dir_end, off_t *file_size)
                int to_fd;
 
                (void)unlink(dest_dir);
+#ifdef HAVE_STATX
+               if ((to_fd = open(dest_dir, O_WRONLY | O_CREAT | O_TRUNC,
+                                 stat_buf.stx_mode)) == -1)
+#else
                if ((to_fd = open(dest_dir, O_WRONLY | O_CREAT | O_TRUNC,
                                  stat_buf.st_mode)) == -1)
+#endif
                {
                   (void)fprintf(stderr, "Failed to open() %s : %s (%s %d)\n",
                                 dest_dir, strerror(errno), __FILE__, __LINE__);
@@ -990,12 +1017,20 @@ get_file(char *dest_dir, char *p_dest_dir_end, off_t *file_size)
                }
                else
                {
+#ifdef HAVE_STATX
+                  if (stat_buf.stx_size > 0)
+#else
                   if (stat_buf.st_size > 0)
+#endif
                   {
                      int  bytes_buffered;
                      char *buffer;
 
+#ifdef HAVE_STATX
+                     if ((buffer = malloc(stat_buf.stx_blksize)) == NULL)
+#else
                      if ((buffer = malloc(stat_buf.st_blksize)) == NULL)
+#endif
                      {
                         (void)fprintf(stderr,
                                       "malloc() error : %s (%s %d)\n",
@@ -1006,8 +1041,13 @@ get_file(char *dest_dir, char *p_dest_dir_end, off_t *file_size)
 
                      do
                      {
+#ifdef HAVE_STATX
+                        if ((bytes_buffered = read(from_fd, buffer,
+                                                   stat_buf.stx_blksize)) == -1)
+#else
                         if ((bytes_buffered = read(from_fd, buffer,
                                                    stat_buf.st_blksize)) == -1)
+#endif
                         {
                            (void)fprintf(stderr,
                                          "Failed to read() from %s : %s (%s %d)\n",
@@ -1030,11 +1070,19 @@ get_file(char *dest_dir, char *p_dest_dir_end, off_t *file_size)
                               return(INCORRECT);
                            }
                         }
+#ifdef HAVE_STATX
+                     } while (bytes_buffered == stat_buf.stx_blksize);
+#else
                      } while (bytes_buffered == stat_buf.st_blksize);
+#endif
                      free(buffer);
                   }
                   (void)close(to_fd);
+#ifdef HAVE_STATX
+                  *file_size = stat_buf.stx_size;
+#else
                   *file_size = stat_buf.st_size;
+#endif
                }
             }
             (void)close(from_fd);
@@ -1051,7 +1099,11 @@ get_file(char *dest_dir, char *p_dest_dir_end, off_t *file_size)
          }
          else
          {
+#ifdef HAVE_STATX
+            struct statx stat_buf;
+#else
             struct stat stat_buf;
+#endif
 
             /*
              * Since we do not have write permission we cannot update
@@ -1059,15 +1111,24 @@ get_file(char *dest_dir, char *p_dest_dir_end, off_t *file_size)
              * it can happen that the files are deleted immediatly by
              * sf_xxx.
              */
+#ifdef HAVE_STATX
+            if (statx(0, dest_dir, AT_STATX_SYNC_AS_STAT,
+                      STATX_SIZE, &stat_buf) == -1)
+#else
             if (stat(dest_dir, &stat_buf) == -1)
+#endif
             {
-               (void)fprintf(stdout, "Failed to stat() `%s' : %s (%s %d)\n",
+               (void)fprintf(stdout, "Failed to access `%s' : %s (%s %d)\n",
                              dest_dir, strerror(errno), __FILE__, __LINE__);
                return(INCORRECT);
             }
             else
             {
+#ifdef HAVE_STATX
+               *file_size = stat_buf.stx_size;
+#else
                *file_size = stat_buf.st_size;
+#endif
             }
          }
       }

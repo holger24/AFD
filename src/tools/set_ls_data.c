@@ -1,7 +1,7 @@
 /*
  *  set_ls_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2021 Deutscher Wetterdienst (DWD),
- *                     Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2021, 2022 Deutscher Wetterdienst (DWD),
+ *                           Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -136,18 +136,32 @@ main(int argc, char *argv[])
    }
    else
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(fd, &stat_buf) == -1)
+#endif
       {
-         (void)fprintf(stderr, "Failed to fstat() %s : %s\n",
+         (void)fprintf(stderr, "Failed to access %s : %s\n",
                        fullname, strerror(errno));
       }
       else
       {
          char *ptr;
 
-         if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+         if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                         stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+#else
+                         stat_buf.st_size, (PROT_READ | PROT_WRITE),
+#endif
                          MAP_SHARED, fd, 0)) == (caddr_t) -1)
          {
             (void)fprintf(stderr, "Failed to mmap() %s : %s\n",
@@ -213,7 +227,11 @@ main(int argc, char *argv[])
                }
                ptr -= AFD_WORD_OFFSET;
             }
+#ifdef HAVE_STATX
+            if (munmap(ptr, stat_buf.stx_size) == -1)
+#else
             if (munmap(ptr, stat_buf.st_size) == -1)
+#endif
             {
                (void)fprintf(stderr, "Failed to munmap() from %s : %s\n",
                              fullname, strerror(errno));

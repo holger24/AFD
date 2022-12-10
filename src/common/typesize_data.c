@@ -1,6 +1,6 @@
 /*
  *  typesize_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -115,26 +115,53 @@ check_typesize_data(int *old_value_list, FILE *output_fp, int do_conversion)
    }
    else
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(fd, &stat_buf) == -1)
+#endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                    "Failed to statx() `%s' : %s",
+#else
                     "Failed to fstat() `%s' : %s",
+#endif
                     typesize_filename, strerror(errno));
          not_match = INCORRECT;
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > 0)
+#else
          if (stat_buf.st_size > 0)
+#endif
          {
             char *ptr;
 
 #ifdef HAVE_MMAP
-            if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ, MAP_SHARED,
+            if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                            stat_buf.stx_size, PROT_READ, MAP_SHARED,
+# else
+                            stat_buf.st_size, PROT_READ, MAP_SHARED,
+# endif
                             fd, 0)) == (caddr_t) -1)
 #else
-            if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
+            if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                stat_buf.stx_size, PROT_READ,
+# else
+                                stat_buf.st_size, PROT_READ,
+# endif
                                 MAP_SHARED, typesize_filename,
                                 0)) == (caddr_t) -1)
 #endif
@@ -223,12 +250,22 @@ check_typesize_data(int *old_value_list, FILE *output_fp, int do_conversion)
                   if ((*ptr == '#') || (*ptr == '|'))
                   {
                      while ((*ptr != '\n') && (*ptr != '\r') &&
-                            ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                            ((ptr - p_start) < stat_buf.stx_size)
+#else
+                            ((ptr - p_start) < stat_buf.st_size)
+#endif
+                           )
                      {
                         ptr++;
                      }
                      while (((*ptr == '\n') || (*ptr == '\r')) &&
-                            ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                            ((ptr - p_start) < stat_buf.stx_size)
+#else
+                            ((ptr - p_start) < stat_buf.st_size)
+#endif
+                           )
                      {
                         ptr++;
                      }
@@ -237,7 +274,12 @@ check_typesize_data(int *old_value_list, FILE *output_fp, int do_conversion)
                   {
                      i = 0;
                      while ((*ptr != '|') && (i < MAX_VAR_STR_LENGTH) &&
-                            ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                            ((ptr - p_start) < stat_buf.stx_size)
+#else
+                            ((ptr - p_start) < stat_buf.st_size)
+#endif
+                           )
                      {
                         var_str[i] = *ptr;
                         ptr++; i++;
@@ -253,7 +295,12 @@ check_typesize_data(int *old_value_list, FILE *output_fp, int do_conversion)
                               k = 0;
                               while ((*ptr != '\n') && (*ptr != '\r') &&
                                      (k < MAX_INT_LENGTH) &&
-                                     ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                                     ((ptr - p_start) < stat_buf.stx_size)
+#else
+                                     ((ptr - p_start) < stat_buf.st_size)
+#endif
+                                    )
                               {
                                  val_str[k] = *ptr;
                                  ptr++; k++;
@@ -356,13 +403,23 @@ check_typesize_data(int *old_value_list, FILE *output_fp, int do_conversion)
                               else
                               {
                                  while ((*ptr != '\n') && (*ptr != '\r') &&
-                                        ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                                        ((ptr - p_start) < stat_buf.stx_size)
+#else
+                                        ((ptr - p_start) < stat_buf.st_size)
+#endif
+                                       )
                                  {
                                     ptr++;
                                  }
                               }
                               while (((*ptr == '\n') || (*ptr == '\r')) &&
-                                     ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                                     ((ptr - p_start) < stat_buf.stx_size)
+#else
+                                     ((ptr - p_start) < stat_buf.st_size)
+#endif
+                                    )
                               {
                                  ptr++;
                               }
@@ -375,22 +432,40 @@ check_typesize_data(int *old_value_list, FILE *output_fp, int do_conversion)
                      {
                         /* Go to end of line. */
                         while ((*ptr != '\n') && (*ptr != '\r') &&
-                               ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                               ((ptr - p_start) < stat_buf.stx_size)
+#else
+                               ((ptr - p_start) < stat_buf.st_size)
+#endif
+                              )
                         {
                            ptr++;
                         }
                         while (((*ptr == '\n') || (*ptr == '\r')) &&
-                               ((ptr - p_start) < stat_buf.st_size))
+#ifdef HAVE_STATX
+                               ((ptr - p_start) < stat_buf.stx_size)
+#else
+                               ((ptr - p_start) < stat_buf.st_size)
+#endif
+                              )
                         {
                            ptr++;
                         }
                      }
                   }
+#ifdef HAVE_STATX
+               } while ((ptr - p_start) < stat_buf.stx_size);
+#else
                } while ((ptr - p_start) < stat_buf.st_size);
+#endif
 
                /* Unmap from file. */
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+               if (munmap(p_start, stat_buf.stx_size) == -1)
+# else
                if (munmap(p_start, stat_buf.st_size) == -1)
+# endif
 #else
                if (munmap_emu(p_start) == -1)
 #endif
@@ -529,23 +604,40 @@ adapt_pwb_database(int old_real_hostname_length, int old_user_name_length)
    }
    else
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
 #ifdef LOCK_DEBUG
       rlock_region(old_pwb_fd, 1, __FILE__, __LINE__);
 #else
       rlock_region(old_pwb_fd, 1);
 #endif
+#ifdef HAVE_STATX
+      if (statx(old_pwb_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(old_pwb_fd, &stat_buf) == -1)
+#endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                    _("Failed to statx() `%s' : %s"),
+#else
                     _("Failed to fstat() `%s' : %s"),
+#endif
                     old_pwb_file_name, strerror(errno));
          ret = INCORRECT;
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size <= AFD_WORD_OFFSET)
+#else
          if (stat_buf.st_size <= AFD_WORD_OFFSET)
+#endif
          {
             system_log(DEBUG_SIGN, __FILE__, __LINE__,
                        _("Password file %s is not long enough to contain any valid data."),
@@ -557,11 +649,20 @@ adapt_pwb_database(int old_real_hostname_length, int old_user_name_length)
             char *old_ptr;
 
 #ifdef HAVE_MMAP
-            if ((old_ptr = mmap(NULL, stat_buf.st_size, PROT_READ, MAP_SHARED,
+            if ((old_ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                stat_buf.stx_size, PROT_READ, MAP_SHARED,
+# else
+                                stat_buf.st_size, PROT_READ, MAP_SHARED,
+# endif
                                 old_pwb_fd, 0)) == (caddr_t) -1)
 #else
-            if ((old_ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
-                                    MAP_SHARED,
+            if ((old_ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                    stat_buf.stx_size, PROT_READ, MAP_SHARED,
+# else
+                                    stat_buf.st_size, PROT_READ, MAP_SHARED,
+# endif
                                     old_pwb_file_name, 0)) == (caddr_t) -1)
 #endif
             {
@@ -767,7 +868,11 @@ adapt_pwb_database(int old_real_hostname_length, int old_user_name_length)
                   do_rename = YES;
                }
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+               if (munmap(old_ptr, stat_buf.stx_size) == -1)
+# else
                if (munmap(old_ptr, stat_buf.st_size) == -1)
+# endif
 #else
                if (munmap_emu(old_ptr) == -1)
 #endif

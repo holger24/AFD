@@ -1,6 +1,6 @@
 /*
  *  fra_attach.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -96,7 +96,11 @@ fra_attach(void)
                 fra_stat_file[MAX_PATH_LENGTH];
    struct flock wlock = {F_WRLCK, SEEK_SET, 0, 1},
                 ulock = {F_UNLCK, SEEK_SET, 0, 1};
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
 
    /* Get absolute path of FRA_ID_FILE. */
    (void)strcpy(fra_id_file, p_work_dir);
@@ -117,15 +121,28 @@ fra_attach(void)
          (void)snprintf(p_fra_stat_file,
                         MAX_PATH_LENGTH - (p_fra_stat_file - fra_stat_file),
                         ".%d", fra_id);
+# ifdef HAVE_STATX
+         if (statx(0, fra_stat_file, AT_STATX_SYNC_AS_STAT,
+                   STATX_SIZE, &stat_buf) == -1)
+# else
          if (stat(fra_stat_file, &stat_buf) == -1)
+# endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
+# ifdef HAVE_STATX
+                       _("Failed to statx() `%s' : %s"),
+# else
                        _("Failed to stat() `%s' : %s"),
+# endif
                        fra_stat_file, strerror(errno));
          }
          else
          {
+# ifdef HAVE_STATX
+            if (munmap((void *)fra, stat_buf.stx_size) == -1)
+# else
             if (munmap((void *)fra, stat_buf.st_size) == -1)
+# endif
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           _("Failed to munmap() `%s' : %s"),
@@ -262,11 +279,20 @@ fra_attach(void)
          }
       }
 
+#ifdef HAVE_STATX
+      if (statx(fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(fra_fd, &stat_buf) == -1)
+#endif
       {
          tmp_errno = errno;
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    _("Failed to stat() `%s' : %s"),
+#ifdef HAVE_STATX
+                    _("Failed to statx() `%s' : %s"),
+#else
+                    _("Failed to fstat() `%s' : %s"),
+#endif
                     fra_stat_file, strerror(errno));
          (void)close(fra_fd);
          fra_fd = -1;
@@ -274,10 +300,20 @@ fra_attach(void)
       }
 
 #ifdef HAVE_MMAP
-      if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+      if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                      stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                      stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                       MAP_SHARED, fra_fd, 0)) == (caddr_t) -1)
 #else
-      if ((ptr = mmap_emu(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+      if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                          stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                          stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                           MAP_SHARED, fra_stat_file, 0)) == (caddr_t) -1)
 #endif
       {
@@ -300,7 +336,11 @@ fra_attach(void)
                     _("This code is compiled for of FRA version %d, but the FRA we try to attach is %d."),
                     CURRENT_FRA_VERSION, (int)(*(ptr + SIZEOF_INT + 1 + 1 + 1)));
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+         if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
          if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
          if (munmap_emu(ptr) == -1)
 #endif
@@ -317,7 +357,11 @@ fra_attach(void)
    ptr += AFD_WORD_OFFSET;
    fra = (struct fileretrieve_status *)ptr;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+   fra_size = stat_buf.stx_size;
+# else
    fra_size = stat_buf.st_size;
+# endif
 #endif
 
    return(SUCCESS);
@@ -328,13 +372,17 @@ fra_attach(void)
 int
 fra_attach_passive(void)
 {
-   int         fd,
-               tmp_errno;
-   char        *ptr = NULL,
-               *p_fra_stat_file,
-               fra_id_file[MAX_PATH_LENGTH],
-               fra_stat_file[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+   int          fd,
+                tmp_errno;
+   char         *ptr = NULL,
+                *p_fra_stat_file,
+                fra_id_file[MAX_PATH_LENGTH],
+                fra_stat_file[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    /* Get absolute path of FRA_ID_FILE. */
    (void)strcpy(fra_id_file, p_work_dir);
@@ -389,17 +437,30 @@ fra_attach_passive(void)
       return(tmp_errno);
    }
 
+#ifdef HAVE_STATX
+   if (statx(fra_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fra_fd, &stat_buf) == -1)
+#endif
    {
       tmp_errno = errno;
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 _("Failed to stat() `%s' : %s"),
+#ifdef HAVE_STATX
+                 _("Failed to statx() `%s' : %s"),
+#else
+                 _("Failed to fstat() `%s' : %s"),
+#endif
                  fra_stat_file, strerror(errno));
       (void)close(fra_fd);
       fra_fd = -1;
       return(tmp_errno);
    }
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size < AFD_WORD_OFFSET)
+#else
    if (stat_buf.st_size < AFD_WORD_OFFSET)
+#endif
    {
       tmp_errno = errno;
       system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -410,10 +471,20 @@ fra_attach_passive(void)
    }
 
 #ifdef HAVE_MMAP
-   if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+   if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                   stat_buf.stx_size, PROT_READ,
+# else
+                   stat_buf.st_size, PROT_READ,
+# endif
                    MAP_SHARED, fra_fd, 0)) == (caddr_t) -1)
 #else
-   if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
+   if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                       stat_buf.stx_size, PROT_READ,
+# else
+                       stat_buf.st_size, PROT_READ,
+# endif
                        MAP_SHARED, fra_stat_file, 0)) == (caddr_t) -1)
 #endif
    {
@@ -432,7 +503,11 @@ fra_attach_passive(void)
                  _("This code is compiled for of FRA version %d, but the FRA we try to attach is %d."),
                  CURRENT_FRA_VERSION, (int)(*(ptr + SIZEOF_INT + 1 + 1 + 1)));
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
       if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
       if (munmap_emu(ptr) == -1)
 #endif
@@ -451,7 +526,11 @@ fra_attach_passive(void)
    ptr += AFD_WORD_OFFSET;
    fra = (struct fileretrieve_status *)ptr;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+   fra_size = stat_buf.stx_size;
+# else
    fra_size = stat_buf.st_size;
+# endif
 #endif
 
    return(SUCCESS);

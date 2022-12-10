@@ -1,6 +1,6 @@
 /*
  *  handle_delete_fifo.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -493,14 +493,25 @@ handle_delete_fifo(int delete_jobs_fd, size_t fifo_size, char *file_dir)
                                           */
                                          if (qb[i].pid == PENDING)
                                          {
-                                            char        *ptr;
-                                            struct stat stat_buf;
+                                            char         *ptr;
+#ifdef HAVE_STATX
+                                            struct statx stat_buf;
+#else
+                                            struct stat  stat_buf;
+#endif
 
                                             *p_end = tmp_char;
                                             ptr = file_dir +
                                                   strlen(file_dir);
                                             (void)strcpy(ptr, del_read_ptr);
+#ifdef HAVE_STATX
+                                            if (statx(0, file_dir,
+                                                      AT_STATX_SYNC_AS_STAT,
+                                                      STATX_SIZE,
+                                                      &stat_buf) != -1)
+#else
                                             if (stat(file_dir, &stat_buf) != -1)
+#endif
                                             {
                                                if (unlink(file_dir) == -1)
                                                {
@@ -519,7 +530,11 @@ handle_delete_fifo(int delete_jobs_fd, size_t fifo_size, char *file_dir)
 #endif
 
                                                   qb[i].files_to_send--;
+#ifdef HAVE_STATX
+                                                  qb[i].file_size_to_send -= stat_buf.stx_size;
+#else
                                                   qb[i].file_size_to_send -= stat_buf.st_size;
+#endif
 #ifdef _DELETE_LOG
                                                   (void)strcpy(dl.file_name, p_end + 1);
                                                   if (mdb[qb[i].pos].fsa_pos > -1)
@@ -541,7 +556,11 @@ handle_delete_fifo(int delete_jobs_fd, size_t fifo_size, char *file_dir)
                                                         fsa[mdb[qb[i].pos].fsa_pos].total_file_counter = 0;
                                                      }
 # endif
+# ifdef HAVE_STATX
+                                                     fsa[mdb[qb[i].pos].fsa_pos].total_file_size -= stat_buf.stx_size;
+# else
                                                      fsa[mdb[qb[i].pos].fsa_pos].total_file_size -= stat_buf.st_size;
+# endif
 # ifdef _VERIFY_FSA
                                                      if (fsa[mdb[qb[i].pos].fsa_pos].total_file_size < 0)
                                                      {
@@ -599,7 +618,11 @@ handle_delete_fifo(int delete_jobs_fd, size_t fifo_size, char *file_dir)
                                                                     "-",
                                                                     USER_DEL);
                                                   }
+# ifdef HAVE_STATX
+                                                  *dl.file_size = stat_buf.stx_size;
+# else
                                                   *dl.file_size = stat_buf.st_size;
+# endif
                                                   *dl.job_id = mdb[qb[i].pos].job_id;
                                                   *dl.dir_id = 0;
                                                   *dl.input_time = input_time;

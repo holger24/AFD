@@ -1,7 +1,7 @@
 /*
  *  handle_group_list_mtime.c - Part of AFD, an automatic file
  *                                distribution program.
- *  Copyright (c) 2017 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2017 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -58,6 +58,9 @@ DESCR__E_M3
 #include <string.h>                /* strcpy(), strerror()               */
 #include <stdlib.h>                /* exit()                             */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>                /* Definition of AT_* constants       */
+#endif
 #include <sys/stat.h>              /* stat(), S_ISREG()                  */
 #include <dirent.h>                /* opendir(), closedir(), readdir(),  */
                                    /* DIR, struct dirent                 */
@@ -169,24 +172,45 @@ init_group_list_mtime(void)
 int
 check_group_list_mtime(void)
 {
-   int         changed = NO;
-   struct stat stat_buf;
-   DIR         *dp;
+   int          changed = NO;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
+   DIR          *dp;
 
    /* Check if the single group.list file has changed. */
-   if ((stat(group_file_name, &stat_buf) < 0) && (errno != ENOENT))
+#ifdef HAVE_STATX
+   if ((statx(0, group_file_name, AT_STATX_SYNC_AS_STAT,
+              STATX_MTIME, &stat_buf) == -1) && (errno != ENOENT))
+#else
+   if ((stat(group_file_name, &stat_buf) == -1) && (errno != ENOENT))
+#endif
    {
       system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                 _("Failed to statx() `%s' : %s"),
+#else
                  _("Failed to stat() `%s' : %s"),
+#endif
                  group_file_name, strerror(errno));
    }
    else
    {
+#ifdef HAVE_STATX
+      if (stat_buf.stx_mtime.tv_sec != group_file_name_mtime)
+#else
       if (stat_buf.st_mtime != group_file_name_mtime)
+#endif
       {
          system_log(DEBUG_SIGN, NULL, 0L,
                     "group list file %s was modified.", group_file_name);
+#ifdef HAVE_STATX
+         group_file_name_mtime = stat_buf.stx_mtime.tv_sec;
+#else
          group_file_name_mtime = stat_buf.st_mtime;
+#endif
          changed = YES;
       }
    }
@@ -230,12 +254,24 @@ check_group_list_mtime(void)
          {
 #endif
          (void)strcpy(p_filter_dir_name, p_dir->d_name);
-         if (stat(filter_dir_name, &stat_buf) < 0)
+#ifdef HAVE_STATX
+         if (statx(0, filter_dir_name, AT_STATX_SYNC_AS_STAT,
+# ifndef LINUX
+                   STATX_MODE |
+# endif
+                   STATX_MTIME, &stat_buf) == -1)
+#else
+         if (stat(filter_dir_name, &stat_buf) == -1)
+#endif
          {
             if (errno != ENOENT)
             {
               system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         _("Failed to statx() `%s' : %s"),
+#else
                          _("Failed to stat() `%s' : %s"),
+#endif
                          filter_dir_name, strerror(errno));
             }
             errno = 0;
@@ -244,7 +280,11 @@ check_group_list_mtime(void)
 
 #ifndef LINUX
          /* Sure it is a normal file? */
+# ifdef HAVE_STATX
+         if (S_ISREG(stat_buf.stx_mode))
+# else
          if (S_ISREG(stat_buf.st_mode))
+# endif
          {
 #endif
             int gotcha = NO;
@@ -255,9 +295,17 @@ check_group_list_mtime(void)
                if (strcmp(gf[i].name, p_dir->d_name) == 0)
                {
                   gotcha = YES;
+#ifdef HAVE_STATX
+                  if (stat_buf.stx_mtime.tv_sec != gf[i].mtime)
+#else
                   if (stat_buf.st_mtime != gf[i].mtime)
+#endif
                   {
+#ifdef HAVE_STATX
+                     gf[i].mtime = stat_buf.stx_mtime.tv_sec;
+#else
                      gf[i].mtime = stat_buf.st_mtime;
+#endif
                      changed = YES;
                      break;
                   }
@@ -285,7 +333,11 @@ check_group_list_mtime(void)
 
                (void)strncpy(gf[group_filter_counter].name,
                              p_dir->d_name, MAX_FILENAME_LENGTH);
+#ifdef HAVE_STATX
+               gf[group_filter_counter].mtime = stat_buf.stx_mtime.tv_sec;
+#else
                gf[group_filter_counter].mtime = stat_buf.st_mtime;
+#endif
                gf[group_filter_counter].in_list = YES;
                group_filter_counter++;
                changed = YES;
@@ -358,12 +410,24 @@ check_group_list_mtime(void)
          {
 #endif
          (void)strcpy(p_source_dir_name, p_dir->d_name);
+#ifdef HAVE_STATX
+         if (statx(0, source_dir_name, AT_STATX_SYNC_AS_STAT,
+# ifndef LINUX
+                   STATX_MODE |
+# endif
+                   STATX_MTIME, &stat_buf) < 0)
+#else
          if (stat(source_dir_name, &stat_buf) < 0)
+#endif
          {
             if (errno != ENOENT)
             {
               system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         _("Failed to statx() `%s' : %s"),
+#else
                          _("Failed to stat() `%s' : %s"),
+#endif
                          source_dir_name, strerror(errno));
             }
             errno = 0;
@@ -372,7 +436,11 @@ check_group_list_mtime(void)
 
 #ifndef LINUX
          /* Sure it is a normal file? */
+# ifdef HAVE_STATX
+         if (S_ISREG(stat_buf.stx_mode))
+# else
          if (S_ISREG(stat_buf.st_mode))
+# endif
          {
 #endif
             int gotcha = NO;
@@ -383,9 +451,17 @@ check_group_list_mtime(void)
                if (strcmp(gs[i].name, p_dir->d_name) == 0)
                {
                   gotcha = YES;
+#ifdef HAVE_STATX
+                  if (stat_buf.stx_mtime.tv_sec != gs[i].mtime)
+#else
                   if (stat_buf.st_mtime != gs[i].mtime)
+#endif
                   {
+#ifdef HAVE_STATX
+                     gs[i].mtime = stat_buf.stx_mtime.tv_sec;
+#else
                      gs[i].mtime = stat_buf.st_mtime;
+#endif
                      changed = YES;
                      break;
                   }
@@ -413,7 +489,11 @@ check_group_list_mtime(void)
 
                (void)strncpy(gs[group_source_counter].name,
                              p_dir->d_name, MAX_FILENAME_LENGTH);
+#ifdef HAVE_STATX
+               gs[group_source_counter].mtime = stat_buf.stx_mtime.tv_sec;
+#else
                gs[group_source_counter].mtime = stat_buf.st_mtime;
+#endif
                gs[group_source_counter].in_list = YES;
                group_source_counter++;
                changed = YES;
@@ -486,12 +566,24 @@ check_group_list_mtime(void)
          {
 #endif
          (void)strcpy(p_recipient_dir_name, p_dir->d_name);
+#ifdef HAVE_STATX
+         if (statx(0, recipient_dir_name, AT_STATX_SYNC_AS_STAT,
+# ifndef LINUX
+                   STATX_MODE |
+# endif
+                   STATX_MTIME, &stat_buf) < 0)
+#else
          if (stat(recipient_dir_name, &stat_buf) < 0)
+#endif
          {
             if (errno != ENOENT)
             {
               system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         _("Failed to statx() `%s' : %s"),
+#else
                          _("Failed to stat() `%s' : %s"),
+#endif
                          recipient_dir_name, strerror(errno));
             }
             errno = 0;
@@ -500,7 +592,11 @@ check_group_list_mtime(void)
 
 #ifndef LINUX
          /* Sure it is a normal file? */
+# ifdef HAVE_STATX
+         if (S_ISREG(stat_buf.stx_mode))
+# else
          if (S_ISREG(stat_buf.st_mode))
+# endif
          {
 #endif
             int gotcha = NO;
@@ -511,9 +607,17 @@ check_group_list_mtime(void)
                if (strcmp(gr[i].name, p_dir->d_name) == 0)
                {
                   gotcha = YES;
+#ifdef HAVE_STATX
+                  if (stat_buf.stx_mtime.tv_sec != gr[i].mtime)
+#else
                   if (stat_buf.st_mtime != gr[i].mtime)
+#endif
                   {
+#ifdef HAVE_STATX
+                     gr[i].mtime = stat_buf.stx_mtime.tv_sec;
+#else
                      gr[i].mtime = stat_buf.st_mtime;
+#endif
                      changed = YES;
                      break;
                   }
@@ -541,7 +645,11 @@ check_group_list_mtime(void)
 
                (void)strncpy(gr[group_recipient_counter].name,
                              p_dir->d_name, MAX_FILENAME_LENGTH);
+#ifdef HAVE_STATX
+               gr[group_recipient_counter].mtime = stat_buf.stx_mtime.tv_sec;
+#else
                gr[group_recipient_counter].mtime = stat_buf.st_mtime;
+#endif
                gr[group_recipient_counter].in_list = YES;
                group_recipient_counter++;
                changed = YES;

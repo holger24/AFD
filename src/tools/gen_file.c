@@ -1,6 +1,6 @@
 /*
  *  gen_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2008 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2004 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -78,7 +78,11 @@ main(int argc, char *argv[])
                 dot_target_dir[MAX_PATH_LENGTH],
                 str_number[MAX_INT_LENGTH],
                 target_dir[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
 
    if (argc == 6)
    {
@@ -98,16 +102,29 @@ main(int argc, char *argv[])
    /*
     * Determine blocksize with which we should create the files.
     */
+#ifdef HAVE_STATX
+   if (statx(0, target_dir, AT_STATX_SYNC_AS_STAT, 0, &stat_buf) == -1)
+#else
    if (stat(target_dir, &stat_buf) == -1)
+#endif
    {
-      (void)fprintf(stderr, "Failed to stat() target directory %s : %s\n",
+      (void)fprintf(stderr, "Failed to access target directory %s : %s\n",
                     target_dir, strerror(errno));
       exit(INCORRECT);
    }
+#ifdef HAVE_STATX
+   if ((block = malloc(stat_buf.stx_blksize)) == NULL)
+#else
    if ((block = malloc(stat_buf.st_blksize)) == NULL)
+#endif
    {
       (void)fprintf(stderr, "Failed to malloc() %d bytes of memory : %s\n",
-                    (int)stat_buf.st_blksize, strerror(errno));
+#ifdef HAVE_STATX
+                    (int)stat_buf.stx_blksize,
+#else
+                    (int)stat_buf.st_blksize,
+#endif
+                    strerror(errno));
       exit(INCORRECT);
    }
 
@@ -122,14 +139,23 @@ main(int argc, char *argv[])
    (void)strcpy(dot_ptr, filename);
    dot_ptr += strlen(filename);
    *dot_ptr++ = '-';
+#ifdef HAVE_STATX
+   loops = filesize / stat_buf.stx_blksize;
+   rest = filesize % stat_buf.stx_blksize;
+#else
    loops = filesize / stat_buf.st_blksize;
    rest = filesize % stat_buf.st_blksize;
+#endif
 
    for (;;)
    {
       p_block = (time_t *)block;
       current_time = time(NULL);
+#ifdef HAVE_STATX
+      while (p_block < (time_t *)&block[stat_buf.stx_blksize - sizeof(time_t)])
+#else
       while (p_block < (time_t *)&block[stat_buf.st_blksize - sizeof(time_t)])
+#endif
       {
          *p_block = current_time;
          p_block++;
@@ -152,10 +178,19 @@ main(int argc, char *argv[])
          }
          for (j = 0; j < loops; j++)
          {
+#ifdef HAVE_STATX
+            if (write(fd, block, stat_buf.stx_blksize) != stat_buf.stx_blksize)
+#else
             if (write(fd, block, stat_buf.st_blksize) != stat_buf.st_blksize)
+#endif
             {
                (void)fprintf(stderr, "Failed to write() %d bytes : %s\n",
-                             (int)stat_buf.st_blksize, strerror(errno));
+#ifdef HAVE_STATX
+                             (int)stat_buf.stx_blksize,
+#else
+                             (int)stat_buf.st_blksize,
+#endif
+                             strerror(errno));
                exit(INCORRECT);
             }
          }

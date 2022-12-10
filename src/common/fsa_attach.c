@@ -1,6 +1,6 @@
 /*
  *  fsa_attach.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -130,7 +130,11 @@ fsa_attach(char *who)
                 fsa_stat_file[MAX_PATH_LENGTH];
    struct flock wlock = {F_WRLCK, SEEK_SET, 0, 1},
                 ulock = {F_UNLCK, SEEK_SET, 0, 1};
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
 
    /* Get absolute path of FSA_ID_FILE. */
    (void)strcpy(fsa_id_file, p_work_dir);
@@ -285,11 +289,20 @@ fsa_attach(char *who)
          }
       }
 
+#ifdef HAVE_STATX
+      if (statx(fsa_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(fsa_fd, &stat_buf) == -1)
+#endif
       {
          tmp_errno = errno;
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    _("Failed to stat() `%s' [%s] : %s"),
+#ifdef HAVE_STATX
+                    _("Failed to statx() `%s' [%s] : %s"),
+#else
+                    _("Failed to fstat() `%s' [%s] : %s"),
+#endif
                     fsa_stat_file, who, strerror(errno));
          (void)close(fsa_fd);
          fsa_fd = -1;
@@ -297,10 +310,20 @@ fsa_attach(char *who)
       }
 
 #ifdef HAVE_MMAP
-      if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+      if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                      stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                      stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                       MAP_SHARED, fsa_fd, 0)) == (caddr_t) -1)
 #else
-      if ((ptr = mmap_emu(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+      if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                          stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                          stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                           MAP_SHARED, fsa_stat_file, 0)) == (caddr_t) -1)
 #endif
       {
@@ -324,7 +347,11 @@ fsa_attach(char *who)
                     CURRENT_FSA_VERSION, (int)(*(ptr + SIZEOF_INT + 1 + 1 + 1)),
                     who);
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+         if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
          if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
          if (munmap_emu(ptr) == -1)
 #endif
@@ -341,7 +368,11 @@ fsa_attach(char *who)
       ptr += AFD_WORD_OFFSET;
       fsa = (struct filetransfer_status *)ptr;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      fsa_size = stat_buf.stx_size;
+# else
       fsa_size = stat_buf.st_size;
+# endif
 #endif
    } while (no_of_hosts <= 0);
 
@@ -362,7 +393,11 @@ fsa_attach_passive(int silent, char *who)
                 fsa_id_file[MAX_PATH_LENGTH],
                 fsa_stat_file[MAX_PATH_LENGTH];
    struct flock rlock = {F_RDLCK, SEEK_SET, 0, 1};
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
 
    /* Get absolute path of FSA_ID_FILE. */
    (void)strcpy(fsa_id_file, p_work_dir);
@@ -490,17 +525,30 @@ fsa_attach_passive(int silent, char *who)
          }
       }
 
+#ifdef HAVE_STATX
+      if (statx(fsa_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(fsa_fd, &stat_buf) == -1)
+#endif
       {
          tmp_errno = errno;
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    _("Failed to stat() `%s' [%s] : %s"),
+#ifdef HAVE_STATX
+                    _("Failed to statx() `%s' [%s] : %s"),
+#else
+                    _("Failed to fstat() `%s' [%s] : %s"),
+#endif
                     fsa_stat_file, who, strerror(errno));
          (void)close(fsa_fd);
          fsa_fd = -1;
          return(tmp_errno);
       }
+#ifdef HAVE_STATX
+      if (stat_buf.stx_size < AFD_WORD_OFFSET)
+#else
       if (stat_buf.st_size < AFD_WORD_OFFSET)
+#endif
       {
          tmp_errno = errno;
          system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -512,10 +560,20 @@ fsa_attach_passive(int silent, char *who)
       }
 
 #ifdef HAVE_MMAP
-      if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+      if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                      stat_buf.stx_size, PROT_READ,
+# else
+                      stat_buf.st_size, PROT_READ,
+# endif
                       MAP_SHARED, fsa_fd, 0)) == (caddr_t) -1)
 #else
-      if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
+      if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                          stat_buf.stx_size, PROT_READ,
+# else
+                          stat_buf.st_size, PROT_READ,
+# endif
                           MAP_SHARED, fsa_stat_file, 0)) == (caddr_t) -1)
 #endif
       {
@@ -539,7 +597,11 @@ fsa_attach_passive(int silent, char *who)
                     CURRENT_FSA_VERSION, (int)(*(ptr + SIZEOF_INT + 1 + 1 + 1)),
                     who);
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+         if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
          if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
          if (munmap_emu(ptr) == -1)
 #endif
@@ -556,7 +618,11 @@ fsa_attach_passive(int silent, char *who)
       ptr += AFD_WORD_OFFSET;
       fsa = (struct filetransfer_status *)ptr;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      fsa_size = stat_buf.stx_size;
+# else
       fsa_size = stat_buf.st_size;
+# endif
 #endif
    } while (no_of_hosts <= 0);
 

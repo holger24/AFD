@@ -1,6 +1,6 @@
 /*
  *  receive_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -104,7 +104,11 @@ main(int argc, char *argv[])
                   prev_msg_str[MAX_LINE_LENGTH + 1];
    fd_set         rset;
    struct timeval timeout;
+#ifdef HAVE_STATX
+   struct statx   stat_buf;
+#else
    struct stat    stat_buf;
+#endif
 
    CHECK_FOR_VERSION(argc, argv);
 
@@ -232,9 +236,18 @@ main(int argc, char *argv[])
                    HISTORY_LOG_INTERVAL;
 
    /* Is current log file already too old? */
+#ifdef HAVE_STATX
+   if (statx(0, current_log_file, AT_STATX_SYNC_AS_STAT,
+             STATX_MTIME, &stat_buf) == 0)
+#else
    if (stat(current_log_file, &stat_buf) == 0)
+#endif
    {
+#ifdef HAVE_STATX
+      if (stat_buf.stx_mtime.tv_sec < (next_file_time - SWITCH_FILE_TIME))
+#else
       if (stat_buf.st_mtime < (next_file_time - SWITCH_FILE_TIME))
+#endif
       {
          if (log_number < (max_receive_log_files - 1))
          {

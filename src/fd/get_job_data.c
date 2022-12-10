@@ -1,6 +1,6 @@
 /*
  *  get_job_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -117,17 +117,36 @@ retry:
    }
    if (mdb_position == -1)
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE | STATX_MTIME, &stat_buf) == -1)
+#else
       if (fstat(fd, &stat_buf) == -1)
+#endif
       {
          system_log(WARN_SIGN, __FILE__, __LINE__,
-                    "Failed to fstat() %s : %s", msg_dir, strerror(errno));
+#ifdef HAVE_STATX
+                    "Failed to statx() %s : %s",
+#else
+                    "Failed to fstat() %s : %s",
+#endif
+                    msg_dir, strerror(errno));
          (void)close(fd);
          return(INCORRECT);
       }
+#ifdef HAVE_STATX
+      msg_size = stat_buf.stx_size;
+      msg_mtime = stat_buf.stx_mtime.tv_sec;
+#else
       msg_size = stat_buf.st_size;
       msg_mtime = stat_buf.st_mtime;
+#endif
    }
    if ((file_buf = malloc(msg_size + 1)) == NULL)
    {

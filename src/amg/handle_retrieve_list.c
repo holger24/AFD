@@ -1,7 +1,7 @@
 /*
  *  handle_retrieve_list.c - Part of AFD, an automatic file distribution
  *                           program.
- *  Copyright (c) 2006 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -74,15 +74,24 @@ extern struct fileretrieve_status *fra;
 int
 check_list(struct directory_entry *p_de,
            char                   *file,
-           struct stat            *p_stat_buf)
+#ifdef HAVE_STATX
+           struct statx           *p_stat_buf
+#else
+           struct stat            *p_stat_buf
+#endif
+          )
 {
    int i;
 
    if (p_de->rl_fd == -1)
    {
-      char        list_file[MAX_PATH_LENGTH],
-                  *ptr;
-      struct stat stat_buf;
+      char         list_file[MAX_PATH_LENGTH],
+                   *ptr;
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
+      struct stat  stat_buf;
+#endif
 
       (void)snprintf(list_file, MAX_PATH_LENGTH, "%s%s%s%s/%s",
                      p_work_dir, AFD_FILE_DIR, INCOMING_DIR, LS_DATA_DIR,
@@ -94,13 +103,22 @@ check_list(struct directory_entry *p_de,
                     list_file, strerror(errno));
          exit(INCORRECT);
       }
+#ifdef HAVE_STATX
+      if (statx(p_de->rl_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(p_de->rl_fd, &stat_buf) == -1)
+#endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                     "Failed to fstat() `%s' : %s", list_file, strerror(errno));
          exit(INCORRECT);
       }
+#ifdef HAVE_STATX
+      if (stat_buf.stx_size == 0)
+#else
       if (stat_buf.st_size == 0)
+#endif
       {
          p_de->rl_size = (RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
                          AFD_WORD_OFFSET;
@@ -121,7 +139,11 @@ check_list(struct directory_entry *p_de,
       }
       else
       {
+#ifdef HAVE_STATX
+         p_de->rl_size = stat_buf.stx_size;
+#else
          p_de->rl_size = stat_buf.st_size;
+#endif
       }
       if ((ptr = mmap(NULL, p_de->rl_size, (PROT_READ | PROT_WRITE),
                       MAP_SHARED, p_de->rl_fd, 0)) == (caddr_t) -1)
@@ -134,7 +156,11 @@ check_list(struct directory_entry *p_de,
       p_de->no_of_listed_files = (int *)ptr;
       ptr += AFD_WORD_OFFSET;
       p_de->rl = (struct retrieve_list *)ptr;
+#ifdef HAVE_STATX
+      if (stat_buf.stx_size == 0)
+#else
       if (stat_buf.st_size == 0)
+#endif
       {
          *p_de->no_of_listed_files = 0;
          *(ptr + SIZEOF_INT + 1 + 1) = 0;               /* Not used. */
@@ -167,10 +193,17 @@ check_list(struct directory_entry *p_de,
                p_de->no_of_listed_files = (int *)ptr;
                ptr += AFD_WORD_OFFSET;
                p_de->rl = (struct retrieve_list *)ptr;
+#ifdef HAVE_STATX
+               if (statx(p_de->rl_fd, "",
+                         AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                         STATX_SIZE, &stat_buf) == -1)
+#else
                if (fstat(p_de->rl_fd, &stat_buf) == -1)
+#endif
                {
                   system_log(ERROR_SIGN, __FILE__, __LINE__,
-                             "Failed to fstat() `%s' : %s", list_file, strerror(errno));
+                             "Failed to fstat() `%s' : %s",
+                             list_file, strerror(errno));
                   exit(INCORRECT);
                }
             }
@@ -189,7 +222,11 @@ check_list(struct directory_entry *p_de,
             calc_size = (((*p_de->no_of_listed_files / RETRIEVE_LIST_STEP_SIZE) + 1) *
                          RETRIEVE_LIST_STEP_SIZE *
                          sizeof(struct retrieve_list)) + AFD_WORD_OFFSET;
+#ifdef HAVE_STATX
+            if (((stat_buf.stx_size - AFD_WORD_OFFSET) % sizeof(struct retrieve_list)) != 0)
+#else
             if (((stat_buf.st_size - AFD_WORD_OFFSET) % sizeof(struct retrieve_list)) != 0)
+#endif
             {
                system_log(DEBUG_SIGN, __FILE__, __LINE__,
 #if SIZEOF_OFF_T == 4
@@ -197,10 +234,18 @@ check_list(struct directory_entry *p_de,
 #else
                           "Hmm, LS data file %s has incorrect size (%lld != %lld), removing it.",
 #endif
+#ifdef HAVE_STATX
+                          list_file, (pri_off_t)stat_buf.stx_size,
+#else
                           list_file, (pri_off_t)stat_buf.st_size,
+#endif
                           (pri_off_t)calc_size);
                ptr -= AFD_WORD_OFFSET;
+#ifdef HAVE_STATX
+               if (munmap(ptr, stat_buf.stx_size) == -1)
+#else
                if (munmap(ptr, stat_buf.st_size) == -1)
+#endif
                {
                   system_log(WARN_SIGN, __FILE__, __LINE__,
                              "Failed to munmap() %s : %s",
@@ -256,7 +301,12 @@ check_list(struct directory_entry *p_de,
                p_de->rl = (struct retrieve_list *)ptr;
                *p_de->no_of_listed_files = 0;
             }
-            else if ((calc_size > stat_buf.st_size) &&
+            else if (
+#ifdef HAVE_STATX
+                     (calc_size > stat_buf.stx_size) &&
+#else
+                     (calc_size > stat_buf.st_size) &&
+#endif
                      (!((*p_de->no_of_listed_files != 0) &&
                       ((*p_de->no_of_listed_files % RETRIEVE_LIST_STEP_SIZE) == 0))))
                  {
@@ -271,23 +321,39 @@ check_list(struct directory_entry *p_de,
 #else
                                "Hmm, LS data file %s has incorrect size (%lld != %lld), resizing it.",
 #endif
+#ifdef HAVE_STATX
+                               list_file, (pri_off_t)stat_buf.stx_size,
+#else
                                list_file, (pri_off_t)stat_buf.st_size,
+#endif
                                (pri_off_t)calc_size);
                     ptr -= AFD_WORD_OFFSET;
+#ifdef HAVE_STATX
+                    if (munmap(ptr, stat_buf.stx_size) == -1)
+#else
                     if (munmap(ptr, stat_buf.st_size) == -1)
+#endif
                     {
                        system_log(WARN_SIGN, __FILE__, __LINE__,
                                   "Failed to munmap() %s : %s",
                                   list_file, strerror(errno));
                     }
+#ifdef HAVE_STATX
+                    if (lseek(p_de->rl_fd, stat_buf.stx_size, SEEK_SET) == -1)
+#else
                     if (lseek(p_de->rl_fd, stat_buf.st_size, SEEK_SET) == -1)
+#endif
                     {
                        system_log(ERROR_SIGN, __FILE__, __LINE__,
                                   "Failed to lssek() in %s : %s",
                                   list_file, strerror(errno));
                        exit(INCORRECT);
                     }
+#ifdef HAVE_STATX
+                    write_size = calc_size - stat_buf.stx_size;
+#else
                     write_size = calc_size - stat_buf.st_size;
+#endif
                     (void)memset(buffer, 0, 4096);
                     loops = write_size / 4096;
                     rest = write_size % 4096;
@@ -344,16 +410,32 @@ check_list(struct directory_entry *p_de,
          {
             return(-1);
          }
+#ifdef HAVE_STATX
+         if (p_de->rl[i].file_mtime != p_stat_buf->stx_mtime.tv_sec)
+#else
          if (p_de->rl[i].file_mtime != p_stat_buf->st_mtime)
+#endif
          {
+#ifdef HAVE_STATX
+            p_de->rl[i].file_mtime = p_stat_buf->stx_mtime.tv_sec;
+#else
             p_de->rl[i].file_mtime = p_stat_buf->st_mtime;
+#endif
             p_de->rl[i].retrieved = NO;
          }
          p_de->rl[i].got_date = YES;
          p_de->rl[i].prev_size = p_de->rl[i].size;
+#ifdef HAVE_STATX
+         if (p_de->rl[i].size != p_stat_buf->stx_size)
+#else
          if (p_de->rl[i].size != p_stat_buf->st_size)
+#endif
          {
+#ifdef HAVE_STATX
+            p_de->rl[i].size = p_stat_buf->stx_size;
+#else
             p_de->rl[i].size = p_stat_buf->st_size;
+#endif
             p_de->rl[i].retrieved = NO;
          }
          if (p_de->rl[i].retrieved == NO)
@@ -398,13 +480,21 @@ check_list(struct directory_entry *p_de,
          *p_de->no_of_listed_files = 0;
       }
    }
+#ifdef HAVE_STATX
+   p_de->rl[*p_de->no_of_listed_files].file_mtime = p_stat_buf->stx_mtime.tv_sec;
+#else
    p_de->rl[*p_de->no_of_listed_files].file_mtime = p_stat_buf->st_mtime;
+#endif
    p_de->rl[*p_de->no_of_listed_files].got_date = YES;
 
    (void)strcpy(p_de->rl[*p_de->no_of_listed_files].file_name, file);
    p_de->rl[*p_de->no_of_listed_files].retrieved = NO;
    p_de->rl[*p_de->no_of_listed_files].in_list = YES;
+#ifdef HAVE_STATX
+   p_de->rl[*p_de->no_of_listed_files].size = p_stat_buf->stx_size;
+#else
    p_de->rl[*p_de->no_of_listed_files].size = p_stat_buf->st_size;
+#endif
    p_de->rl[*p_de->no_of_listed_files].prev_size = 0;
    (*p_de->no_of_listed_files)++;
 
@@ -427,9 +517,13 @@ rm_removed_files(struct directory_entry *p_de, int full_scan, char *dirname)
     */
    if (full_scan != YES)
    {
-      char        *work_ptr;
+      char         *work_ptr;
 #ifdef SAVE_FILE_CHECK
-      struct stat stat_buf;
+# ifdef HAVE_STATX
+      struct statx stat_buf;
+# else
+      struct stat  stat_buf;
+# endif
 #endif
 
       work_ptr = dirname + strlen(dirname);
@@ -439,7 +533,13 @@ rm_removed_files(struct directory_entry *p_de, int full_scan, char *dirname)
          {
             (void)strcpy(work_ptr, p_de->rl[i].file_name);
 #ifdef SAVE_FILE_CHECK
+# ifdef HAVE_STATX
+            if ((statx(0, dirname, AT_STATX_SYNC_AS_STAT,
+                       STATX_MODE, &stat_buf) == 0) &&
+                (S_ISREG(stat_buf.st_mode)))
+# else
             if ((stat(dirname, &stat_buf) == 0) && (S_ISREG(stat_buf.st_mode)))
+# endif
 #else
             if (access(dirname, F_OK) == 0)
 #endif

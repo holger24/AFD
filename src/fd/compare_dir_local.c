@@ -1,6 +1,6 @@
 /*
  *  compare_dir_local.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2010 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2010 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -51,6 +51,9 @@ DESCR__E_M3
 #include <string.h>           /* strerror()                              */
 #include <stdlib.h>           /* realloc(), free()                       */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>           /* Definition of AT_* constants            */
+#endif
 #include <sys/stat.h>         /* stat(), S_ISREG()                       */
 #include <dirent.h>           /* opendir(), closedir(), readdir(), DIR,  */
                               /* struct dirent                           */
@@ -92,7 +95,11 @@ compare_dir_local(void)
                        *work_ptr;
    DIR                 *dp;
    struct dirent       *p_dir;
+#ifdef HAVE_STATX
+   struct statx        stat_buf;
+#else
    struct stat         stat_buf;
+#endif
 
    if (fra_fd == -1)
    {
@@ -193,19 +200,32 @@ compare_dir_local(void)
          if (gotcha == YES)
          {
             (void)strcpy(work_ptr, p_dir->d_name);
-            if (stat(fullname, &stat_buf) < 0)
+#ifdef HAVE_STATX
+            if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                      STATX_SIZE | STATX_MODE, &stat_buf) == -1)
+#else
+            if (stat(fullname, &stat_buf) == -1)
+#endif
             {
                if (errno != ENOENT)
                {
                   system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                             "Can't statx() file `%s' : %s",
+#else
                              "Can't stat() file `%s' : %s",
+#endif
                              fullname, strerror(errno));
                }
                continue;
             }
 
             /* Sure it is a normal file? */
+#ifdef HAVE_STATX
+            if (S_ISREG(stat_buf.stx_mode))
+#else
             if (S_ISREG(stat_buf.st_mode))
+#endif
             {
                gotcha = NO;
                for (i = 0; i < no_of_listed_files; i++)
@@ -234,7 +254,11 @@ compare_dir_local(void)
 #endif
 
                      deleted_files++;
+#ifdef HAVE_STATX
+                     deleted_size += stat_buf.stx_size;
+#else
                      deleted_size += stat_buf.st_size;
+#endif
 #ifdef _DELETE_LOG
                      if (dl.fd == -1)
                      {
@@ -245,7 +269,11 @@ compare_dir_local(void)
                                     "%-*s %03x",
                                     MAX_HOSTNAME_LENGTH, fsa->host_alias,
                                     MIRROR_REMOVE);
+# ifdef HAVE_STATX
+                     *dl.file_size = stat_buf.stx_size;
+# else
                      *dl.file_size = stat_buf.st_size;
+# endif
                      *dl.job_id = db.id.job;
                      *dl.dir_id = dir_id;
                      *dl.input_time = db.creation_time;

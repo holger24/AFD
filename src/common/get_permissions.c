@@ -1,6 +1,6 @@
 /*
  *  get_permissions.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -79,13 +79,17 @@ extern char *p_work_dir;
 int
 get_permissions(char **perm_buffer, char *fake_user, char *profile)
 {
-   int         fd,
-               ret = SUCCESS;
-   char        *buffer = NULL,
-               *user = NULL,
-               *user_profile = NULL,
-               afd_user_file[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+   int          fd,
+                ret = SUCCESS;
+   char         *buffer = NULL,
+                *user = NULL,
+                *user_profile = NULL,
+                afd_user_file[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    if (fake_user[0] == '\0')
    {
@@ -156,14 +160,28 @@ get_permissions(char **perm_buffer, char *fake_user, char *profile)
    (void)strcat(afd_user_file, AFD_USER_FILE);
    if ((fd = open(afd_user_file, O_RDONLY)) != -1)
    {
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) != -1)
+#else
       if (fstat(fd, &stat_buf) != -1)
+#endif
       {
+#ifdef HAVE_STATX
+         if ((stat_buf.stx_size > 0) && (stat_buf.stx_size < 1048576))
+#else
          if ((stat_buf.st_size > 0) && (stat_buf.st_size < 1048576))
+#endif
          {
             /* Create two buffers, one to scribble around 'buffer' the other */
             /* is returned to the calling process.                           */
+#ifdef HAVE_STATX
+            if (((buffer = malloc(stat_buf.stx_size + 2)) != NULL) &&
+                ((*perm_buffer = calloc(stat_buf.stx_size, sizeof(char))) != NULL))
+#else
             if (((buffer = malloc(stat_buf.st_size + 2)) != NULL) &&
                 ((*perm_buffer = calloc(stat_buf.st_size, sizeof(char))) != NULL))
+#endif
             {
                off_t   bytes_buffered;
 #ifdef HAVE_GETLINE
@@ -186,7 +204,11 @@ get_permissions(char **perm_buffer, char *fake_user, char *profile)
                bytes_buffered = 0;
                read_ptr = buffer + 1;
 #ifdef HAVE_GETLINE
+# ifdef HAVE_STATX
+               line_buffer_length = stat_buf.stx_size + 1;
+# else
                line_buffer_length = stat_buf.st_size + 1;
+# endif
                while ((n = getline(&read_ptr, &line_buffer_length, fp)) != -1)
 #else
                while (fgets(read_ptr, MAX_LINE_LENGTH, fp) != NULL)
@@ -235,7 +257,11 @@ get_permissions(char **perm_buffer, char *fake_user, char *profile)
          }
          else
          {
+#ifdef HAVE_STATX
+            if (stat_buf.stx_size != 0)
+#else
             if (stat_buf.st_size != 0)
+#endif
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           _("The function get_permissions() was not made to handle large file."));
@@ -328,7 +354,11 @@ get_permissions(char **perm_buffer, char *fake_user, char *profile)
                   *(*perm_buffer + i) = *ptr;
                   i++; ptr++;
                }
+#ifdef HAVE_STATX
+               if (((ptr + 1) - buffer) >= stat_buf.stx_size)
+#else
                if (((ptr + 1) - buffer) >= stat_buf.st_size)
+#endif
                {
                   break;
                }
@@ -362,7 +392,11 @@ get_permissions(char **perm_buffer, char *fake_user, char *profile)
                   *(*perm_buffer + i) = *ptr;
                   i++; ptr++;
                }
+#ifdef HAVE_STATX
+               if (((ptr + 1) - buffer) >= stat_buf.stx_size)
+#else
                if (((ptr + 1) - buffer) >= stat_buf.st_size)
+#endif
                {
                   break;
                }

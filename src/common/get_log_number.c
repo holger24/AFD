@@ -58,6 +58,9 @@ DESCR__E_M3
 #include <ctype.h>                 /* isdigit()                          */
 #include <sys/types.h>
 #ifndef LINUX
+# ifdef HAVE_STATX
+#  include <fcntl.h>               /* Definition of AT_* constants       */
+# endif
 # include <sys/stat.h>             /* stat(), S_ISREG()                  */
 #endif
 #include <unistd.h>                /* unlink()                           */
@@ -84,7 +87,11 @@ get_log_number(int  *log_number,
                  fullname[MAX_PATH_LENGTH + 256],
                  log_dir[MAX_PATH_LENGTH];
 #ifndef LINUX
+# ifdef HAVE_STATX
+   struct statx  stat_buf;
+# else
    struct stat   stat_buf;
+# endif
 #endif
    struct dirent *p_dir;
    DIR           *dp;
@@ -124,7 +131,12 @@ get_log_number(int  *log_number,
          (void)snprintf(fullname, MAX_PATH_LENGTH + 256, "%s/%s",
                         log_dir, p_dir->d_name);
 #ifndef LINUX
-         if (stat(fullname, &stat_buf) < 0)
+# ifdef HAVE_STATX
+         if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                   STATX_MODE, &stat_buf) == -1)
+# else
+         if (stat(fullname, &stat_buf) == -1)
+# endif
          {
             if (errno != ENOENT)
             {
@@ -136,7 +148,11 @@ get_log_number(int  *log_number,
          }
 
          /* Sure it is a normal file? */
+# ifdef HAVE_STATX
+         if (S_ISREG(stat_buf.stx_mode))
+# else
          if (S_ISREG(stat_buf.st_mode))
+# endif
          {
 #endif
             ptr = p_dir->d_name;

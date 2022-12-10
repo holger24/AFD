@@ -1,6 +1,6 @@
 /*
  *  count_pool_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -141,7 +141,11 @@ count_pool_files(int           *dir_pos,
                else
                {
                   char          *work_ptr;
+#ifdef HAVE_STATX
+                  struct statx  stat_buf;
+#else
                   struct stat   stat_buf;
+#endif
                   struct dirent *p_dir;
 
                   work_ptr = pool_dir + strlen(pool_dir);
@@ -152,10 +156,19 @@ count_pool_files(int           *dir_pos,
                      if (p_dir->d_name[0] != '.')
                      {
                         (void)strcpy(work_ptr, p_dir->d_name);
+#ifdef HAVE_STATX
+                        if (statx(0, pool_dir, AT_STATX_SYNC_AS_STAT,
+                                  STATX_SIZE | STATX_MTIME, &stat_buf) == -1)
+#else
                         if (stat(pool_dir, &stat_buf) == -1)
+#endif
                         {
                            system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                                      "Failed to statx() `%s' : %s",
+#else
                                       "Failed to stat() `%s' : %s",
+#endif
                                       pool_dir, strerror(errno));
                         }
                         else
@@ -165,8 +178,13 @@ count_pool_files(int           *dir_pos,
                            (void)memcpy(file_name_pool[file_counter],
                                         p_dir->d_name,
                                         (size_t)(file_length_pool[file_counter] + 1));
+#ifdef HAVE_STATX
+                           file_size_pool[file_counter] = stat_buf.stx_size;
+                           file_mtime_pool[file_counter] = stat_buf.stx_mtime.tv_sec;
+#else
                            file_size_pool[file_counter] = stat_buf.st_size;
                            file_mtime_pool[file_counter] = stat_buf.st_mtime;
+#endif
                            file_counter++;
                         }
                      }

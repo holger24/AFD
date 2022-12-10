@@ -1,6 +1,6 @@
 /*
  *  check_file_dir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -122,8 +122,12 @@ check_file_dir(time_t now,
                char   *outgoing_file_dir,
                int    outgoing_file_dir_length)
 {
-   time_t      diff_time;
-   struct stat stat_buf;
+   time_t       diff_time;
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    (void)strcpy(file_dir, outgoing_file_dir);
    p_file_dir = file_dir + outgoing_file_dir_length;
@@ -133,10 +137,18 @@ check_file_dir(time_t now,
       p_file_dir++;
       *p_file_dir = '\0';
    }
+#ifdef HAVE_STATX
+   if (statx(0, file_dir, AT_STATX_SYNC_AS_STAT, 0, &stat_buf) == -1)
+#else
    if (stat(file_dir, &stat_buf) == -1)
+#endif
    {
       system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                 _("Failed to statx() `%s' [%d] : %s"),
+#else
                  _("Failed to stat() `%s' [%d] : %s"),
+#endif
                  file_dir, outgoing_file_dir_length, strerror(errno));
       return;
    }
@@ -266,7 +278,11 @@ check_jobs(void)
    struct dirent *dir_no_dirp,
                  *dirp,
                  *id_dirp;
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
 
    /*
     * Check file directory for files that do not have a message.
@@ -350,7 +366,12 @@ check_jobs(void)
             }
             if (proc_pos == -1)
             {
+#ifdef HAVE_STATX
+               if (statx(0, file_dir, AT_STATX_SYNC_AS_STAT,
+                         STATX_MODE, &stat_buf) == -1)
+#else
                if (stat(file_dir, &stat_buf) == -1)
+#endif
                {
                   /*
                    * Be silent when there is no such file or directory, since
@@ -359,14 +380,22 @@ check_jobs(void)
                   if (errno != ENOENT)
                   {
                      system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                                _("Failed to statx() `%s' : %s"),
+#else
                                 _("Failed to stat() `%s' : %s"),
+#endif
                                 file_dir, strerror(errno));
                   }
                }
                else
                {
                   /* Test if it is a directory. */
+#ifdef HAVE_STATX
+                  if (S_ISDIR(stat_buf.stx_mode))
+#else
                   if (S_ISDIR(stat_buf.st_mode))
+#endif
                   {
                      if ((id_dp = opendir(file_dir)) == NULL)
                      {
@@ -385,21 +414,39 @@ check_jobs(void)
                            if (id_dirp->d_name[0] != '.')
                            {
                               (void)strcpy(p_job_id, id_dirp->d_name);
+#ifdef HAVE_STATX
+                              if (statx(0, file_dir, AT_STATX_SYNC_AS_STAT,
+                                        STATX_MODE | STATX_NLINK,
+                                        &stat_buf) == -1)
+#else
                               if (stat(file_dir, &stat_buf) == -1)
+#endif
                               {
                                  if (errno != ENOENT)
                                  {
                                     system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                                               _("Failed to statx() `%s' : %s #%x"),
+#else
                                                _("Failed to stat() `%s' : %s #%x"),
+#endif
                                                file_dir, strerror(errno),
                                                job_id);
                                  }
                               }
                               else
                               {
+#ifdef HAVE_STATX
+                                 if (S_ISDIR(stat_buf.stx_mode))
+#else
                                  if (S_ISDIR(stat_buf.st_mode))
+#endif
                                  {
+#ifdef HAVE_STATX
+                                    if (stat_buf.stx_nlink < MAX_CHECK_FILE_DIRS)
+#else
                                     if (stat_buf.st_nlink < MAX_CHECK_FILE_DIRS)
+#endif
                                     {
                                        if ((dir_no_dp = opendir(file_dir)) == NULL)
                                        {
@@ -425,12 +472,23 @@ check_jobs(void)
                                              {
                                                 (void)strcpy(p_dir_no, dir_no_dirp->d_name);
 #ifndef LINUX
+# ifdef HAVE_STATX
+                                                if (statx(0, file_dir,
+                                                          AT_STATX_SYNC_AS_STAT,
+                                                          STATX_MODE,
+                                                          &stat_buf) == -1)
+# else
                                                 if (stat(file_dir, &stat_buf) == -1)
+# endif
                                                 {
                                                    if (errno != ENOENT)
                                                    {
                                                       system_log(WARN_SIGN, __FILE__, __LINE__,
+# ifdef HAVE_STATX
+                                                                 _("Failed to statx() `%s' : %s #%x"),
+# else
                                                                  _("Failed to stat() `%s' : %s #%x"),
+# endif
                                                                  file_dir,
                                                                  strerror(errno),
                                                                  job_id);
@@ -438,7 +496,11 @@ check_jobs(void)
                                                 }
                                                 else
                                                 {
+# ifdef HAVE_STATX
+                                                   if (S_ISDIR(stat_buf.stx_mode))
+# else
                                                    if (S_ISDIR(stat_buf.st_mode))
+# endif
                                                    {
 #endif
 #ifdef MULTI_FS_SUPPORT
@@ -481,10 +543,21 @@ check_jobs(void)
                                                                   continue;
                                                                }
                                                                (void)strcpy(p_file, file_dirp->d_name);
+#ifdef HAVE_STATX
+                                                               if (statx(0, file_dir,
+                                                                         AT_STATX_SYNC_AS_STAT,
+                                                                         STATX_SIZE,
+                                                                         &stat_buf) != -1)
+#else
                                                                if (stat(file_dir, &stat_buf) != -1)
+#endif
                                                                {
                                                                   file_counter++;
+#ifdef HAVE_STATX
+                                                                  size_counter += stat_buf.stx_size;
+#else
                                                                   size_counter += stat_buf.st_size;
+#endif
                                                                }
                                                                errno = 0;
                                                             }
@@ -584,9 +657,17 @@ check_jobs(void)
                                     }
                                     else
                                     {
+#ifdef HAVE_STATX
+                                       if (stat_buf.stx_nlink > max_nlinks)
+#else
                                        if (stat_buf.st_nlink > max_nlinks)
+#endif
                                        {
+#ifdef HAVE_STATX
+                                          max_nlinks = stat_buf.stx_nlink;
+#else
                                           max_nlinks = stat_buf.st_nlink;
+#endif
                                           max_nlinks_job_id = job_id;
                                        }
                                        max_nlinks_reached++;

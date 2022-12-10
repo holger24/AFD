@@ -677,7 +677,11 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
                 **invisible_members = NULL,
                 *perm_buffer;
    struct tms   tmsdummy;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
 
    /* See if user wants some help. */
    if ((get_arg(argc, argv, "-?", NULL, 0) == SUCCESS) ||
@@ -989,9 +993,14 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
    }
    else
    {
-      if (fstat(fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE | STATX_MTIME, &stat_buf) == -1)
+#else
+      if (fstat(fd, &stat_buf) == -1)
+#endif
       {
-         (void)fprintf(stderr, "WARNING : fstat() error : %s (%s %d)\n",
+         (void)fprintf(stderr, "WARNING : access error : %s (%s %d)\n",
                        strerror(errno), __FILE__, __LINE__);
          (void)close(fd);
          pid_list = NULL;
@@ -999,10 +1008,20 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
       else
       {
 #ifdef HAVE_MMAP
-         if ((pid_list = mmap(0, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# ifdef HAVE_STATX
+         afd_active_size = stat_buf.stx_size;
+# else
+         afd_active_size = stat_buf.st_size;
+# endif
+         if ((pid_list = mmap(0, afd_active_size, (PROT_READ | PROT_WRITE),
                               MAP_SHARED, fd, 0)) == (caddr_t) -1)
 #else
-         if ((pid_list = mmap_emu(0, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+         if ((pid_list = mmap_emu(0,
+# ifdef HAVE_STATX
+                                  stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# else
+                                  stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                   MAP_SHARED,
                                   afd_active_file, 0)) == (caddr_t) -1)
 #endif
@@ -1011,10 +1030,11 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
                           strerror(errno), __FILE__, __LINE__);
             pid_list = NULL;
          }
-#ifdef HAVE_MMAP
-         afd_active_size = stat_buf.st_size;
-#endif
+#ifdef HAVE_STATX
+         afd_active_time = stat_buf.stx_mtime.tv_sec;
+#else
          afd_active_time = stat_buf.st_mtime;
+#endif
 
          if (close(fd) == -1)
          {

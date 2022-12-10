@@ -1,6 +1,6 @@
 /*
  *  check_inotify_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2013 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@ DESCR__S_M1
  **   20.05.2013 H.Kiehl Created
  **   21.08.2021 H.Kiehl When all host are disabled and 'do not remove' is
  **                      set, don't delete the files for local dirs.
+ **   28.11.2022 H.Kiehl Use statx() when available.
  **
  */
 DESCR__E_M1
@@ -146,7 +147,11 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
 #ifdef _INPUT_LOG
    size_t       il_real_size;
 #endif
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
 
    (void)strcpy(fullname, p_de->dir);
    work_ptr = fullname + strlen(fullname);
@@ -162,12 +167,27 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
          continue;
       }
       (void)strcpy(work_ptr, &p_iwl->file_name[current_fnl_pos]);
+#ifdef HAVE_STATX
+      if (statx(0, fullname,
+                AT_STATX_SYNC_AS_STAT,
+                STATX_SIZE | STATX_MODE |
+# ifdef _POSIX_SAVED_IDS
+                STATX_UID |
+# endif
+                STATX_ATIME | STATX_MTIME,
+                &stat_buf) == -1)
+#else
       if (stat(fullname, &stat_buf) == -1)
+#endif
       {
          if (errno != ENOENT)
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                       _("Failed to statx() file `%s' : %s"),
+#else
                        _("Failed to stat() file `%s' : %s"),
+#endif
                        fullname, strerror(errno));
          }
       }
@@ -175,17 +195,33 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
       {
          if (fra[p_de->fra_pos].ignore_file_time != 0)
          {
+#ifdef HAVE_STATX
+            diff_time = current_time - stat_buf.stx_mtime.tv_sec;
+#else
             diff_time = current_time - stat_buf.st_mtime;
+#endif
          }
 
          if ((fra[p_de->fra_pos].fsa_pos != -1) || /* Time+size check only local dirs! */
              (((fra[p_de->fra_pos].ignore_size == -1) ||
                ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_EQUAL) &&
+#ifdef HAVE_STATX
+                (fra[p_de->fra_pos].ignore_size != stat_buf.stx_size)) ||
+#else
                 (fra[p_de->fra_pos].ignore_size != stat_buf.st_size)) ||
+#endif
                ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_LESS_THEN) &&
+#ifdef HAVE_STATX
+                (fra[p_de->fra_pos].ignore_size < stat_buf.stx_size)) ||
+#else
                 (fra[p_de->fra_pos].ignore_size < stat_buf.st_size)) ||
+#endif
                ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_GREATER_THEN) &&
+#ifdef HAVE_STATX
+                (fra[p_de->fra_pos].ignore_size > stat_buf.stx_size))) &&
+#else
                 (fra[p_de->fra_pos].ignore_size > stat_buf.st_size))) &&
+#endif
               ((fra[p_de->fra_pos].ignore_file_time == 0) ||
                ((fra[p_de->fra_pos].gt_lt_sign & IFTIME_EQUAL) &&
                 (fra[p_de->fra_pos].ignore_file_time != diff_time)) ||
@@ -195,11 +231,19 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                 (fra[p_de->fra_pos].ignore_file_time > diff_time)))))
          {
 #ifdef _POSIX_SAVED_IDS
+# ifdef HAVE_STATX
+            if ((stat_buf.stx_mode & S_IROTH) ||
+                ((stat_buf.stx_gid == afd_gid) && (stat_buf.stx_mode & S_IRGRP)) ||
+                ((stat_buf.stx_uid == afd_uid) && (stat_buf.stx_mode & S_IRUSR)) ||
+                ((stat_buf.stx_mode & S_IRGRP) && (no_of_sgids > 0) &&
+                 (check_sgids(stat_buf.stx_gid) == YES)))
+# else
             if ((stat_buf.st_mode & S_IROTH) ||
                 ((stat_buf.st_gid == afd_gid) && (stat_buf.st_mode & S_IRGRP)) ||
                 ((stat_buf.st_uid == afd_uid) && (stat_buf.st_mode & S_IRUSR)) ||
                 ((stat_buf.st_mode & S_IRGRP) && (no_of_sgids > 0) &&
                  (check_sgids(stat_buf.st_gid) == YES)))
+# endif
 #else
             if ((eaccess(fullname, R_OK) == 0))
 #endif
@@ -232,7 +276,11 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                         dis_log(DISABLED_DIS_TYPE, current_time,
                                 p_de->dir_id, 0,
                                 &p_iwl->file_name[current_fnl_pos],
+# ifdef HAVE_STATX
+                                p_iwl->fnl[i], stat_buf.stx_size, 1,
+# else
                                 p_iwl->fnl[i], stat_buf.st_size, 1,
+# endif
                                 &p_dummy_job_id, &dummy_proc_cycles, 1);
 #endif
 #ifdef _DELETE_LOG
@@ -244,7 +292,11 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                                        "%-*s %03x",
                                        MAX_HOSTNAME_LENGTH, "-",
                                        DELETE_HOST_DISABLED);
+# ifdef HAVE_STATX
+                        *dl.file_size = stat_buf.stx_size;
+# else
                         *dl.file_size = stat_buf.st_size;
+# endif
                         *dl.dir_id = p_de->dir_id;
                         *dl.job_id = 0;
                         *dl.input_time = current_time;
@@ -313,7 +365,11 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
 
                      if ((fra[p_de->fra_pos].dup_check_timeout == 0L) ||
                          (((is_duplicate = isdup(fullname, NULL,
+# ifdef HAVE_STATX
+                                                 stat_buf.stx_size,
+# else
                                                  stat_buf.st_size,
+# endif
                                                  p_de->dir_id,
                                                  fra[p_de->fra_pos].dup_check_timeout,
                                                  fra[p_de->fra_pos].dup_check_flag,
@@ -337,10 +393,17 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                      if ((fra[p_de->fra_pos].fsa_pos != -1) ||
                          (fra[p_de->fra_pos].stupid_mode == YES) ||
                          (fra[p_de->fra_pos].remove == YES) ||
-                         ((rl_pos = check_list(p_de, &p_iwl->file_name[current_fnl_pos], &stat_buf)) > -1))
+                         ((rl_pos = check_list(p_de,
+                                               &p_iwl->file_name[current_fnl_pos],
+                                               &stat_buf)) > -1))
                      {
                         if ((fra[p_de->fra_pos].end_character == -1) ||
-                            (fra[p_de->fra_pos].end_character == get_last_char(fullname, stat_buf.st_size)))
+#ifdef HAVE_STATX
+                            (fra[p_de->fra_pos].end_character == get_last_char(fullname, stat_buf.stx_size))
+#else
+                            (fra[p_de->fra_pos].end_character == get_last_char(fullname, stat_buf.st_size))
+#endif
+                           )
                         {
                            int what_done;
 
@@ -594,7 +657,11 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                                   (is_duplicate == NO))
                               {
                                  (void)isdup(fullname, NULL,
+# ifdef HAVE_STATX
+                                             stat_buf.stx_size,
+# else
                                              stat_buf.st_size,
+# endif
                                              p_de->dir_id,
                                              fra[p_de->fra_pos].dup_check_timeout,
                                              fra[p_de->fra_pos].dup_check_flag,
@@ -623,15 +690,24 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                               (void)memcpy(file_name_pool[files_copied],
                                            &p_iwl->file_name[current_fnl_pos],
                                            (size_t)(file_length_pool[files_copied] + 1));
+#ifdef HAVE_STATX
+                              file_mtime_pool[files_copied] = stat_buf.stx_mtime.tv_sec;
+                              file_size_pool[files_copied] = stat_buf.stx_size;
+#else
                               file_mtime_pool[files_copied] = stat_buf.st_mtime;
                               file_size_pool[files_copied] = stat_buf.st_size;
+#endif
 
 #ifdef _INPUT_LOG
                               /* Log the file name in the input log. */
                               (void)memcpy(il_file_name,
                                            &p_iwl->file_name[current_fnl_pos],
                                            (size_t)(file_length_pool[files_copied] + 1));
+# ifdef HAVE_STATX
+                              *il_file_size = stat_buf.stx_size;
+# else
                               *il_file_size = stat_buf.st_size;
+# endif
                               *il_time = current_time;
                               *il_dir_number = p_de->dir_id;
                               *il_unique_number = *unique_number;
@@ -649,7 +725,11 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                               }
 #endif
 
+#ifdef HAVE_STATX
+                              *total_file_size += stat_buf.stx_size;
+#else
                               *total_file_size += stat_buf.st_size;
+#endif
                               if ((++files_copied >= fra[p_de->fra_pos].max_copied_files) ||
                                   (*total_file_size >= fra[p_de->fra_pos].max_copied_file_size))
                               {
@@ -675,7 +755,11 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
 # ifdef _INPUT_LOG
                            /* Log the file name in the input log. */
                            (void)strcpy(il_file_name, &p_iwl->file_name[current_fnl_pos]);
+# ifdef HAVE_STATX
+                           *il_file_size = stat_buf.stx_size;
+# else
                            *il_file_size = stat_buf.st_size;
+# endif
                            *il_time = current_time;
                            *il_dir_number = p_de->dir_id;
                            *il_unique_number = *unique_number;
@@ -715,7 +799,11 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                                          p_de->dir_id,
                                          *unique_number,
                                          &p_iwl->file_name[current_fnl_pos],
+#  ifdef HAVE_STATX
+                                         p_iwl->fnl[i], stat_buf.stx_size, 1,
+#  else
                                          p_iwl->fnl[i], stat_buf.st_size, 1,
+#  endif
                                          &p_dummy_job_id, &dummy_proc_cycles, 1);
 # endif
 # ifdef _DELETE_LOG
@@ -727,7 +815,11 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                                                 "%-*s %03x",
                                                 MAX_HOSTNAME_LENGTH, "-",
                                                 DUP_INPUT);
+#  ifdef HAVE_STATX
+                                 *dl.file_size = stat_buf.stx_size;
+#  else
                                  *dl.file_size = stat_buf.st_size;
+#  endif
                                  *dl.dir_id = p_de->dir_id;
                                  *dl.job_id = 0;
                                  *dl.input_time = current_time;
@@ -823,7 +915,11 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                                           "%-*s %03x",
                                           MAX_HOSTNAME_LENGTH, "-",
                                           (fra[p_de->fra_pos].in_dc_flag & UNKNOWN_FILES_IDC) ?  DEL_UNKNOWN_FILE : DEL_UNKNOWN_FILE_GLOB);
+# ifdef HAVE_STATX
+                           *dl.file_size = stat_buf.stx_size;
+# else
                            *dl.file_size = stat_buf.st_size;
+# endif
                            *dl.dir_id = p_de->dir_id;
                            *dl.job_id = 0;
                            *dl.input_time = 0L;

@@ -1,6 +1,6 @@
 /*
  *  read_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -77,20 +77,37 @@ read_file(char *filename, char **buffer)
    }
    else
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
       /* Get best IO size to read file. */
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                0, &stat_buf) == -1)
+#else
       if (fstat(fd, &stat_buf) == -1)
+#endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                    _("Could not statx() `%s' : %s"),
+#else
                     _("Could not fstat() `%s' : %s"),
+#endif
                     filename, strerror(errno));
          bytes_buffered = INCORRECT;
       }
       else
       {
          /* Allocate enough memory for the contents of the file. */
+#ifdef HAVE_STATX
+         if ((*buffer = malloc(stat_buf.stx_blksize + 1)) == NULL)
+#else
          if ((*buffer = malloc(stat_buf.st_blksize + 1)) == NULL)
+#endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        _("Could not malloc() memory : %s"), strerror(errno));
@@ -108,7 +125,11 @@ read_file(char *filename, char **buffer)
             /* Read file into buffer. */
             do
             {
+#ifdef HAVE_STATX
+               if ((bytes_read = read(fd, read_ptr, stat_buf.stx_blksize)) == -1)
+#else
                if ((bytes_read = read(fd, read_ptr, stat_buf.st_blksize)) == -1)
+#endif
                {
                   system_log(ERROR_SIGN, __FILE__, __LINE__,
                              _("Failed to read `%s' : %s"),
@@ -119,10 +140,19 @@ read_file(char *filename, char **buffer)
                   return(INCORRECT);
                }
                bytes_buffered += bytes_read;
+#ifdef HAVE_STATX
+               if (bytes_read == stat_buf.stx_blksize)
+#else
                if (bytes_read == stat_buf.st_blksize)
+#endif
                {
+#ifdef HAVE_STATX
+                  if ((tmp_buffer = realloc(*buffer,
+                                            bytes_buffered + stat_buf.stx_blksize + 1)) == NULL)
+#else
                   if ((tmp_buffer = realloc(*buffer,
                                             bytes_buffered + stat_buf.st_blksize + 1)) == NULL)
+#endif
                   {
                      system_log(ERROR_SIGN, __FILE__, __LINE__,
                                 _("Could not realloc() memory : %s"),
@@ -135,7 +165,11 @@ read_file(char *filename, char **buffer)
                   *buffer = tmp_buffer;
                   read_ptr = *buffer + bytes_buffered;
                }
+#ifdef HAVE_STATX
+            } while (bytes_read == stat_buf.stx_blksize);
+#else
             } while (bytes_read == stat_buf.st_blksize);
+#endif
             (*buffer)[bytes_buffered] = '\0';
          }
       }

@@ -220,7 +220,11 @@ extract(char         *file_name,
                  from_fd;
    char          *src_ptr,
                  fullname[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
 
 #ifdef _PRODUCTION_LOG
    (void)getrusage(RUSAGE_SELF, &ru);
@@ -240,10 +244,21 @@ extract(char         *file_name,
       return(INCORRECT);
    }
 
-   if (fstat(from_fd, &stat_buf) < 0)   /* need size of input file */
+   /* Need size and mode of input file. */
+#ifdef HAVE_STATX
+   if (statx(from_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE | STATX_MTIME | STATX_MODE, &stat_buf) == -1)
+#else
+   if (fstat(from_fd, &stat_buf) == -1)
+#endif
    {
       receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                  _("fstat() error : %s"), strerror(errno));
+#ifdef HAVE_STATX
+                  _("statx() error : %s"),
+#else
+                  _("fstat() error : %s"),
+#endif
+                  strerror(errno));
       (void)close(from_fd);
       return(INCORRECT);
    }
@@ -252,15 +267,28 @@ extract(char         *file_name,
     * If the size of the file is less then 10 forget it. There can't
     * be a WMO bulletin in it.
     */
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size < 10)
+#else
    if (stat_buf.st_size < 10)
+#endif
    {
       receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
 #ifdef _PRODUCTION_LOG
                   _("Got a file for extracting that is %ld bytes long! #%x"),
-                  stat_buf.st_size, job_id);
+# ifdef HAVE_STATX
+                  stat_buf.stx_size,
+# else
+                  stat_buf.st_size,
+# endif
+                  job_id);
 #else
                   _("Got a file for extracting that is %ld bytes long!"),
+# ifdef HAVE_STATX
+                  stat_buf.stx_size);
+# else
                   stat_buf.st_size);
+# endif
 #endif
       (void)close(from_fd);
       return(INCORRECT);
@@ -271,15 +299,27 @@ extract(char         *file_name,
     * files. This gives the originator the possibility to set the
     * permissions on the destination site.
     */
+#ifdef HAVE_STATX
+   file_mode = stat_buf.stx_mode;
+#else
    file_mode = stat_buf.st_mode;
+#endif
 
 #ifdef HAVE_MMAP
-   if ((src_ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
-                       (MAP_FILE | MAP_SHARED),
+   if ((src_ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                       stat_buf.stx_size, PROT_READ, (MAP_FILE | MAP_SHARED),
+# else
+                       stat_buf.st_size, PROT_READ, (MAP_FILE | MAP_SHARED),
+# endif
                        from_fd, 0)) == (caddr_t) -1)
 #else
-   if ((src_ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
-                           (MAP_FILE | MAP_SHARED),
+   if ((src_ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                           stat_buf.stx_size, PROT_READ, (MAP_FILE | MAP_SHARED),
+# else
+                           stat_buf.st_size, PROT_READ, (MAP_FILE | MAP_SHARED),
+# endif
                            fullname, 0)) == (caddr_t) -1)
 #endif
    {
@@ -299,7 +339,11 @@ extract(char         *file_name,
    }
    else
    {
+#ifdef HAVE_STATX
+      *file_size -= stat_buf.stx_size;
+#else
       *file_size -= stat_buf.st_size;
+#endif
       (*files_to_send)--;
    }
 
@@ -334,27 +378,52 @@ extract(char         *file_name,
    switch (type)
    {
       case ASCII_STANDARD: /* No length indicator, just locate SOH + ETX. */
+#ifdef HAVE_STATX
+         ascii_sohetx(src_ptr, stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
+                      file_name);
+#else
          ascii_sohetx(src_ptr, stat_buf.st_size, stat_buf.st_mtime, file_name);
+#endif
          break;
 
       case BINARY_STANDARD: /* No length indicator, just cut away header. */
+#ifdef HAVE_STATX
+         binary_sohetx(src_ptr, stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
+                       file_name);
+#else
          binary_sohetx(src_ptr, stat_buf.st_size, stat_buf.st_mtime, file_name);
+#endif
          break;
 
       case ZCZC_NNNN: /* No length indicator, just locate ZCZC + NNNN. */
-         ascii_zczc_nnnn(src_ptr, stat_buf.st_size, stat_buf.st_mtime, file_name);
+#ifdef HAVE_STATX
+         ascii_zczc_nnnn(src_ptr, stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
+                         file_name);
+#else
+         ascii_zczc_nnnn(src_ptr, stat_buf.st_size, stat_buf.st_mtime,
+                         file_name);
+#endif
          break;
 
       case TWO_BYTE      : /* Vax Standard */
          if (*(char *)&byte_order == 1)
          {
             /* little-endian */
+#ifdef HAVE_STATX
+            two_byte_vax(src_ptr, stat_buf.stx_size, stat_buf.stx_mtime.tv_sec);
+#else
             two_byte_vax(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+#endif
          }
          else
          {
             /* big-endian */
+#ifdef HAVE_STATX
+            two_byte_vax_swap(src_ptr, stat_buf.stx_size,
+                              stat_buf.stx_mtime.tv_sec);
+#else
             two_byte_vax_swap(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+#endif
          }
          break;
 
@@ -362,12 +431,21 @@ extract(char         *file_name,
          if (*(char *)&byte_order == 1)
          {
             /* little-endian */
+#ifdef HAVE_STATX
+            four_byte(src_ptr, stat_buf.stx_size, stat_buf.stx_mtime.tv_sec);
+#else
             four_byte(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+#endif
          }
          else
          {
             /* big-endian */
+#ifdef HAVE_STATX
+            four_byte_swap(src_ptr, stat_buf.stx_size,
+                           stat_buf.stx_mtime.tv_sec);
+#else
             four_byte_swap(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+#endif
          }
          break;
 
@@ -375,12 +453,21 @@ extract(char         *file_name,
          if (*(char *)&byte_order == 1)
          {
             /* little-endian */
+#ifdef HAVE_STATX
+            four_byte_swap(src_ptr, stat_buf.stx_size,
+                           stat_buf.stx_mtime.tv_sec);
+#else
             four_byte_swap(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+#endif
          }
          else
          {
             /* big-endian */
+#ifdef HAVE_STATX
+            four_byte(src_ptr, stat_buf.stx_size, stat_buf.stx_mtime.tv_sec);
+#else
             four_byte(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+#endif
          }
          break;
 
@@ -388,27 +475,51 @@ extract(char         *file_name,
          if (*(char *)&byte_order == 1)
          {
             /* little-endian */
+#ifdef HAVE_STATX
+            four_byte_mss_swap(src_ptr, stat_buf.stx_size,
+                               stat_buf.stx_mtime.tv_sec);
+#else
             four_byte_mss_swap(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+#endif
          }
          else
          {
             /* big-endian */
+#ifdef HAVE_STATX
+            four_byte_mss(src_ptr, stat_buf.stx_size,
+                          stat_buf.stx_mtime.tv_sec);
+#else
             four_byte_mss(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+#endif
          }
          break;
 
       case WMO_STANDARD  : /* WMO Standard */
+#ifdef HAVE_STATX
+         wmo_standard(src_ptr, stat_buf.stx_size, stat_buf.stx_mtime.tv_sec);
+#else
          wmo_standard(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+#endif
          break;
 
       case WMO_STANDARD_CHK : /* WMO Standard with end search. */
+#ifdef HAVE_STATX
+         wmo_standard_chk(src_ptr, stat_buf.stx_size,
+                          stat_buf.stx_mtime.tv_sec);
+#else
          wmo_standard_chk(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+#endif
          break;
 
       case SP_CHAR : /* No length indicator, just locate separator */
                      /* character at end.                          */
+#ifdef HAVE_STATX
+         separator_char(src_ptr, stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
+                        file_name, '=');
+#else
          separator_char(src_ptr, stat_buf.st_size, stat_buf.st_mtime,
                         file_name, '=');
+#endif
          break;
 
       default            : /* Impossible! */
@@ -421,7 +532,11 @@ extract(char         *file_name,
                      type);
 #endif
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+         (void)munmap((void *)src_ptr, stat_buf.stx_size);
+# else
          (void)munmap((void *)src_ptr, stat_buf.st_size);
+# endif
 #else
          (void)munmap_emu((void *)src_ptr);
 #endif
@@ -435,7 +550,11 @@ extract(char         *file_name,
    }
 
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+   if (munmap((void *)src_ptr, stat_buf.stx_size) == -1)
+# else
    if (munmap((void *)src_ptr, stat_buf.st_size) == -1)
+# endif
 #else
    if (munmap_emu((void *)src_ptr) == -1)
 #endif
@@ -471,7 +590,11 @@ extract(char         *file_name,
                         "%s%c%llx%c%s%c%llx%c0%c%s",
 # endif
                         p_orig_name, SEPARATOR_CHAR,
+# ifdef HAVE_STATX
+                        (pri_off_t)stat_buf.stx_size, SEPARATOR_CHAR,
+# else
                         (pri_off_t)stat_buf.st_size, SEPARATOR_CHAR,
+# endif
                         pld[byte_order].file_name, SEPARATOR_CHAR,
                         (pri_off_t)pld[byte_order].size, SEPARATOR_CHAR,
                         SEPARATOR_CHAR, full_option);

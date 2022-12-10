@@ -4278,7 +4278,11 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                     check_typesize_data(int *, FILE *, int),
                     coe_open(char *, int, ...),
                     convert_grib2wmo(char *, off_t *, char *),
+#ifdef HAVE_STATX
+                    copy_file(char *, char *, struct statx *),
+#else
                     copy_file(char *, char *, struct stat *),
+#endif
                     create_message(unsigned int, char *, char *),
                     create_name(char *, int, signed char, time_t, unsigned int,
                                 unsigned int *, int *, char *, int, int),
@@ -4529,7 +4533,11 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
 #ifdef _MAINTAINER_LOG
                     maintainer_log(char *, char *, int, char *, ...),
 #endif
+#ifdef HAVE_STATX
+                    *map_file(char *, int *, off_t *, struct statx *, int, ...),
+#else
                     *map_file(char *, int *, off_t *, struct stat *, int, ...),
+#endif
                     mode_t2str(mode_t, char *),
                     *mmap_resize(int, void *, size_t),
                     my_fillncpy(char *, const char *, const char, const size_t),

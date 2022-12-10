@@ -1,6 +1,6 @@
 /*
  *  bull_file_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -68,7 +68,11 @@ main(int argc, char *argv[])
                  *file_buf,
                  filename[256],
                  bullname[256];
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
 
    if (argc != 2)
    {
@@ -79,15 +83,23 @@ main(int argc, char *argv[])
    {
       (void)strcpy(filename, argv[1]);
    }
-   
-   if (stat(filename, &stat_buf) < 0)
+
+#ifdef HAVE_STATX
+   if (statx(0, filename, AT_STATX_SYNC_AS_STAT, STATX_SIZE, &stat_buf) == -1)
+#else
+   if (stat(filename, &stat_buf) == -1)
+#endif
    {
-      (void)fprintf(stderr, "ERROR   : Failed to stat() %s : %s (%s %d)\n",
+      (void)fprintf(stderr, "ERROR   : Failed to access %s : %s (%s %d)\n",
                     filename, strerror(errno), __FILE__, __LINE__);
       exit(1);
    }
 
+#ifdef HAVE_STATX
+   if ((file_buf = calloc(stat_buf.stx_size, sizeof(char))) == NULL)
+#else
    if ((file_buf = calloc(stat_buf.st_size, sizeof(char))) == NULL)
+#endif
    {
       (void)fprintf(stderr, "ERROR   : Failed to calloc() : %s (%s %d)\n",
                     strerror(errno), __FILE__, __LINE__);
@@ -101,7 +113,11 @@ main(int argc, char *argv[])
       exit(1);
    }
 
+#ifdef HAVE_STATX
+   if (read(fd, file_buf, stat_buf.stx_size) < stat_buf.stx_size)
+#else
    if (read(fd, file_buf, stat_buf.st_size) < stat_buf.st_size)
+#endif
    {
       (void)fprintf(stderr, "ERROR   : Failed to read() : %s (%s %d)\n",
                     strerror(errno), __FILE__, __LINE__);

@@ -326,16 +326,20 @@ main(int argc, char *argv[])
 static void
 init_show_stat(int *argc, char *argv[], char *font_name, char *window_title)
 {
-   int         stat_fd;
-   time_t      now;
-   char        fake_user[MAX_FULL_USER_ID_LENGTH],
-               hostname[MAX_AFD_NAME_LENGTH],
-               *perm_buffer,
-               profile[MAX_PROFILE_NAME_LENGTH + 1],
-               *ptr,
-               statistic_file[MAX_PATH_LENGTH];
-   struct tm   *p_ts;
-   struct stat stat_buf;
+   int          stat_fd;
+   time_t       now;
+   char         fake_user[MAX_FULL_USER_ID_LENGTH],
+                hostname[MAX_AFD_NAME_LENGTH],
+                *perm_buffer,
+                profile[MAX_PROFILE_NAME_LENGTH + 1],
+                *ptr,
+                statistic_file[MAX_PATH_LENGTH];
+   struct tm    *p_ts;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    /* See if user wants some help. */
    if ((get_arg(argc, argv, "-?", NULL, 0) == SUCCESS) ||
@@ -481,13 +485,23 @@ init_show_stat(int *argc, char *argv[], char *font_name, char *window_title)
                     statistic_file, strerror(errno), __FILE__, __LINE__);
       exit(INCORRECT);
    }
+#ifdef HAVE_STATX
+   if (statx(stat_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(stat_fd, &stat_buf) == -1)
+#endif
    {
-      (void)fprintf(stderr, "ERROR   : Failed to fstat() %s : %s (%s %d)\n",
+      (void)fprintf(stderr, "ERROR   : Failed to access %s : %s (%s %d)\n",
                     statistic_file, strerror(errno), __FILE__, __LINE__);
       exit(INCORRECT);
    }
-   if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ, (MAP_FILE | MAP_SHARED),
+   if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                   stat_buf.stx_size, PROT_READ, (MAP_FILE | MAP_SHARED),
+#else
+                   stat_buf.st_size, PROT_READ, (MAP_FILE | MAP_SHARED),
+#endif
                    stat_fd, 0)) == (caddr_t) -1)
    {
       (void)fprintf(stderr, "ERROR   : Failed to mmap() %s : %s (%s %d)\n",
@@ -496,7 +510,11 @@ init_show_stat(int *argc, char *argv[], char *font_name, char *window_title)
       exit(INCORRECT);
    }
    stat_db = (struct afdstat *)(ptr + AFD_WORD_OFFSET);
+#ifdef HAVE_STATX
+   no_of_hosts = (stat_buf.stx_size - AFD_WORD_OFFSET) / sizeof(struct afdstat);
+#else
    no_of_hosts = (stat_buf.st_size - AFD_WORD_OFFSET) / sizeof(struct afdstat);
+#endif
    if (close(stat_fd) == -1)
    {
       (void)fprintf(stderr, "WARN    : Failed to close() %s : %s (%s %d)\n",

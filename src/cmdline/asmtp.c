@@ -112,33 +112,37 @@ static void          asmtp_exit(void),
 int
 main(int argc, char *argv[])
 {
-   int         blocksize,
-               buffer_size = 0,
-               encode_buffer_size = 0,
-               fd,
-               j,
-               status,
-               loops,
-               rest,
-               files_send = 0,
-               no_of_files_done = 0,
-               write_size;
-   size_t      length;
-   off_t       file_size_done = 0,
-               local_file_size,
-               no_of_bytes;
-   char        *buffer,
-               *buffer_ptr,
-               *encode_buffer = NULL,
-               *file_ptr,
-               host_name[256],
-               local_user[MAX_FILENAME_LENGTH + MAX_FILENAME_LENGTH],
-               multipart_boundary[MAX_FILENAME_LENGTH],
-               remote_user[MAX_USER_NAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 1],
-               final_filename[MAX_FILENAME_LENGTH],
-               *ptr,
-               *smtp_buffer;
-   struct stat stat_buf;
+   int          blocksize,
+                buffer_size = 0,
+                encode_buffer_size = 0,
+                fd,
+                j,
+                status,
+                loops,
+                rest,
+                files_send = 0,
+                no_of_files_done = 0,
+                write_size;
+   size_t       length;
+   off_t        file_size_done = 0,
+                local_file_size,
+                no_of_bytes;
+   char         *buffer,
+                *buffer_ptr,
+                *encode_buffer = NULL,
+                *file_ptr,
+                host_name[256],
+                local_user[MAX_FILENAME_LENGTH + MAX_FILENAME_LENGTH],
+                multipart_boundary[MAX_FILENAME_LENGTH],
+                remote_user[MAX_USER_NAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 1],
+                final_filename[MAX_FILENAME_LENGTH],
+                *ptr,
+                *smtp_buffer;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    CHECK_FOR_VERSION(argc, argv);
 
@@ -674,12 +678,17 @@ main(int argc, char *argv[])
             }
             continue;
          }
+#ifdef HAVE_STATX
+         if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_MODE | STATX_SIZE, &stat_buf) == -1)
+#else
          if (fstat(fd, &stat_buf) == -1)
+#endif
          {
             if (db.verbose == YES)
             {
                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-                         _("Failed to fstat() local file `%s'"),
+                         _("Failed to access local file `%s'"),
                          db.filename[files_send]);
             }
             WHAT_DONE("mailed", file_size_done, no_of_files_done);
@@ -689,7 +698,11 @@ main(int argc, char *argv[])
          }
          else
          {
+#ifdef HAVE_STATX
+            if (!S_ISREG(stat_buf.stx_mode))
+#else
             if (!S_ISREG(stat_buf.st_mode))
+#endif
             {
                if (db.verbose == YES)
                {
@@ -719,7 +732,11 @@ main(int argc, char *argv[])
                continue;
             }
          }
+#ifdef HAVE_STATX
+         local_file_size = stat_buf.stx_size;
+#else
          local_file_size = stat_buf.st_size;
+#endif
          if (db.verbose == YES)
          {
             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -1009,13 +1026,28 @@ main(int argc, char *argv[])
              * NOTE: This is NOT a fool proof way. There must be a better
              *       way!
              */
+#ifdef HAVE_STATX
+            if (statx(0, db.filename[files_send], AT_STATX_SYNC_AS_STAT,
+                      STATX_SIZE, &stat_buf) == 0)
+#else
             if (stat(db.filename[files_send], &stat_buf) == 0)
+#endif
             {
+#ifdef HAVE_STATX
+               if (stat_buf.stx_size > local_file_size)
+#else
                if (stat_buf.st_size > local_file_size)
+#endif
                {
+#ifdef HAVE_STATX
+                  loops = (stat_buf.stx_size - local_file_size) / blocksize;
+                  rest = (stat_buf.stx_size - local_file_size) % blocksize;
+                  local_file_size = stat_buf.stx_size;
+#else
                   loops = (stat_buf.st_size - local_file_size) / blocksize;
                   rest = (stat_buf.st_size - local_file_size) % blocksize;
                   local_file_size = stat_buf.st_size;
+#endif
 
                   /*
                    * Give a warning in the system log, so some action

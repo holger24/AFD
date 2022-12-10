@@ -1,6 +1,6 @@
 /*
  *  set_pw.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -108,7 +108,11 @@ main(int argc, char *argv[])
                        smtp_auth;
    struct passwd_buf  *pwb;
    struct job_id_data *jd;
+#ifdef HAVE_STATX
+   struct statx       stat_buf;
+#else
    struct stat        stat_buf;
+#endif
 
    if ((get_arg(&argc, argv, "-?", NULL, 0) == SUCCESS) ||
        (get_arg(&argc, argv, "-help", NULL, 0) == SUCCESS) ||
@@ -327,14 +331,24 @@ main(int argc, char *argv[])
       exit(INCORRECT);
    }
 
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
-      (void)fprintf(stderr, "Failed to fstat() `%s' : %s (%s %d)\n",
+      (void)fprintf(stderr, "Failed to access `%s' : %s (%s %d)\n",
                     file, strerror(errno), __FILE__, __LINE__);
       exit(INCORRECT);
    }
 
-   if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+   if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                   stat_buf.stx_size, PROT_READ,
+#else
+                   stat_buf.st_size, PROT_READ,
+#endif
                    MAP_SHARED, fd, 0)) == (caddr_t)-1)
    {
       (void)fprintf(stderr, "Failed to mmap() `%s' : %s (%s %d)\n",
@@ -350,7 +364,11 @@ main(int argc, char *argv[])
    no_of_job_ids = *(int *)ptr;
    ptr += AFD_WORD_OFFSET;
    jd = (struct job_id_data *)ptr;
+#ifdef HAVE_STATX
+   size = stat_buf.stx_size;
+#else
    size = stat_buf.st_size;
+#endif
 
    current_jid_list = NULL;
    no_of_current_jobs = 0;
@@ -482,9 +500,14 @@ main(int argc, char *argv[])
       }
       else
       {
+#ifdef HAVE_STATX
+         if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &stat_buf) == -1)
+#else
          if (fstat(fd, &stat_buf) == -1)
+#endif
          {
-            (void)fprintf(stderr, "Failed to mmap() `%s' : %s (%s %d)\n",
+            (void)fprintf(stderr, "Failed to access `%s' : %s (%s %d)\n",
                           file, strerror(errno), __FILE__, __LINE__);
             dnb = NULL;
             dnb_size = 0;
@@ -492,10 +515,20 @@ main(int argc, char *argv[])
          else
          {
 #ifdef HAVE_MMAP
-            if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+            if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                            stat_buf.stx_size, PROT_READ,
+# else
+                            stat_buf.st_size, PROT_READ,
+# endif
                             MAP_SHARED, fd, 0)) == (caddr_t)-1)
 #else
-            if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
+            if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                stat_buf.stx_size, PROT_READ,
+# else
+                                stat_buf.st_size, PROT_READ,
+# endif
                                 MAP_SHARED, file, 0)) == (caddr_t)-1)
 #endif
             {
@@ -509,7 +542,11 @@ main(int argc, char *argv[])
                no_of_dir_names = *(int *)ptr;
                ptr += AFD_WORD_OFFSET;
                dnb = (struct dir_name_buf *)ptr;
+#ifdef HAVE_STATX
+               dnb_size = stat_buf.stx_size;
+#else
                dnb_size = stat_buf.st_size;
+#endif
             }
          }
 

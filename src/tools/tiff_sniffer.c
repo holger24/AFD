@@ -1,7 +1,7 @@
 /*
  *  tiff_sniffer.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 Deutscher Wetterdienst (DWD),
- *                     Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
+ *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -71,22 +71,26 @@ const char *sys_log_name = SYSTEM_LOG_FIFO;
 int
 main(int argc, char *argv[])
 {
-   int         i = 0,
-               j,
-               fd,
-               offset,
-               ifd_offset,
-               byte_order = 1,
-               swap_bytes_flag,
-               tmp_int,
-               count,
-               length;
-   short       no_of_dirs,
-               tag_id,
-               tmp_short;
-   char        *src,
-               *buf;
-   struct stat stat_buf;
+   int          i = 0,
+                j,
+                fd,
+                offset,
+                ifd_offset,
+                byte_order = 1,
+                swap_bytes_flag,
+                tmp_int,
+                count,
+                length;
+   short        no_of_dirs,
+                tag_id,
+                tmp_short;
+   char         *src,
+                *buf;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    CHECK_FOR_VERSION(argc, argv);
 
@@ -103,20 +107,42 @@ main(int argc, char *argv[])
       exit(INCORRECT);
    }
 
-   if (fstat(fd, &stat_buf) < 0)   /* Need size of input file. */
+   /* Need size of input file. */
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
+   if (fstat(fd, &stat_buf) == -1)
+#endif
    {
-      (void)fprintf(stderr, "ERROR   : Could not fstat() on %s : %s\n",
+      (void)fprintf(stderr, "ERROR   : Could not access on %s : %s\n",
                     argv[1], strerror(errno));
       (void)close(fd);
       exit(INCORRECT);
    }
 
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size > 0)
+#else
    if (stat_buf.st_size > 0)
+#endif
    {
 #ifdef HAVE_MMAP
-      if ((src = mmap(0, stat_buf.st_size, PROT_READ, (MAP_FILE | MAP_SHARED), fd, 0)) == (caddr_t) -1)
+      if ((src = mmap(0,
+# ifdef HAVE_STATX
+                      stat_buf.stx_size, PROT_READ,
+# else
+                      stat_buf.st_size, PROT_READ,
+# endif
+                      (MAP_FILE | MAP_SHARED), fd, 0)) == (caddr_t) -1)
 #else
-      if ((src = mmap_emu(0, stat_buf.st_size, PROT_READ, (MAP_FILE | MAP_SHARED), argv[1], 0)) == (caddr_t) -1)
+      if ((src = mmap_emu(0,
+# ifdef HAVE_STATX
+                          stat_buf.stx_size, PROT_READ, (MAP_FILE | MAP_SHARED),
+# else
+                          stat_buf.st_size, PROT_READ, (MAP_FILE | MAP_SHARED),
+# endif
+                          argv[1], 0)) == (caddr_t) -1)
 #endif
       {
          (void)fprintf(stderr, "ERROR   : Could not mmap() file %s : %s\n",
@@ -124,16 +150,28 @@ main(int argc, char *argv[])
          (void)close(fd);
          exit(INCORRECT);
       }
+#ifdef HAVE_STATX
+      if ((buf = malloc(stat_buf.stx_size)) == NULL)
+#else
       if ((buf = malloc(stat_buf.st_size)) == NULL)
+#endif
       {
          (void)fprintf(stderr, "ERROR   : Failed to allocate memory : %s\n",
                        strerror(errno));
          (void)close(fd);
          exit(INCORRECT);
       }
+#ifdef HAVE_STATX
+      (void)memcpy(buf, src, stat_buf.stx_size);
+#else
       (void)memcpy(buf, src, stat_buf.st_size);
+#endif
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      if (munmap(src, stat_buf.stx_size) < 0)
+# else
       if (munmap(src, stat_buf.st_size) < 0)
+# endif
 #else
       if (munmap_emu(src) < 0)
 #endif

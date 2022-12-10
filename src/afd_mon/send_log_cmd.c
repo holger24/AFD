@@ -1,6 +1,6 @@
 /*
  *  send_log_cmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -352,11 +352,10 @@ init_log_values(char  *log_name,
                 char  *remote_log_inode,
                 off_t *log_file_size)
 {
-   int         fd;
-   char        current_log_no_str[MAX_INT_LENGTH],
-               fullname[MAX_PATH_LENGTH],
-               *p_end;
-   struct stat stat_buf;
+   int  fd;
+   char current_log_no_str[MAX_INT_LENGTH],
+        fullname[MAX_PATH_LENGTH],
+        *p_end;
 
    p_end = fullname + snprintf(fullname, MAX_PATH_LENGTH, "%s%s/%s/%s",
                                p_work_dir, RLOG_DIR, afd_alias, log_name);
@@ -438,8 +437,19 @@ init_log_values(char  *log_name,
    }
    if (log_file_size != NULL)
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
+      struct stat stat_buf;
+#endif
+
       (void)strcpy(p_end, current_log_no_str);
+#ifdef HAVE_STATX
+      if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (stat(fullname, &stat_buf) == -1)
+#endif
       {
          if (errno != ENOENT)
          {
@@ -450,7 +460,11 @@ init_log_values(char  *log_name,
       }
       else
       {
+#ifdef HAVE_STATX
+         *log_file_size = stat_buf.stx_size;
+#else
          *log_file_size = stat_buf.st_size;
+#endif
       }
    }
 

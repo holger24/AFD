@@ -77,11 +77,19 @@ tiff2gts(char *path, char* filename)
    char         *buf,
                 dest_file_name[MAX_PATH_LENGTH],
                 fullname[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
 
    (void)snprintf(fullname, MAX_PATH_LENGTH, "%s/%s", path, filename);
 
-   if (stat(fullname, &stat_buf) < 0)
+#ifdef HAVE_STATX
+   if (statx(0, fullname, AT_STATX_SYNC_AS_STAT, STATX_SIZE, &stat_buf) == -1)
+#else
+   if (stat(fullname, &stat_buf) == -1)
+#endif
    {
       receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                   _("Failed to stat() file `%s' : %s"),
@@ -89,7 +97,11 @@ tiff2gts(char *path, char* filename)
       return(INCORRECT);
    }
 
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size <= (OFFSET_END + 4))
+#else
    if (stat_buf.st_size <= (OFFSET_END + 4))
+#endif
    {
       receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                   _("Could not convert file `%s'. File does not have the correct length."),
@@ -97,7 +109,11 @@ tiff2gts(char *path, char* filename)
       return(INCORRECT);
    }
 
+#ifdef HAVE_STATX
+   if ((buf = malloc(stat_buf.stx_size)) == NULL)
+#else
    if ((buf = malloc(stat_buf.st_size)) == NULL)
+#endif
    {
       receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                   _("malloc() error : %s"), strerror(errno));
@@ -112,7 +128,11 @@ tiff2gts(char *path, char* filename)
       return(INCORRECT);
    }
 
+#ifdef HAVE_STATX
+   if (read(fd, buf, stat_buf.stx_size) != stat_buf.stx_size)
+#else
    if (read(fd, buf, stat_buf.st_size) != stat_buf.st_size)
+#endif
    {
       receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                   _("read() error : %s"), fullname, strerror(errno));
@@ -157,11 +177,20 @@ tiff2gts(char *path, char* filename)
    }
 
    data_size = data_end - data_start + 1;
+#ifdef HAVE_STATX
+   if (data_size > stat_buf.stx_size)
+#else
    if (data_size > stat_buf.st_size)
+#endif
    {
       receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                   _("File %s is corrupt. Data size (%d) larger then file size (%d)."),
-                  filename, data_size, stat_buf.st_size);
+#ifdef HAVE_STATX
+                  filename, data_size, stat_buf.stx_size
+#else
+                  filename, data_size, stat_buf.st_size
+#endif
+                 );
       free(buf);
       return(INCORRECT);
    }
@@ -169,7 +198,12 @@ tiff2gts(char *path, char* filename)
         {
            receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                        _("File %s is corrupt. Data size (%d) less then or equal to file size (%d)."),
-                       filename, data_size, stat_buf.st_size);
+#ifdef HAVE_STATX
+                       filename, data_size, stat_buf.stx_size
+#else
+                       filename, data_size, stat_buf.st_size
+#endif
+                      );
            free(buf);
            return(INCORRECT);
         }

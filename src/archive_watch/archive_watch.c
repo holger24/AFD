@@ -1,6 +1,6 @@
 /*
  *  archive_watch.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -104,7 +104,11 @@ main(int argc, char *argv[])
                   work_dir[MAX_PATH_LENGTH];
    fd_set         rset;
    struct timeval timeout;
+#ifdef HAVE_STATX
+   struct statx   stat_buf;
+#else
    struct stat    stat_buf;
+#endif
 
    CHECK_FOR_VERSION(argc, argv);
 
@@ -138,7 +142,13 @@ main(int argc, char *argv[])
    (void)strcat(archive_dir, AFD_ARCHIVE_DIR);
 
    /* Now lets open the fifo to receive commands from the AFD. */
-   if ((stat(aw_cmd_fifo, &stat_buf) < 0) || (!S_ISFIFO(stat_buf.st_mode)))
+#ifdef HAVE_STATX
+   if ((statx(0, aw_cmd_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) ||
+       (!S_ISFIFO(stat_buf.stx_mode)))
+#else
+   if ((stat(aw_cmd_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(aw_cmd_fifo) < 0)
       {

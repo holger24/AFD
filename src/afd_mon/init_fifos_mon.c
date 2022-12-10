@@ -1,6 +1,6 @@
 /*
  *  init_fifos_mon.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2006 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -73,9 +73,13 @@ extern char mon_cmd_fifo[],
 int
 init_fifos_mon(void)
 {
-   char        mon_log_fifo[MAX_PATH_LENGTH],
-               mon_resp_fifo[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+   char         mon_log_fifo[MAX_PATH_LENGTH],
+                mon_resp_fifo[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    /* Initialise fifo names. */
    (void)strcpy(mon_resp_fifo, p_work_dir);
@@ -90,7 +94,12 @@ init_fifos_mon(void)
 
    /* If the process AFD has not yet created these fifos */
    /* create them now.                                   */
+#ifdef HAVE_STATX
+   if ((statx(0, mon_cmd_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
    if ((stat(mon_cmd_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(mon_cmd_fifo) < 0)
       {
@@ -99,7 +108,12 @@ init_fifos_mon(void)
          return(INCORRECT);
       }
    }
+#ifdef HAVE_STATX
+   if ((statx(0, mon_resp_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
    if ((stat(mon_resp_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(mon_resp_fifo) < 0)
       {
@@ -108,8 +122,13 @@ init_fifos_mon(void)
          return(INCORRECT);
       }
    }
+#ifdef HAVE_STATX
+   if ((statx(0, probe_only_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
    if ((stat(probe_only_fifo, &stat_buf) == -1) ||
        (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(probe_only_fifo) < 0)
       {
@@ -118,8 +137,13 @@ init_fifos_mon(void)
          return(INCORRECT);
       }
    }
+#ifdef HAVE_STATX
+   if ((statx(0, mon_log_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
    if ((stat(mon_log_fifo, &stat_buf) == -1) ||
        (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(mon_log_fifo) < 0)
       {

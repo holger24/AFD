@@ -1,6 +1,6 @@
 /*
  *  eval_message.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -2675,16 +2675,30 @@ eval_message(char *message_name, struct job *p_db)
                           }
                           else
                           {
-                             char        config_file[MAX_PATH_LENGTH];
-                             struct stat stat_buf;
+                             char         config_file[MAX_PATH_LENGTH];
+#  ifdef HAVE_STATX
+                             struct statx stat_buf;
+#  else
+                             struct stat  stat_buf;
+#  endif
 
                              (void)snprintf(config_file, MAX_PATH_LENGTH,
                                             "%s%s%s", p_work_dir, ETC_DIR,
                                             AFD_CONFIG_FILE);
                              if ((eaccess(config_file, F_OK) == 0) &&
-                                 (stat(config_file, &stat_buf) == 0))
+#  ifdef HAVE_STATX
+                                 (statx(0, config_file, AT_STATX_SYNC_AS_STAT,
+                                        STATX_MTIME, &stat_buf) == 0)
+#  else
+                                 (stat(config_file, &stat_buf) == 0)
+#  endif
+                                )
                              {
+#  ifdef HAVE_STATX
+                                if (stat_buf.stx_mtime.tv_sec != p_db->afd_config_mtime)
+#  else
                                 if (stat_buf.st_mtime != p_db->afd_config_mtime)
+#  endif
                                 {
                                    char *buffer = NULL;
 
@@ -2693,7 +2707,11 @@ eval_message(char *message_name, struct job *p_db)
                                    {
                                       char value[MAX_INT_LENGTH + 1];
 
+#  ifdef HAVE_STATX
+                                      p_db->afd_config_mtime = stat_buf.stx_mtime.tv_sec;
+#  else
                                       p_db->afd_config_mtime = stat_buf.st_mtime;
+#  endif
                                       if (get_definition(buffer, EXEC_BASE_PRIORITY_DEF,
                                                          value, MAX_INT_LENGTH) != NULL)
                                       {

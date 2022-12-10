@@ -1,6 +1,6 @@
 /*
  *  convert_jid.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -147,8 +147,12 @@ convert_jid(int           old_jid_fd,
             unsigned char old_version,
             unsigned char new_version)
 {
-   char        *ptr;
-   struct stat stat_buf;
+   char         *ptr;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    if ((old_version == 1) && (new_version == 2))
    {
@@ -158,23 +162,46 @@ convert_jid(int           old_jid_fd,
       struct job_id_data_2 *new_jid;
 
       /* Get the size of the old JID file. */
-      if (fstat(old_jid_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+      if (statx(old_jid_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
+      if (fstat(old_jid_fd, &stat_buf) == -1)
+#endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                    "Failed to statx() %s : %s",
+#else
                     "Failed to fstat() %s : %s",
+#endif
                     old_job_id_data_file, strerror(errno));
          *old_jid_size = -1;
          return(NULL);
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > 0)
+#else
          if (stat_buf.st_size > 0)
+#endif
          {
 #ifdef HAVE_MMAP
-            if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+            if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                            stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                            stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                             MAP_SHARED, old_jid_fd, 0)) == (caddr_t) -1)
 #else
-            if ((ptr = mmap_emu(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+            if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                 MAP_SHARED, old_job_id_data_file, 0)) == (caddr_t) -1)
 #endif
             {
@@ -207,7 +234,11 @@ convert_jid(int           old_jid_fd,
          ptr = (char *)old_jid;
          ptr -= AFD_WORD_OFFSET_1;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+         if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
          if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
          if (munmap_emu(ptr) == -1)
 #endif
@@ -282,7 +313,11 @@ convert_jid(int           old_jid_fd,
                  "filesize old: %lld (%d) new: %lld (%d)  Number of jobs: %d",
 # endif
 #endif
+#ifdef HAVE_STATX
+                 (pri_off_t)stat_buf.stx_size, (int)sizeof(struct job_id_data_1),
+#else
                  (pri_off_t)stat_buf.st_size, (int)sizeof(struct job_id_data_1),
+#endif
                  (pri_size_t)new_size + AFD_WORD_OFFSET_2,
                  (int)sizeof(struct job_id_data_2), old_no_of_job_ids);
    }
@@ -294,24 +329,48 @@ convert_jid(int           old_jid_fd,
            struct job_id_data_3 *new_jid;
 
            /* Get the size of the old JID file. */
+#ifdef HAVE_STATX
+           if (statx(old_jid_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE, &stat_buf) < 0)
+#else
            if (fstat(old_jid_fd, &stat_buf) < 0)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_job_id_data_file, strerror(errno));
               *old_jid_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_jid_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
-                                     MAP_SHARED, old_job_id_data_file, 0)) == (caddr_t) -1)
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                     stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
+                                     MAP_SHARED, old_job_id_data_file,
+                                     0)) == (caddr_t) -1)
 #endif
                  {
                     system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -343,7 +402,11 @@ convert_jid(int           old_jid_fd,
               ptr = (char *)old_jid;
               ptr -= AFD_WORD_OFFSET_1;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -420,7 +483,12 @@ convert_jid(int           old_jid_fd,
                       "filesize old: %lld (%d) new: %lld (%d)  Number of jobs: %d",
 # endif
 #endif
-                      (pri_off_t)stat_buf.st_size, (int)sizeof(struct job_id_data_1),
+#ifdef HAVE_STATX
+                      (pri_off_t)stat_buf.stx_size,
+#else
+                      (pri_off_t)stat_buf.st_size,
+#endif
+                      (int)sizeof(struct job_id_data_1),
                       (pri_size_t)new_size + AFD_WORD_OFFSET_3,
                       (int)sizeof(struct job_id_data_3), old_no_of_job_ids);
         }
@@ -432,29 +500,53 @@ convert_jid(int           old_jid_fd,
            struct job_id_data_3 *new_jid;
 
            /* Get the size of the old JID file. */
-           if (fstat(old_jid_fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+           if (statx(old_jid_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                     STATX_SIZE, &stat_buf) == -1)
+#else
+           if (fstat(old_jid_fd, &stat_buf) == -1)
+#endif
            {
               system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                         "Failed to statx() %s : %s",
+#else
                          "Failed to fstat() %s : %s",
+#endif
                          old_job_id_data_file, strerror(errno));
               *old_jid_size = -1;
               return(NULL);
            }
            else
            {
+#ifdef HAVE_STATX
+              if (stat_buf.stx_size > 0)
+#else
               if (stat_buf.st_size > 0)
+#endif
               {
 #ifdef HAVE_MMAP
-                 if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                                 stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                 stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                  MAP_SHARED, old_jid_fd, 0)) == (caddr_t) -1)
 #else
-                 if ((ptr = mmap_emu(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+                 if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                     stat_buf.stx_size,
+# else
+                                     stat_buf.st_size,
+# endif
+                                     (PROT_READ | PROT_WRITE),
                                      MAP_SHARED, old_job_id_data_file, 0)) == (caddr_t) -1)
 #endif
                  {
                     system_log(ERROR_SIGN, __FILE__, __LINE__,
                                "Failed to mmap() to %s : %s",
-                                    old_job_id_data_file, strerror(errno));
+                               old_job_id_data_file, strerror(errno));
                     *old_jid_size = -1;
                     return(NULL);
                  }
@@ -481,7 +573,11 @@ convert_jid(int           old_jid_fd,
               ptr = (char *)old_jid;
               ptr -= AFD_WORD_OFFSET_2;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+              if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
               if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
               if (munmap_emu(ptr) == -1)
 #endif
@@ -558,7 +654,12 @@ convert_jid(int           old_jid_fd,
                       "filesize old: %lld (%d) new: %lld (%d)  Number of jobs: %d",
 # endif
 #endif
-                      (pri_off_t)stat_buf.st_size, (int)sizeof(struct job_id_data_2),
+#ifdef HAVE_STATX
+                      (pri_off_t)stat_buf.stx_size,
+#else
+                      (pri_off_t)stat_buf.st_size,
+#endif
+                      (int)sizeof(struct job_id_data_2),
                       (pri_size_t)new_size + AFD_WORD_OFFSET_3,
                       (int)sizeof(struct job_id_data_3), old_no_of_job_ids);
         }

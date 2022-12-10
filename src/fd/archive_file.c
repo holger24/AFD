@@ -69,6 +69,9 @@ DESCR__E_M3
 #include <time.h>        /* time()                                       */
 #include <limits.h>      /* LINK_MAX                                     */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>      /* Definition of AT_* constants                 */
+#endif
 #include <sys/stat.h>
 #include <unistd.h>      /* mkdir(), pathconf(), unlink()                */
 #include <errno.h>
@@ -444,10 +447,14 @@ archive_file(char       *file_path,  /* Original path of file to archive.*/
 static int
 get_archive_dir_number(char *directory)
 {
-   int         i;
-   size_t      length;
-   char        fulldir[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+   int          i;
+   size_t       length;
+   char         fulldir[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    if (link_max == 0L)
    {
@@ -477,14 +484,28 @@ get_archive_dir_number(char *directory)
    for (i = 0; i < link_max; i++)
    {
       (void)snprintf(&fulldir[length], MAX_PATH_LENGTH - length, "%x", i);
+#ifdef HAVE_STATX
+      if (statx(0, fulldir, AT_STATX_SYNC_AS_STAT,
+                STATX_NLINK, &stat_buf) == -1)
+#else
       if (stat(fulldir, &stat_buf) == -1)
+#endif
       {
          if (errno == ENOENT)
          {
+#ifdef HAVE_STATX
+            if ((statx(0, directory, AT_STATX_SYNC_AS_STAT,
+                       0, &stat_buf) == -1) && (errno != ENOENT))
+#else
             if ((stat(directory, &stat_buf) == -1) && (errno != ENOENT))
+#endif
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                          "Failed to statx() `%s' : %s",
+#else
                           "Failed to stat() `%s' : %s",
+#endif
                           directory, strerror(errno));
                return(INCORRECT);
             }
@@ -525,7 +546,11 @@ get_archive_dir_number(char *directory)
             return(INCORRECT);
          }
       }
+#ifdef HAVE_STATX
+      else if (stat_buf.stx_nlink < link_max)
+#else
       else if (stat_buf.st_nlink < link_max)
+#endif
            {
               return(i);
            }

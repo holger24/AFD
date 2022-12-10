@@ -1,6 +1,6 @@
 /*
  *  event_reason.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -244,15 +244,19 @@ er_input(Widget w, XtPointer client_data, XEvent *event)
 static void
 get_event_reason(char *reason_str, char *host_alias)
 {
-   int         fd,
-               i,
-               max_event_log_files,
-               type;
-   char        log_file[MAX_PATH_LENGTH],
-               *p_log_file,
-               *ptr,
-               *src;
-   struct stat stat_buf;
+   int          fd,
+                i,
+                max_event_log_files,
+                type;
+   char         log_file[MAX_PATH_LENGTH],
+                *p_log_file,
+                *ptr,
+                *src;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    /* Always reset reason_str, so we do not display incoreect data. */
    reason_str[0] = '\0';
@@ -296,7 +300,12 @@ get_event_reason(char *reason_str, char *host_alias)
    {
       (void)snprintf(p_log_file, MAX_PATH_LENGTH - (p_log_file - log_file),
                      "%d", i);
-      if (stat(log_file, &stat_buf) < 0)
+#ifdef HAVE_STATX
+      if (statx(0, log_file, AT_STATX_SYNC_AS_STAT,
+                STATX_SIZE, &stat_buf) == -1)
+#else
+      if (stat(log_file, &stat_buf) == -1)
+#endif
       {
          if (errno == ENOENT)
          {
@@ -305,12 +314,16 @@ get_event_reason(char *reason_str, char *host_alias)
          }
          else
          {
-            (void)xrec(WARN_DIALOG, "Failed to stat() %s : %s (%s %d)",
+            (void)xrec(WARN_DIALOG, "Failed to access %s : %s (%s %d)",
                        log_file, strerror(errno), __FILE__, __LINE__);
          }
          return;
       }
+#ifdef HAVE_STATX
+      if (stat_buf.stx_size == 0)
+#else
       if (stat_buf.st_size == 0)
+#endif
       {
          return;
       }
@@ -322,7 +335,12 @@ get_event_reason(char *reason_str, char *host_alias)
          return;
       }
 #ifdef HAVE_MMAP
-      if ((src = mmap(0, stat_buf.st_size, PROT_READ,
+      if ((src = mmap(0,
+# ifdef HAVE_STATX
+                      stat_buf.stx_size, PROT_READ,
+# else
+                      stat_buf.st_size, PROT_READ,
+# endif
                       (MAP_FILE | MAP_SHARED), fd, 0)) == (caddr_t) -1)
       {
          (void)xrec(FATAL_DIALOG, "Failed to mmap() %s : %s (%s %d)",
@@ -331,14 +349,22 @@ get_event_reason(char *reason_str, char *host_alias)
          return;
       }
 #else
+# ifdef HAVE_STATX
+      if ((src = malloc(stat_buf.stx_size)) == NULL)
+# else
       if ((src = malloc(stat_buf.st_size)) == NULL)
+# endif
       {
          (void)xrec(FATAL_DIALOG, "malloc() error : %s (%s %d)",
                     strerror(errno), __FILE__, __LINE__);
          (void)close(fd);
          return;
       }
+# ifdef HAVE_STATX
+      if (read(fd, src, stat_buf.stx_size) != stat_buf.stx_size)
+# else
       if (read(fd, src, stat_buf.st_size) != stat_buf.st_size)
+# endif
       {
          (void)xrec(FATAL_DIALOG, "Failed to read() from %s : %s (%s %d)",
                     log_file, strerror(errno), __FILE__, __LINE__);
@@ -352,7 +378,11 @@ get_event_reason(char *reason_str, char *host_alias)
          system_log(DEBUG_SIGN, __FILE__, __LINE__,
                     "close() error : %s", strerror(errno));
       }
+#ifdef HAVE_STATX
+      ptr = src + stat_buf.stx_size - 2;
+#else
       ptr = src + stat_buf.st_size - 2;
+#endif
 
       /*
        * Lets first search for an EA_OFFLINE or EA_ACKNOWLEDGE event
@@ -455,7 +485,11 @@ get_event_reason(char *reason_str, char *host_alias)
 
                               /* Free all memory we have allocated. */
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+                              if (munmap(src, stat_buf.stx_size) < 0)
+# else
                               if (munmap(src, stat_buf.st_size) < 0)
+# endif
                               {
                                  (void)xrec(ERROR_DIALOG,
                                             "munmap() error : %s (%s %d)",
@@ -506,7 +540,11 @@ get_event_reason(char *reason_str, char *host_alias)
 
       /* Free all memory we have allocated. */
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      if (munmap(src, stat_buf.stx_size) < 0)
+# else
       if (munmap(src, stat_buf.st_size) < 0)
+# endif
       {
          (void)xrec(ERROR_DIALOG, "munmap() error : %s (%s %d)",
                     strerror(errno), __FILE__, __LINE__);

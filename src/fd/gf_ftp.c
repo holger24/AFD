@@ -1108,7 +1108,11 @@ main(int argc, char *argv[])
                                     i;
                off_t                bytes_done;
                char                 *buffer;
+#ifdef HAVE_STATX
+               struct statx         stat_buf;
+#else
                struct stat          stat_buf;
+#endif
                struct retrieve_list tmp_rl;
 
                /* Allocate buffer to read data from the source file. */
@@ -1188,7 +1192,12 @@ main(int argc, char *argv[])
                      }
                      if (fsa->file_size_offset != -1)
                      {
+#ifdef HAVE_STATX
+                        if (statx(0, local_tmp_file, AT_STATX_SYNC_AS_STAT,
+                                  STATX_SIZE, &stat_buf) == -1)
+#else
                         if (stat(local_tmp_file, &stat_buf) == -1)
+#endif
                         {
                            if (fra->stupid_mode == APPEND_ONLY)
                            {
@@ -1201,7 +1210,11 @@ main(int argc, char *argv[])
                         }
                         else
                         {
+#ifdef HAVE_STATX
+                           offset = stat_buf.stx_size;
+#else
                            offset = stat_buf.st_size;
+#endif
                            prev_download_exists = YES;
                         }
                      }

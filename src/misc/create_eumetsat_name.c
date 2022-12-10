@@ -73,12 +73,16 @@ int sys_log_fd = STDERR_FILENO;
 int
 main(int argc, char *argv[])
 {
-   int         diff_time,
-               ver_time = 0;
-   time_t      base_time;
-   char        newname[70];
-   struct stat stat_buf;
-   struct tm   *p_tm;
+   int          diff_time,
+                ver_time = 0;
+   time_t       base_time;
+   char         newname[70];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
+   struct tm    *p_tm;
 
    if ((argc != 2) && (argc != 3))
    {
@@ -92,15 +96,28 @@ main(int argc, char *argv[])
       exit(1);
    }
 
+#ifdef HAVE_STATX
+   if (statx(0, argv[1], AT_STATX_SYNC_AS_STAT, STATX_MTIME, &stat_buf) == -1)
+#else
    if (stat(argv[1], &stat_buf) == -1)
+#endif
    {
-      (void)fprintf(stderr, _("Failed to stat() `%s' : %s\n"),
+      (void)fprintf(stderr,
+#ifdef HAVE_STATX
+                    _("Failed to statx() `%s' : %s\n"),
+#else
+                    _("Failed to stat() `%s' : %s\n"),
+#endif
                     argv[1], strerror(errno));
       exit(1);
    }
 
    /* Get diff_time in hours from validate date and base date. */
+#ifdef HAVE_STATX
+   p_tm = gmtime(&stat_buf.stx_mtime.tv_sec);
+#else
    p_tm = gmtime(&stat_buf.st_mtime);
+#endif
    p_tm->tm_sec = 0;
    p_tm->tm_min = ((argv[1][9] - '0') * 10) + (argv[1][10] - '0');
    p_tm->tm_hour = ((argv[1][7] - '0') * 10) + (argv[1][8] - '0');
@@ -108,7 +125,11 @@ main(int argc, char *argv[])
    p_tm->tm_mon = ((argv[1][3] - '0') * 10) + (argv[1][4] - '0') - 1;
    p_tm->tm_wday = 0;
    base_time = mktime(p_tm);
+#ifdef HAVE_STATX
+   p_tm = gmtime(&stat_buf.stx_mtime.tv_sec);
+#else
    p_tm = gmtime(&stat_buf.st_mtime);
+#endif
    p_tm->tm_sec = 0;
    p_tm->tm_min = ((argv[1][17] - '0') * 10) + (argv[1][18] - '0');
    p_tm->tm_hour = ((argv[1][15] - '0') * 10) + (argv[1][16] - '0');
@@ -183,7 +204,11 @@ main(int argc, char *argv[])
              wmo_header[MAX_FILENAME_LENGTH];
 
       /* File time */
+#ifdef HAVE_STATX
+      p_tm = gmtime(&stat_buf.stx_mtime.tv_sec);
+#else
       p_tm = gmtime(&stat_buf.st_mtime);
+#endif
       (void)strftime(&newname[49], 15, "%Y%m%d%H%M%S", p_tm);
 
       /* RTH_DADF_MET_FOR_ */
@@ -300,15 +325,29 @@ main(int argc, char *argv[])
          exit(INCORRECT);
       }
 
+#ifdef HAVE_STATX
+      if (statx(from_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(from_fd, &stat_buf) == -1)
+#endif
       {
-         (void)fprintf(stderr, _("Failed to fstat() `%s' : %s (%s %d)\n"),
+         (void)fprintf(stderr,
+#ifdef HAVE_STATX
+                       _("Failed to statx() `%s' : %s (%s %d)\n"),
+#else
+                       _("Failed to fstat() `%s' : %s (%s %d)\n"),
+#endif
                        argv[1], strerror(errno), __FILE__, __LINE__);
          (void)close(from_fd);
          exit(INCORRECT);
       }
 
+#ifdef HAVE_STATX
+      left = hunk = stat_buf.stx_size;
+#else
       left = hunk = stat_buf.st_size;
+#endif
 
       if (hunk > HUNK_MAX)
       {

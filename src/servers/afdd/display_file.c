@@ -1,6 +1,6 @@
 /*
  *  display_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2009 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -61,12 +61,16 @@ extern char *p_work_dir;
 void
 display_file(FILE *p_data)
 {
-   int         fd,
-               from_fd;
-   size_t      hunk,
-               left;
-   char        *buffer;
-   struct stat stat_buf;
+   int          fd,
+                from_fd;
+   size_t       hunk,
+                left;
+   char         *buffer;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    /* Open source file. */
    if ((from_fd = open(p_work_dir, O_RDONLY)) < 0)
@@ -76,15 +80,24 @@ display_file(FILE *p_data)
       return;
    }
 
+#ifdef HAVE_STATX
+   if (statx(from_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) != 0)
+#else
    if (fstat(from_fd, &stat_buf) != 0)
+#endif
    {
-      (void)fprintf(p_data, "500 Failed to fstat() %s : %s (%s %d)\r\n",
+      (void)fprintf(p_data, "500 Failed to access %s : %s (%s %d)\r\n",
                     p_work_dir, strerror(errno), __FILE__, __LINE__);
       (void)close(from_fd);
       return;
    }
 
+#ifdef HAVE_STATX
+   left = hunk = stat_buf.stx_size;
+#else
    left = hunk = stat_buf.st_size;
+#endif
 
    if (hunk > HUNK_MAX)
    {

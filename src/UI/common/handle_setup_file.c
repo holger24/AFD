@@ -101,12 +101,16 @@ read_setup(char *file_name,
            int  *no_of_invisible_members,
            char ***invisible_members)
 {
-   int         fd;
-   uid_t       euid, /* Effective user ID. */
-               ruid; /* Real user ID. */
-   char        *ptr,
-               *buffer = NULL;
-   struct stat stat_buf;
+   int          fd;
+   uid_t        euid, /* Effective user ID. */
+                ruid; /* Real user ID. */
+   char         *ptr,
+                *buffer = NULL;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    if (setup_file[0] == '\0')
    {
@@ -177,7 +181,11 @@ read_setup(char *file_name,
       }
    }
 
+#ifdef HAVE_STATX
+   if (statx(0, setup_file, AT_STATX_SYNC_AS_STAT, STATX_SIZE, &stat_buf) == -1)
+#else
    if (stat(setup_file, &stat_buf) == -1)
+#endif
    {
       if (errno != ENOENT)
       {
@@ -262,19 +270,31 @@ read_setup(char *file_name,
       return;
    }
 
+#ifdef HAVE_STATX
+   if ((buffer = malloc(stat_buf.stx_size + 1)) == NULL)
+#else
    if ((buffer = malloc(stat_buf.st_size + 1)) == NULL)
+#endif
    {
       (void)close(fd);
       return;
    }
+#ifdef HAVE_STATX
+   if (read(fd, buffer, stat_buf.stx_size) != stat_buf.stx_size)
+#else
    if (read(fd, buffer, stat_buf.st_size) != stat_buf.st_size)
+#endif
    {
       free(buffer);
       (void)close(fd);
       return;
    }
    (void)close(fd); /* This will release the lock as well. */
+#ifdef HAVE_STATX
+   buffer[stat_buf.stx_size] = '\0';
+#else
    buffer[stat_buf.st_size] = '\0';
+#endif
 
    /* Get the default font. */
    if ((ptr = posi(buffer, FONT_ID)) != NULL)
@@ -577,13 +597,17 @@ write_setup(int  hostname_display_length,
             int  his_log_set,
             char *invisible_groups)
 {
-   int         buf_length,
-               fd = -1,
-               length;
-   uid_t       euid, /* Effective user ID. */
-               ruid; /* Real user ID. */
-   char        *buffer;
-   struct stat stat_buf;
+   int          buf_length,
+                fd = -1,
+                length;
+   uid_t        euid, /* Effective user ID. */
+                ruid; /* Real user ID. */
+   char         *buffer;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
    
    if (setup_file[0] == '\0')
    {
@@ -604,7 +628,11 @@ write_setup(int  hostname_display_length,
                        ruid, euid, strerror(errno), __FILE__, __LINE__);
       }
    }
+#ifdef HAVE_STATX
+   if (statx(0, setup_file, AT_STATX_SYNC_AS_STAT, 0, &stat_buf) == -1)
+#else
    if (stat(setup_file, &stat_buf) == -1)
+#endif
    {
       if (errno == ENOENT)
       {

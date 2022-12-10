@@ -55,6 +55,9 @@ DESCR__E_M3
 #include <ctype.h>            /* isxdigit()                              */
 #include <sys/types.h>
 #ifndef LINUX
+# ifdef HAVE_STATX
+#  include <fcntl.h>          /* Definition of AT_* constants            */
+# endif
 # include <sys/stat.h>        /* S_ISDIR()                               */
 #endif
 #include <dirent.h>           /* opendir(), readdir(), closedir()        */
@@ -128,24 +131,42 @@ check_old_time_jobs(int no_of_jobs, char *time_dir)
          if (*ptr == '\0')
          {
 #ifndef LINUX
-            struct stat stat_buf;
+# ifdef HAVE_STATX
+            struct statx stat_buf;
+# else
+            struct stat  stat_buf;
+# endif
 #endif
 
             (void)strcpy(time_dir_ptr, p_dir->d_name);
 #ifdef LINUX
-               if (p_dir->d_type == DT_DIR)
+            if (p_dir->d_type == DT_DIR)
 #else
+# ifdef HAVE_STATX
+            if (statx(0, time_dir, AT_STATX_SYNC_AS_STAT,
+                      STATX_MODE, &stat_buf) == -1)
+# else
             if (stat(time_dir, &stat_buf) == -1)
+# endif
             {
                if (errno != ENOENT)
                {
                   system_log(WARN_SIGN, __FILE__, __LINE__,
-                             _("Failed to stat() `%s' : %s"), strerror(errno));
+# ifdef HAVE_STATX
+                             _("Failed to statx() `%s' : %s"),
+# else
+                             _("Failed to stat() `%s' : %s"),
+# endif
+                             strerror(errno));
                }
             }
             else
             {
+# ifdef HAVE_STATX
+               if (S_ISDIR(stat_buf.stx_mode))
+# else
                if (S_ISDIR(stat_buf.st_mode))
+# endif
 #endif
                {
                   int          gotcha = NO;

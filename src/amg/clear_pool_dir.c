@@ -1,6 +1,6 @@
 /*
  *  clear_pool_dir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -79,17 +79,30 @@ static void                move_files_back(char *, char *);
 void
 clear_pool_dir(void)
 {
-   char        pool_dir[MAX_PATH_LENGTH],
-               orig_dir[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+   char         pool_dir[MAX_PATH_LENGTH],
+                orig_dir[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    (void)snprintf(pool_dir, MAX_PATH_LENGTH,
                   "%s%s%s", p_work_dir, AFD_FILE_DIR, AFD_TMP_DIR);
 
+#ifdef HAVE_STATX
+   if (statx(0, pool_dir, AT_STATX_SYNC_AS_STAT, 0, &stat_buf) == -1)
+#else
    if (stat(pool_dir, &stat_buf) == -1)
+#endif
    {
       system_log(WARN_SIGN, __FILE__, __LINE__,
-                 "Failed to stat() %s : %s", pool_dir, strerror(errno));
+#ifdef HAVE_STATX
+                 "Failed to statx() %s : %s",
+#else
+                 "Failed to stat() %s : %s",
+#endif
+                 pool_dir, strerror(errno));
    }
    else
    {
@@ -150,8 +163,14 @@ clear_pool_dir(void)
 
             (void)strcpy(work_ptr, p_dir->d_name);
 #ifdef MULTI_FS_SUPPORT
+# ifdef HAVE_STATX
+            if ((statx(0, pool_dir, AT_STATX_SYNC_AS_STAT | AT_SYMLINK_NOFOLLOW,
+                       STATX_MODE, &stat_buf) != -1) &&
+                (S_ISLNK(stat_buf.stx_mode) == 0))
+# else
             if ((lstat(pool_dir, &stat_buf) != -1) &&
                 (S_ISLNK(stat_buf.st_mode) == 0))
+# endif
             {
 #endif
                if (get_source_dir(p_dir->d_name, orig_dir, &dir_id) == INCORRECT)

@@ -1,6 +1,6 @@
 /*
  *  mapper.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -121,7 +121,11 @@ main(int argc, char *argv[])
                   buf[BUFSIZE];
    fd_set         rset,
                   initialset;
+#ifdef HAVE_STATX
+   struct statx   stat_buf;
+#else
    struct stat    stat_buf;
+#endif
    struct timeval timeout;
 
    if (get_afd_path(&argc, argv, work_dir) < 0)
@@ -136,7 +140,12 @@ main(int argc, char *argv[])
    (void)strcat(request_fifo, REQUEST_FIFO);
 
    /* Open/create fifo to write system log data */
-   if ((stat(sys_log_fifo, &stat_buf) < 0) || (!S_ISFIFO(stat_buf.st_mode)))
+#ifdef HAVE_STATX
+   if ((statx(0, sys_log_fifo, AT_STATX_SYNC_AS_STAT,
+              STAX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
+   if ((stat(sys_log_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(sys_log_fifo) < 0)
       {

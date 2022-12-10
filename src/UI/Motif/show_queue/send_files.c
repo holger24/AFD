@@ -1,6 +1,6 @@
 /*
  *  send_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -88,7 +88,11 @@ send_files(int no_selected, int *select_list)
                        fullname[MAX_PATH_LENGTH + 1 + MAX_HOSTNAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 1],
                        user_message[256];
    FILE                *fp;
+#ifdef HAVE_STATX
+   struct statx        stat_buf;
+#else
    struct stat         stat_buf;
+#endif
    struct dir_name_buf *dnb;
    static int          user_limit = 0;
    static unsigned int counter = 0;
@@ -110,18 +114,32 @@ send_files(int no_selected, int *select_list)
                  fullname, strerror(errno), __FILE__, __LINE__);
       return;
    }
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
-      (void)xrec(ERROR_DIALOG, "Failed to fstat() <%s> : %s (%s %d)",
+      (void)xrec(ERROR_DIALOG, "Failed to access <%s> : %s (%s %d)",
                  fullname, strerror(errno), __FILE__, __LINE__);
       (void)close(fd);
       return;
    }
+#ifdef HAVE_STATX
+   if (stat_buf.stx_size > 0)
+#else
    if (stat_buf.st_size > 0)
+#endif
    {
       char *ptr;
 
-      if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+      if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                      stat_buf.stx_size, PROT_READ,
+#else
+                      stat_buf.st_size, PROT_READ,
+#endif
                       MAP_SHARED, fd, 0)) == (caddr_t) -1)
       {
          (void)xrec(ERROR_DIALOG, "Failed to mmap() to <%s> : %s (%s %d)",
@@ -129,7 +147,11 @@ send_files(int no_selected, int *select_list)
          (void)close(fd);
          return;
       }
+#ifdef HAVE_STATX
+      dnb_size = stat_buf.stx_size;
+#else
       dnb_size = stat_buf.st_size;
+#endif
       ptr += AFD_WORD_OFFSET;
       dnb = (struct dir_name_buf *)ptr;
       (void)close(fd);
@@ -194,7 +216,12 @@ send_files(int no_selected, int *select_list)
                              p_work_dir, AFD_FILE_DIR, OUTGOING_DIR,
                              qtb[qfl[select_list[i] - 1].queue_tmp_buf_pos].msg_name,
                              qfl[select_list[i] - 1].file_name);
+#ifdef HAVE_STATX
+               if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                         0, &stat_buf) == -1)
+#else
                if (stat(fullname, &stat_buf) == -1)
+#endif
                {
                   not_found++;
                }
@@ -220,7 +247,12 @@ send_files(int no_selected, int *select_list)
                                p_work_dir, AFD_FILE_DIR, AFD_TIME_DIR,
                                qfl[select_list[i] - 1].job_id,
                                qfl[select_list[i] - 1].file_name);
+#ifdef HAVE_STATX
+                 if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                           0, &stat_buf) == -1)
+#else
                  if (stat(fullname, &stat_buf) == -1)
+#endif
                  {
                     not_found++;
                  }
@@ -254,7 +286,12 @@ send_files(int no_selected, int *select_list)
                                   qfl[select_list[i] - 1].hostname,
                                   qfl[select_list[i] - 1].file_name);
                  }
+#ifdef HAVE_STATX
+                 if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                           0, &stat_buf) == -1)
+#else
                  if (stat(fullname, &stat_buf) == -1)
+#endif
                  {
                     not_found++;
                  }

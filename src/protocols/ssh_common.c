@@ -1,6 +1,6 @@
 /*
  *  ssh_common.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1255,18 +1255,35 @@ remove_from_knownhosts(char *hostname)
       }
       else
       {
+#  ifdef HAVE_STATX
+         struct statx stat_buf;
+#  else
          struct stat stat_buf;
+#  endif
 
+#  ifdef HAVE_STATX
+         if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &stat_buf) == -1)
+#  else
          if (fstat(fd, &stat_buf) == -1)
+#  endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
+#  ifdef HAVE_STATX
+                       _("Failed to statx() `%s' : %s"),
+#  else
                        _("Failed to fstat() `%s' : %s"),
+#  endif
                        fullname, strerror(errno));
             ret = INCORRECT;
          }
          else
          {
+#  ifdef HAVE_STATX
+            if (stat_buf.stx_size == 0)
+#  else
             if (stat_buf.st_size == 0)
+#  endif
             {
                trans_log(DEBUG_SIGN, __FILE__, __LINE__, "remove_from_knownhosts", NULL,
                          _("File `%s' is empty."), fullname);
@@ -1276,7 +1293,12 @@ remove_from_knownhosts(char *hostname)
             {
                char *data;
 
-               if ((data = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+               if ((data = mmap(NULL,
+#  ifdef HAVE_STATX
+                                stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+#  else
+                                stat_buf.st_size, (PROT_READ | PROT_WRITE),
+#  endif
                                 MAP_SHARED, fd, 0)) == (caddr_t) -1)
                {
                   system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -1322,19 +1344,34 @@ remove_from_knownhosts(char *hostname)
                            }
                            p_start = ptr;
 
+#  ifdef HAVE_STATX
+                           while ((ptr < (data + stat_buf.stx_size)) &&
+                                  (*ptr != '\n'))
+#  else
                            while ((ptr < (data + stat_buf.st_size)) &&
                                   (*ptr != '\n'))
+#  endif
                            {
                               ptr++;
                            }
                            if (*ptr == '\n')
                            {
                               ptr++;
+#  ifdef HAVE_STATX
+                              if (ptr < (data + stat_buf.stx_size))
+#  else
                               if (ptr < (data + stat_buf.st_size))
+#  endif
                               {
+#  ifdef HAVE_STATX
+                                 (void)memmove(p_start, ptr,
+                                               ((data + stat_buf.stx_size) - ptr));
+                                 if (msync(data, stat_buf.stx_size, MS_SYNC) == -1)
+#  else
                                  (void)memmove(p_start, ptr,
                                                ((data + stat_buf.st_size) - ptr));
                                  if (msync(data, stat_buf.st_size, MS_SYNC) == -1)
+#  endif
                                  {
                                     system_log(WARN_SIGN, __FILE__, __LINE__,
                                                _("msync() error : %s"),
@@ -1350,14 +1387,22 @@ remove_from_knownhosts(char *hostname)
                         }
                      }
                   }
+#  ifdef HAVE_STATX
+                  if (munmap(data, stat_buf.stx_size) == -1)
+#  else
                   if (munmap(data, stat_buf.st_size) == -1)
+#  endif
                   {
                      system_log(WARN_SIGN, __FILE__, __LINE__,
                                 _("munmap() error : %s"), strerror(errno));
                   }
                   if (remove_size > 0)
                   {
+#  ifdef HAVE_STATX
+                     if (ftruncate(fd, (stat_buf.stx_size - remove_size)) == -1)
+#  else
                      if (ftruncate(fd, (stat_buf.st_size - remove_size)) == -1)
+#  endif
                      {
                         system_log(ERROR_SIGN, __FILE__, __LINE__,
                                    _("ftruncate() error : %s"), strerror(errno));

@@ -1,6 +1,6 @@
 /*
  *  mshow_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,6 +59,9 @@ DESCR__E_M1
 # include <sys/resource.h>       /* setpriority()                        */
 #endif
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>              /* Definition of AT_* constants         */
+#endif
 #include <sys/stat.h>
 #include <unistd.h>              /* gethostname(), STDERR_FILENO         */
 #include <stdlib.h>              /* getenv(), exit()                     */
@@ -1139,15 +1142,28 @@ init_log_file(int *argc, char *argv[], char *window_title)
    if ((log_type_flag != TRANSFER_LOG_TYPE) &&
        (log_type_flag != RECEIVE_LOG_TYPE) && (current_log_number == 0))
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+      if (statx(fileno(p_log_file), "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_INO, &stat_buf) == -1)
+#else
       if (fstat(fileno(p_log_file), &stat_buf) == -1)
+#endif
       {
-         (void)fprintf(stderr, "ERROR   : Could not fstat() %s : %s (%s %d)\n",
+         (void)fprintf(stderr, "ERROR   : Could not access %s : %s (%s %d)\n",
                        log_file, strerror(errno), __FILE__, __LINE__);
          exit(INCORRECT);
       }
+#ifdef HAVE_STATX
+      current_inode_no = stat_buf.stx_ino;
+#else
       current_inode_no = stat_buf.st_ino;
+#endif
    }
 
    /* Collect all hostnames. */

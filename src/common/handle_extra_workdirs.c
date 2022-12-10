@@ -1,7 +1,7 @@
 /*
  *  handle_extra_workdirs.c - Part of AFD, an automatic file distribution
  *                            program.
- *  Copyright (c) 2015 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2015 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -55,6 +55,10 @@ DESCR__E_M3
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <sys/sysmacros.h>        /* makedev()                          */
+# include <fcntl.h>                /* Definition of AT_* constants       */
+#endif
 #include <sys/stat.h>
 #include <dirent.h>                /* opendir(), closedir(), readdir(),  */
                                    /* DIR, struct dirent                 */
@@ -76,12 +80,16 @@ get_extra_work_dirs(char                   *afd_config_buffer,
                     struct extra_work_dirs **ewl,
                     int                    create)
 {
-   char        afd_file_dir[MAX_PATH_LENGTH],
-               *buffer = NULL,
-               linkpath[MAX_PATH_LENGTH],
-               *ptr,
-               value[MAX_ADD_LOCKED_FILES_LENGTH];
-   struct stat stat_buf;
+   char         afd_file_dir[MAX_PATH_LENGTH],
+                *buffer = NULL,
+                linkpath[MAX_PATH_LENGTH],
+                *ptr,
+                value[MAX_ADD_LOCKED_FILES_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    if (afd_config_buffer == NULL)
    {
@@ -133,10 +141,18 @@ get_extra_work_dirs(char                   *afd_config_buffer,
    /* First insert the default from AFD_WORK_DIR environment variable. */
    (void)strcpy(afd_file_dir, p_work_dir);
    (void)strcat(afd_file_dir, AFD_FILE_DIR);
-   if (stat(afd_file_dir, &stat_buf) < 0)
+#ifdef HAVE_STATX
+   if (statx(0, afd_file_dir, AT_STATX_SYNC_AS_STAT, 0, &stat_buf) == -1)
+#else
+   if (stat(afd_file_dir, &stat_buf) == -1)
+#endif
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                 _("Failed to statx() `%s' : %s"),
+#else
                  _("Failed to stat() `%s' : %s"),
+#endif
                  afd_file_dir, strerror(errno));
       exit(INCORRECT);
    }
@@ -149,7 +165,11 @@ get_extra_work_dirs(char                   *afd_config_buffer,
       exit(INCORRECT);
    }
    (void)memcpy((*ewl)[0].dir_name, p_work_dir, (*ewl)[0].dir_name_length + 1);
+#ifdef HAVE_STATX
+   (*ewl)[0].dev = makedev(stat_buf.stx_dev_major, stat_buf.stx_dev_minor);
+#else
    (*ewl)[0].dev = stat_buf.st_dev;
+#endif
    if (((*ewl)[0].afd_file_dir = malloc(MAX_PATH_LENGTH)) == NULL)
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__,
@@ -536,10 +556,18 @@ get_extra_work_dirs(char                   *afd_config_buffer,
 
          if ((ret == SUCCESS) || (ret == CREATED_DIR))
          {
+#ifdef HAVE_STATX
+            if (statx(0, new_path, AT_STATX_SYNC_AS_STAT, 0, &stat_buf) == -1)
+#else
             if (stat(new_path, &stat_buf) == -1)
+#endif
             {
                system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                          "Unable to statx() `%s' : %s. Will ignore this directory.",
+#else
                           "Unable to stat() `%s' : %s. Will ignore this directory.",
+#endif
                           new_path, strerror(errno));
                (*ewl)[i].dev = 0;
                (*ewl)[i].dir_name = NULL;
@@ -562,7 +590,12 @@ get_extra_work_dirs(char                   *afd_config_buffer,
                }
                (void)memcpy((*ewl)[i].dir_name, new_path, length + 1);
                (*ewl)[i].dir_name_length = length;
+#ifdef HAVE_STATX
+               (*ewl)[i].dev = makedev(stat_buf.stx_dev_major,
+                                       stat_buf.stx_dev_minor);
+#else
                (*ewl)[i].dev = stat_buf.st_dev;
+#endif
 
                ptr = new_path + length;
                (void)strcpy(ptr, AFD_ARCHIVE_DIR);
@@ -1223,7 +1256,11 @@ scan_old_links(int                    no_of_extra_work_dirs,
 {
    DIR           *dp;
    struct dirent *p_dir;
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
 
    if ((dp = opendir(search_dir)) == NULL)
    {
@@ -1242,10 +1279,19 @@ scan_old_links(int                    no_of_extra_work_dirs,
       }
       (void)strcpy(search_dir + search_dir_length + 1, p_dir->d_name);
 
+#ifdef HAVE_STATX
+      if (statx(0, search_dir, AT_STATX_SYNC_AS_STAT | AT_SYMLINK_NOFOLLOW,
+                STATX_MODE, &stat_buf) != -1)
+#else
       if (lstat(search_dir, &stat_buf) != -1)
+#endif
       {
          /* Only check symbolic links! */
+#ifdef HAVE_STATX
+         if (S_ISLNK(stat_buf.stx_mode))
+#else
          if (S_ISLNK(stat_buf.st_mode))
+#endif
          {
             int          gotcha = NO,
                          i;

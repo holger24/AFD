@@ -1,6 +1,6 @@
 /*
  *  open_log_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2001 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -114,19 +114,36 @@ open_log_file(char *log_file_name)
    {
       if (current_log_cache_file != NULL)
       {
-         int fd;
-         struct stat stat_buf;
+         int          fd;
+# ifdef HAVE_STATX
+         struct statx stat_buf;
+# else
+         struct stat  stat_buf;
+# endif
 
          fd = fileno(log_file);
+# ifdef HAVE_STATX
+         if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &stat_buf) == -1)
+# else
          if (fstat(fd, &stat_buf) == -1)
+# endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
+# ifdef HAVE_STATX
+                       "Failed to statx() %s : %s",
+# else
                        "Failed to fstat() %s : %s",
+# endif
                        log_file_name, strerror(errno));
          }
          else
          {
+# ifdef HAVE_STATX
+            *log_pos = stat_buf.stx_size;
+# else
             *log_pos = stat_buf.st_size;
+# endif
          }
       }
    }

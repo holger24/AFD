@@ -67,13 +67,17 @@ extern char *p_work_dir;
 void
 log_append(struct job *p_db, char *file_name, char *source_file_name)
 {
-   int         fd;
-   size_t      buf_size;
-   off_t       msg_file_size;
-   char        *buffer,
-               *ptr,
-               msg[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+   int          fd;
+   size_t       buf_size;
+   off_t        msg_file_size;
+   char         *buffer,
+                *ptr,
+                msg[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    (void)snprintf(msg, MAX_PATH_LENGTH, "%s%s/%x",
                   p_work_dir, AFD_MSG_DIR, p_db->id.job);
@@ -82,14 +86,28 @@ log_append(struct job *p_db, char *file_name, char *source_file_name)
    {
       return;
    }
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Failed to stat() message %s : %s", msg, strerror(errno));
+#ifdef HAVE_STATX
+                 "Failed to statx() message %s : %s",
+#else
+                 "Failed to fstat() message %s : %s",
+#endif
+                 msg, strerror(errno));
       (void)close(fd);
       return;
    }
+#ifdef HAVE_STATX
+   buf_size = stat_buf.stx_size + OPTION_IDENTIFIER_LENGTH +
+#else
    buf_size = stat_buf.st_size + OPTION_IDENTIFIER_LENGTH +
+#endif
               RESTART_FILE_ID_LENGTH + strlen(file_name) + 20 + 4;
    if ((buffer = malloc(buf_size + 1)) == NULL)
    {
@@ -98,7 +116,11 @@ log_append(struct job *p_db, char *file_name, char *source_file_name)
       (void)close(fd);
       return;
    }
+#ifdef HAVE_STATX
+   if (read(fd, buffer, stat_buf.stx_size) != stat_buf.stx_size)
+#else
    if (read(fd, buffer, stat_buf.st_size) != stat_buf.st_size)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  "Failed to read() message %s : %s", msg, strerror(errno));
@@ -106,17 +128,31 @@ log_append(struct job *p_db, char *file_name, char *source_file_name)
       (void)close(fd);
       return;
    }
+#ifdef HAVE_STATX
+   buffer[stat_buf.stx_size] = '\0';
+   msg_file_size = stat_buf.stx_size;
+#else
    buffer[stat_buf.st_size] = '\0';
    msg_file_size = stat_buf.st_size;
+#endif
 
    /* Get the date of the current file. */
    (void)snprintf(msg, MAX_PATH_LENGTH, "%s%s%s/%s/%s",
                   p_work_dir, AFD_FILE_DIR,
                   OUTGOING_DIR, p_db->msg_name, source_file_name);
+#ifdef HAVE_STATX
+   if (statx(0, msg, AT_STATX_SYNC_AS_STAT, STATX_MTIME, &stat_buf) == -1)
+#else
    if (stat(msg, &stat_buf) == -1)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Failed to stat() %s : %s", msg, strerror(errno));
+#ifdef HAVE_STATX
+                 "Failed to statx() %s : %s",
+#else
+                 "Failed to stat() %s : %s",
+#endif
+                 msg, strerror(errno));
       (void)close(fd);
       free(buffer);
       return;
@@ -154,7 +190,12 @@ log_append(struct job *p_db, char *file_name, char *source_file_name)
 #else
                         "%s|%lld\n",
 #endif
-                        file_name, (pri_time_t)stat_buf.st_mtime);
+#ifdef HAVE_STATX
+                        file_name, (pri_time_t)stat_buf.stx_mtime.tv_sec
+#else
+                        file_name, (pri_time_t)stat_buf.st_mtime
+#endif
+                       );
 
          /* Now check if the file name is already in the list. */
          do
@@ -189,7 +230,12 @@ log_append(struct job *p_db, char *file_name, char *source_file_name)
 #else
                                       "%lld",
 #endif
-                                      (pri_time_t)stat_buf.st_mtime);
+#ifdef HAVE_STATX
+                                      (pri_time_t)stat_buf.stx_mtime.tv_sec
+#else
+                                      (pri_time_t)stat_buf.st_mtime
+#endif
+                                     );
                   if (w_length > r_length)
                   {
                      if (w_length > r_length)
@@ -281,10 +327,19 @@ log_append(struct job *p_db, char *file_name, char *source_file_name)
    *(ptr++) = ' ';
    ptr += snprintf(ptr, buf_size - msg_file_size,
 #if SIZEOF_TIME_T == 4
-                   "%s|%ld\n", file_name, (pri_time_t)stat_buf.st_mtime);
+# ifdef HAVE_STATX
+                   "%s|%ld\n", file_name, (pri_time_t)stat_buf.stx_mtime.tv_sec
+# else
+                   "%s|%ld\n", file_name, (pri_time_t)stat_buf.st_mtime
+# endif
 #else
-                   "%s|%lld\n", file_name, (pri_time_t)stat_buf.st_mtime);
+# ifdef HAVE_STATX
+                   "%s|%lld\n", file_name, (pri_time_t)stat_buf.stx_mtime.tv_sec
+# else
+                   "%s|%lld\n", file_name, (pri_time_t)stat_buf.st_mtime
+# endif
 #endif
+                  );
    *ptr = '\0';
    buf_size = strlen(buffer);
 
@@ -330,15 +385,19 @@ log_append(struct job *p_db, char *file_name, char *source_file_name)
 void
 remove_append(unsigned int job_id, char *file_name)
 {
-   int         fd;
-   size_t      length;
-   time_t      file_date;
-   char        *buffer,
-               *ptr,
-               *tmp_ptr,
-               msg[MAX_PATH_LENGTH],
-               *search_str;
-   struct stat stat_buf;
+   int          fd;
+   size_t       length;
+   time_t       file_date;
+   char         *buffer,
+                *ptr,
+                *tmp_ptr,
+                msg[MAX_PATH_LENGTH],
+                *search_str;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    (void)snprintf(msg, MAX_PATH_LENGTH, "%s%s/%x", p_work_dir, AFD_MSG_DIR, job_id);
 
@@ -346,21 +405,39 @@ remove_append(unsigned int job_id, char *file_name)
    {
       return;
    }
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Failed to stat() message %s : %s", msg, strerror(errno));
+#ifdef HAVE_STATX
+                 "Failed to statx() message %s : %s",
+#else
+                 "Failed to fstat() message %s : %s",
+#endif
+                 msg, strerror(errno));
       (void)close(fd);
       return;
    }
+#ifdef HAVE_STATX
+   if ((buffer = malloc(stat_buf.stx_size + 1)) == NULL)
+#else
    if ((buffer = malloc(stat_buf.st_size + 1)) == NULL)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  "malloc() error : %s", strerror(errno));
       (void)close(fd);
       return;
    }
+#ifdef HAVE_STATX
+   if (read(fd, buffer, stat_buf.stx_size) != stat_buf.stx_size)
+#else
    if (read(fd, buffer, stat_buf.st_size) != stat_buf.st_size)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  "Failed to read() message %s : %s", msg, strerror(errno));
@@ -368,7 +445,11 @@ remove_append(unsigned int job_id, char *file_name)
       (void)close(fd);
       return;
    }
+#ifdef HAVE_STATX
+   buffer[stat_buf.stx_size] = '\0';
+#else
    buffer[stat_buf.st_size] = '\0';
+#endif
 
    /* Retrieve file date which is stored just behind the file name. */
    ptr = file_name;
@@ -473,7 +554,11 @@ remove_append(unsigned int job_id, char *file_name)
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > length)
+#else
          if (stat_buf.st_size > length)
+#endif
          {
             if (ftruncate(fd, length) == -1)
             {
@@ -504,7 +589,11 @@ remove_all_appends(unsigned int job_id)
    char        *buffer,
                *ptr,
                msg[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat stat_buf;
+#endif
 
    (void)snprintf(msg, MAX_PATH_LENGTH, "%s%s/%x", p_work_dir, AFD_MSG_DIR, job_id);
 
@@ -512,21 +601,39 @@ remove_all_appends(unsigned int job_id)
    {
       return;
    }
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Failed to stat() message %s : %s", msg, strerror(errno));
+#ifdef HAVE_STATX
+                 "Failed to statx() message %s : %s",
+#else
+                 "Failed to fstat() message %s : %s",
+#endif
+                 msg, strerror(errno));
       (void)close(fd);
       return;
    }
+#ifdef HAVE_STATX
+   if ((buffer = malloc(stat_buf.stx_size + 1)) == NULL)
+#else
    if ((buffer = malloc(stat_buf.st_size + 1)) == NULL)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  "malloc() error : %s", strerror(errno));
       (void)close(fd);
       return;
    }
+#ifdef HAVE_STATX
+   if (read(fd, buffer, stat_buf.stx_size) != stat_buf.stx_size)
+#else
    if (read(fd, buffer, stat_buf.st_size) != stat_buf.st_size)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  "Failed to read() message %s : %s", msg, strerror(errno));
@@ -534,7 +641,11 @@ remove_all_appends(unsigned int job_id)
       (void)close(fd);
       return;
    }
+#ifdef HAVE_STATX
+   buffer[stat_buf.stx_size] = '\0';
+#else
    buffer[stat_buf.st_size] = '\0';
+#endif
 
    if ((ptr = lposi(buffer, RESTART_FILE_ID, RESTART_FILE_ID_LENGTH)) == NULL)
    {
@@ -570,7 +681,11 @@ remove_all_appends(unsigned int job_id)
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > length)
+#else
          if (stat_buf.st_size > length)
+#endif
          {
             if (ftruncate(fd, length) == -1)
             {
@@ -598,12 +713,25 @@ remove_all_appends(unsigned int job_id)
 int
 append_compare(char *append_data, char *fullname)
 {
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+   if (statx(0, fullname, AT_STATX_SYNC_AS_STAT, STATX_MTIME, &stat_buf) == -1)
+#else
    if (stat(fullname, &stat_buf) == -1)
+#endif
    {
       system_log(WARN_SIGN, __FILE__, __LINE__,
-                 "Failed to stat() %s : %s", fullname, strerror(errno));
+#ifdef HAVE_STATX
+                 "Failed to statx() %s : %s",
+#else
+                 "Failed to stat() %s : %s",
+#endif
+                 fullname, strerror(errno));
    }
    else
    {
@@ -615,7 +743,11 @@ append_compare(char *append_data, char *fullname)
          ptr++;
       }
       ptr++;
+#ifdef HAVE_STATX
+      if (stat_buf.stx_mtime.tv_sec == atol(ptr))
+#else
       if (stat_buf.st_mtime == atol(ptr))
+#endif
       {
          return(YES);
       }

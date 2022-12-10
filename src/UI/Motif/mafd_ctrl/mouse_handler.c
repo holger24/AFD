@@ -4591,9 +4591,13 @@ insert_dir_ids_recieve(int fsa_pos)
    {
       if (get_current_jid_list() == SUCCESS)
       {
-         int         fd;
-         char        fullname[MAX_PATH_LENGTH];
-         struct stat stat_buf;
+         int          fd;
+         char         fullname[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+         struct statx stat_buf;
+#else
+         struct stat  stat_buf;
+#endif
 
          /* Map to job ID data file. */
          (void)snprintf(fullname, MAX_PATH_LENGTH, "%s%s%s",
@@ -4604,22 +4608,41 @@ insert_dir_ids_recieve(int fsa_pos)
                        fullname, strerror(errno), __FILE__, __LINE__);
             return;
          }
+#ifdef HAVE_STATX
+         if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &stat_buf) == -1)
+#else
          if (fstat(fd, &stat_buf) == -1)
+#endif
          {
-            (void)xrec(ERROR_DIALOG, "Failed to fstat() %s : %s (%s %d)",
+            (void)xrec(ERROR_DIALOG, "Failed to access %s : %s (%s %d)",
                        fullname, strerror(errno), __FILE__, __LINE__);
             (void)close(fd);
          }
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > 0)
+#else
          if (stat_buf.st_size > 0)
+#endif
          {
             char *ptr;
 
 #ifdef HAVE_MMAP
-            if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+            if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                            stat_buf.stx_size, PROT_READ,
+# else
+                            stat_buf.st_size, PROT_READ,
+# endif
                             MAP_SHARED, fd, 0)) == (caddr_t) -1)
 #else
-            if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
-                            MAP_SHARED, fullname, 0)) == (caddr_t) -1)
+            if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                                stat_buf.stx_size, PROT_READ,
+# else
+                                stat_buf.st_size, PROT_READ,
+# endif
+                                MAP_SHARED, fullname, 0)) == (caddr_t) -1)
 #endif
             {
                (void)xrec(ERROR_DIALOG, "Failed to mmap() to %s : %s (%s %d)",
@@ -4634,7 +4657,11 @@ insert_dir_ids_recieve(int fsa_pos)
                (void)close(fd);
                return;
             }
+#ifdef HAVE_STATX
+            jid_size = stat_buf.stx_size;
+#else
             jid_size = stat_buf.st_size;
+#endif
             no_of_jids = *(int *)ptr;
             ptr += AFD_WORD_OFFSET;
             jid = (struct job_id_data *)ptr;

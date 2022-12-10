@@ -1,6 +1,6 @@
 /*
  *  remove_time_dir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,6 +53,9 @@ DESCR__E_M3
 #include <stdio.h>
 #include <string.h>           /* strerror(), strcpy(), strlen()          */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>           /* Definition of AT_* constants            */
+#endif
 #include <sys/stat.h>         /* S_ISDIR()                               */
 #include <dirent.h>           /* opendir(), readdir(), closedir()        */
 #include <unistd.h>           /* rmdir(), unlink()                       */
@@ -106,7 +109,11 @@ remove_time_dir(char         *host_name,
       off_t         file_size_deleted = 0;
       char          *ptr;
       struct dirent *p_dir;
+# ifdef HAVE_STATX
+      struct statx  stat_buf;
+# else
       struct stat   stat_buf;
+# endif
 
       ptr = time_dir + strlen(time_dir);
       *(ptr++) = '/';
@@ -120,7 +127,12 @@ remove_time_dir(char         *host_name,
          }
          (void)strcpy(ptr, p_dir->d_name);
 
+# ifdef HAVE_STATX
+         if (statx(0, time_dir, AT_STATX_SYNC_AS_STAT,
+                   STATX_SIZE, &stat_buf) == -1)
+# else
          if (stat(time_dir, &stat_buf) == -1)
+# endif
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
                        "Failed to stat() `%s' : %s", time_dir, strerror(errno));
@@ -141,13 +153,21 @@ remove_time_dir(char         *host_name,
 # endif
 
                number_deleted++;
+# ifdef HAVE_STATX
+               file_size_deleted += stat_buf.stx_size;
+# else
                file_size_deleted += stat_buf.st_size;
+# endif
 # ifdef _DELETE_LOG
                (void)strcpy(dl.file_name, p_dir->d_name);
                (void)snprintf(dl.host_name, MAX_HOSTNAME_LENGTH + 4 + 1,
                               "%-*s %03x",
                               MAX_HOSTNAME_LENGTH, host_name, reason);
+# ifdef HAVE_STATX
+               *dl.file_size = stat_buf.stx_size;
+# else
                *dl.file_size = stat_buf.st_size;
+# endif
                *dl.job_id = job_id;
                *dl.dir_id = dir_id;
                *dl.input_time = 0L;

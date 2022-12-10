@@ -1,6 +1,6 @@
 /*
  *  wmo2ascii.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -86,24 +86,46 @@ wmo2ascii(char *file_path, char *p_file_name, off_t *filesize)
    }
    else
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+      if (statx(from_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE | STATX_MODE, &stat_buf) == -1)
+#else
       if (fstat(from_fd, &stat_buf) == -1)
+#endif
       {
          receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                     _("wmo2ascii(): Failed to stat() `%s' : %s"),
+#ifdef HAVE_STATX
+                     _("wmo2ascii(): Failed to statx() `%s' : %s"),
+#else
+                     _("wmo2ascii(): Failed to fstat() `%s' : %s"),
+#endif
                      from, strerror(errno));
       }
       else
       {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > 0)
+#else
          if (stat_buf.st_size > 0)
+#endif
          {
             int  to_fd;
             char to[MAX_PATH_LENGTH];
 
             (void)snprintf(to, MAX_PATH_LENGTH, "%s/.wmo2ascii", file_path);
+#ifdef HAVE_STATX
+            if ((to_fd = open(to, O_WRONLY | O_CREAT | O_TRUNC,
+                              stat_buf.stx_mode)) == -1)
+#else
             if ((to_fd = open(to, O_WRONLY | O_CREAT | O_TRUNC,
                               stat_buf.st_mode)) == -1)
+#endif
             {
                receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                            _("wmo2ascii(): Failed to open() `%s' : %s"),
@@ -114,8 +136,13 @@ wmo2ascii(char *file_path, char *p_file_name, off_t *filesize)
                char *read_buffer,
                     *write_buffer;
 
+#ifdef HAVE_STATX
+               if (((read_buffer = malloc(stat_buf.stx_blksize + 1)) == NULL) ||
+                   ((write_buffer = malloc(stat_buf.stx_blksize + 1)) == NULL))
+#else
                if (((read_buffer = malloc(stat_buf.st_blksize + 1)) == NULL) ||
                    ((write_buffer = malloc(stat_buf.st_blksize + 1)) == NULL))
+#endif
                {
                   receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                               _("wmo2ascii(): malloc() error : %s"),
@@ -126,8 +153,13 @@ wmo2ascii(char *file_path, char *p_file_name, off_t *filesize)
                {
                   ssize_t bytes_buffered;
 
+#ifdef HAVE_STATX
+                  if ((bytes_buffered = read(from_fd, read_buffer,
+                                             stat_buf.stx_blksize)) == -1)
+#else
                   if ((bytes_buffered = read(from_fd, read_buffer,
                                              stat_buf.st_blksize)) == -1)
+#endif
                   {
                      receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                                  _("wmo2ascii(): Failed to read() `%s' : %s"),
@@ -187,8 +219,13 @@ wmo2ascii(char *file_path, char *p_file_name, off_t *filesize)
                      }
 
                      length = write_ptr - write_buffer;
+#ifdef HAVE_STATX
+                     if (writen(to_fd, write_buffer, length,
+                                stat_buf.stx_blksize) != length)
+#else
                      if (writen(to_fd, write_buffer, length,
                                 stat_buf.st_blksize) != length)
+#endif
                      {
                         receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                                     _("wmo2ascii(): Failed to writen() `%s' : %s"),
@@ -197,10 +234,19 @@ wmo2ascii(char *file_path, char *p_file_name, off_t *filesize)
                      else
                      {
                         length_done = length;
+#ifdef HAVE_STATX
+                        while (bytes_buffered == stat_buf.stx_blksize)
+#else
                         while (bytes_buffered == stat_buf.st_blksize)
+#endif
                         {
+#ifdef HAVE_STATX
+                           if ((bytes_buffered = read(from_fd, read_buffer,
+                                                      stat_buf.stx_blksize)) == -1)
+#else
                            if ((bytes_buffered = read(from_fd, read_buffer,
                                                       stat_buf.st_blksize)) == -1)
+#endif
                            {
                               receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                                           _("wmo2ascii(): Failed to read() `%s' : %s"),
@@ -227,8 +273,13 @@ wmo2ascii(char *file_path, char *p_file_name, off_t *filesize)
                               read_ptr++;
                            }
                            length = write_ptr - write_buffer;
+#ifdef HAVE_STATX
+                           if (writen(to_fd, write_buffer, length,
+                                      stat_buf.stx_blksize) != length)
+#else
                            if (writen(to_fd, write_buffer, length,
                                       stat_buf.st_blksize) != length)
+#endif
                            {
                               receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                                           _("wmo2ascii(): Failed to writen() `%s' : %s"),

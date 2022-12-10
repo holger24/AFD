@@ -1,6 +1,6 @@
 /*
  *  transfer_rate_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2017 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2017 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,6 +45,9 @@ DESCR__E_M1
 #include <stdlib.h>          /* malloc(), atexit()                       */
 #include <time.h>            /* time()                                   */
 #include <sys/types.h>       /* fdset                                    */
+#ifdef HAVE_STATX
+# include <fcntl.h>          /* Definition of AT_* constants             */
+#endif
 #include <sys/stat.h>
 #include <sys/time.h>        /* struct timeval, time()                   */
 #include <unistd.h>          /* select()                                 */
@@ -121,7 +124,11 @@ main(int argc, char *argv[])
                   log_file[MAX_PATH_LENGTH],
                   *p_end,
                   *work_dir;
+#ifdef HAVE_STATX
+   struct statx   stat_buf;
+#else
    struct stat    stat_buf;
+#endif
    struct timeval timeout;
 
    CHECK_FOR_VERSION(argc, argv);
@@ -207,9 +214,18 @@ main(int argc, char *argv[])
    prev_time = now;
 
    /* Is current log file already too old? */
+#ifdef HAVE_STATX
+   if (statx(0, current_log_file, AT_STATX_SYNC_AS_STAT,
+             STATX_MTIME, &stat_buf) == 0)
+#else
    if (stat(current_log_file, &stat_buf) == 0)
+#endif
    {
+#ifdef HAVE_STATX
+      if (stat_buf.stx_mtime.tv_sec < (next_file_time - SWITCH_FILE_TIME))
+#else
       if (stat_buf.st_mtime < (next_file_time - SWITCH_FILE_TIME))
+#endif
       {
          if (log_number < (max_transfer_rate_log_files - 1))
          {

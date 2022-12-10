@@ -1,6 +1,6 @@
 /*
  *  grib2wmo.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,6 +47,9 @@ DESCR__E_M1
 #include <stdlib.h>           /* exit()                                  */
 #include <unistd.h>           /* STDERR_FILENO                           */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>           /* Definition of AT_* constants            */
+#endif
 #include <sys/stat.h>
 #include <errno.h>
 
@@ -63,11 +66,19 @@ main(int argc, char *argv[])
 
    if ((argc >= 2) && (argc < 4))
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+      if (statx(0, argv[1], AT_STATX_SYNC_AS_STAT, 0, &stat_buf) == -1)
+#else
       if (stat(argv[1], &stat_buf) == -1)
+#endif
       {
-         (void)fprintf(stderr, _("Failed to stat() `%s' : %s\n"),
+         (void)fprintf(stderr, _("Failed to access `%s' : %s\n"),
                        argv[1], strerror(errno));
          ret = INCORRECT;
       }

@@ -1,6 +1,6 @@
 /*
  *  delete_log_ptrs.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -93,14 +93,24 @@ extern char       *p_work_dir;
 void
 delete_log_ptrs(struct delete_log *dl)
 {
-   char        delete_log_fifo[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+   char         delete_log_fifo[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    (void)strcpy(delete_log_fifo, p_work_dir);
    (void)strcat(delete_log_fifo, FIFO_DIR);
    (void)strcat(delete_log_fifo, DELETE_LOG_FIFO);
-   if ((stat(delete_log_fifo, &stat_buf) < 0) ||
+#ifdef HAVE_STATX
+   if ((statx(0, delete_log_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) ||
+       (!S_ISFIFO(stat_buf.stx_mode)))
+#else
+   if ((stat(delete_log_fifo, &stat_buf) == -1) ||
        (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(delete_log_fifo) < 0)
       {

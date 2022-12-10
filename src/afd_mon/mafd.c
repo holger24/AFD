@@ -1,6 +1,6 @@
 /*
  *  mafd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -141,8 +141,11 @@ main(int argc, char *argv[])
                   work_dir[MAX_PATH_LENGTH];
    fd_set         rset;
    struct timeval timeout;
-   struct stat    stat_buf,
-                  stat_buf_fifo;
+#ifdef HAVE_STATX
+   struct statx   stat_buf;
+#else
+   struct stat    stat_buf;
+#endif
 
    CHECK_FOR_VERSION(argc, argv);
    if ((argc > 1) &&
@@ -426,7 +429,12 @@ main(int argc, char *argv[])
    (void)strcat(probe_only_fifo, MON_PROBE_ONLY_FIFO);
    (void)strcat(mon_active_file, MON_ACTIVE_FILE);
 
+#ifdef HAVE_STATX
+   if ((statx(0, sys_log_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
    if ((stat(sys_log_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(sys_log_fifo) < 0)
       {
@@ -789,8 +797,14 @@ main(int argc, char *argv[])
       }
       else
       {
-         if ((stat(probe_only_fifo, &stat_buf_fifo) == -1) ||
-             (!S_ISFIFO(stat_buf_fifo.st_mode)))
+#ifdef HAVE_STATX
+         if ((statx(0, probe_only_fifo, AT_STATX_SYNC_AS_STAT,
+                    STATX_MODE, &stat_buf) == -1) ||
+             (!S_ISFIFO(stat_buf.stx_mode)))
+#else
+         if ((stat(probe_only_fifo, &stat_buf) == -1) ||
+             (!S_ISFIFO(stat_buf.st_mode)))
+#endif
          {
             if (make_fifo(probe_only_fifo) < 0)
             {

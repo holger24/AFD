@@ -1,6 +1,6 @@
 /*
  *  init_msg_buffer.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -68,11 +68,15 @@ extern struct message_buf *mb;
 void
 init_msg_buffer(void)
 {
-   char        *ptr,
-               message_buf_file[MAX_PATH_LENGTH],
-               msg_fifo[MAX_PATH_LENGTH];
-   size_t      new_size;
-   struct stat stat_buf;
+   char         *ptr,
+                message_buf_file[MAX_PATH_LENGTH],
+                msg_fifo[MAX_PATH_LENGTH];
+   size_t       new_size;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    (void)strcpy(message_buf_file, p_work_dir);
    (void)strcat(message_buf_file, FIFO_DIR);
@@ -100,7 +104,12 @@ init_msg_buffer(void)
    ptr += AFD_WORD_OFFSET;
    mb = (struct message_buf *)ptr;
 
+#ifdef HAVE_STATX
+   if ((statx(0, msg_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
    if ((stat(msg_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(msg_fifo) < 0)
       {

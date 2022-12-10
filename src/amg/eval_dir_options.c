@@ -118,8 +118,6 @@ DESCR__E_M3
 #include <stdlib.h>               /* atoi(), malloc(), free(), strtoul() */
 #include <string.h>               /* strcmp(), strncmp(), strerror()     */
 #include <ctype.h>                /* isdigit()                           */
-#include <sys/types.h>
-#include <sys/stat.h>             /* fstat()                             */
 #include <unistd.h>               /* read(), close(), setuid()           */
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>               /* O_RDONLY, etc                       */

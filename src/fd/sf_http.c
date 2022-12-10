@@ -225,7 +225,11 @@ main(int argc, char *argv[])
                     fullname[MAX_PATH_LENGTH + 1],
                     file_path[MAX_PATH_LENGTH],
                     remote_filename[MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH];
+#ifdef HAVE_STATX
+   struct statx     stat_buf;
+#else
    struct stat      stat_buf;
+#endif
    struct job       *p_db;
 #ifdef SA_FULLDUMP
    struct sigaction sact;
@@ -499,10 +503,41 @@ main(int argc, char *argv[])
 #  endif
                     YES, YES) == YES))
          {
+            time_t       file_mtime;
+#  ifdef HAVE_STATX
+            struct statx stat_buf;
+#  else
+            struct stat  stat_buf;
+#  endif
+
             now = time(NULL);
+            if (file_mtime_buffer == NULL)
+            {
+#  ifdef HAVE_STATX
+               if (statx(0, fullname, AT_STATX_SYNC_AS_STAT,
+                         STATX_MTIME, &stat_buf) == -1)
+#  else
+               if (stat(fullname, &stat_buf) == -1)
+#  endif
+               {
+                  file_mtime = now;
+               }
+               else
+               {
+#  ifdef HAVE_STATX
+                  file_mtime = stat_buf.stx_mtime.tv_sec;
+#  else
+                  file_mtime = stat_buf.st_mtime;
+#  endif
+               }
+            }
+            else
+            {
+               file_mtime = *p_file_mtime_buffer;
+            }
             handle_dupcheck_delete(SEND_FILE_HTTP, fsa->host_alias, fullname,
                                    p_file_name_buffer, *p_file_size_buffer,
-                                   *p_file_mtime_buffer, now);
+                                   file_mtime, now);
             if (db.dup_check_flag & DC_DELETE)
             {
                local_file_size += *p_file_size_buffer;
@@ -953,16 +988,29 @@ main(int argc, char *argv[])
              * NOTE: This is NOT a fool proof way. There must be a better
              *       way!
              */
+#ifdef HAVE_STATX
+            if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                      STATX_SIZE, &stat_buf) == -1)
+#else
             if (fstat(fd, &stat_buf) == -1)
+#endif
             {
                (void)rec(transfer_log_fd, DEBUG_SIGN,
-                         "Hmmm. Failed to stat() `%s' : %s (%s %d)\n",
+#ifdef HAVE_STATX
+                         "Hmmm. Failed to statx() `%s' : %s (%s %d)\n",
+#else
+                         "Hmmm. Failed to fstat() `%s' : %s (%s %d)\n",
+#endif
                          fullname, strerror(errno), __FILE__, __LINE__);
                break;
             }
             else
             {
+#ifdef HAVE_STATX
+               if (stat_buf.stx_size > *p_file_size_buffer)
+#else
                if (stat_buf.st_size > *p_file_size_buffer)
+#endif
                {
                   char sign[LOG_SIGN_LENGTH];
 
@@ -974,9 +1022,15 @@ main(int argc, char *argv[])
                   {
                      (void)memcpy(sign, WARN_SIGN, LOG_SIGN_LENGTH);
                   }
+#ifdef HAVE_STATX
+                  loops = (stat_buf.stx_size - *p_file_size_buffer) / blocksize;
+                  rest = (stat_buf.stx_size - *p_file_size_buffer) % blocksize;
+                  *p_file_size_buffer = stat_buf.stx_size;
+#else
                   loops = (stat_buf.st_size - *p_file_size_buffer) / blocksize;
                   rest = (stat_buf.st_size - *p_file_size_buffer) % blocksize;
                   *p_file_size_buffer = stat_buf.st_size;
+#endif
 
                   /*
                    * Give a warning in the system log, so some action

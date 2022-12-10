@@ -1,6 +1,6 @@
 /*
  *  lock_proc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -70,7 +70,11 @@ lock_proc(int proc_id, int test_lock)
    static char  user_str[MAX_FULL_USER_ID_LENGTH + 6 + MAX_INT_LENGTH + 2 + 1];
    char         file[MAX_PATH_LENGTH],
                 *ptr;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat  stat_buf;
+#endif
    struct flock wlock;
 
    (void)snprintf(file, MAX_PATH_LENGTH, "%s%s%s",
@@ -78,7 +82,12 @@ lock_proc(int proc_id, int test_lock)
 
    /* See if the lock file does already exist. */
    errno = 0;
+#ifdef HAVE_STATX
+   if ((statx(0, file, AT_STATX_SYNC_AS_STAT, 0, &stat_buf) == -1) &&
+       (errno == ENOENT))
+#else
    if ((stat(file, &stat_buf) == -1) && (errno == ENOENT))
+#endif
    {
       if ((fd = coe_open(file, (O_WRONLY | O_CREAT | O_TRUNC),
 #ifdef GROUP_CAN_WRITE

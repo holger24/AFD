@@ -236,7 +236,11 @@ main(int argc, char *argv[])
                   work_dir[MAX_PATH_LENGTH];
    struct timeval timeout;
    struct tm      *bd_time;
+#ifdef HAVE_STATX
+   struct statx   stat_buf;
+#else
    struct stat    stat_buf;
+#endif
 
    CHECK_FOR_VERSION(argc, argv);
    if ((get_arg(&argc, argv, "-?", NULL, 0) == SUCCESS) ||
@@ -463,8 +467,14 @@ main(int argc, char *argv[])
    /* Now check if all directories needed are created. */
    check_dirs(work_dir);
 
+#ifdef HAVE_STATX
+   if (((i = statx(0, afd_status_file, AT_STATX_SYNC_AS_STAT,
+                   STATX_SIZE, &stat_buf)) == -1) ||
+       (stat_buf.stx_size != sizeof(struct afd_status)))
+#else
    if (((i = stat(afd_status_file, &stat_buf)) == -1) ||
        (stat_buf.st_size != sizeof(struct afd_status)))
+#endif
    {
       if ((i == -1) && (errno != ENOENT))
       {
@@ -1235,10 +1245,19 @@ main(int argc, char *argv[])
           * See how many directories there are in file directory,
           * so we can show user the number of jobs in queue.
           */
-         if (stat(afd_file_dir, &stat_buf) < 0)
+#ifdef HAVE_STATX
+         if (statx(0, afd_file_dir, AT_STATX_SYNC_AS_STAT,
+                   STATX_NLINK, &stat_buf) == -1)
+#else
+         if (stat(afd_file_dir, &stat_buf) == -1)
+#endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                       _("Failed to statx() %s : %s"),
+#else
                        _("Failed to stat() %s : %s"),
+#endif
                        afd_file_dir, strerror(errno));
 
             /*
@@ -1252,7 +1271,11 @@ main(int argc, char *argv[])
              * If there are more then LINK_MAX directories stop the AMG.
              * Or else files will be lost!
              */
+#ifdef HAVE_STATX
+            if ((stat_buf.stx_nlink > (link_max - STOP_AMG_THRESHOLD - DIRS_IN_FILE_DIR)) && (proc_table[AMG_NO].pid != 0))
+#else
             if ((stat_buf.st_nlink > (link_max - STOP_AMG_THRESHOLD - DIRS_IN_FILE_DIR)) && (proc_table[AMG_NO].pid != 0))
+#endif
             {
                /* Tell user that AMG is stopped. */
                system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -1266,7 +1289,12 @@ main(int argc, char *argv[])
 #else
                          _("To many jobs (%lld) in system."),
 #endif
-                         (pri_nlink_t)stat_buf.st_nlink);
+#ifdef HAVE_STATX
+                         (pri_nlink_t)stat_buf.stx_nlink
+#else
+                         (pri_nlink_t)stat_buf.st_nlink
+#endif
+                        );
                auto_amg_stop = YES;
 
                if (send_cmd(STOP, amg_cmd_fd) < 0)
@@ -1277,8 +1305,13 @@ main(int argc, char *argv[])
             }
             else
             {
+#ifdef HAVE_STATX
+               if ((auto_amg_stop == YES) &&
+                   (stat_buf.stx_nlink < (link_max - START_AMG_THRESHOLD)))
+#else
                if ((auto_amg_stop == YES) &&
                    (stat_buf.st_nlink < (link_max - START_AMG_THRESHOLD)))
+#endif
                {
                   if (proc_table[AMG_NO].pid < 1)
                   {
@@ -1836,19 +1869,33 @@ get_afd_config_value(int          *afdd_port,
 {
    char          *buffer,
                  config_file[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
    static time_t afd_config_mtime = 0;
 
    (void)snprintf(config_file, MAX_PATH_LENGTH, "%s%s%s",
                   p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
+#ifdef HAVE_STATX
+   if ((statx(0, config_file, AT_STATX_SYNC_AS_STAT,
+              STATX_MTIME, &stat_buf) == -1) ||
+       (stat_buf.stx_mtime.tv_sec == afd_config_mtime))
+#else
    if ((stat(config_file, &stat_buf) == -1) ||
        (stat_buf.st_mtime == afd_config_mtime))
+#endif
    {
       return;
    }
    else
    {
+#ifdef HAVE_STATX
+      afd_config_mtime = stat_buf.stx_mtime.tv_sec;
+#else
       afd_config_mtime = stat_buf.st_mtime;
+#endif
    }
    if ((eaccess(config_file, F_OK) == 0) &&
        (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
@@ -2156,7 +2203,11 @@ check_dirs(char *work_dir)
    char                   new_dir[MAX_PATH_LENGTH],
                           *ptr2,
                           *ptr;
+#ifdef HAVE_STATX
+   struct statx           stat_buf;
+#else
    struct stat            stat_buf;
+#endif
 #ifdef MULTI_FS_SUPPORT
    int                    no_of_extra_work_dirs;
    struct extra_work_dirs *ewl;
@@ -2165,14 +2216,28 @@ check_dirs(char *work_dir)
    /* First check that the working directory does exist */
    /* and make sure that it is a directory.             */
    sys_log_fd = STDOUT_FILENO;
-   if (stat(work_dir, &stat_buf) < 0)
+#ifdef HAVE_STATX
+   if (statx(0, work_dir, AT_STATX_SYNC_AS_STAT,
+             STATX_MODE, &stat_buf) == -1)
+#else
+   if (stat(work_dir, &stat_buf) == -1)
+#endif
    {
-      (void)fprintf(stderr, _("Could not stat() `%s' : %s (%s %d)\n"),
+      (void)fprintf(stderr,
+#ifdef HAVE_STATX
+                    _("Could not statx() `%s' : %s (%s %d)\n"),
+#else
+                    _("Could not stat() `%s' : %s (%s %d)\n"),
+#endif
                     work_dir, strerror(errno), __FILE__, __LINE__);
       (void)unlink(afd_active_file);
       exit(INCORRECT);
    }
+#ifdef HAVE_STATX
+   if (!S_ISDIR(stat_buf.stx_mode))
+#else
    if (!S_ISDIR(stat_buf.st_mode))
+#endif
    {
       (void)fprintf(stderr, _("`%s' is not a directory. (%s %d)\n"),
                     work_dir, __FILE__, __LINE__);
@@ -2491,9 +2556,19 @@ check_dirs(char *work_dir)
 
       for (i = 0; i < no_of_extra_work_dirs; i++)
       {
-         if (stat(ewl[i].dir_name, &stat_buf) < 0)
+# ifdef HAVE_STATX
+         if (statx(0, ewl[i].dir_name, AT_STATX_SYNC_AS_STAT,
+                   STATX_MODE, &stat_buf) == -1)
+# else
+         if (stat(ewl[i].dir_name, &stat_buf) == -1)
+# endif
          {
-            (void)fprintf(stderr, _("Could not stat() `%s' : %s (%s %d)\n"),
+            (void)fprintf(stderr,
+# ifdef HAVE_STATX
+                          _("Could not statx() `%s' : %s (%s %d)\n"),
+# else
+                          _("Could not stat() `%s' : %s (%s %d)\n"),
+# endif
                           ewl[i].dir_name, strerror(errno), __FILE__, __LINE__);
             if (i == 0)
             {
@@ -2501,7 +2576,11 @@ check_dirs(char *work_dir)
                exit(INCORRECT);
             }
          }
+# ifdef HAVE_STATX
+         if (!S_ISDIR(stat_buf.stx_mode))
+# else
          if (!S_ISDIR(stat_buf.st_mode))
+# endif
          {
             (void)fprintf(stderr, _("`%s' is not a directory. (%s %d)\n"),
                           ewl[i].dir_name, __FILE__, __LINE__);
@@ -2974,12 +3053,21 @@ fprintf(stderr, "%d -> OFF (%s %d)\n", i, __FILE__, __LINE__);
 #ifdef NO_OF_SAVED_CORE_FILES
                  if (no_of_saved_cores < NO_OF_SAVED_CORE_FILES)
                  {
-                    char        core_file[MAX_PATH_LENGTH];
-                    struct stat stat_buf;
+                    char         core_file[MAX_PATH_LENGTH];
+# ifdef HAVE_STATX
+                    struct statx stat_buf;
+# else
+                    struct stat  stat_buf;
+# endif
 
                     (void)snprintf(core_file, MAX_PATH_LENGTH,
                                    "%s/core", p_work_dir);
+# ifdef HAVE_STATX
+                    if (statx(0, core_file, AT_STATX_SYNC_AS_STAT,
+                              0, &stat_buf) != -1)
+# else
                     if (stat(core_file, &stat_buf) != -1)
+# endif
                     {
                        char new_core_file[MAX_PATH_LENGTH + 51];
 
@@ -3323,9 +3411,13 @@ start_afd(int          binary_changed,
 static void
 stop_afd(void)
 {
-   char        *buffer,
-               *ptr;
-   struct stat stat_buf;
+   char         *buffer,
+                *ptr;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    if ((current_afd_status == ON) && (probe_only != 1))
    {
@@ -3351,14 +3443,27 @@ stop_afd(void)
                        afd_active_file, strerror(errno));
             _exit(INCORRECT);
          }
+#ifdef HAVE_STATX
+         if (statx(read_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE, &stat_buf) == -1)
+#else
          if (fstat(read_fd, &stat_buf) == -1)
+#endif
          {
             system_log(FATAL_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                       _("Failed to statx() `%s' : %s"),
+#else
                        _("Failed to fstat() `%s' : %s"),
+#endif
                        afd_active_file, strerror(errno));
             _exit(INCORRECT);
          }
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size == 0)
+#else
          if (stat_buf.st_size == 0)
+#endif
          {
             system_log(FATAL_SIGN, __FILE__, __LINE__,
                        "`%s' is empty! Unable to kill remaining process.",
@@ -3367,13 +3472,21 @@ stop_afd(void)
          }
          else
          {
+#ifdef HAVE_STATX
+            if ((buffer = malloc(stat_buf.stx_size)) == NULL)
+#else
             if ((buffer = malloc(stat_buf.st_size)) == NULL)
+#endif
             {
                system_log(FATAL_SIGN, __FILE__, __LINE__,
                           _("malloc() error : %s"), strerror(errno));
                _exit(INCORRECT);
             }
+#ifdef HAVE_STATX
+            if (read(read_fd, buffer, stat_buf.stx_size) != stat_buf.stx_size)
+#else
             if (read(read_fd, buffer, stat_buf.st_size) != stat_buf.st_size)
+#endif
             {
                system_log(FATAL_SIGN, __FILE__, __LINE__,
                           _("read() error : %s"), strerror(errno));

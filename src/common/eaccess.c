@@ -1,6 +1,6 @@
 /*
  *  eaccess.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2002 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -71,11 +71,20 @@ eaccess(char *pathname, int access_mode)
    if ((access_mode & R_OK) || (access_mode & W_OK) || (access_mode & X_OK))
    {
       int           access_ctrl = 0;
+#ifdef HAVE_STATX
+      struct statx  stat_buf;
+#else
       struct stat   stat_buf;
+#endif
       struct group  *group = NULL;
       struct passwd *passwd = NULL;
 
+#ifdef HAVE_STATX
+      if (statx(0, pathname, AT_STATX_SYNC_AS_STAT,
+                STATX_MODE | STATX_UID | STATX_GUID, &stat_buf) == -1)
+#else
       if (stat(pathname, &stat_buf) == -1)
+#endif
       {
          access_ctrl = -1;
       }
@@ -88,10 +97,17 @@ eaccess(char *pathname, int access_mode)
          egid = getegid();
          if (access_mode & R_OK)
          {
+#ifdef HAVE_STATX
+            if ((stat_buf.stx_mode & S_IROTH) ||
+                ((euid == stat_buf.stx_uid) && (stat_buf.stx_mode & S_IRUSR)) ||
+                ((egid == stat_buf.stx_gid) && (stat_buf.stx_mode & S_IRGRP)) ||
+                (check_group(euid, stat_buf.stx_gid, &group, &passwd) == YES))
+#else
             if ((stat_buf.st_mode & S_IROTH) ||
                 ((euid == stat_buf.st_uid) && (stat_buf.st_mode & S_IRUSR)) ||
                 ((egid == stat_buf.st_gid) && (stat_buf.st_mode & S_IRGRP)) ||
                 (check_group(euid, stat_buf.st_gid, &group, &passwd) == YES))
+#endif
             {
                access_ctrl = 0;
             }
@@ -102,10 +118,17 @@ eaccess(char *pathname, int access_mode)
          }
          if ((access_ctrl == 0) && (access_mode & W_OK))
          {
+#ifdef HAVE_STATX
+            if ((stat_buf.stx_mode & S_IWOTH) ||
+                ((euid == stat_buf.stx_uid) && (stat_buf.stx_mode & S_IWUSR)) ||
+                ((egid == stat_buf.stx_gid) && (stat_buf.stx_mode & S_IWGRP)) ||
+                (check_group(euid, stat_buf.stx_gid, &group, &passwd) == YES))
+#else
             if ((stat_buf.st_mode & S_IWOTH) ||
                 ((euid == stat_buf.st_uid) && (stat_buf.st_mode & S_IWUSR)) ||
                 ((egid == stat_buf.st_gid) && (stat_buf.st_mode & S_IWGRP)) ||
                 (check_group(euid, stat_buf.st_gid, &group, &passwd) == YES))
+#endif
             {
                if (access_ctrl != -1)
                {
@@ -119,10 +142,17 @@ eaccess(char *pathname, int access_mode)
          }
          if ((access_ctrl == 0) && (access_mode & X_OK))
          {
+#ifdef HAVE_STATX
+            if ((stat_buf.stx_mode & S_IXOTH) ||
+                ((euid == stat_buf.stx_uid) && (stat_buf.stx_mode & S_IXUSR)) ||
+                ((egid == stat_buf.stx_gid) && (stat_buf.stx_mode & S_IXGRP)) ||
+                (check_group(euid, stat_buf.stx_gid, &group, &passwd) == YES))
+#else
             if ((stat_buf.st_mode & S_IXOTH) ||
                 ((euid == stat_buf.st_uid) && (stat_buf.st_mode & S_IXUSR)) ||
                 ((egid == stat_buf.st_gid) && (stat_buf.st_mode & S_IXGRP)) ||
                 (check_group(euid, stat_buf.st_gid, &group, &passwd) == YES))
+#endif
             {
                if (access_ctrl != -1)
                {

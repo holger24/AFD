@@ -1,6 +1,6 @@
 /*
  *  fax2gts.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2010 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2006 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -195,25 +195,46 @@ main(int argc, char *argv[])
             }
             else
             {
+#ifdef HAVE_STATX
+               struct statx stat_buf;
+#else
                struct stat stat_buf;
+#endif
 
+#ifdef HAVE_STATX
+               if (statx(from_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                         STATX_SIZE, &stat_buf) == -1)
+#else
                if (fstat(from_fd, &stat_buf) == -1)
+#endif
                {
-                  (void)fprintf(stderr, "Failed to fstat() `%s' : %s (%s %d)\n",
+                  (void)fprintf(stderr, "Failed to access `%s' : %s (%s %d)\n",
                                 fullname, strerror(errno), __FILE__, __LINE__);
                   ret = INCORRECT;
                }
                else
                {
+#ifdef HAVE_STATX
+                  if (stat_buf.stx_size > 0)
+#else
                   if (stat_buf.st_size > 0)
+#endif
                   {
                      char *buffer;
 
+#ifdef HAVE_STATX
+                     if ((buffer = malloc(stat_buf.stx_blksize)) == NULL)
+#else
                      if ((buffer = malloc(stat_buf.st_blksize)) == NULL)
+#endif
                      {
                         (void)fprintf(stderr,
                                       "Failed to malloc() %d bytes : %s (%s %d)\n",
+#ifdef HAVE_STATX
+                                      stat_buf.stx_blksize, strerror(errno),
+#else
                                       stat_buf.st_blksize, strerror(errno),
+#endif
                                       __FILE__, __LINE__);
                         ret = INCORRECT;
                      }
@@ -223,12 +244,21 @@ main(int argc, char *argv[])
 
                         do
                         {
+#ifdef HAVE_STATX
+                           if ((bytes_buffered = read(from_fd, buffer,
+                                                      stat_buf.stx_blksize)) == -1)
+#else
                            if ((bytes_buffered = read(from_fd, buffer,
                                                       stat_buf.st_blksize)) == -1)
+#endif
                            {
                               (void)fprintf(stderr,
                                             "Failed to read() %d bytes from `%s' : %s (%s %d)\n",
+#ifdef HAVE_STATX
+                                            stat_buf.stx_blksize, fullname,
+#else
                                             stat_buf.st_blksize, fullname,
+#endif
                                             strerror(errno),
                                             __FILE__, __LINE__);
                               ret = INCORRECT;
@@ -246,7 +276,11 @@ main(int argc, char *argv[])
                                  break;
                               }
                            }
+#ifdef HAVE_STATX
+                        } while (bytes_buffered == stat_buf.stx_blksize);
+#else
                         } while (bytes_buffered == stat_buf.st_blksize);
+#endif
                         free(buffer);
 
                         if (ret != INCORRECT)

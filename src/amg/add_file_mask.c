@@ -1,7 +1,7 @@
 /*
  *  add_file_mask.c - Part of AFD, an automatic file distribution
  *                    program.
- *  Copyright (c) 2015 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -77,18 +77,22 @@ extern char *alfiles,            /* Additional locked files              */
 void
 add_file_mask(char *dir_alias, struct dir_group *dir)
 {
-   int         align_offset,
-               fbl,
-               fc,
-               fd,
-               i,
-               mod;
-   size_t      length;
-   char        *buffer,
-               file_mask_file[MAX_PATH_LENGTH],
-               *p_file_mask_file,
-               tmp_file_mask_file[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+   int          align_offset,
+                fbl,
+                fc,
+                fd,
+                i,
+                mod;
+   size_t       length;
+   char         *buffer,
+                file_mask_file[MAX_PATH_LENGTH],
+                *p_file_mask_file,
+                tmp_file_mask_file[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    if ((i = snprintf(file_mask_file,
                      (MAX_PATH_LENGTH - MAX_DIR_ALIAS_LENGTH - 1),
@@ -110,7 +114,12 @@ add_file_mask(char *dir_alias, struct dir_group *dir)
       return;
    }
 
+#ifdef HAVE_STATX
+   if ((statx(0, file_mask_file, AT_STATX_SYNC_AS_STAT, 0, &stat_buf) == -1) &&
+       (errno == ENOENT))
+#else
    if ((stat(file_mask_file, &stat_buf) == -1) && (errno == ENOENT))
+#endif
    {
       p_file_mask_file = tmp_file_mask_file;
       if (my_strlcpy(&tmp_file_mask_file[i + 1], dir_alias,

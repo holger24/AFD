@@ -1,6 +1,6 @@
 /*
  *  convert_ls_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2012 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2008 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -82,7 +82,11 @@ main(int argc, char *argv[])
                           to_fd;
    char                   *ptr,
                           tmp_name[MAX_FILENAME_LENGTH];
+#ifdef HAVE_STATX
+   struct statx           stat_buf;
+#else
    struct stat            stat_buf;
+#endif
    struct retrieve_list   *rl;
    struct retrieve_list32 *rl32;
 
@@ -102,14 +106,24 @@ main(int argc, char *argv[])
       }
       else
       {
+#ifdef HAVE_STATX
+         if (statx(from_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                   STATX_SIZE | STATX_MODE, &stat_buf) == -1)
+#else
          if (fstat(from_fd, &stat_buf) == -1)
+#endif
          {
-            (void)fprintf(stderr, "Failed to fstat() %s : %s\n",
+            (void)fprintf(stderr, "Failed to access %s : %s\n",
                           argv[i], strerror(errno));
          }
          else
          {
-            if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ, MAP_SHARED,
+            if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                            stat_buf.stx_size, PROT_READ, MAP_SHARED,
+#else
+                            stat_buf.st_size, PROT_READ, MAP_SHARED,
+#endif
                             from_fd, 0)) == (caddr_t) -1)
             {
                (void)fprintf(stderr, "Failed to mmap() %s : %s\n",
@@ -119,8 +133,13 @@ main(int argc, char *argv[])
             {
                (void)strcpy(tmp_name, argv[i]);
                (void)strcat(tmp_name, ".converted");
+#ifdef HAVE_STATX
+               if ((to_fd = open(tmp_name, (O_WRONLY | O_CREAT | O_TRUNC),
+                                 stat_buf.stx_mode)) == -1)
+#else
                if ((to_fd = open(tmp_name, (O_WRONLY | O_CREAT | O_TRUNC),
                                  stat_buf.st_mode)) == -1)
+#endif
                {
                   (void)fprintf(stderr, "Failed to open() %s : %s\n",
                                 tmp_name, strerror(errno));
@@ -186,7 +205,11 @@ main(int argc, char *argv[])
                      free(buffer);
                   }
                }
+#ifdef HAVE_STATX
+               if (munmap(ptr, stat_buf.stx_size) == -1)
+#else
                if (munmap(ptr, stat_buf.st_size) == -1)
+#endif
                {
                   (void)fprintf(stderr, "Failed to munmap() from %s : %s\n",
                                 argv[i], strerror(errno));

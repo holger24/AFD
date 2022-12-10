@@ -1,6 +1,6 @@
 /*
  *  copy_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ DESCR__S_M3
  **   02.09.2007 H.Kiehl Added copying via splice().
  **   13.07.2012 H.Kiehl Keep modification and access time of original
  **                      file.
+ **   28.11.2022 H.Kiehl Use statx() when available.
  **
  */
 DESCR__E_M3
@@ -75,7 +76,11 @@ DESCR__E_M3
 
 /*############################# copy_file() #############################*/
 int
+#ifdef HAVE_STATX
+copy_file(char *from, char *to, struct statx *p_stat_buf)
+#else
 copy_file(char *from, char *to, struct stat *p_stat_buf)
+#endif
 {
    int from_fd,
        ret = SUCCESS;
@@ -94,13 +99,29 @@ copy_file(char *from, char *to, struct stat *p_stat_buf)
    }
    else
    {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
       struct stat stat_buf;
+#endif
 
       /* Need size and permissions of input file. */
-      if ((p_stat_buf == NULL) && (fstat(from_fd, &stat_buf) == -1))
+      if ((p_stat_buf == NULL) &&
+#ifdef HAVE_STATX
+          (statx(from_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                 STATX_MODE | STATX_SIZE | STATX_ATIME | STATX_MTIME,
+                 &stat_buf) == -1)
+#else
+          (fstat(from_fd, &stat_buf) == -1)
+#endif
+         )
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                    _("Could not statx() `%s' : %s"), from, strerror(errno));
+#else
                     _("Could not fstat() `%s' : %s"), from, strerror(errno));
+#endif
          (void)close(from_fd);
          ret = INCORRECT;
       }
@@ -114,12 +135,18 @@ copy_file(char *from, char *to, struct stat *p_stat_buf)
          }
 
          /* Open destination file. */
+         if ((to_fd = open(to,
 #ifdef O_LARGEFILE
-         if ((to_fd = open(to, O_WRONLY | O_CREAT | O_TRUNC | O_LARGEFILE,
+                           O_WRONLY | O_CREAT | O_TRUNC | O_LARGEFILE,
 #else
-         if ((to_fd = open(to, O_WRONLY | O_CREAT | O_TRUNC,
+                           O_WRONLY | O_CREAT | O_TRUNC,
 #endif
-                           p_stat_buf->st_mode)) == -1)
+#ifdef HAVE_STATX
+                           p_stat_buf->stx_mode
+#else
+                           p_stat_buf->st_mode
+#endif
+                          )) == -1)
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        _("Could not open `%s' for copying : %s"),
@@ -130,7 +157,11 @@ copy_file(char *from, char *to, struct stat *p_stat_buf)
          {
             struct utimbuf old_time;
 
+#ifdef HAVE_STATX
+            if (p_stat_buf->stx_size > 0)
+#else
             if (p_stat_buf->st_size > 0)
+#endif
             {
 #ifdef WITH_SPLICE_SUPPORT
                int fd_pipe[2];
@@ -148,7 +179,11 @@ copy_file(char *from, char *to, struct stat *p_stat_buf)
                         bytes_written;
                   off_t bytes_left;
 
+# ifdef HAVE_STATX
+                  bytes_left = p_stat_buf->stx_size;
+# else
                   bytes_left = p_stat_buf->st_size;
+# endif
                   while (bytes_left)
                   {
                      if ((bytes_read = splice(from_fd, NULL, fd_pipe[1], NULL,
@@ -187,7 +222,11 @@ copy_file(char *from, char *to, struct stat *p_stat_buf)
 #else
                char *buffer;
 
+# ifdef HAVE_STATX
+               if ((buffer = malloc(p_stat_buf->stx_blksize)) == NULL)
+# else
                if ((buffer = malloc(p_stat_buf->st_blksize)) == NULL)
+# endif
                {
                   system_log(ERROR_SIGN, __FILE__, __LINE__,
                              _("Failed to allocate memory : %s"),
@@ -201,7 +240,12 @@ copy_file(char *from, char *to, struct stat *p_stat_buf)
                   do
                   {
                      if ((bytes_buffered = read(from_fd, buffer,
-                                                p_stat_buf->st_blksize)) == -1)
+# ifdef HAVE_STATX
+                                                p_stat_buf->stx_blksize
+# else
+                                                p_stat_buf->st_blksize
+# endif
+                                               )) == -1)
                      {
                         system_log(ERROR_SIGN, __FILE__, __LINE__,
                                    _("Failed to read() from `%s' : %s"),
@@ -220,7 +264,11 @@ copy_file(char *from, char *to, struct stat *p_stat_buf)
                            break;
                         }
                      }
+# ifdef HAVE_STATX
+                  } while (bytes_buffered == p_stat_buf->stx_blksize);
+# else
                   } while (bytes_buffered == p_stat_buf->st_blksize);
+# endif
                   free(buffer);
                }
 #endif /* !WITH_SPLICE_SUPPORT */
@@ -233,8 +281,13 @@ copy_file(char *from, char *to, struct stat *p_stat_buf)
             }
 
             /* Keep time stamp of the original file. */
+#ifdef HAVE_STATX
+            old_time.actime = p_stat_buf->stx_atime.tv_sec;
+            old_time.modtime = p_stat_buf->stx_mtime.tv_sec;
+#else
             old_time.actime = p_stat_buf->st_atime;
             old_time.modtime = p_stat_buf->st_mtime;
+#endif
             if (utime(to, &old_time) == -1)
             {
                system_log(WARN_SIGN, __FILE__, __LINE__,

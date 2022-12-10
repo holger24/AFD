@@ -1,6 +1,6 @@
 /*
  *  view_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -81,14 +81,18 @@ view_data(char *fullname, char *file_name)
                   p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
    if (eaccess(afd_config_file, F_OK) == 0)
    {
-      int         argcounter,
-                  fd,
-                  with_show_cmd;
-      char        *buffer,
-                  *ptr,
-                  *p_start,
-                  view_data_prog_def[VIEW_DATA_PROG_DEF_LENGTH + 2];
-      struct stat stat_buf;
+      int          argcounter,
+                   fd,
+                   with_show_cmd;
+      char         *buffer,
+                   *ptr,
+                   *p_start,
+                   view_data_prog_def[VIEW_DATA_PROG_DEF_LENGTH + 2];
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
+      struct stat  stat_buf;
+#endif
 
       if ((fd = open(afd_config_file, O_RDONLY)) == -1)
       {
@@ -97,15 +101,24 @@ view_data(char *fullname, char *file_name)
                        afd_config_file, strerror(errno), __FILE__, __LINE__);
          exit(INCORRECT);
       }
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(fd, &stat_buf) == -1)
+#endif
       {
          (void)fprintf(stderr,
-                       "Failed to fstat() `%s' : %s (%s %d)\n",
+                       "Failed to access `%s' : %s (%s %d)\n",
                        afd_config_file, strerror(errno), __FILE__, __LINE__);
          exit(INCORRECT);
       }
 
+#ifdef HAVE_STATX
+      if ((buffer = malloc(1 + stat_buf.stx_size + 1)) == NULL)
+#else
       if ((buffer = malloc(1 + stat_buf.st_size + 1)) == NULL)
+#endif
       {
          (void)fprintf(stderr,
 #if SIZEOF_OFF_T == 4
@@ -113,11 +126,19 @@ view_data(char *fullname, char *file_name)
 #else
                        "Failed to malloc() %lld bytes : %s (%s %d)\n",
 #endif
+#ifdef HAVE_STATX
+                       (pri_off_t)(1 + stat_buf.stx_size + 1),
+#else
                        (pri_off_t)(1 + stat_buf.st_size + 1),
+#endif
                        strerror(errno), __FILE__, __LINE__);
          exit(INCORRECT);
       }
+#ifdef HAVE_STATX
+      if (read(fd, &buffer[1], stat_buf.stx_size) == -1)
+#else
       if (read(fd, &buffer[1], stat_buf.st_size) == -1)
+#endif
       {
          (void)fprintf(stderr,
 #if SIZEOF_OFF_T == 4
@@ -125,12 +146,20 @@ view_data(char *fullname, char *file_name)
 #else
                        "Failed to read() %lld bytes from `%s' : %s (%s %d)\n",
 #endif
+#ifdef HAVE_STATX
+                       (pri_off_t)stat_buf.stx_size, afd_config_file,
+#else
                        (pri_off_t)stat_buf.st_size, afd_config_file,
+#endif
                        strerror(errno), __FILE__, __LINE__);
          exit(INCORRECT);
       }
       buffer[0] = '\n';
+#ifdef HAVE_STATX
+      buffer[stat_buf.stx_size + 1] = '\0';
+#else
       buffer[stat_buf.st_size + 1] = '\0';
+#endif
 
       (void)strcpy(&view_data_prog_def[1], VIEW_DATA_PROG_DEF);
       view_data_prog_def[0] = '\n';

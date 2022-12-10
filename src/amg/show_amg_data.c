@@ -1,6 +1,6 @@
 /*
  *  show_amg_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -81,7 +81,11 @@ main(int argc, char *argv[])
                *p_mmap,
                work_dir[MAX_PATH_LENGTH];
    FILE        *fp;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
    struct stat stat_buf;
+#endif
 
    if (get_afd_path(&argc, argv, work_dir) < 0)
    {
@@ -107,17 +111,32 @@ main(int argc, char *argv[])
                     amg_data_file, strerror(errno));
       exit(1);
    }
+#ifdef HAVE_STATX
+   if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+              STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(fd, &stat_buf) == -1)
+#endif
    {
       (void)fprintf(stderr, "Failed to fstat() %s : %s\n",
                     amg_data_file, strerror(errno));
       exit(1);
    }
 #ifdef HAVE_MMAP
-   if ((p_mmap = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+   if ((p_mmap = mmap(NULL,
+# ifdef HAVE_STATX
+                      stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                      stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                       MAP_SHARED, fd, 0)) == (caddr_t) -1)
 #else
-   if ((p_mmap = mmap_emu(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+   if ((p_mmap = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                          stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                          stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                           MAP_SHARED, amg_data_file, 0)) == (caddr_t) -1)
 #endif
    {
@@ -130,10 +149,18 @@ main(int argc, char *argv[])
       (void)fprintf(stderr, "Failed to close() %s : %s\n",
                     amg_data_file, strerror(errno));
    }
+#ifdef HAVE_STATX
+   show_amg_data(fp, p_mmap, (off_t)stat_buf.stx_size);
+#else
    show_amg_data(fp, p_mmap, stat_buf.st_size);
+#endif
    fclose(fp);
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+   if (munmap(p_mmap, stat_buf.stx_size) == -1)
+# else
    if (munmap(p_mmap, stat_buf.st_size) == -1)
+# endif
 #else
    if (munmap_emu((void *)p_mmap) == -1)
 #endif

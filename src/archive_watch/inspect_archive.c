@@ -1,6 +1,6 @@
 /*
  *  inspect_archive.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -59,6 +59,9 @@ DESCR__E_M3
 #include <ctype.h>                   /* isdigit(), isxdigit()            */
 #include <unistd.h>                  /* rmdir(), unlink()                */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>                  /* Definition of AT_* constants     */
+#endif
 #include <sys/stat.h>
 #include <dirent.h>                  /* opendir(), readdir(), closedir() */
 #include <errno.h>
@@ -95,7 +98,11 @@ inspect_archive(char *archive_dir)
       int           nof;
       char          *ptr_filesystemname;
       struct dirent *dp_filesystemname;
+# ifdef HAVE_STATX
+      struct statx  stat_buf;
+# else
       struct stat   stat_buf;
+# endif
       DIR           *p_dir_filesystemname;
 #endif
       int           noh = 0,
@@ -121,8 +128,15 @@ inspect_archive(char *archive_dir)
 #ifdef MULTI_FS_SUPPORT
             /* Enter directory with filesystem number. */
             (void)strcpy(ptr_archive, dp_archive->d_name);
+# ifdef HAVE_STATX
+            if ((statx(0, archive_dir,
+                       AT_STATX_SYNC_AS_STAT | AT_SYMLINK_NOFOLLOW,
+                       STATX_MODE, &stat_buf) != -1) &&
+                (S_ISLNK(stat_buf.stx_mode)))
+# else
             if ((lstat(archive_dir, &stat_buf) != -1) &&
                 (S_ISLNK(stat_buf.st_mode)))
+# endif
             {
                if ((p_dir_filesystemname = opendir(archive_dir)) != NULL)
                {
@@ -137,8 +151,15 @@ inspect_archive(char *archive_dir)
                         /* Enter directory with hostname. */
                         (void)strcpy(ptr_filesystemname,
                                      dp_filesystemname->d_name);
+# ifdef HAVE_STATX
+                        if ((statx(0, archive_dir,
+                                   AT_STATX_SYNC_AS_STAT | AT_SYMLINK_NOFOLLOW,
+                                   STATX_MODE, &stat_buf) != -1) &&
+                            (S_ISLNK(stat_buf.stx_mode) == 0))
+# else
                         if ((lstat(archive_dir, &stat_buf) != -1) &&
                             (S_ISLNK(stat_buf.st_mode) == 0))
+# endif
                         {
 #else
                         (void)strcpy(ptr_archive, dp_archive->d_name);
@@ -280,8 +301,15 @@ inspect_archive(char *archive_dir)
                   else if (noh == 2)
                        {
                           ptr_filesystemname[-1] = '\0';
+# ifdef HAVE_STATX
+                          if ((statx(0, archive_dir,
+                                     AT_STATX_SYNC_AS_STAT | AT_SYMLINK_NOFOLLOW,
+                                     STATX_MODE, &stat_buf) != -1) &&
+                              (S_ISLNK(stat_buf.stx_mode) == 0))
+# else
                           if ((lstat(archive_dir, &stat_buf) != -1) &&
                               (S_ISLNK(stat_buf.st_mode) == 0))
+# endif
                           {
                              if ((rmdir(archive_dir) == -1) &&
                                  (errno != EEXIST))

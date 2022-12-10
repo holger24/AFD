@@ -1,6 +1,6 @@
 /*
  *  get_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -116,10 +116,14 @@ get_info(int item)
     */
    if (jd == NULL)
    {
-      int         dnb_fd,
-                  jd_fd;
-      char        job_id_data_file[MAX_PATH_LENGTH];
-      struct stat stat_buf;
+      int          dnb_fd,
+                   jd_fd;
+      char         job_id_data_file[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
+      struct stat  stat_buf;
+#endif
 
       /* Map to job ID data file. */
       (void)sprintf(job_id_data_file, "%s%s%s", p_work_dir, FIFO_DIR,
@@ -131,19 +135,33 @@ get_info(int item)
          free(current_jid_list);
          return;
       }
+#ifdef HAVE_STATX
+      if (statx(jd_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(jd_fd, &stat_buf) == -1)
+#endif
       {
-         (void)xrec(ERROR_DIALOG, "Failed to fstat() %s : %s (%s %d)",
+         (void)xrec(ERROR_DIALOG, "Failed to access %s : %s (%s %d)",
                     job_id_data_file, strerror(errno), __FILE__, __LINE__);
          (void)close(jd_fd);
          free(current_jid_list);
          return;
       }
+#ifdef HAVE_STATX
+      if (stat_buf.stx_size > 0)
+#else
       if (stat_buf.st_size > 0)
+#endif
       {
          char *ptr;
 
-         if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+         if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                         stat_buf.stx_size, PROT_READ,
+#else
+                         stat_buf.st_size, PROT_READ,
+#endif
                          MAP_SHARED, jd_fd, 0)) == (caddr_t) -1)
          {
             (void)xrec(ERROR_DIALOG, "Failed to mmap() to %s : %s (%s %d)",
@@ -163,7 +181,11 @@ get_info(int item)
          no_of_job_ids = (int *)ptr;
          ptr += AFD_WORD_OFFSET;
          jd = (struct job_id_data *)ptr;
+#ifdef HAVE_STATX
+         jd_size = stat_buf.stx_size;
+#else
          jd_size = stat_buf.st_size;
+#endif
          (void)close(jd_fd);
       }
       else
@@ -185,19 +207,33 @@ get_info(int item)
          free(current_jid_list);
          return;
       }
+#ifdef HAVE_STATX
+      if (statx(dnb_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(dnb_fd, &stat_buf) == -1)
+#endif
       {
-         (void)xrec(ERROR_DIALOG, "Failed to fstat() %s : %s (%s %d)",
+         (void)xrec(ERROR_DIALOG, "Failed to access %s : %s (%s %d)",
                     job_id_data_file, strerror(errno), __FILE__, __LINE__);
          (void)close(dnb_fd);
          free(current_jid_list);
          return;
       }
+#ifdef HAVE_STATX
+      if (stat_buf.stx_size > 0)
+#else
       if (stat_buf.st_size > 0)
+#endif
       {
          char *ptr;
 
-         if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+         if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                         stat_buf.stx_size, PROT_READ,
+#else
+                         stat_buf.st_size, PROT_READ,
+#endif
                          MAP_SHARED, dnb_fd, 0)) == (caddr_t) -1)
          {
             (void)xrec(ERROR_DIALOG, "Failed to mmap() to %s : %s (%s %d)",
@@ -209,7 +245,11 @@ get_info(int item)
          no_of_dir_names = (int *)ptr;
          ptr += AFD_WORD_OFFSET;
          dnb = (struct dir_name_buf *)ptr;
+#ifdef HAVE_STATX
+         dnb_size = stat_buf.stx_size;
+#else
          dnb_size = stat_buf.st_size;
+#endif
          (void)close(dnb_fd);
       }
       else
@@ -231,19 +271,33 @@ get_info(int item)
          free(current_jid_list);
          return;
       }
+#ifdef HAVE_STATX
+      if (statx(jd_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(jd_fd, &stat_buf) == -1)
+#endif
       {
-         (void)xrec(ERROR_DIALOG, "Failed to fstat() %s : %s (%s %d)",
+         (void)xrec(ERROR_DIALOG, "Failed to access %s : %s (%s %d)",
                     job_id_data_file, strerror(errno), __FILE__, __LINE__);
          (void)close(jd_fd);
          free(current_jid_list);
          return;
       }
+#ifdef HAVE_STATX
+      if (stat_buf.stx_size > 0)
+#else
       if (stat_buf.st_size > 0)
+#endif
       {
          char *ptr;
 
-         if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+         if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                         stat_buf.stx_size, PROT_READ,
+#else
+                         stat_buf.st_size, PROT_READ,
+#endif
                          MAP_SHARED, jd_fd, 0)) == (caddr_t) -1)
          {
             (void)xrec(ERROR_DIALOG, "Failed to mmap() to %s : %s (%s %d)",
@@ -263,7 +317,11 @@ get_info(int item)
          no_of_dc_ids = (int *)ptr;
          ptr += AFD_WORD_OFFSET;
          dcl = (struct dir_config_list *)ptr;
+#ifdef HAVE_STATX
+         dcl_size = stat_buf.stx_size;
+#else
          dcl_size = stat_buf.st_size;
+#endif
          (void)close(jd_fd);
       }
       else

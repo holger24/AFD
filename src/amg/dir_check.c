@@ -1,6 +1,6 @@
 /*
  *  dir_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -95,6 +95,9 @@ DESCR__E_M1
 # include <sys/resource.h>         /* struct rusage                      */
 #endif
 #include <sys/wait.h>              /* waitpid()                          */
+#ifdef HAVE_STATX
+# include <sys/sysmacros.h>        /* makedev()                          */
+#endif
 #include <sys/stat.h>
 #include <sys/time.h>              /* struct timeval                     */
 #ifdef HAVE_MMAP
@@ -1122,12 +1125,16 @@ main(int argc, char *argv[])
       if ((p_afd_status->amg_jobs & PAUSE_DISTRIBUTION) == 0)
       {
 #endif
-         char        *error_ptr;          /* Pointer showing where we */
+         char         *error_ptr;         /* Pointer showing where we */
                                           /* fail to see that the     */
                                           /* directory is available   */
                                           /* for us.                  */
-         time_t      start_time = now + sleep_time;
-         struct stat dir_stat_buf;
+         time_t       start_time = now + sleep_time;
+#ifdef HAVE_STATX
+         struct statx dir_stat_buf;
+#else
+         struct stat  dir_stat_buf;
+#endif
 
          if (check_fsa(NO, DIR_CHECK) == YES)
          {
@@ -1282,7 +1289,12 @@ main(int argc, char *argv[])
                  (fra[de[i].fra_pos].no_of_time_entries == 0) ||
                  (fra[de[i].fra_pos].next_check_time <= start_time)))
             {
-               if (stat(de[i].dir, &dir_stat_buf) < 0)
+# ifdef HAVE_STATX
+               if (statx(0, de[i].dir, AT_STATX_SYNC_AS_STAT,
+                         STATX_NLINK | STATX_MTIME, &dir_stat_buf) == -1)
+# else
+               if (stat(de[i].dir, &dir_stat_buf) == -1)
+# endif
                {
                   int ret;
 
@@ -1346,7 +1358,12 @@ main(int argc, char *argv[])
                       (fra[de[i].fra_pos].force_reread == LOCAL_ONLY) ||
                       ((force_reread_interval) &&
                        ((now - de[i].search_time) > force_reread_interval)) ||
-                      (dir_stat_buf.st_mtime >= de[i].search_time))
+# ifdef HAVE_STATX
+                      (dir_stat_buf.stx_mtime.tv_sec >= de[i].search_time)
+# else
+                      (dir_stat_buf.st_mtime >= de[i].search_time)
+# endif
+                     )
                   {
                      /* The directory time has changed. New files */
                      /* have arrived!                             */
@@ -1355,7 +1372,11 @@ main(int argc, char *argv[])
                      /*       so we might end up in an endless    */
                      /*       loop.                               */
 # ifdef WITH_MULTI_DIR_SCANS
+#  ifdef HAVE_STATX
+                     if ((handle_dir(i, &dir_stat_buf.stx_mtime.tv_sec, NULL, NULL,
+#  else
                      if ((handle_dir(i, &dir_stat_buf.st_mtime, NULL, NULL,
+#  endif
 # else
                      if ((handle_dir(i, NULL, NULL, NULL,
 # endif
@@ -1386,7 +1407,11 @@ main(int argc, char *argv[])
                    * very unlikely that the paused status has changed
                    * so quickly.
                    */
+# ifdef HAVE_STATX
+                  if (dir_stat_buf.stx_nlink > 2)
+# else
                   if (dir_stat_buf.st_nlink > 2)
+# endif
                   {
                      int dest_count = 0,
                          nfg = 0;
@@ -1943,9 +1968,16 @@ do_one_dir(void *arg)
                  start_time;
    char          *p_paused_host;
    struct data_t *data = (struct data_t *)arg;
+# ifdef HAVE_STATX
+   struct statx  dir_stat_buf;
+
+   if (statx(0, de[data->i].dir, AT_STATX_SYNC_AS_STAT,
+             STATX_MTIME | STATX_NLINK, &dir_stat_buf) < 0)
+# else
    struct stat   dir_stat_buf;
 
    if (stat(de[data->i].dir, &dir_stat_buf) < 0)
+# endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  "Can't access directory %s : %s",
@@ -1960,7 +1992,12 @@ do_one_dir(void *arg)
     */
    if ((fra[de[data->i].fra_pos].force_reread == YES) ||
        (fra[de[data->i].fra_pos].force_reread == LOCAL_ONLY) ||
-       (dir_stat_buf.st_mtime >= de[data->i].search_time))
+# ifdef HAVE_STATX
+       (dir_stat_buf.stx_mtime.tv_sec >= de[data->i].search_time)
+# else
+       (dir_stat_buf.st_mtime >= de[data->i].search_time)
+# endif
+      )
    {
       /* The directory time has changed. New files */
       /* have arrived!                             */
@@ -1990,7 +2027,11 @@ do_one_dir(void *arg)
    /*
     * Handle any paused hosts in this directory.
     */
+# ifdef HAVE_STATX
+   if (dir_stat_buf.stx_nlink > 2)
+# else
    if (dir_stat_buf.st_nlink > 2)
+# endif
    {
       int dest_count = 0,
           nfg = 0;
@@ -2085,12 +2126,20 @@ check_pool_dir(time_t now)
       char          *work_ptr;
 #ifdef MULTI_FS_SUPPORT
       char          str_dev_self[MAX_INT_HEX_LENGTH + 1];
+# ifdef HAVE_STATX
+      struct statx  stat_buf;
+# else
       struct stat   stat_buf;
+# endif
 #endif
       struct dirent *p_dir;
 
 #ifdef MULTI_FS_SUPPORT
+# ifdef HAVE_STATX
+      if (statx(0, pool_dir, AT_STATX_SYNC_AS_STAT, 0, &stat_buf) == -1)
+# else
       if (stat(pool_dir, &stat_buf) == -1)
+# endif
       {
          system_log(DEBUG_SIGN, __FILE__, __LINE__,
                     "Failed to stat() `%s' : %s", pool_dir, strerror(errno));
@@ -2099,7 +2148,12 @@ check_pool_dir(time_t now)
       else
       {
          (void)snprintf(str_dev_self, MAX_INT_HEX_LENGTH, "%x",
-                        (unsigned int)stat_buf.st_dev);
+# ifdef HAVE_STATX
+                        (unsigned int)makedev(stat_buf.stx_dev_major, stat_buf.stx_dev_minor)
+# else
+                        (unsigned int)stat_buf.st_dev
+# endif
+                       );
       }
 #endif
       work_ptr = pool_dir + strlen(pool_dir);
@@ -2111,8 +2165,14 @@ check_pool_dir(time_t now)
          {
             (void)strcpy(work_ptr, p_dir->d_name);
 #ifdef MULTI_FS_SUPPORT
+# ifdef HAVE_STATX
+            if ((statx(0, pool_dir, AT_STATX_SYNC_AS_STAT | AT_SYMLINK_NOFOLLOW,
+                       STATX_MODE, &stat_buf) != -1) &&
+                (S_ISLNK(stat_buf.stx_mode)))
+# else
             if ((lstat(pool_dir, &stat_buf) != -1) &&
                 (S_ISLNK(stat_buf.st_mode)))
+# endif
             {
                if (strcmp(str_dev_self, p_dir->d_name) != 0)
                {

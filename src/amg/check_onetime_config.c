@@ -1,6 +1,6 @@
 /*
  *  check_onetime_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,6 +45,9 @@ DESCR__E_M3
 #include <string.h>                /* strlen(), strcpy(), strerror()     */
 #include <stdlib.h>                /* exit(), realloc()                  */
 #include <sys/types.h>
+#ifdef HAVE_STATX
+# include <fcntl.h>                /* Definition of AT_* constants       */
+#endif
 #include <sys/stat.h>              /* stat(), S_ISREG()                  */
 #include <dirent.h>                /* opendir(), closedir(), readdir(),  */
                                    /* DIR, struct dirent                 */
@@ -69,8 +72,14 @@ static time_t                last_cscan_time = 0L,
 void
 check_onetime_config(void)
 {
-   off_t       db_size;
-   struct stat stat_buf;
+   off_t        db_size;
+#ifdef HAVE_STATX
+   struct statx stat_buf,
+                stat_buf2;
+#else
+   struct stat  stat_buf,
+                stat_buf2;
+#endif
 
    if ((last_cscan_time == 0L) || (last_lscan_time == 0L))
    {
@@ -128,14 +137,28 @@ check_onetime_config(void)
    }
 
    /* Check config directories for changes. */
-   if (stat(ot_config_dir, &stat_buf) < 0)
+#ifdef HAVE_STATX
+   if (statx(0, ot_config_dir, AT_STATX_SYNC_AS_STAT,
+             STATX_MTIME, &stat_buf) == -1)
+#else
+   if (stat(ot_config_dir, &stat_buf) == -1)
+#endif
    {
       system_log(WARN_SIGN, __FILE__, __LINE__,
-                 "Failed to stat() `%s' : %s", ot_config_dir, strerror(errno));
+#ifdef HAVE_STATX
+                 "Failed to statx() `%s' : %s",
+#else
+                 "Failed to stat() `%s' : %s",
+#endif
+                 ot_config_dir, strerror(errno));
    }
    else
    {
+#ifdef HAVE_STATX
+      if (stat_buf.stx_mtime.tv_sec > last_cscan_time)
+#else
       if (stat_buf.st_mtime > last_cscan_time)
+#endif
       {
          DIR *dp;
 
@@ -154,19 +177,33 @@ check_onetime_config(void)
                if (p_dir->d_name[0] != '.')
                {
                   (void)strcpy(p_config_dir, p_dir->d_name);
-                  if (stat(ot_config_dir, &stat_buf) < 0)
+#ifdef HAVE_STATX
+                  if (statx(0, ot_config_dir, AT_STATX_SYNC_AS_STAT,
+                            STATX_MODE | STATX_SIZE | STATX_MTIME,
+                            &stat_buf2) == -1)
+#else
+                  if (stat(ot_config_dir, &stat_buf2) == -1)
+#endif
                   {
                      if (errno != ENOENT)
                      {
                         system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                                   _("Can't statx() file `%s' : %s"),
+#else
                                    _("Can't stat() file `%s' : %s"),
+#endif
                                    ot_config_dir, strerror(errno));
                      }
                      continue;
                   }
 
                   /* Sure it is a normal file? */
-                  if (S_ISREG(stat_buf.st_mode))
+#ifdef HAVE_STATX
+                  if (S_ISREG(stat_buf2.stx_mode))
+#else
+                  if (S_ISREG(stat_buf2.st_mode))
+#endif
                   {
                      if ((no_of_ot_dir_configs % OT_DC_STEP_SIZE) == 0)
                      {
@@ -192,9 +229,14 @@ check_onetime_config(void)
                      }
                      (void)strcpy(ot_dcl[no_of_ot_dir_configs].dir_config_file,
                                   ot_config_dir);
-                     ot_dcl[no_of_ot_dir_configs].dc_old_time = stat_buf.st_mtime;
                      ot_dcl[no_of_ot_dir_configs].type = OT_CONFIG_TYPE;
-                     db_size += stat_buf.st_size;
+#ifdef HAVE_STATX
+                     ot_dcl[no_of_ot_dir_configs].dc_old_time = stat_buf2.stx_mtime.tv_sec;
+                     db_size += stat_buf2.stx_size;
+#else
+                     ot_dcl[no_of_ot_dir_configs].dc_old_time = stat_buf2.st_mtime;
+                     db_size += stat_buf2.st_size;
+#endif
                   }
                }
             } /* while ((p_dir = readdir(dp)) != NULL) */
@@ -221,19 +263,37 @@ check_onetime_config(void)
                           ot_config_dir, strerror(errno));
             }
          }
+#ifdef HAVE_STATX
+         last_cscan_time = stat_buf.stx_mtime.tv_sec;
+#else
          last_cscan_time = stat_buf.st_mtime;
+#endif
       }
    }
 
    /* Check list directory for changes. */
-   if (stat(ot_list_dir, &stat_buf) < 0)
+#ifdef HAVE_STATX
+   if (statx(0, ot_list_dir, AT_STATX_SYNC_AS_STAT,
+             STATX_MTIME, &stat_buf) == -1)
+#else
+   if (stat(ot_list_dir, &stat_buf) == -1)
+#endif
    {
       system_log(WARN_SIGN, __FILE__, __LINE__,
-                 "Failed to stat() `%s' : %s", ot_list_dir, strerror(errno));
+#ifdef HAVE_STATX
+                 "Failed to statx() `%s' : %s",
+#else
+                 "Failed to stat() `%s' : %s",
+#endif
+                 ot_list_dir, strerror(errno));
    }
    else
    {
+#ifdef HAVE_STATX
+      if (stat_buf.stx_mtime.tv_sec > last_lscan_time)
+#else
       if (stat_buf.st_mtime > last_lscan_time)
+#endif
       {
          DIR *dp;
 
@@ -252,19 +312,33 @@ check_onetime_config(void)
                if (p_dir->d_name[0] != '.')
                {
                   (void)strcpy(p_list_dir, p_dir->d_name);
-                  if (stat(ot_list_dir, &stat_buf) < 0)
+#ifdef HAVE_STATX
+                  if (statx(0, ot_list_dir, AT_STATX_SYNC_AS_STAT,
+                            STATX_MODE | STATX_SIZE | STATX_MTIME,
+                            &stat_buf2) == -1)
+#else
+                  if (stat(ot_list_dir, &stat_buf2) == -1)
+#endif
                   {
                      if (errno != ENOENT)
                      {
                         system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                                   _("Can't statx() file `%s' : %s"),
+#else
                                    _("Can't stat() file `%s' : %s"),
+#endif
                                    ot_list_dir, strerror(errno));
                      }
                      continue;
                   }
 
                   /* Sure it is a normal file? */
-                  if (S_ISREG(stat_buf.st_mode))
+#ifdef HAVE_STATX
+                  if (S_ISREG(stat_buf2.stx_mode))
+#else
+                  if (S_ISREG(stat_buf2.st_mode))
+#endif
                   {
                      if ((no_of_ot_dir_configs % OT_DC_STEP_SIZE) == 0)
                      {
@@ -290,9 +364,14 @@ check_onetime_config(void)
                      }
                      (void)strcpy(ot_dcl[no_of_ot_dir_configs].dir_config_file,
                                   ot_config_dir);
-                     ot_dcl[no_of_ot_dir_configs].dc_old_time = stat_buf.st_mtime;
+#ifdef HAVE_STATX
+                     db_size += stat_buf2.stx_size;
+                     ot_dcl[no_of_ot_dir_configs].dc_old_time = stat_buf2.stx_mtime.tv_sec;
+#else
+                     db_size += stat_buf2.st_size;
+                     ot_dcl[no_of_ot_dir_configs].dc_old_time = stat_buf2.st_mtime;
+#endif
                      ot_dcl[no_of_ot_dir_configs].type = OT_LIST_TYPE;
-                     db_size += stat_buf.st_size;
                   }
                }
             } /* while ((p_dir = readdir(dp)) != NULL) */
@@ -319,7 +398,11 @@ check_onetime_config(void)
                           ot_list_dir, strerror(errno));
             }
          }
+#ifdef HAVE_STATX
+         last_lscan_time = stat_buf.stx_mtime.tv_sec;
+#else
          last_lscan_time = stat_buf.st_mtime;
+#endif
       }
    }
 

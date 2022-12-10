@@ -1,6 +1,6 @@
 /*
  *  map_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2008 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,11 +25,11 @@ DESCR__S_M3
  **   map_file - uses mmap() to map to a file
  **
  ** SYNOPSIS
- **   void *map_file(char        *file,
- **                  int         *fd,
- **                  off_t       *size,
- **                  struct stat *p_stat_buf,
- **                  int         flags,
+ **   void *map_file(char         *file,
+ **                  int          *fd,
+ **                  off_t        *size,
+ **                  struct statx *p_stat_buf,
+ **                  int          flags,
  **                  ...)
  **
  ** DESCRIPTION
@@ -64,15 +64,23 @@ DESCR__E_M3
 
 /*############################# map_file() ##############################*/
 void *
-map_file(char        *file,
-         int         *fd,
-         off_t       *size,
-         struct stat *p_stat_buf,
-         int         flags,
+map_file(char         *file,
+         int          *fd,
+         off_t        *size,
+#ifdef HAVE_STATX
+         struct statx *p_stat_buf,
+#else
+         struct stat  *p_stat_buf,
+#endif
+         int          flags,
          ...)
 {
-   int         prot;
-   struct stat stat_buf;
+   int          prot;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    if (flags & O_RDWR)
    {
@@ -111,7 +119,12 @@ map_file(char        *file,
 
    if (p_stat_buf == NULL)
    {
+#ifdef HAVE_STATX
+      if (statx(*fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
       if (fstat(*fd, &stat_buf) == -1)
+#endif
       {
          int tmp_errno = errno;
 
@@ -122,7 +135,11 @@ map_file(char        *file,
       p_stat_buf = &stat_buf;
    }
 
+#ifdef HAVE_STATX
+   if (p_stat_buf->stx_size == 0)
+#else
    if (p_stat_buf->st_size == 0)
+#endif
    {
       (void)close(*fd);
       errno = EINVAL;
@@ -130,8 +147,16 @@ map_file(char        *file,
    }
    if (size != NULL)
    {
+#ifdef HAVE_STATX
+      *size = p_stat_buf->stx_size;
+#else
       *size = p_stat_buf->st_size;
+#endif
    }
 
+#ifdef HAVE_STATX
+   return(mmap(NULL, p_stat_buf->stx_size, prot, MAP_SHARED, *fd, 0));
+#else
    return(mmap(NULL, p_stat_buf->st_size, prot, MAP_SHARED, *fd, 0));
+#endif
 }

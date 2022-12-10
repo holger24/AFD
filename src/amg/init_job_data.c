@@ -74,13 +74,17 @@ extern struct dir_name_buf *dnb;
 void
 init_job_data(void)
 {
-   int         new_job_id_data_file;
-   char        *ptr,
-               job_id_data_file[MAX_PATH_LENGTH],
-               dir_name_file[MAX_PATH_LENGTH],
-               file_mask_file[MAX_PATH_LENGTH];
-   size_t      new_size;
-   struct stat stat_buf;
+   int          new_job_id_data_file;
+   char         *ptr,
+                job_id_data_file[MAX_PATH_LENGTH],
+                dir_name_file[MAX_PATH_LENGTH],
+                file_mask_file[MAX_PATH_LENGTH];
+   size_t       new_size;
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    (void)strcpy(job_id_data_file, p_work_dir);
    (void)strcat(job_id_data_file, FIFO_DIR);
@@ -95,7 +99,11 @@ init_job_data(void)
    p_msg_dir = msg_dir + strlen(msg_dir);
 
    /* Check if job ID data file exists. */
+#ifdef HAVE_STATX
+   if (statx(0, job_id_data_file, AT_STATX_SYNC_AS_STAT, 0, &stat_buf) == -1)
+#else
    if (stat(job_id_data_file, &stat_buf) == -1)
+#endif
    {
       new_job_id_data_file = YES;
    }

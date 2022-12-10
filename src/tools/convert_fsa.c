@@ -1,6 +1,6 @@
 /*
  *  convert_fsa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2000 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -127,7 +127,11 @@ main(int argc, char *argv[])
                                   fsa_id_file[MAX_PATH_LENGTH],
                                   old_fsa_stat[MAX_PATH_LENGTH],
                                   new_fsa_stat[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx                   stat_buf;
+#else
    struct stat                    stat_buf;
+#endif
    struct flock                   wlock = {F_WRLCK, SEEK_SET, 0, 1};
    struct filetransfer_status     *fsa;
    struct old_filetransfer_status *old_fsa;
@@ -182,15 +186,24 @@ main(int argc, char *argv[])
    (void)sprintf(ptr, ".%d", old_fsa_id);
 
    /* Get the size of the old FSA file. */
-   if (stat(old_fsa_stat, &stat_buf) < 0)
+#ifdef HAVE_STATX
+   if (statx(0, old_fsa_stat, AT_STATX_SYNC_AS_STAT,
+             STATX_SIZE, &stat_buf) == -1)
+#else
+   if (stat(old_fsa_stat, &stat_buf) == -1)
+#endif
    {
-      (void)fprintf(stderr, "Failed to stat() %s : %s (%s %d)\n",
+      (void)fprintf(stderr, "Failed to access %s : %s (%s %d)\n",
                     old_fsa_stat, strerror(errno), __FILE__, __LINE__);
       exit(INCORRECT);
    }
    else
    {
+#ifdef HAVE_STATX
+      if (stat_buf.stx_size > 0)
+#else
       if (stat_buf.st_size > 0)
+#endif
       {
          if ((old_fsa_fd = open(old_fsa_stat, O_RDWR)) < 0)
          {
@@ -200,10 +213,20 @@ main(int argc, char *argv[])
          }
 
 #ifdef HAVE_MMAP
-         if ((ptr = mmap(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+         if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                         stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                         stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                          MAP_SHARED, old_fsa_fd, 0)) == (caddr_t) -1)
 #else
-         if ((ptr = mmap_emu(NULL, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+         if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                             stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                             stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                              MAP_SHARED, old_fsa_stat, 0)) == (caddr_t) -1)
 #endif
          {
@@ -211,7 +234,11 @@ main(int argc, char *argv[])
                           old_fsa_stat, strerror(errno), __FILE__, __LINE__);
             exit(INCORRECT);
          }
+#ifdef HAVE_STATX
+         old_fsa_size = stat_buf.stx_size;
+#else
          old_fsa_size = stat_buf.st_size;
+#endif
       }
       else
       {

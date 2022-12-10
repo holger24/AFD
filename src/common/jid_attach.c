@@ -1,6 +1,6 @@
 /*
  *  jid_attach.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2019, 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2019 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -72,9 +72,13 @@ extern struct job_id_data *jid;
 int
 jid_attach(int writeable, char *who)
 {
-   char        *ptr,
-               jid_file[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+   char         *ptr,
+                jid_file[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+   struct statx stat_buf;
+#else
+   struct stat  stat_buf;
+#endif
 
    (void)strcpy(jid_file, p_work_dir);
    (void)strcat(jid_file, FIFO_DIR);
@@ -96,21 +100,40 @@ jid_attach(int writeable, char *who)
       }
       return(INCORRECT);
    }
+#ifdef HAVE_STATX
+   if (statx(jid_fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+             STATX_SIZE, &stat_buf) == -1)
+#else
    if (fstat(jid_fd, &stat_buf) == -1)
+#endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                 _("Failed to statx() `%s' : %s"),
+#else
                  _("Failed to fstat() `%s' : %s"),
+#endif
                  jid_file, strerror(errno));
       (void)close(jid_fd);
       jid_fd = -1;
       return(INCORRECT);
    }
 #ifdef HAVE_MMAP
-   if ((ptr = mmap(NULL, stat_buf.st_size,
+   if ((ptr = mmap(NULL,
+# ifdef HAVE_STATX
+                   stat_buf.stx_size,
+# else
+                   stat_buf.st_size,
+# endif
                    (writeable == YES) ? (PROT_READ | PROT_WRITE) : PROT_READ,
                    MAP_SHARED, jid_fd, 0)) == (caddr_t) -1)
 #else
-   if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+   if ((ptr = mmap_emu(NULL,
+# ifdef HAVE_STATX
+                       stat_buf.stx_size,
+# else
+                       stat_buf.st_size,
+# endif
                        (writeable == YES) ? (PROT_READ | PROT_WRITE) : PROT_READ,
                        MAP_SHARED, afd_mon_status_file, 0)) == (caddr_t) -1)
 #endif
@@ -129,7 +152,11 @@ jid_attach(int writeable, char *who)
       (void)close(jid_fd);
       jid_fd = -1;
 #ifdef HAVE_MMAP
+# ifdef HAVE_STATX
+      if (munmap(ptr, stat_buf.stx_size) == -1)
+# else
       if (munmap(ptr, stat_buf.st_size) == -1)
+# endif
 #else
       if (munmap_emu(ptr) == -1)
 #endif
@@ -143,7 +170,11 @@ jid_attach(int writeable, char *who)
    no_of_job_ids = *(int *)ptr;
    ptr += AFD_WORD_OFFSET;
    jid = (struct job_id_data *)ptr;
+#ifdef HAVE_STATX
+   jid_size = stat_buf.stx_size;
+#else
    jid_size = stat_buf.st_size;
+#endif
 
    return(SUCCESS);
 }

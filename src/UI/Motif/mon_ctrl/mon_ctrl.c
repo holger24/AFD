@@ -1,6 +1,6 @@
 /*
  *  mon_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -590,7 +590,11 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
                  **invisible_members = NULL,
                  mon_log_fifo[MAX_PATH_LENGTH],
                  *perm_buffer;
+#ifdef HAVE_STATX
+   struct statx  stat_buf;
+#else
    struct stat   stat_buf;
+#endif
    struct passwd *pwd;
 
    /* See if user wants some help. */
@@ -736,7 +740,12 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
    (void)strcat(mon_active_file, MON_ACTIVE_FILE);
 
    /* Create and open mon_log fifo. */
-   if ((stat(mon_log_fifo, &stat_buf) < 0) || (!S_ISFIFO(stat_buf.st_mode)))
+#ifdef HAVE_STATX
+   if ((statx(0, mon_log_fifo, AT_STATX_SYNC_AS_STAT,
+              STATX_MODE, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.stx_mode)))
+#else
+   if ((stat(mon_log_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+#endif
    {
       if (make_fifo(mon_log_fifo) < 0)
       {
@@ -816,9 +825,14 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
    }
    else
    {
-      if (fstat(fd, &stat_buf) < 0)
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE | STATX_MTIME, &stat_buf) == -1)
+#else
+      if (fstat(fd, &stat_buf) == -1)
+#endif
       {
-         (void)fprintf(stderr, "WARNING : fstat() error : %s (%s %d)\n",
+         (void)fprintf(stderr, "WARNING : Failed to access %s (%s %d)\n",
                        strerror(errno), __FILE__, __LINE__);
          (void)close(fd);
          pid_list = NULL;
@@ -826,10 +840,20 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
       else
       {
 #ifdef HAVE_MMAP
-         if ((pid_list = mmap(0, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# ifdef HAVE_STATX
+         afd_mon_active_size = stat_buf.stx_size;
+# else
+         afd_mon_active_size = stat_buf.st_size;
+# endif
+         if ((pid_list = mmap(0, afd_mon_active_size, (PROT_READ | PROT_WRITE),
                               MAP_SHARED, fd, 0)) == (caddr_t) -1)
 #else
-         if ((pid_list = mmap_emu(0, stat_buf.st_size, (PROT_READ | PROT_WRITE),
+         if ((pid_list = mmap_emu(0,
+# ifdef HAVE_STATX
+                                  stat_buf.stx_size, (PROT_READ | PROT_WRITE),
+# else
+                                  stat_buf.st_size, (PROT_READ | PROT_WRITE),
+# endif
                                   MAP_SHARED,
                                   mon_active_file, 0)) == (caddr_t) -1)
 #endif
@@ -838,10 +862,11 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
                           strerror(errno), __FILE__, __LINE__);
             pid_list = NULL;
          }
-#ifdef HAVE_MMAP
-         afd_mon_active_size = stat_buf.st_size;
-#endif
+#ifdef HAVE_STATX
+         afd_mon_active_time = stat_buf.stx_mtime.tv_sec;
+#else
          afd_mon_active_time = stat_buf.st_mtime;
+#endif
 
          if (close(fd) == -1)
          {
