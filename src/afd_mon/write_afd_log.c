@@ -1,6 +1,6 @@
 /*
  *  write_afd_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2008 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,6 +39,10 @@ DESCR__S_M3
  **
  ** HISTORY
  **   10.12.2006 H.Kiehl Created
+ **   22.01.2023 H.Kiehl Use writen() instead of write() so logs
+ **                      can be on a network filesystem.
+ **                      Add print_log_type() to add more information
+ **                      in error message.
  **
  */
 DESCR__E_M3
@@ -65,6 +69,7 @@ extern unsigned int           log_flags[];
 extern struct mon_status_area *msa;
 
 /* Local function prototypes. */
+static char                   *print_log_type(int);
 static void                   add_log_number(char *, int),
                               get_log_name(int, char *);
 
@@ -112,11 +117,13 @@ write_afd_log(int          afd_no,
       /* is used, lets just drop the package.                        */
       if (options == 0)
       {
-         if (write(log_fd[log_type], buffer, packet_length) != packet_length)
+         if (writen(log_fd[log_type], buffer, packet_length,
+                    packet_length) != packet_length)
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "Failed to write() log (%d) package : %s",
-                       log_type, strerror(errno));
+                       "Failed to write() %u bytes to %s log : %s",
+                       packet_length, print_log_type(log_type),
+                       strerror(errno));
          }
       }
       else
@@ -130,9 +137,41 @@ write_afd_log(int          afd_no,
 }
 
 
+/*+++++++++++++++++++++++++ print_log_type() ++++++++++++++++++++++++++++*/
+static char *
+print_log_type(int log_type)
+{
+   switch (log_type)
+   {
+#ifdef _OUTPUT_LOG
+      case OUT_LOG_POS : return("output");
+#endif
+#ifdef _INPUT_LOG
+      case INP_LOG_POS : return("input");
+#endif
+      case TRA_LOG_POS : return("transfer");
+      case REC_LOG_POS : return("receive");
+#ifdef _DISTRIBUTION_LOG
+      case DIS_LOG_POS : return("distribution");
+#endif
+#ifdef _PRODUCTION_LOG
+      case PRO_LOG_POS : return("production");
+#endif
+#ifdef _DELETE_LOG
+      case DEL_LOG_POS : return("delete");
+#endif
+      case SYS_LOG_POS : return("system");
+      case EVE_LOG_POS : return("event");
+      case TDB_LOG_POS : return("transfer debug");
+   }
+
+   return("unknown");
+}
+
+
 /*++++++++++++++++++++++++++ get_log_name() +++++++++++++++++++++++++++++*/
 static void
-get_log_name(int  log_type, char *log_name)
+get_log_name(int log_type, char *log_name)
 {
    int log_name_length;
 
