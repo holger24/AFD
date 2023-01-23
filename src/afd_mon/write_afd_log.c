@@ -41,7 +41,7 @@ DESCR__S_M3
  **   10.12.2006 H.Kiehl Created
  **   22.01.2023 H.Kiehl Use writen() instead of write() so logs
  **                      can be on a network filesystem.
- **                      Add print_log_type() to add more information
+ **                      Add print_log_type() to make add more information
  **                      in error message.
  **
  */
