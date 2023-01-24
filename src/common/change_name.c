@@ -105,6 +105,9 @@ DESCR__S_M3
  **   12.03.2015 H.Kiehl    Catch the case when there are no * and ? in
  **                         the filter.
  **   10.04.2016 H.Kiehl    Added %H to insert hostname without domain.
+ **   24.01.2023 H.Kiehl    Allow up to 20 *.
+ **                         Check if we go beyond the number of * and/or
+ **                         ?.
  **
  */
 DESCR__E_M3
@@ -123,6 +126,8 @@ DESCR__E_M3
 #include <time.h>
 
 /* #define _DEBUG 1 */
+#define MAX_ASTERIX_SIGNS    20
+#define MAX_QUESTIONER_SIGNS 50
 
 /* External global variables. */
 extern char *p_work_dir;
@@ -144,11 +149,12 @@ change_name(char         *orig_file_name,
 {
    char   buffer[MAX_FILENAME_LENGTH],
           string[MAX_INT_LENGTH + 1],
-          *ptr_asterix[10] =
+          *ptr_asterix[MAX_ASTERIX_SIGNS] =
           {
+             NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
              NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
           },
-          *ptr_questioner[50] =
+          *ptr_questioner[MAX_QUESTIONER_SIGNS] =
           {
              NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
              NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -191,14 +197,38 @@ change_name(char         *orig_file_name,
       switch (*ptr_filter)
       {
          case '*' : /* '*' in filter detected -> mark position in array. */
-            ptr_asterix[count_asterix++] = ptr_oldname;
+            if (count_asterix < MAX_ASTERIX_SIGNS)
+            {
+               ptr_asterix[count_asterix++] = ptr_oldname;
+            }
+            else
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "There are more then %d '*' signs in filter %s. Will not change name.",
+                          MAX_ASTERIX_SIGNS, filter);
+               (void)strcpy(new_name, orig_file_name);
+
+               return;
+            }
             ptr_filter++;
             break;
 
          case '?' : /* '?' in filter -> skip one character in both words */
                     /*                  and mark questioner.             */
             ptr_filter++;
-            ptr_questioner[count_questioner++] = ptr_oldname++;
+            if (count_questioner < MAX_QUESTIONER_SIGNS)
+            {
+               ptr_questioner[count_questioner++] = ptr_oldname++;
+            }
+            else
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "There are more then %d '?' signs in filter %s. Will not change name.",
+                          MAX_QUESTIONER_SIGNS, filter, rename_to_rule);
+               (void)strcpy(new_name, orig_file_name);
+
+               return;
+            }
             break;
 
          default  : /* Search the char, found in filter, in oldname. */
@@ -228,8 +258,20 @@ change_name(char         *orig_file_name,
                   {
                      if (*ptr_filter_tmp == '?')
                      {
-                        /* Mark questioner. */
-                        ptr_questioner[count_questioner + tmp_count_questioner++] = ptr_oldname_tmp;
+                        if ((count_questioner + tmp_count_questioner) < MAX_QUESTIONER_SIGNS)
+                        {
+                           /* Mark questioner. */
+                           ptr_questioner[count_questioner + tmp_count_questioner++] = ptr_oldname_tmp;
+                        }
+                        else
+                        {
+                           system_log(WARN_SIGN, __FILE__, __LINE__,
+                                      "There are more then %d '?' signs in filter %s. Will not change name.",
+                                      MAX_QUESTIONER_SIGNS, filter, rename_to_rule);
+                           (void)strcpy(new_name, orig_file_name);
+
+                           return;
+                        }
                      }
                      ptr_filter_tmp++;
                      ptr_oldname_tmp++;
