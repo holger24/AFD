@@ -26,7 +26,7 @@ DESCR__S_M1
  **                afd_status structure
  **
  ** SYNOPSIS
- **   afd_status [-w <working directory>]
+ **   afd_status [-w <working directory>] [--reset_log_to_info]
  **
  ** DESCRIPTION
  **
@@ -39,6 +39,7 @@ DESCR__S_M1
  ** HISTORY
  **   11.10.1998 H.Kiehl Created
  **   29.03.2022 H.Kiehl Added process afdds.
+ **   24.01.2023 H.Kiehl Added parameter --reset_log_to_info.
  **
  */
 
@@ -57,12 +58,16 @@ char              *p_work_dir;
 struct afd_status *p_afd_status;
 const char        *sys_log_name = SYSTEM_LOG_FIFO;
 
+/* Local function prototypes. */
+static void       usage(char *);
+
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$ afd_status() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
 int
 main(int argc, char *argv[])
 {
-   int           i;
+   int           i,
+                 reset_log_to_info;
    char          work_dir[MAX_PATH_LENGTH];
    struct passwd *pwd;
 
@@ -73,6 +78,21 @@ main(int argc, char *argv[])
       exit(INCORRECT);
    }
    p_work_dir = work_dir;
+
+   if ((get_arg(&argc, argv, "-?", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "--help", NULL, 0) == SUCCESS))
+   {
+      usage(argv[0]);
+      exit(SUCCESS);
+   }
+   if (get_arg(&argc, argv, "--reset_log_to_info", NULL, 0) == SUCCESS)
+   {
+      reset_log_to_info = YES;
+   }
+   else
+   {
+      reset_log_to_info = NO;
+   }
 
    /* Attach to the AFD Status Area. */
    if (attach_afd_status(NULL, WAIT_AFD_STATUS_ATTACH) < 0)
@@ -145,6 +165,21 @@ main(int argc, char *argv[])
 #if ALDAD_OFFSET != 0
    (void)fprintf(stdout, "ALDA daemon           : %d\n", p_afd_status->aldad);
 #endif
+   if (reset_log_to_info == YES)
+   {
+      for (i = 0; i < LOG_FIFO_SIZE; i++)
+      {
+         p_afd_status->receive_log_fifo[i] = INFO_ID;
+         p_afd_status->sys_log_fifo[i] = INFO_ID;
+         p_afd_status->trans_log_fifo[i] = INFO_ID;
+      }
+      for (i = 0; i < MAX_LOG_HISTORY; i++)
+      {
+         p_afd_status->receive_log_history[i] = INFO_ID;
+         p_afd_status->sys_log_history[i] = INFO_ID;
+         p_afd_status->trans_log_history[i] = INFO_ID;
+      }
+   }
    (void)fprintf(stdout, "Receivelog indicator  : %u <",
                  p_afd_status->receive_log_ec);
    for (i = 0; i < LOG_FIFO_SIZE; i++)
@@ -320,4 +355,15 @@ main(int argc, char *argv[])
    (void)fprintf(stdout, "AFD start time        : %s", ctime(&p_afd_status->start_time));
 
    exit(SUCCESS);
+}
+
+
+/*+++++++++++++++++++++++++++++++ usage() ++++++++++++++++++++++++++++++*/
+static void
+usage(char *progname)
+{
+   (void)fprintf(stderr,
+                 _("SYNTAX  : %s [-w <working directory>] [--reset_log_to_info]\n"),
+                 progname);
+   return;
 }
