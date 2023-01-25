@@ -97,76 +97,79 @@ static int32_t get_random(void);
 int
 basic_authentication(struct http_message_reply *p_hmr)
 {
-   size_t length;
-   char   *dst_ptr,
-          *src_ptr,
-          base_64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
-          userpasswd[MAX_USER_NAME_LENGTH + MAX_USER_NAME_LENGTH];
+   if ((p_hmr->user[0] != '\0') || (p_hmr->passwd[0] != '\0'))
+   {
+      size_t length;
+      char   *dst_ptr,
+             *src_ptr,
+             base_64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
+             userpasswd[MAX_USER_NAME_LENGTH + MAX_USER_NAME_LENGTH];
 
-   /*
-    * Let us first construct the authorization string from user name
-    * and passwd:  <user>:<passwd>
-    * And then encode this to using base-64 encoding.
-    */
-   length = snprintf(userpasswd, MAX_USER_NAME_LENGTH + MAX_USER_NAME_LENGTH,
-                     "%s:%s", p_hmr->user, p_hmr->passwd);
-   if (length > (MAX_USER_NAME_LENGTH + MAX_USER_NAME_LENGTH))
-   {
-      trans_log(ERROR_SIGN, __FILE__, __LINE__, "basic_authentication", NULL,
+      /*
+       * Let us first construct the authorization string from user name
+       * and passwd:  <user>:<passwd>
+       * And then encode this to using base-64 encoding.
+       */
+      length = snprintf(userpasswd, MAX_USER_NAME_LENGTH + MAX_USER_NAME_LENGTH,
+                        "%s:%s", p_hmr->user, p_hmr->passwd);
+      if (length > (MAX_USER_NAME_LENGTH + MAX_USER_NAME_LENGTH))
+      {
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, "basic_authentication", NULL,
 #if SIZEOF_SIZE_T == 4
-                _("Buffer length to store user+passwd not long enough, needs %d bytes"),
+                   _("Buffer length to store user+passwd not long enough, needs %d bytes"),
 #else
-                _("Buffer length to store user+passwd not long enough, needs %lld bytes"),
+                   _("Buffer length to store user+passwd not long enough, needs %lld bytes"),
 #endif
-               (pri_size_t)length);
-      return(INCORRECT);
+                  (pri_size_t)length);
+         return(INCORRECT);
+      }
+      free(p_hmr->authorization);
+      if ((p_hmr->authorization = malloc(21 + length + (length / 3) + 4 + 2 + 1)) == NULL)
+      {
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, "basic_authentication", NULL,
+                   _("malloc() error : %s"), strerror(errno));
+         return(INCORRECT);
+      }
+      dst_ptr = p_hmr->authorization;
+      *dst_ptr = 'A'; *(dst_ptr + 1) = 'u'; *(dst_ptr + 2) = 't';
+      *(dst_ptr + 3) = 'h'; *(dst_ptr + 4) = 'o'; *(dst_ptr + 5) = 'r';
+      *(dst_ptr + 6) = 'i'; *(dst_ptr + 7) = 'z'; *(dst_ptr + 8) = 'a';
+      *(dst_ptr + 9) = 't'; *(dst_ptr + 10) = 'i'; *(dst_ptr + 11) = 'o';
+      *(dst_ptr + 12) = 'n'; *(dst_ptr + 13) = ':'; *(dst_ptr + 14) = ' ';
+      *(dst_ptr + 15) = 'B'; *(dst_ptr + 16) = 'a'; *(dst_ptr + 17) = 's';
+      *(dst_ptr + 18) = 'i'; *(dst_ptr + 19) = 'c'; *(dst_ptr + 20) = ' ';
+      dst_ptr += 21;
+      src_ptr = userpasswd;
+      while (length > 2)
+      {
+         *dst_ptr = base_64[(int)(*src_ptr) >> 2];
+         *(dst_ptr + 1) = base_64[((((int)(*src_ptr) & 0x3)) << 4) | (((int)(*(src_ptr + 1)) & 0xF0) >> 4)];
+         *(dst_ptr + 2) = base_64[((((int)(*(src_ptr + 1))) & 0xF) << 2) | ((((int)(*(src_ptr + 2))) & 0xC0) >> 6)];
+         *(dst_ptr + 3) = base_64[((int)(*(src_ptr + 2))) & 0x3F];
+         src_ptr += 3;
+         length -= 3;
+         dst_ptr += 4;
+      }
+      if (length == 2)
+      {
+         *dst_ptr = base_64[(int)(*src_ptr) >> 2];
+         *(dst_ptr + 1) = base_64[((((int)(*src_ptr) & 0x3)) << 4) | (((int)(*(src_ptr + 1)) & 0xF0) >> 4)];
+         *(dst_ptr + 2) = base_64[(((int)(*(src_ptr + 1))) & 0xF) << 2];
+         *(dst_ptr + 3) = '=';
+         dst_ptr += 4;
+      }
+      else if (length == 1)
+           {
+              *dst_ptr = base_64[(int)(*src_ptr) >> 2];
+              *(dst_ptr + 1) = base_64[(((int)(*src_ptr) & 0x3)) << 4];
+              *(dst_ptr + 2) = '=';
+              *(dst_ptr + 3) = '=';
+              dst_ptr += 4;
+           }
+      *dst_ptr = '\r';
+      *(dst_ptr + 1) = '\n';
+      *(dst_ptr + 2) = '\0';
    }
-   free(p_hmr->authorization);
-   if ((p_hmr->authorization = malloc(21 + length + (length / 3) + 4 + 2 + 1)) == NULL)
-   {
-      trans_log(ERROR_SIGN, __FILE__, __LINE__, "basic_authentication", NULL,
-                _("malloc() error : %s"), strerror(errno));
-      return(INCORRECT);
-   }
-   dst_ptr = p_hmr->authorization;
-   *dst_ptr = 'A'; *(dst_ptr + 1) = 'u'; *(dst_ptr + 2) = 't';
-   *(dst_ptr + 3) = 'h'; *(dst_ptr + 4) = 'o'; *(dst_ptr + 5) = 'r';
-   *(dst_ptr + 6) = 'i'; *(dst_ptr + 7) = 'z'; *(dst_ptr + 8) = 'a';
-   *(dst_ptr + 9) = 't'; *(dst_ptr + 10) = 'i'; *(dst_ptr + 11) = 'o';
-   *(dst_ptr + 12) = 'n'; *(dst_ptr + 13) = ':'; *(dst_ptr + 14) = ' ';
-   *(dst_ptr + 15) = 'B'; *(dst_ptr + 16) = 'a'; *(dst_ptr + 17) = 's';
-   *(dst_ptr + 18) = 'i'; *(dst_ptr + 19) = 'c'; *(dst_ptr + 20) = ' ';
-   dst_ptr += 21;
-   src_ptr = userpasswd;
-   while (length > 2)
-   {
-      *dst_ptr = base_64[(int)(*src_ptr) >> 2];
-      *(dst_ptr + 1) = base_64[((((int)(*src_ptr) & 0x3)) << 4) | (((int)(*(src_ptr + 1)) & 0xF0) >> 4)];
-      *(dst_ptr + 2) = base_64[((((int)(*(src_ptr + 1))) & 0xF) << 2) | ((((int)(*(src_ptr + 2))) & 0xC0) >> 6)];
-      *(dst_ptr + 3) = base_64[((int)(*(src_ptr + 2))) & 0x3F];
-      src_ptr += 3;
-      length -= 3;
-      dst_ptr += 4;
-   }
-   if (length == 2)
-   {
-      *dst_ptr = base_64[(int)(*src_ptr) >> 2];
-      *(dst_ptr + 1) = base_64[((((int)(*src_ptr) & 0x3)) << 4) | (((int)(*(src_ptr + 1)) & 0xF0) >> 4)];
-      *(dst_ptr + 2) = base_64[(((int)(*(src_ptr + 1))) & 0xF) << 2];
-      *(dst_ptr + 3) = '=';
-      dst_ptr += 4;
-   }
-   else if (length == 1)
-        {
-           *dst_ptr = base_64[(int)(*src_ptr) >> 2];
-           *(dst_ptr + 1) = base_64[(((int)(*src_ptr) & 0x3)) << 4];
-           *(dst_ptr + 2) = '=';
-           *(dst_ptr + 3) = '=';
-           dst_ptr += 4;
-        }
-   *dst_ptr = '\r';
-   *(dst_ptr + 1) = '\n';
-   *(dst_ptr + 2) = '\0';
 
    return(SUCCESS);
 }
