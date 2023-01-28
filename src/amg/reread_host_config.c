@@ -108,7 +108,7 @@ reread_host_config(time_t           *hc_old_time,
    if (statx(0, host_config_file, AT_STATX_SYNC_AS_STAT,
              STATX_MTIME, &stat_buf) == -1)
 #else
-   if (stat(host_config_file, &stat_buf) < 0)
+   if (stat(host_config_file, &stat_buf) == -1)
 #endif
    {
       if (errno == ENOENT)

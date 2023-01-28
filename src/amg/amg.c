@@ -1280,7 +1280,6 @@ main(int argc, char *argv[])
                                 }
 
                                 hc_warn_counter = 0;
-                                hc_result = NO_CHANGE_IN_HOST_CONFIG;
                                 hc_result = reread_host_config(&hc_old_time,
                                                                NULL, NULL, NULL,
                                                                NULL,
@@ -1300,7 +1299,8 @@ main(int argc, char *argv[])
                                      else
                                      {
                                         event_log(0L, EC_GLOB, ET_MAN, EA_REREAD_HOST_CONFIG,
-                                                  "with %d warnings", hc_warn_counter);
+                                                  "with %d warnings",
+                                                  hc_warn_counter);
                                      }
 
                                 /*
