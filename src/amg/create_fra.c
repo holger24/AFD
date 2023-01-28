@@ -1,6 +1,6 @@
 /*
  *  create_fra.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -61,6 +61,10 @@ DESCR__S_M3
  **   28.05.2012 H.Kiehl Added 'create sourde dir' support.
  **   26.01.2019 H.Kiehl Added dir_mtime support.
  **   01.08.2019 H.Kiehl Added pagesize.
+ **   28.01.2023 H.Kiehl Always create FRA one entry larger then needed,
+ **                      so that get_new_positions() can direct writes
+ **                      of no longer existing entries to the end of FRA
+ **                      where it is not visible to user.
  **
  */
 DESCR__E_M3
@@ -324,9 +328,11 @@ create_fra(int no_of_dirs)
    /*
     * Create the new mmap region.
     */
-   /* First calculate the new size. */
+   /* First calculate the new size. The + 1 after no_of_dirs is in case */
+   /* the function get_new_positions() needs to write some data not     */
+   /* visible to the user.                                              */
    fra_size = AFD_WORD_OFFSET +
-              (no_of_dirs * sizeof(struct fileretrieve_status));
+              ((no_of_dirs + 1) * sizeof(struct fileretrieve_status));
 
    if ((old_fra_id + 1) > -1)
    {
