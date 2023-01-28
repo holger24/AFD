@@ -1,6 +1,6 @@
 /*
  *  get_new_positions.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,10 +41,14 @@ DESCR__S_M3
  **   27.10.2022 H.Kiehl If we write to the end of the fsa structure
  **                      because the host has been removed, initialize
  **                      this part of the structure.
+ **   28.01.2023 H.Kiehl Initialize all values of FSA with all the
+ **                      data from connecion structure. Also, initialize
+ **                      FRA values.
  **
  */
 DESCR__E_M3
 
+#include <stdlib.h>    /* strtoul()                                      */
 #include "fddefs.h"
 
 /* External global variables. */
@@ -97,6 +101,7 @@ get_new_positions(void)
 #endif
                        connection[i].hostname, i, (pri_pid_t)connection[i].pid);
             connection[i].fsa_pos = no_of_hosts;
+            connection[i].temp_toggle = OFF;
 
             /*
              * Lets put some sane values into this part of the
@@ -106,8 +111,14 @@ get_new_positions(void)
                          sizeof(struct filetransfer_status));
             (void)memcpy(fsa[connection[i].fsa_pos].host_alias,
                          connection[i].hostname, MAX_HOSTNAME_LENGTH + 1);
+            fsa[connection[i].fsa_pos].host_id = connection[i].host_id;
             fsa[connection[i].fsa_pos].allowed_transfers = MAX_NO_PARALLEL_JOBS;
+            fsa[connection[i].fsa_pos].max_errors = DEFAULT_MAX_ERRORS;
+            fsa[connection[i].fsa_pos].retry_interval = DEFAULT_RETRY_INTERVAL;
+            fsa[connection[i].fsa_pos].block_size = DEFAULT_TRANSFER_BLOCKSIZE;
+            fsa[connection[i].fsa_pos].transfer_timeout = DEFAULT_TRANSFER_TIMEOUT;
             fsa[connection[i].fsa_pos].keep_connected = 0;
+            fsa[connection[i].fsa_pos].active_transfers = 1; /* we just know of this one at this point */
 
             /*
              * Since we now have moved the complete job
@@ -124,23 +135,45 @@ get_new_positions(void)
                fsa[old_pos].job_status[connection[i].job_no].unique_name[0] = '\0';
                fsa[old_pos].job_status[connection[i].job_no].job_id = NO_ID;
 #endif
+               if (connection[i].pid != 1)
+               {
+                  fsa[connection[i].fsa_pos].job_status[connection[i].job_no].proc_id = connection[i].pid;
+               }
+               memcpy(fsa[connection[i].fsa_pos].job_status[connection[i].job_no].unique_name,
+                      connection[i].msg_name, MAX_MSG_NAME_LENGTH + 1);
             }
          }
          if (connection[i].fra_pos != -1)
          {
-            if ((connection[i].fra_pos = get_dir_position(fra,
-                                                          connection[i].dir_alias,
-                                                          no_of_dirs)) < 0)
+            unsigned int dir_id = (unsigned int)strtoul(connection[i].msg_name,
+                                                        (char **)NULL, 16);
+
+            if ((connection[i].fra_pos = get_dir_id_position(fra, dir_id,
+                                                             no_of_dirs)) < 0)
             {
                system_log(DEBUG_SIGN, __FILE__, __LINE__,
 #if SIZEOF_PID_T == 4
-                          "Hmm. Failed to locate dir_alias %s for connection job %d [pid = %d] has been removed. Writing data to end of FRA 8-(",
+                          "Hmm. Failed to locate dir_alias <%s> [%x] for connection job %d [pid = %d] has been removed. Writing data to end of FRA 8-(",
 #else
-                          "Hmm. Failed to locate dir_alias %s for connection job %d [pid = %lld] has been removed. Writing data to end of FRA 8-(",
+                          "Hmm. Failed to locate dir_alias <%s> [%x] for connection job %d [pid = %lld] has been removed. Writing data to end of FRA 8-(",
 #endif
-                          connection[i].dir_alias, i,
+                          connection[i].dir_alias, dir_id, i,
                           (pri_pid_t)connection[i].pid);
                connection[i].fra_pos = no_of_dirs;
+               connection[i].temp_toggle = OFF;
+
+               /*
+                * Lets put some sane values into this part of the
+                * struct. It contains uninitiliazed data!
+                */
+               (void)memset(&fra[connection[i].fra_pos], 0,
+                            sizeof(struct fileretrieve_status));
+               (void)memcpy(fra[connection[i].fra_pos].dir_alias,
+                            connection[i].dir_alias, MAX_DIR_ALIAS_LENGTH + 1);
+               fra[connection[i].fra_pos].dir_id = dir_id;
+               fra[connection[i].fra_pos].protocol = connection[i].protocol;
+               fra[connection[i].fra_pos].max_process = MAX_PROCESS_PER_DIR;
+               fra[connection[i].fra_pos].max_errors = DEFAULT_MAX_ERRORS;
             }
          }
       }
