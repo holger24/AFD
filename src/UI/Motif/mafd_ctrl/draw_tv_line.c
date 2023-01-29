@@ -1,6 +1,6 @@
 /*
  *  draw_tv_line.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -77,10 +77,12 @@ extern int                        bar_thickness_3,
                                   tv_line_length,
                                   tv_no_of_columns,
                                   tv_no_of_rows,
-                                  x_offset_rotating_dash,
                                   x_offset_tv_bars,
                                   x_offset_tv_characters,
-                                  x_offset_tv_file_name;
+                                  x_offset_tv_file_name,
+                                  x_offset_tv_job_number,
+                                  x_offset_tv_priority,
+                                  x_offset_tv_rotating_dash;
 extern unsigned int               glyph_height,
                                   glyph_width,
                                   text_offset;
@@ -95,10 +97,8 @@ extern struct filetransfer_status *fsa;
 void
 draw_tv_label_line(void)
 {
-   int  i,
-        length,
-        x = 0;
-   char text[MAX_FILENAME_LENGTH + 17];
+   int i,
+       x = 0;
 
    for (i = 0; i < tv_no_of_columns; i++)
    {
@@ -141,13 +141,19 @@ draw_tv_label_line(void)
                 x + tv_line_length,
                 line_height - 1);
 
-      /* Draw string "  host   P     file name". */
-      length = snprintf(text, MAX_FILENAME_LENGTH + 17, "  host  J P    %-*s",
-                        filename_display_length, "file name");
+      /* Draw string "host". */
       XDrawString(display, tv_label_window, letter_gc,
                   x + DEFAULT_FRAME_SPACE,
                   text_offset + SPACE_ABOVE_LINE,
-                  text, length);
+                  "host",
+                  4);
+
+      /* Draw string "J P     file name". */
+      XDrawString(display, tv_label_window, letter_gc,
+                  x + x_offset_tv_job_number,
+                  text_offset + SPACE_ABOVE_LINE,
+                  "J P     file name",
+                  17);
 
       /* See if we need to extend heading for "Character" display. */
       if (line_style & SHOW_CHARACTERS)
@@ -301,7 +307,7 @@ draw_rotating_dash(int pos, int x, int y)
    gc_values.foreground = color_pool[BLACK];
    XChangeGC(display, color_letter_gc, GCForeground | GCBackground, &gc_values);
    XDrawImageString(display, detailed_window, color_letter_gc,
-                    x + x_offset_rotating_dash,
+                    x + x_offset_tv_rotating_dash,
                     y + text_offset + SPACE_ABOVE_LINE,
                     string,
                     1);
@@ -370,8 +376,7 @@ draw_tv_job_number(int pos, int x, int y)
    gc_values.background = color_pool[(int)jd[pos].connect_status];
    XChangeGC(display, color_letter_gc, GCForeground | GCBackground, &gc_values);
    XDrawImageString(display, detailed_window, color_letter_gc,
-                    DEFAULT_FRAME_SPACE + x +
-                    (hostname_display_length * glyph_width) + DEFAULT_FRAME_SPACE,
+                    x + x_offset_tv_job_number,
                     y + text_offset + SPACE_ABOVE_LINE,
                     string,
                     1);
@@ -401,8 +406,7 @@ draw_tv_priority(int pos, int x, int y)
    gc_values.foreground = color_pool[BLACK];
    XChangeGC(display, color_letter_gc, GCForeground | GCBackground, &gc_values);
    XDrawImageString(display, detailed_window, color_letter_gc,
-                    x + (3 * DEFAULT_FRAME_SPACE) +
-                    ((MAX_HOSTNAME_LENGTH + 1) * glyph_width),
+                    x + x_offset_tv_priority,
                     y + text_offset + SPACE_ABOVE_LINE,
                     string,
                     1);

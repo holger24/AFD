@@ -1,6 +1,6 @@
 /*
  *  mafd_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -230,10 +230,12 @@ int                        alias_length_set,
                            x_offset_trans_log,
                            x_offset_log_history_left,
                            x_offset_log_history_right,
-                           x_offset_rotating_dash,
-                           x_offset_tv_characters,
                            x_offset_tv_bars,
+                           x_offset_tv_characters,
                            x_offset_tv_file_name,
+                           x_offset_tv_job_number,
+                           x_offset_tv_priority,
+                           x_offset_tv_rotating_dash,
                            y_center_log,
                            y_offset_led;
 XT_PTR_TYPE                current_alias_length = -1,

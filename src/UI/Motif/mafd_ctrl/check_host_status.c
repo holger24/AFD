@@ -1,7 +1,7 @@
 /*
  *  check_host_status.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1996 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -241,7 +241,7 @@ check_host_status(Widget w)
             }
             (void)snprintf(new_connect_data[i].host_display_str,
                            MAX_HOSTNAME_LENGTH + 2, "%-*s",
-                           MAX_HOSTNAME_LENGTH, fsa[i].host_dsp_name);
+                           MAX_HOSTNAME_LENGTH + 1, fsa[i].host_dsp_name);
             new_connect_data[i].host_toggle = fsa[i].host_toggle;
             if (fsa[i].host_toggle_str[0] != '\0')
             {

@@ -1,6 +1,6 @@
 /*
  *  mouse_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -4043,6 +4043,25 @@ change_alias_length_cb(Widget w, XtPointer client_data, XtPointer call_data)
    (void)fprintf(stderr, "%s: You have chosen: %d alias length\n",
                  __FILE__, alias_length_set);
 #endif
+
+   /* Redraw detailed transfer view window. */
+   if (no_of_jobs_selected > 0)
+   {
+      setup_tv_window();
+
+      if (resize_tv_window() == YES)
+      {
+         int i;
+
+         XClearWindow(display, detailed_window);
+         draw_tv_label_line();
+         for (i = 0; i < no_of_jobs_selected; i++)
+         {
+            draw_detailed_line(i);
+         }
+         redraw = YES;
+      }
+   }
 
    if (resize_window() == YES)
    {
