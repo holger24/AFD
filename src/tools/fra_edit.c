@@ -1,6 +1,6 @@
 /*
  *  fra_edit.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -263,6 +263,8 @@ main(int argc, char *argv[])
                                   (fra[position].dir_options & INOTIFY_CREATE) ? 1 : 0);
                     (void)fprintf(stdout, "     INOTIFY_DELETE [%d]...........(h)\n",
                                   (fra[position].dir_options & INOTIFY_DELETE) ? 1 : 0);
+                    (void)fprintf(stdout, "     INOTIFY_ATTRIB [%d]...........(i)\n",
+                                  (fra[position].dir_options & INOTIFY_ATTRIB) ? 1 : 0);
 # else
                     (void)fprintf(stdout, "     INOTIFY_RENAME [%d]...........(e)\n",
                                   (fra[position].dir_flag & INOTIFY_RENAME) ? 1 : 0);
@@ -272,9 +274,11 @@ main(int argc, char *argv[])
                                   (fra[position].dir_flag & INOTIFY_CREATE) ? 1 : 0);
                     (void)fprintf(stdout, "     INOTIFY_DELETE [%d]...........(h)\n",
                                   (fra[position].dir_flag & INOTIFY_DELETE) ? 1 : 0);
+                    (void)fprintf(stdout, "     INOTIFY_ATTRIB [%d]...........(i)\n",
+                                  (fra[position].dir_flag & INOTIFY_ATTRIB) ? 1 : 0);
 # endif
 #endif
-                    (void)fprintf(stdout, "     ALL_DISABLED [%d].............(i)\n",
+                    (void)fprintf(stdout, "     ALL_DISABLED [%d].............(j)\n",
                                   (fra[position].dir_flag & ALL_DISABLED) ? 1 : 0);
                     (void)fprintf(stderr, "     None..........................(Z) ");
 
@@ -326,6 +330,8 @@ main(int argc, char *argv[])
                                   break;
                        case 'h' : fra[position].dir_options ^= INOTIFY_DELETE;
                                   break;
+                       case 'i' : fra[position].dir_options ^= INOTIFY_ATTRIB;
+                                  break;
 # else
                        case 'e' : fra[position].dir_flag ^= INOTIFY_RENAME;
                                   break;
@@ -335,9 +341,11 @@ main(int argc, char *argv[])
                                   break;
                        case 'h' : fra[position].dir_flag ^= INOTIFY_DELETE;
                                   break;
+                       case 'i' : fra[position].dir_flag ^= INOTIFY_ATTRIB;
+                                  break;
 # endif
 #endif
-                       case 'i' : fra[position].dir_flag ^= ALL_DISABLED;
+                       case 'j' : fra[position].dir_flag ^= ALL_DISABLED;
                                   break;
                        case 'Z' : break;
                        default  : (void)printf(_("Wrong choice!\n"));

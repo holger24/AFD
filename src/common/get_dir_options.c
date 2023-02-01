@@ -1,6 +1,6 @@
 /*
  *  get_dir_options.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -280,6 +280,10 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
             {
                flag += INOTIFY_DELETE_FLAG;
             }
+            if (fra[i].dir_options & INOTIFY_ATTRIB)
+            {
+               flag += INOTIFY_ATTRIB_FLAG;
+            }
 # else
             if (fra[i].dir_flag & INOTIFY_RENAME)
             {
@@ -296,6 +300,10 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
             if (fra[i].dir_flag & INOTIFY_DELETE)
             {
                flag += INOTIFY_DELETE_FLAG;
+            }
+            if (fra[i].dir_flag & INOTIFY_ATTRIB)
+            {
+               flag += INOTIFY_ATTRIB_FLAG;
             }
 # endif
             (void)snprintf(d_o->aoptions[d_o->no_of_dir_options],

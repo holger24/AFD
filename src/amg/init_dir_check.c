@@ -1,6 +1,6 @@
 /*
  *  init_dir_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -953,12 +953,14 @@ init_dir_check(int    argc,
          if (((fra[de[i].fra_pos].dir_options & INOTIFY_RENAME) ||
               (fra[de[i].fra_pos].dir_options & INOTIFY_CLOSE) ||
               (fra[de[i].fra_pos].dir_options & INOTIFY_CREATE) ||
-              (fra[de[i].fra_pos].dir_options & INOTIFY_DELETE)) &&
+              (fra[de[i].fra_pos].dir_options & INOTIFY_DELETE) ||
+              (fra[de[i].fra_pos].dir_options & INOTIFY_ATTRIB)) &&
 #else
          if (((fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME) ||
               (fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE) ||
               (fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE) ||
-              (fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE)) &&
+              (fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE) ||
+              (fra[de[i].fra_pos].dir_flag & INOTIFY_ATTRIB)) &&
 #endif
              ((fra[de[i].fra_pos].no_of_time_entries == 0) ||
               (fra[de[i].fra_pos].host_alias[0] != '\0')) &&
@@ -996,12 +998,14 @@ init_dir_check(int    argc,
             if (((fra[de[i].fra_pos].dir_options & INOTIFY_RENAME) ||
                  (fra[de[i].fra_pos].dir_options & INOTIFY_CLOSE) ||
                  (fra[de[i].fra_pos].dir_options & INOTIFY_CREATE) ||
-                 (fra[de[i].fra_pos].dir_options & INOTIFY_DELETE)) &&
+                 (fra[de[i].fra_pos].dir_options & INOTIFY_DELETE) ||
+                 (fra[de[i].fra_pos].dir_options & INOTIFY_ATTRIB)) &&
 #else
             if (((fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME) ||
                  (fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE) ||
                  (fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE) ||
-                 (fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE)) &&
+                 (fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE) ||
+                 (fra[de[i].fra_pos].dir_flag & INOTIFY_ATTRIB)) &&
 #endif
                 ((fra[de[i].fra_pos].no_of_time_entries == 0) ||
                  (fra[de[i].fra_pos].host_alias[0] != '\0')) &&
@@ -1040,6 +1044,14 @@ init_dir_check(int    argc,
 #endif
                {
                   mask |= IN_DELETE;
+               }
+#ifdef NEW_FRA
+               if (fra[de[i].fra_pos].dir_options & INOTIFY_ATTRIB)
+#else
+               if (fra[de[i].fra_pos].dir_flag & INOTIFY_ATTRIB)
+#endif
+               {
+                  mask |= IN_ATTRIB;
                }
 
                if ((iwl[j].wd = inotify_add_watch(inotify_fd, de[i].dir, mask)) == -1)

@@ -1,7 +1,7 @@
 /*
  *  eval_dir_options.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -352,7 +352,7 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
               {
                  number[length] = '\0';
                  dd[dir_pos].inotify_flag = (unsigned int)atoi(number);
-                 if (dd[dir_pos].inotify_flag > (INOTIFY_RENAME_FLAG | INOTIFY_CLOSE_FLAG | INOTIFY_CREATE_FLAG | INOTIFY_DELETE_FLAG))
+                 if (dd[dir_pos].inotify_flag > (INOTIFY_RENAME_FLAG | INOTIFY_CLOSE_FLAG | INOTIFY_CREATE_FLAG | INOTIFY_DELETE_FLAG | INOTIFY_ATTRIB))
                  {
                     update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
                                   "Incorrect parameter %u for directory option `%s' for directory `%s'. Resetting to %u.",

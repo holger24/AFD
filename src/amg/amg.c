@@ -1,6 +1,6 @@
 /*
  *  amg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1920,7 +1920,7 @@ get_afd_config_value(int          *rescan_time,
                          value, MAX_INT_LENGTH) != NULL)
       {
          *default_inotify_flag = (unsigned int)atoi(value);
-         if (*default_inotify_flag > (INOTIFY_RENAME_FLAG | INOTIFY_CLOSE_FLAG | INOTIFY_CREATE_FLAG | INOTIFY_DELETE_FLAG))
+         if (*default_inotify_flag > (INOTIFY_RENAME_FLAG | INOTIFY_CLOSE_FLAG | INOTIFY_CREATE_FLAG | INOTIFY_DELETE_FLAG | INOTIFY_ATTRIB_FLAG))
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
                        _("Incorrect value (%u) set in AFD_CONFIG for %s. Setting to default %u."),

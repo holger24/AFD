@@ -1,6 +1,6 @@
 /*
  *  afddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -2124,8 +2124,8 @@ typedef unsigned long       u_long_64;
 # define INOTIFY_CLOSE             32768
 #endif
 #define ALL_DISABLED               65536
-/* #define ____no_used____            131072 */
 #ifdef WITH_INOTIFY
+# define INOTIFY_ATTRIB            131072
 # define INOTIFY_NEEDS_SCAN        262144
 # define INOTIFY_CREATE            524288
 #endif
@@ -2151,6 +2151,7 @@ typedef unsigned long       u_long_64;
 # define INOTIFY_CLOSE_FLAG        2
 # define INOTIFY_CREATE_FLAG       4
 # define INOTIFY_DELETE_FLAG       8
+# define INOTIFY_ATTRIB_FLAG      16
 #endif
 
 
@@ -3089,7 +3090,9 @@ struct fileretrieve_status
                                             /*|   22| DO_NOT_PARALLELIZE|*/
                                             /*|   21| Not used.         |*/
                                             /*|   20| INOTIFY_CREATE    |*/
-                                            /*|17-19| Not used.         |*/
+                                            /*|   19| Not used.         |*/
+                                            /*|   18| INOTIFY_ATTRIB    |*/
+                                            /*|   17| Not used.         |*/
                                             /*|   16| INOTIFY_CLOSE     |*/
                                             /*|   15| INOTIFY_RENAME    |*/
                                             /*| 8-14| Not used.         |*/

@@ -597,6 +597,14 @@ create_fra(int no_of_dirs)
             fra[i].dir_flag |= INOTIFY_DELETE;
 # endif
          }
+         if (dd[i].inotify_flag & INOTIFY_ATTRIB_FLAG)
+         {
+# ifdef NEW_FRA
+            fra[i].dir_options |= INOTIFY_ATTRIB;
+# else
+            fra[i].dir_flag |= INOTIFY_ATTRIB;
+# endif
+         }
 #endif
          if (fra[i].no_of_time_entries > 0)
          {
@@ -929,6 +937,16 @@ create_fra(int no_of_dirs)
                  {
                     fra[i].dir_options |= INOTIFY_DELETE;
                  }
+            if ((fra[i].dir_options & INOTIFY_ATTRIB) &&
+                ((dd[i].inotify_flag & INOTIFY_ATTRIB_FLAG) == 0))
+            {
+               fra[i].dir_options &= ~INOTIFY_ATTRIB;
+            }
+            else if (((fra[i].dir_options & INOTIFY_ATTRIB) == 0) &&
+                     (dd[i].inotify_flag & INOTIFY_ATTRIB_FLAG))
+                 {
+                    fra[i].dir_options |= INOTIFY_ATTRIB;
+                 }
 # else
             if ((fra[i].dir_flag & INOTIFY_RENAME) &&
                 ((dd[i].inotify_flag & INOTIFY_RENAME_FLAG) == 0))
@@ -969,6 +987,16 @@ create_fra(int no_of_dirs)
                      (dd[i].inotify_flag & INOTIFY_DELETE_FLAG))
                  {
                     fra[i].dir_flag |= INOTIFY_DELETE;
+                 }
+            if ((fra[i].dir_flag & INOTIFY_ATTRIB) &&
+                ((dd[i].inotify_flag & INOTIFY_ATTRIB_FLAG) == 0))
+            {
+               fra[i].dir_flag &= ~INOTIFY_ATTRIB;
+            }
+            else if (((fra[i].dir_flag & INOTIFY_ATTRIB) == 0) &&
+                     (dd[i].inotify_flag & INOTIFY_ATTRIB_FLAG))
+                 {
+                    fra[i].dir_flag |= INOTIFY_ATTRIB;
                  }
 # endif
 #endif
@@ -1113,6 +1141,14 @@ create_fra(int no_of_dirs)
                fra[i].dir_options |= INOTIFY_DELETE;
 # else
                fra[i].dir_flag |= INOTIFY_DELETE;
+# endif
+            }
+            if (dd[i].inotify_flag & INOTIFY_ATTRIB_FLAG)
+            {
+# ifdef NEW_FRA
+               fra[i].dir_options |= INOTIFY_ATTRIB;
+# else
+               fra[i].dir_flag |= INOTIFY_ATTRIB;
 # endif
             }
 #endif

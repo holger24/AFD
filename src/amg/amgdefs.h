@@ -1,6 +1,6 @@
 /*
  *  amgdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -572,6 +572,7 @@ struct dir_data
                                             /*+----+--------------------+*/
                                             /*|Bit |      Meaning       |*/
                                             /*+----+--------------------+*/
+                                            /*|  5 | INOTIFY_ATTRIB_FLAG|*/
                                             /*|  4 | INOTIFY_DELETE_FLAG|*/
                                             /*|  3 | INOTIFY_CREATE_FLAG|*/
                                             /*|  2 | INOTIFY_CLOSE_FLAG |*/

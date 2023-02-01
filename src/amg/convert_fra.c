@@ -1,6 +1,6 @@
 /*
  *  convert_fra.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -7978,6 +7978,14 @@ migrate_to_dir_options(unsigned int old_dir_flag)
    {
       dir_options |= INOTIFY_CREATE;
    }
+   if (old_dir_flag & INOTIFY_DELETE)
+   {
+      dir_options |= INOTIFY_DELETE;
+   }
+   if (old_dir_flag & INOTIFY_ATTRIB)
+   {
+      dir_options |= INOTIFY_ATTRIB;
+   }
 #endif
    if (old_dir_flag & DO_NOT_PARALLELIZE)
    {
@@ -7987,12 +7995,6 @@ migrate_to_dir_options(unsigned int old_dir_flag)
    {
       dir_options |= DO_NOT_MOVE;
    }
-#ifdef WITH_INOTIFY
-   if (old_dir_flag & INOTIFY_DELETE)
-   {
-      dir_options |= INOTIFY_DELETE;
-   }
-#endif
    if (old_dir_flag & ONE_PROCESS_JUST_SCANNING)
    {
       dir_options |= ONE_PROCESS_JUST_SCANNING;

@@ -1,6 +1,6 @@
 /*
  *  dir_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1181,12 +1181,14 @@ main(int argc, char *argv[])
                  (((fra[de[i].fra_pos].dir_options & INOTIFY_RENAME) == 0) &&
                   ((fra[de[i].fra_pos].dir_options & INOTIFY_CLOSE) == 0) &&
                   ((fra[de[i].fra_pos].dir_options & INOTIFY_CREATE) == 0) &&
-                  ((fra[de[i].fra_pos].dir_options & INOTIFY_DELETE) == 0))) &&
+                  ((fra[de[i].fra_pos].dir_options & INOTIFY_DELETE) == 0) &&
+                  ((fra[de[i].fra_pos].dir_options & INOTIFY_ATTRIB) == 0))) &&
 #  else
                  (((fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME) == 0) &&
                   ((fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE) == 0) &&
                   ((fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE) == 0) &&
-                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE) == 0))) &&
+                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE) == 0) &&
+                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_ATTRIB) == 0))) &&
 #  endif
 # endif
                 ((fra[de[i].fra_pos].fsa_pos != -1) ||
@@ -1277,12 +1279,14 @@ main(int argc, char *argv[])
                  (((fra[de[i].fra_pos].dir_options & INOTIFY_RENAME) == 0) &&
                   ((fra[de[i].fra_pos].dir_options & INOTIFY_CLOSE) == 0) &&
                   ((fra[de[i].fra_pos].dir_options & INOTIFY_CREATE) == 0) &&
-                  ((fra[de[i].fra_pos].dir_options & INOTIFY_DELETE) == 0))) &&
+                  ((fra[de[i].fra_pos].dir_options & INOTIFY_DELETE) == 0) &&
+                  ((fra[de[i].fra_pos].dir_options & INOTIFY_ATTRIB) == 0))) &&
 #  else
                  (((fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME) == 0) &&
                   ((fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE) == 0) &&
                   ((fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE) == 0) &&
-                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE) == 0))) &&
+                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE) == 0) &&
+                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_ATTRIB) == 0))) &&
 #  endif
 # endif
                 ((fra[de[i].fra_pos].fsa_pos != -1) ||
