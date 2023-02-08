@@ -1,6 +1,6 @@
 /*
  *  eval_host_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -100,6 +100,9 @@ DESCR__S_M3
  **   29.11.2021 H.Kiehl Added protocol option bucketname in path.
  **   26.01.2022 H.Kiehl Added protocol options 2.
  **   02.08.2022 H.Kiehl Added protocol option TLS legacy renegotiation.
+ **   08.02.2023 H.Kiehl For group entry always set host_status to
+ **                      HOST_NOT_IN_DIR_CONFIG otherwise reread_host_config()
+ **                      falsely thinks that there are changes.
  **
  */
 DESCR__E_M3
@@ -274,7 +277,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].file_size_offset    = 0;
          (*hl)[host_counter].transfer_timeout    = 0;
          (*hl)[host_counter].number_of_no_bursts = 0;
-         (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
+         (*hl)[host_counter].host_status         = HOST_NOT_IN_DIR_CONFIG;
          (*hl)[host_counter].protocol_options    = DEFAULT_PROTOCOL_OPTIONS;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
