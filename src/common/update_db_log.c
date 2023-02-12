@@ -1,6 +1,6 @@
 /*
  *  update_db_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2017 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2017 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,6 +47,8 @@ DESCR__S_M3
  **
  ** HISTORY
  **   10.04.2017 H.Kiehl Created
+ **   08.02.2023 H.Kiehl Only update warn_counter if sign is WARN_SIGN,
+ **                      ERROR_SIGN or FATAL_SIGN.
  **
  */
 DESCR__E_M3
@@ -177,7 +179,8 @@ update_db_log(char         *sign,
    {
       (void)fprintf(fp, "%s\n", &buf[12]);
    }
-   if (warn_counter != NULL)
+   if ((warn_counter != NULL) &&
+       ((sign[1] == 'W') || (sign[1] == 'E') || (sign[1] == 'F')))
    {
       (*warn_counter)++;
    }
