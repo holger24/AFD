@@ -1,6 +1,6 @@
 /*
  *  gsf_check_fsa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,6 +47,8 @@ DESCR__S_M3
  **   18.03.2003 H.Kiehl Created
  **   09.04.2021 H.Kiehl Introduce global variable fsa_pos_save to
  **                      indicate if the fsa pointer is save to use.
+ **   12.02.2023 H.Kiehl Add maintainer_log() debug information when
+ **                      FSA has changed.
  **
  */
 DESCR__E_M3
@@ -75,6 +77,16 @@ gsf_check_fsa(struct job *p_db)
    {
       if ((p_no_of_hosts != NULL) && (*p_no_of_hosts == STALE))
       {
+#ifdef _MAINTAINER_LOG
+         maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+# if SIZEOF_PID_T == 4
+                        "FSA before change: %s old_fsa_pos=%d job_no=%d pid=%d",
+# else
+                        "FSA before change: %s old_fsa_pos=%d job_no=%d pid=%lld",
+# endif
+                        p_db->host_alias, p_db->fsa_pos, (int)p_db->job_no,
+                        (pri_pid_t)p_db->my_pid);
+#endif
          fsa_pos_save = NO;
          fsa_detach_pos(p_db->fsa_pos);
          if (fsa_attach("sf/gf_xxx") == SUCCESS)
@@ -96,6 +108,16 @@ gsf_check_fsa(struct job *p_db)
                   p_db->lock_offset = AFD_WORD_OFFSET +
                                       (p_db->fsa_pos * sizeof(struct filetransfer_status));
                   ret = YES;
+#ifdef _MAINTAINER_LOG
+                  maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+# if SIZEOF_PID_T == 4
+                                 "FSA after change: %s old_fsa_pos=%d job_no=%d pid=%d",
+# else
+                                 "FSA after change: %s old_fsa_pos=%d job_no=%d pid=%lld",
+# endif
+                                 p_db->host_alias, p_db->fsa_pos,
+                                 (int)p_db->job_no, (pri_pid_t)p_db->my_pid);
+#endif
                }
             }
             else
