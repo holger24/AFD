@@ -103,6 +103,8 @@ DESCR__S_M3
  **   08.02.2023 H.Kiehl For group entry always set host_status to
  **                      HOST_NOT_IN_DIR_CONFIG otherwise reread_host_config()
  **                      falsely thinks that there are changes.
+ **   18.02.2023 H.Kiehl Added 'OPTS UTF8 ON' option for windows FTP
+ **                      server.
  **
  */
 DESCR__E_M3
@@ -2336,13 +2338,13 @@ eval_host_config(int              *hosts_found,
            {
               (*hl)[host_counter].protocol_options2 = (unsigned int)atoi(number);
            }
-      if ((*hl)[host_counter].protocol_options2 > 0)
+      if ((*hl)[host_counter].protocol_options2 > FTP_SEND_UTF8_ON)
       {
          error_flag = YES;
          update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
                        _("Unknown protocol option 2 <%d> for host %s, largest value is %d and smallest %d. Setting to %d."),
                        (*hl)[host_counter].protocol_options2,
-                       (*hl)[host_counter].host_alias, 0,
+                       (*hl)[host_counter].host_alias, FTP_SEND_UTF8_ON,
                        DEFAULT_PROTOCOL_OPTIONS2);
          (*hl)[host_counter].protocol_options2 = DEFAULT_PROTOCOL_OPTIONS2;
       }

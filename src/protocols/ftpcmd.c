@@ -1,6 +1,6 @@
 /*
  *  ftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -58,6 +58,7 @@ DESCR__S_M3
  **   int ftp_read(char *block, int blocksize)
  **   int ftp_sendfile(int source_fd, off_t *offset, int size)
  **   int ftp_set_date(char *filename, time_t file_mtime)
+ **   int ftp_set_utf8_on(void)
  **   int ftp_size(char *filename, off_t *remote_size)
  **   int ftp_type(char type)
  **   int ftp_user(char *user)
@@ -216,6 +217,7 @@ DESCR__S_M3
  **   06.03.2020 H.Kiehl Implement implicit FTPS.
  **   19.03.2022 H.Kiehl Add strict TLS support.
  **   17.07.2022 H.Kiehl Add option to enable TLS legacy renegotiation.
+ **   15.02.2023 H.Kiehl Added ftp_set_utf8_on().
  */
 DESCR__E_M3
 
@@ -1438,7 +1440,8 @@ ftp_feat(unsigned int *ftp_options)
    {
       if (simulation_mode == YES)
       {
-         *ftp_options |= (FTP_OPTION_FEAT | FTP_OPTION_MDTM | FTP_OPTION_SIZE);
+         *ftp_options |= (FTP_OPTION_FEAT | FTP_OPTION_MDTM |
+                          FTP_OPTION_SIZE | FTP_OPTION_UTF8);
          fcd.ftp_options = *ftp_options;
 
          return(SUCCESS);
@@ -1481,6 +1484,15 @@ ftp_feat(unsigned int *ftp_options)
                      ((msg_str[4] == 'E') || (msg_str[4] == 'e')))
                  {
                     *ftp_options |= FTP_OPTION_SIZE;
+                 }
+                 /* UTF8 - Filename encoding */
+            else if ((msg_str[0] == ' ') &&
+                     ((msg_str[1] == 'U') || (msg_str[1] == 'u')) &&
+                     ((msg_str[2] == 'T') || (msg_str[2] == 't')) &&
+                     ((msg_str[3] == 'F') || (msg_str[3] == 'f')) &&
+                     (msg_str[4] == '8'))
+                 {
+                    *ftp_options |= FTP_OPTION_UTF8;
                  }
                  /* MLST - List Single Object + List Directory */
             else if ((msg_str[0] == ' ') &&
@@ -1574,6 +1586,27 @@ ftp_idle(int timeout)
    int reply;
 
    if ((reply = command(control_fd, "SITE IDLE %d", timeout)) == SUCCESS)
+   {
+      if ((reply = get_reply(ERROR_SIGN, 200, __LINE__)) != INCORRECT)
+      {
+         if (reply == 200)
+         {
+            reply = SUCCESS;
+         }
+      }
+   }
+
+   return(reply);
+}
+
+
+/*########################## ftp_set_utf8_on() ##########################*/
+int
+ftp_set_utf8_on(void)
+{
+   int reply;
+
+   if ((reply = command(control_fd, "OPTS UTF8 ON")) == SUCCESS)
    {
       if ((reply = get_reply(ERROR_SIGN, 200, __LINE__)) != INCORRECT)
       {

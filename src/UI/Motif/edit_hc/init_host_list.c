@@ -1,6 +1,6 @@
 /*
  *  init_host_list.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008, 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -85,6 +85,7 @@ init_host_list(int seleted_host_no)
       /* Initialize array holding all changed entries. */
       ce[i].value_changed = 0;
       ce[i].value_changed2 = 0;
+      ce[i].value_changed3 = 0;
       ce[i].real_hostname[0][0] = -1;
       ce[i].real_hostname[1][0] = -1;
       ce[i].proxy_name[0] = -1;

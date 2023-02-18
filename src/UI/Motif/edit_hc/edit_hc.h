@@ -1,6 +1,6 @@
 /*
  *  edit_hc.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -160,12 +160,14 @@
 #define FTPS_IMPLICIT_CHANGED            536870912
 #define NO_EXPECT_CHANGED                1073741824
 #define TLS_LEGACY_RENEGOTIATION_CHANGED 2147483648U
+#define SEND_UTF8_ON_CHANGED             1
 
 /* Structure holding all changed entries of one host. */
 struct changed_entry
        {
           unsigned int   value_changed;
           unsigned int   value_changed2;
+          unsigned int   value_changed3;
           char           real_hostname[2][MAX_REAL_HOSTNAME_LENGTH];
           char           host_toggle[2][1];
           char           proxy_name[MAX_PROXY_NAME_LENGTH + 1];
@@ -193,7 +195,6 @@ struct changed_entry
           signed char    host_switch_toggle;
           signed char    auto_toggle;
           signed char    ftp_mode;
-          signed char    set_ftp_idle_time;
        };
 
 /* Structures holding widget id's for option menu. */
@@ -245,6 +246,7 @@ extern void accept_drop(Widget, XtPointer, XmDropProcCallback),
             tb_option_changed(Widget, XtPointer, XtPointer),
             toggle_button(Widget, XtPointer, XtPointer),
             toggle_button2(Widget, XtPointer, XtPointer),
+            toggle_button3(Widget, XtPointer, XtPointer),
             value_change(Widget, XtPointer, XtPointer);
 
 #endif /* __edit_hc_h */

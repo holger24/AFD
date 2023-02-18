@@ -1,7 +1,7 @@
 /*
  *  write_host_config.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -65,6 +65,7 @@ DESCR__S_M3
  **   04.03.2017 H.Kiehl Added group support.
  **   19.07.2019 H.Kiehl Simulation mode is now stored in HOST_CONFIG.
  **   26.01.2022 H.Kiehl Added protocol options 2.
+ **   18.02.2023 H.Kiehl Added 'OPTS UTF8 ON' option for FTP server.
  **
  */
 DESCR__E_M3
@@ -292,7 +293,7 @@ DESCR__E_M3
 #                          30(536870912)- Do not use HTTP expect.\n\
 #                          31(1073741824)- Bucketname is in path.\n\
 #                          32(2147483648)- TLS legacy renegotiation.\n\
-#                          DEFAULT: 0\n\
+#                          DEFAULT: 1\n\
 # Transfer rate limit    - The maximum number of kilobytes that may be\n\
 #                          transfered per second.\n\
 #                          DEFAULT: 0 (Disabled)\n\
@@ -344,7 +345,7 @@ DESCR__E_M3
 #                          successful the script/program is called again with\n\
 #                          the parameter 'stop'.\n\
 #                          DEFAULT: 0\n\
-# Protocol options 2     - For future use.\n\
+# Protocol options 2     - 1 (1)       - FTP send OPTS UTF8 ON\n\
 #                          DEFAULT: 0\n\
 #\n\
 # Example entry:\n\

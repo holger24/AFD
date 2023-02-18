@@ -1005,6 +1005,7 @@ typedef unsigned long       u_long_64;
 #define TLS_LEGACY_RENEGOTIATION   2147483648U       /* 32 */
 
 /* Definitions for protocol_options2 in FSA. */
+#define FTP_SEND_UTF8_ON           1                 /*  1 */
 
 /* Definitions for protocol_options in sf_xxx + gf_xxx functions. */
 #define PROT_OPT_NO_EXPECT                 1
@@ -2640,7 +2641,7 @@ struct filetransfer_status
                                             /*+-----+-------------------+*/
                                             /*| Bit |      Meaning      |*/
                                             /*+-----+-------------------+*/
-                                            /*|   32| Not used.         |*/
+                                            /*|   32| TLS_LEGACY_RENEGOTIATION|*/
                                             /*|   31| HTTP_BUCKETNAME_IN_PATH|*/
                                             /*|   30| NO_EXPECT         |*/
 #ifdef _WITH_EXTRA_CHECK
@@ -2681,7 +2682,8 @@ struct filetransfer_status
                                             /*+-----+-------------------+*/
                                             /*| Bit |      Meaning      |*/
                                             /*+-----+-------------------+*/
-                                            /*| 1-32| Not used.         |*/
+                                            /*| 2-32| Not used.         |*/
+                                            /*|    1| FTP_SEND_UTF8_ON  |*/
                                             /*+-----+-------------------+*/
 #endif
           unsigned int   socksnd_bufsize;   /* Socket buffer size for    */

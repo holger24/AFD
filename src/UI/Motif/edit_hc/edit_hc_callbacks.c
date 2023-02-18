@@ -1,7 +1,7 @@
 /*
  *  edit_hc_callbacks.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -50,6 +50,7 @@ DESCR__S_M3
  **   20.03.2017 H.Kiehl Add support for groups.
  **   25.10.2021 H.Kiehl Added option bucketname in path.
  **   10.01.2022 H.Kiehl Added no expect option.
+ **   18.02.2023 H.Kiehl Added 'Send UTF8 on'.
  **
  */
 DESCR__E_M3
@@ -152,6 +153,7 @@ extern Widget                     active_mode_w,
                                   retry_interval_label_w,
                                   rm_button_w,
                                   second_label_w,
+                                  send_utf8_on_w,
                                   sequence_locking_w,
                                   socket_send_buffer_size_label_w,
                                   socket_send_buffer_size_w,
@@ -224,7 +226,8 @@ close_button(Widget w, XtPointer client_data, XtPointer call_data)
 
    for (i = 0; i < no_of_hosts; i++)
    {
-      if ((ce[i].value_changed != 0) || (ce[i].value_changed2 != 0))
+      if ((ce[i].value_changed != 0) || (ce[i].value_changed2 != 0) ||
+          (ce[i].value_changed3 != 0))
       {
          if (xrec(QUESTION_DIALOG,
                   "There are unsaved changes!\nDo you want to discard these?") != YES)
@@ -983,6 +986,16 @@ toggle_button2(Widget w, XtPointer client_data, XtPointer call_data)
 }
 
 
+/*########################### toggle_button3() ##########################*/
+void
+toggle_button3(Widget w, XtPointer client_data, XtPointer call_data)
+{
+   ce[cur_pos].value_changed3 |= (XT_PTR_TYPE)client_data;
+
+   return;
+}
+
+
 /*########################### value_change() ############################*/
 void
 value_change(Widget w, XtPointer client_data, XtPointer call_data)
@@ -1451,6 +1464,7 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
          XtSetSensitive(use_list_w, False);
          XtSetSensitive(use_stat_list_w, False);
          XtSetSensitive(disable_mlst_w, False);
+         XtSetSensitive(send_utf8_on_w, False);
          XtSetSensitive(ssl_ccc_w, False);
          XtSetSensitive(ssl_implicit_ftps_w, False);
          XtSetSensitive(ftp_idle_time_w, False);
@@ -1942,6 +1956,19 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
             {
                XtVaSetValues(disable_mlst_w, XmNset, False, NULL);
             }
+#ifdef NEW_FSA
+            XtSetSensitive(send_utf8_on_w, True);
+            if (fsa[cur_pos].protocol_options2 & FTP_SEND_UTF8_ON)
+            {
+               XtVaSetValues(send_utf8_on_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(send_utf8_on_w, XmNset, False, NULL);
+            }
+#else
+            XtSetSensitive(send_utf8_on_w, False);
+#endif
             XtSetSensitive(ssl_ccc_w, True);
             if (fsa[cur_pos].protocol_options & FTP_CCC_OPTION)
             {
@@ -2027,6 +2054,7 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
             XtSetSensitive(use_list_w, False);
             XtSetSensitive(use_stat_list_w, False);
             XtSetSensitive(disable_mlst_w, False);
+            XtSetSensitive(send_utf8_on_w, False);
             XtSetSensitive(ssl_ccc_w, False);
             XtSetSensitive(ssl_implicit_ftps_w, False);
             XtSetSensitive(ftp_idle_time_w, False);
@@ -2764,7 +2792,8 @@ submite_button(Widget w, XtPointer client_data, XtPointer call_data)
     */
    for (i = 0; i < no_of_hosts; i++)
    {
-      if ((ce[i].value_changed != 0) || (ce[i].value_changed2 != 0))
+      if ((ce[i].value_changed != 0) || (ce[i].value_changed2 != 0) ||
+          (ce[i].value_changed3 != 0))
       {
          prev_changes = changes;
          if (ce[i].value_changed & REAL_HOSTNAME_1_CHANGED)
@@ -3455,6 +3484,13 @@ submite_button(Widget w, XtPointer client_data, XtPointer call_data)
             fsa[i].protocol_options ^= FTP_DISABLE_MLST;
             changes++;
          }
+         if (ce[i].value_changed3 & SEND_UTF8_ON_CHANGED)
+         {
+#ifdef NEW_FSA
+            fsa[i].protocol_options2 ^= FTP_SEND_UTF8_ON;
+#endif
+            changes++;
+         }
          if (ce[i].value_changed2 & STRICT_TLS_CHANGED)
          {
             fsa[i].protocol_options ^= TLS_STRICT_VERIFY;
@@ -3488,13 +3524,15 @@ submite_button(Widget w, XtPointer client_data, XtPointer call_data)
 
          ce[i].value_changed = 0;
          ce[i].value_changed2 = 0;
+         ce[i].value_changed3 = 0;
 
          if (prev_changes != changes)
          {
             (void)strcpy(host_list[changed_hosts], fsa[i].host_dsp_name);
             changed_hosts++;
          }
-      } /* if ((ce[i].value_changed != 0) || (ce[i].value_changed2 != 0)) */
+      } /* if ((ce[i].value_changed != 0) || (ce[i].value_changed2 != 0) */
+        /*     (ce[i].value_changed3 != 0))                              */
    } /* for (i = 0; i < no_of_hosts; i++) */
 
    /*

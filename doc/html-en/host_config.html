@@ -213,8 +213,9 @@ host. See below for a description of each entry.
 </tr>
 <tr>
    <th valign=top><a name="protocol_options">Protocol options</a></th>
-   <td>To set some protocol (currently only for FTP, FTPS and some for SFTP)
-       specific features for this host. The following bits can be set:
+   <td>To set some protocol (currently only for FTP, FTPS, HTTP, HTTPS
+       and SFTP) specific features for this host. The following bits
+       can be set:
        <table border>
        <tr>
           <th>Bit number</th>
@@ -407,8 +408,13 @@ host. See below for a description of each entry.
           <td align=center>1073741824</td>
           <td>Bucketname is in path.</td>
        </tr>
+       <tr>
+          <td align=center>32</td>
+          <td align=center>2147483648</td>
+          <td>TLS legacy renegotiation.</td>
+       </tr>
        </table>
-       The default is zero.</td>
+       The default is 1.</td>
 </tr>
 <tr>
    <th valign=top><a name="transfer_rate_limit">Transfer rate limit</a></th>
@@ -474,16 +480,30 @@ host. See below for a description of each entry.
 </tr>
 <tr>
    <th valign=top><a name="protocol_options_2">Protocol options 2</a></th>
-   <td>For future use.</td>
+   <td>To set some protocol specific features for this host. The following
+       bits can be set:
+       <table border>
+       <tr>
+          <th>Bit number</th>
+          <th>Integer value</th>
+          <th>What it does</th>
+       </tr>
+       <tr>
+          <td align=center>1</td>
+          <td align=center>1</td>
+          <td>Sends OPTS UTF8 ON.</td>
+       </tr>
+       </table>
+       The default is 0.</td>
 </tr>
 </table>
 <hr size=3 noshade>
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1997 - 2022 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2023 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 26.01.2022
+   Last updated: 18.02.2023
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

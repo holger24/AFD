@@ -1,6 +1,6 @@
 /*
  *  edit_hc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -89,6 +89,7 @@ DESCR__S_M1
  **   13.01.2014 H.Kiehl Added support for makeing dupcheck timeout fixed.
  **   06.03.2020 H.Kiehl Added implicit FTPS option.
  **   10.01.2022 H.Kiehl Added no expect option.
+ **   18.02.2023 H.Kiehl Added 'Send UTF8 on' option.
  **
  */
 DESCR__E_M1
@@ -214,6 +215,7 @@ Widget                     active_mode_w,
                            retry_interval_label_w,
                            rm_button_w,
                            second_label_w,
+                           send_utf8_on_w,
                            sequence_locking_w,
                            socket_send_buffer_size_label_w,
                            socket_send_buffer_size_w,
@@ -2081,13 +2083,26 @@ main(int argc, char *argv[])
    XtAddCallback(disable_mlst_w, XmNvalueChangedCallback,
                  (XtCallbackProc)toggle_button2,
                  (XtPointer)DISABLE_MLST_CHANGED);
+   send_utf8_on_w = XtVaCreateManagedWidget("Send UTF8 on",
+                           xmToggleButtonGadgetClass, box_w,
+                           XmNfontList,               fontlist,
+                           XmNset,                    False,
+                           XmNtopAttachment,          XmATTACH_FORM,
+                           XmNtopOffset,              SIDE_OFFSET,
+                           XmNleftAttachment,         XmATTACH_WIDGET,
+                           XmNleftWidget,             disable_mlst_w,
+                           XmNbottomAttachment,       XmATTACH_FORM,
+                           NULL);
+   XtAddCallback(send_utf8_on_w, XmNvalueChangedCallback,
+                 (XtCallbackProc)toggle_button3,
+                 (XtPointer)SEND_UTF8_ON_CHANGED);
    ftps_label_w = XtVaCreateManagedWidget("FTPS :",
                                 xmLabelGadgetClass,  box_w,
                                 XmNfontList,         fontlist,
                                 XmNalignment,        XmALIGNMENT_END,
                                 XmNtopAttachment,    XmATTACH_FORM,
                                 XmNleftAttachment,   XmATTACH_WIDGET,
-                                XmNleftWidget,       disable_mlst_w,
+                                XmNleftWidget,       send_utf8_on_w,
                                 XmNleftOffset,       5,
                                 XmNbottomAttachment, XmATTACH_FORM,
                                 NULL);

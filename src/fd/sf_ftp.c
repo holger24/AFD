@@ -1,6 +1,6 @@
 /*
  *  sf_ftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -77,6 +77,8 @@ DESCR__S_M1
  **   30.03.2012 H.Kiehl Inform when we created a directory.
  **   06.07.2019 H.Kiehl Added trans_srename support.
  **   06.04.2020 H.Kiehl Implement implicit FTPS.
+ **   18.02.2023 H.Kiehl Add option 'OPTS UTF8 ON' for windows FTP
+ **                      server.
  **
  */
 DESCR__E_M1
@@ -824,6 +826,31 @@ main(int argc, char *argv[])
             }
          }
       }
+
+#ifdef NEW_FSA
+# ifdef _WITH_BURST_2
+      if ((fsa->protocol_options2 & FTP_SEND_UTF8_ON) &&
+          (burst_2_counter == 0))
+# else
+      if (fsa->protocol_options2 & FTP_SEND_UTF8_ON)
+# endif
+      {
+         if ((status = ftp_set_utf8_on()) != SUCCESS)
+         {
+            trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                      "Failed to set UTF8 to on (%d).",
+                      status);
+         }
+         else
+         {
+            if (fsa->debug > NORMAL_MODE)
+            {
+               trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
+                            "Set UTF8 to on.");
+            }
+         }
+      }
+#endif
 
 #ifdef _WITH_BURST_2
       if ((burst_2_counter != 0) && (db.transfer_mode == 'I') &&

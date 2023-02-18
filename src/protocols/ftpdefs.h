@@ -1,6 +1,6 @@
 /*
  *  ftpdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -74,6 +74,7 @@
 #define FTP_OPTION_MLST_SIZE             32
 #define FTP_OPTION_MLST_TYPE             64
 #define FTP_OPTION_MLST_PERM             128
+#define FTP_OPTION_UTF8                  256
 
 struct ftp_connect_data
        {
@@ -121,6 +122,7 @@ extern int  ftp_account(char *),
             ftp_sendfile(int, off_t *, int),
 #endif
             ftp_set_date(char *, time_t),
+            ftp_set_utf8_on(void),
             ftp_size(char *, off_t *),
             ftp_type(char),
             ftp_user(char *),
