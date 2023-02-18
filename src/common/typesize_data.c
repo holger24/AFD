@@ -51,6 +51,8 @@ DESCR__S_M3
  **   17.10.2011 H.Kiehl Created
  **   16.11.2018 H.Kiehl Add option to do conversion of pwb database
  **                      if some of it's variables change.
+ **   18.02.2023 H.Kiehl Add size for struct fsa, fra, jid and afd_status
+ **                      to write_typesize_data().
  **
  */
 DESCR__E_M3
@@ -78,6 +80,10 @@ DESCR__E_M3
 # define LONG_LONG_STR     "long long"
 #endif
 #define PID_T_STR          "pid_t"
+#define STRUCT_FSA_STR     "struct filetransfer_status"
+#define STRUCT_FRA_STR     "struct fileretrieve_status"
+#define STRUCT_ASTAT_STR   "struct afd_status"
+#define STRUCT_JID_STR     "struct job_id_data"
 
 /* External global variables. */
 extern char *p_work_dir;
@@ -556,6 +562,14 @@ write_typesize_data(void)
    (void)fprintf(fp, "%s|%d\n", LONG_LONG_STR, SIZEOF_LONG_LONG);
 #endif
    (void)fprintf(fp, "%s|%d\n", PID_T_STR, SIZEOF_PID_T);
+   (void)fprintf(fp, "%s|%d\n", STRUCT_FSA_STR,
+                 (int)sizeof(struct filetransfer_status));
+   (void)fprintf(fp, "%s|%d\n", STRUCT_FRA_STR,
+                 (int)sizeof(struct fileretrieve_status));
+   (void)fprintf(fp, "%s|%d\n", STRUCT_ASTAT_STR,
+                 (int)sizeof(struct afd_status));
+   (void)fprintf(fp, "%s|%d\n", STRUCT_JID_STR,
+                 (int)sizeof(struct job_id_data));
 
    if (fclose(fp) == EOF)
    {
