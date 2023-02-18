@@ -74,6 +74,7 @@ DESCR__S_M1
  **   27.10.2012 H.Kiehl On Linux check if hardlink protection is enabled
  **                      and if this is the case, warn user and tell him
  **                      what he can do.
+ **   18.02.2023 H.Kiehl Attach to FSA and/or FRA after eval_dir_config().
  **
  */
 DESCR__E_M1
@@ -557,35 +558,6 @@ main(int argc, char *argv[])
                            &default_transfer_timeout,
                            &default_error_offline_flag, &create_source_dir);
 
-      /* Lets check and see if create_source_dir was set via afdcfg. */
-      if (fsa_attach_passive(YES, AMG) == SUCCESS)
-      {
-         if (*(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) & DISABLE_CREATE_SOURCE_DIR)
-         {
-            if ((create_source_dir != DEFAULT_CREATE_SOURCE_DIR_DEF) &&
-                (DEFAULT_CREATE_SOURCE_DIR_DEF == NO))
-            {
-               system_log(WARN_SIGN, __FILE__, __LINE__,
-                          "Overriding AFD_CONFIG value %s, setting it to NO due to afdcfg setting.",
-                          CREATE_SOURCE_DIR_DEF);
-            }
-            create_source_dir = NO;
-            create_source_dir_disabled = YES;
-         }
-         else
-         {
-            if ((create_source_dir != DEFAULT_CREATE_SOURCE_DIR_DEF) &&
-                (DEFAULT_CREATE_SOURCE_DIR_DEF == YES))
-            {
-               system_log(WARN_SIGN, __FILE__, __LINE__,
-                          "Overriding AFD_CONFIG value %s, setting it to YES due to afdcfg setting.",
-                          CREATE_SOURCE_DIR_DEF);
-            }
-            create_source_dir = YES;
-         }
-         (void)fsa_detach(NO);
-      }
-
       /* Determine the size of the fifo buffer and allocate buffer. */
       if ((i = (int)fpathconf(db_update_fd, _PC_PIPE_BUF)) < 0)
       {
@@ -662,6 +634,9 @@ main(int argc, char *argv[])
                hl[i].dup_check_timeout   = fsa[i].dup_check_timeout;
 #endif
                hl[i].protocol_options    = fsa[i].protocol_options;
+#ifdef NEW_FSA
+               hl[i].protocol_options2   = fsa[i].protocol_options2;
+#endif
                hl[i].host_status = 0;
                if (fsa[i].host_status & HOST_ERROR_OFFLINE_STATIC)
                {
@@ -805,6 +780,35 @@ main(int argc, char *argv[])
       if (using_groups == YES)
       {
          init_group_list_mtime();
+      }
+
+      /* Lets check and see if create_source_dir was set via afdcfg. */
+      if (fsa_attach_passive(YES, AMG) == SUCCESS)
+      {
+         if (*(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) & DISABLE_CREATE_SOURCE_DIR)
+         {
+            if ((create_source_dir != DEFAULT_CREATE_SOURCE_DIR_DEF) &&
+                (DEFAULT_CREATE_SOURCE_DIR_DEF == NO))
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Overriding AFD_CONFIG value %s, setting it to NO due to afdcfg setting.",
+                          CREATE_SOURCE_DIR_DEF);
+            }
+            create_source_dir = NO;
+            create_source_dir_disabled = YES;
+         }
+         else
+         {
+            if ((create_source_dir != DEFAULT_CREATE_SOURCE_DIR_DEF) &&
+                (DEFAULT_CREATE_SOURCE_DIR_DEF == YES))
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Overriding AFD_CONFIG value %s, setting it to YES due to afdcfg setting.",
+                          CREATE_SOURCE_DIR_DEF);
+            }
+            create_source_dir = YES;
+         }
+         (void)fsa_detach(NO);
       }
 
       /*
@@ -1132,6 +1136,9 @@ main(int argc, char *argv[])
                              hl[i].dup_check_timeout   = fsa[i].dup_check_timeout;
 #endif
                              hl[i].protocol_options    = fsa[i].protocol_options;
+#ifdef NEW_FSA
+                             hl[i].protocol_options2   = fsa[i].protocol_options2;
+#endif
                              hl[i].host_status = 0;
                              if (fsa[i].host_status & HOST_ERROR_OFFLINE_STATIC)
                              {
