@@ -1,6 +1,6 @@
 /*
  *  init_afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -79,6 +79,8 @@ DESCR__S_M1
  **   25.07.2020 H.Kiehl Add option -sn.
  **   29.03.2022 H.Kiehl Added process AFDDS.
  **   15.08.2022 H.Kiehl Allow user to specify the interface to bind to.
+ **   18.02.2023 H.Kiehl Only start certain process when AMG sends
+ **                      AMG_READY.
  **
  */
 DESCR__E_M1
@@ -1667,7 +1669,7 @@ main(int argc, char *argv[])
                              stop_typ = NONE_ID;
                           }
                           break;
-                          
+
                        case AMG_READY : /* AMG has successfully executed the command */
 
                           /* Tell afd startup procedure that it may */
@@ -1704,6 +1706,19 @@ main(int argc, char *argv[])
                                   *(pid_t *)(pid_list + ((TRANSFER_RATE_LOG_NO + 1) * sizeof(pid_t))) = proc_table[TRANSFER_RATE_LOG_NO].pid;
                                   *proc_table[TRANSFER_RATE_LOG_NO].status = ON;
 #endif
+
+#if ALDAD_OFFSET != 0
+                                  /* Start ALDA daemon of AFD. */
+                                  proc_table[ALDAD_NO].pid = make_process(ALDAD, p_work_dir, NULL);
+                                  *(pid_t *)(pid_list + ((ALDAD_NO + 1) * sizeof(pid_t))) = proc_table[ALDAD_NO].pid;
+                                  *proc_table[ALDAD_NO].status = ON;
+#endif
+
+                                  /* Start init_afd_worker to help this process. */
+                                  proc_table[AFD_WORKER_NO].pid = make_process(AFD_WORKER, p_work_dir, NULL);
+                                  *(pid_t *)(pid_list + ((AFD_WORKER_NO + 1) * sizeof(pid_t))) = proc_table[AFD_WORKER_NO].pid;
+                                  *proc_table[AFD_WORKER_NO].status = ON;
+
                                   if (fra_attach() == SUCCESS)
                                   {
                                      int    gotcha,
@@ -1782,6 +1797,26 @@ main(int argc, char *argv[])
                                   {
                                      system_log(ERROR_SIGN, __FILE__, __LINE__,
                                                _("Failed to attach to FSA."));
+                                  }
+                                  else
+                                  {
+                                     int j;
+
+                                     for (i = 0; i < no_of_hosts; i++)
+                                     {
+#ifdef WITH_IP_DB
+                                        fsa[i].host_status |= STORE_IP;
+#endif
+                                        fsa[i].active_transfers = 0;
+                                        for (j = 0; j < MAX_NO_PARALLEL_JOBS; j++)
+                                        {
+                                           fsa[i].job_status[j].no_of_files = 0;
+                                           fsa[i].job_status[j].proc_id = -1;
+                                           fsa[i].job_status[j].job_id = NO_ID;
+                                           fsa[i].job_status[j].connect_status = DISCONNECT;
+                                           fsa[i].job_status[j].file_name_in_use[0] = '\0';
+                                        }
+                                     }
                                   }
 
                                   /* Start the FD */
@@ -2979,7 +3014,6 @@ zombie_check(void)
 #endif
                      proc_table[i].pid = 0;
                      *proc_table[i].status = OFF;
-fprintf(stderr, "%d -> OFF (%s %d)\n", i, __FILE__, __LINE__);
                      system_log(ERROR_SIGN, __FILE__, __LINE__,
                                 _("<INIT> Process %s has died!"),
                                 proc_table[i].proc_name);
@@ -3046,7 +3080,6 @@ fprintf(stderr, "%d -> OFF (%s %d)\n", i, __FILE__, __LINE__);
                  /* abnormal termination */
                  proc_table[i].pid = 0;
                  *proc_table[i].status = OFF;
-fprintf(stderr, "%d -> OFF (%s %d)\n", i, __FILE__, __LINE__);
                  system_log(ERROR_SIGN, __FILE__, __LINE__,
                             _("<INIT> Abnormal termination of %s, caused by signal %d!"),
                             proc_table[i].proc_name, WTERMSIG(status));
@@ -3189,8 +3222,6 @@ start_afd(int          binary_changed,
           int          afdd_port,
           int          afdds_port)
 {
-   int i;
-
    /* Initialize start_time so AMG signals us that we must start FD. */
    p_afd_status->start_time = 0L;
 
@@ -3339,57 +3370,7 @@ start_afd(int          binary_changed,
    *proc_table[DEMCD_NO].status = ON;
 #endif
 
-#if ALDAD_OFFSET != 0
-   /* Start ALDA daemon of AFD. */
-   proc_table[ALDAD_NO].pid = make_process(ALDAD, p_work_dir, NULL);
-   *(pid_t *)(pid_list + ((ALDAD_NO + 1) * sizeof(pid_t))) = proc_table[ALDAD_NO].pid;
-   *proc_table[ALDAD_NO].status = ON;
-#endif
-
-   /*
-    * Before starting the FD lets initialise all critical values
-    * for this process.
-    */
    p_afd_status->no_of_transfers = 0;
-   if ((i = fsa_attach(AFD)) != SUCCESS)
-   {
-      if (i != INCORRECT_VERSION)
-      {
-         system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    _("Failed to attach to FSA."));
-      }
-      else
-      {
-         system_log(INFO_SIGN, __FILE__, __LINE__,
-                    _("You can ignore the last warning about incorrect version."));
-      }
-   }
-   else
-   {
-      int j;
-
-      for (i = 0; i < no_of_hosts; i++)
-      {
-#ifdef WITH_IP_DB
-         fsa[i].host_status |= STORE_IP;
-#endif
-         fsa[i].active_transfers = 0;
-         for (j = 0; j < MAX_NO_PARALLEL_JOBS; j++)
-         {
-            fsa[i].job_status[j].no_of_files = 0;
-            fsa[i].job_status[j].proc_id = -1;
-            fsa[i].job_status[j].job_id = NO_ID;
-            fsa[i].job_status[j].connect_status = DISCONNECT;
-            fsa[i].job_status[j].file_name_in_use[0] = '\0';
-         }
-      }
-      (void)fsa_detach(YES);
-   }
-
-   /* Start init_afd_worker to help this process. */
-   proc_table[AFD_WORKER_NO].pid = make_process(AFD_WORKER, p_work_dir, NULL);
-   *(pid_t *)(pid_list + ((AFD_WORKER_NO + 1) * sizeof(pid_t))) = proc_table[AFD_WORKER_NO].pid;
-   *proc_table[AFD_WORKER_NO].status = ON;
 
 #ifdef HAVE_FDATASYNC
    if (fdatasync(afd_active_fd) == -1)
