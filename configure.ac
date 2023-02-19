@@ -738,8 +738,8 @@ AC_DEFINE_UNQUOTED([MAX_AFDNAME_LENGTH], [$with_max_afdname_length], [
   name length in the mon_ctrl dialog may be.])
 AC_ARG_WITH(max-real-hostname-length,
             AS_HELP_STRING([--with-max-real-hostname-length=N],
-                           [maximum real hostname length (default=40)]),
-            , with_max_real_hostname_length=40)
+                           [maximum real hostname length (default=70)]),
+            , with_max_real_hostname_length=70)
 AC_DEFINE_UNQUOTED([MAX_REAL_HOSTNAME_LENGTH], [$with_max_real_hostname_length], [
   The value of MAX_REAL_HOSTNAME_LENGTH determines how long the real
   hostname or its IP number may be.])

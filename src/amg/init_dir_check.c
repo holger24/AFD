@@ -949,19 +949,11 @@ init_dir_check(int    argc,
    {
       for (i = 0; i < no_of_local_dirs; i++)
       {
-#ifdef NEW_FRA
          if (((fra[de[i].fra_pos].dir_options & INOTIFY_RENAME) ||
               (fra[de[i].fra_pos].dir_options & INOTIFY_CLOSE) ||
               (fra[de[i].fra_pos].dir_options & INOTIFY_CREATE) ||
               (fra[de[i].fra_pos].dir_options & INOTIFY_DELETE) ||
               (fra[de[i].fra_pos].dir_options & INOTIFY_ATTRIB)) &&
-#else
-         if (((fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME) ||
-              (fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE) ||
-              (fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE) ||
-              (fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE) ||
-              (fra[de[i].fra_pos].dir_flag & INOTIFY_ATTRIB)) &&
-#endif
              ((fra[de[i].fra_pos].no_of_time_entries == 0) ||
               (fra[de[i].fra_pos].host_alias[0] != '\0')) &&
              ((fra[de[i].fra_pos].force_reread == NO) ||
@@ -994,62 +986,34 @@ init_dir_check(int    argc,
          j = 0;
          for (i = 0; i < no_of_local_dirs; i++)
          {
-#ifdef NEW_FRA
             if (((fra[de[i].fra_pos].dir_options & INOTIFY_RENAME) ||
                  (fra[de[i].fra_pos].dir_options & INOTIFY_CLOSE) ||
                  (fra[de[i].fra_pos].dir_options & INOTIFY_CREATE) ||
                  (fra[de[i].fra_pos].dir_options & INOTIFY_DELETE) ||
                  (fra[de[i].fra_pos].dir_options & INOTIFY_ATTRIB)) &&
-#else
-            if (((fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME) ||
-                 (fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE) ||
-                 (fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE) ||
-                 (fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE) ||
-                 (fra[de[i].fra_pos].dir_flag & INOTIFY_ATTRIB)) &&
-#endif
                 ((fra[de[i].fra_pos].no_of_time_entries == 0) ||
                  (fra[de[i].fra_pos].host_alias[0] != '\0')) &&
                 ((fra[de[i].fra_pos].force_reread == NO) ||
                  (fra[de[i].fra_pos].force_reread == REMOTE_ONLY)))
             {
                mask = 0;
-#ifdef NEW_FRA
                if (fra[de[i].fra_pos].dir_options & INOTIFY_RENAME)
-#else
-               if (fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME)
-#endif
                {
                   mask |= IN_MOVED_TO;
                }
-#ifdef NEW_FRA
                if (fra[de[i].fra_pos].dir_options & INOTIFY_CLOSE)
-#else
-               if (fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE)
-#endif
                {
                   mask |= IN_CLOSE_WRITE;
                }
-#ifdef NEW_FRA
                if (fra[de[i].fra_pos].dir_options & INOTIFY_CREATE)
-#else
-               if (fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE)
-#endif
                {
                   mask |= IN_CREATE;
                }
-#ifdef NEW_FRA
                if (fra[de[i].fra_pos].dir_options & INOTIFY_DELETE)
-#else
-               if (fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE)
-#endif
                {
                   mask |= IN_DELETE;
                }
-#ifdef NEW_FRA
                if (fra[de[i].fra_pos].dir_options & INOTIFY_ATTRIB)
-#else
-               if (fra[de[i].fra_pos].dir_flag & INOTIFY_ATTRIB)
-#endif
                {
                   mask |= IN_ATTRIB;
                }

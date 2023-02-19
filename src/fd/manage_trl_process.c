@@ -1,6 +1,6 @@
 /*
  *  manage_trl_process.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -731,20 +731,10 @@ calc_trl_per_process(int fsa_pos)
          {
             fsa[fsa_pos].trl_per_process = 1;
          }
-#ifndef NEW_FSA
-         fsa[fsa_pos].mc_ctrl_per_process = fsa[fsa_pos].mc_ct_rate_limit / real_active_transfers;
-         if (fsa[fsa_pos].mc_ctrl_per_process == 0)
-         {
-            fsa[fsa_pos].mc_ctrl_per_process = 1;
-         }
-#endif
       }
       else
       {
          fsa[fsa_pos].trl_per_process = fsa[fsa_pos].transfer_rate_limit;
-#ifndef NEW_FSA
-         fsa[fsa_pos].mc_ctrl_per_process = fsa[fsa_pos].mc_ct_rate_limit;
-#endif
       }
    }
 #ifdef TRL_DEBUG

@@ -1,6 +1,6 @@
 /*
  *  check_burst_gf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -130,11 +130,7 @@ check_burst_gf(unsigned int *values_changed)
          return(NO);
       }
 
-#ifdef NEW_FRA
       if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
-#else
-      if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
-#endif
           (db.special_flag & DISTRIBUTED_HELPER_JOB))
       {
          if ((db.protocol != LOC_FLAG) && (db.protocol != EXEC_FLAG) &&
@@ -532,11 +528,7 @@ check_burst_gf(unsigned int *values_changed)
                   next_check_time = 0;
                }
                if ((db.protocol & HTTP_FLAG) &&
-#ifdef NEW_FRA
                    (fra->dir_options & URL_WITH_INDEX_FILE_NAME))
-#else
-                   (fra->dir_flag & URL_WITH_INDEX_FILE_NAME))
-#endif
                {
                   if ((p_new_db->index_file = malloc(MAX_RECIPIENT_LENGTH)) == NULL)
                   {
@@ -771,11 +763,7 @@ check_burst_gf(unsigned int *values_changed)
                        {
                           break;
                        }
-#ifdef NEW_FRA
                        if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
-#else
-                       if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
-#endif
                            (db.special_flag & DISTRIBUTED_HELPER_JOB))
                        {
                           if (fsa->job_status[(int)db.job_no].unique_name[2] == 6)
@@ -851,11 +839,7 @@ check_burst_gf(unsigned int *values_changed)
                           }
                           start_time = time(NULL);
                        }
-#ifdef NEW_FRA
                        if ((fra->dir_options & ONE_PROCESS_JUST_SCANNING) &&
-#else
-                       if ((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) &&
-#endif
                            ((db.special_flag & DISTRIBUTED_HELPER_JOB) == 0) &&
                            (start_time >= timeup))
                        {

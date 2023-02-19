@@ -331,7 +331,7 @@
                                        alias name may have in mon_ctrl
                                        dialog. [Default: 12]
 --with-max-real-hostname-length=N    - The maximum length that the real
-                                       hostname or IP may have. [Default: 40]
+                                       hostname or IP may have. [Default: 70]
 --with-max-recipient-length=N        - The maximum length that one recipient
                                        may have, including the directory
                                        entry. [Default 256]

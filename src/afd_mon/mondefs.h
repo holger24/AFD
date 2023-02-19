@@ -1,6 +1,6 @@
 /*
  *  mondefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -36,11 +36,7 @@
 #endif
 #define MAX_REMOTE_CMD_LENGTH       10
 #ifndef MAX_REAL_HOSTNAME_LENGTH
-# if defined NEW_FSA && defined NEW_PWB
-#  define MAX_REAL_HOSTNAME_LENGTH  65
-# else
-#  define MAX_REAL_HOSTNAME_LENGTH  40
-# endif
+# define MAX_REAL_HOSTNAME_LENGTH   70
 #endif
 #define MAX_RET_MSG_LENGTH          4096  /* How much data is buffered from */
                                           /* the remote TCP port.           */

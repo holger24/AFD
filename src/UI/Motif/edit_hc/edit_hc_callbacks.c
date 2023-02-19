@@ -1956,7 +1956,6 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
             {
                XtVaSetValues(disable_mlst_w, XmNset, False, NULL);
             }
-#ifdef NEW_FSA
             XtSetSensitive(send_utf8_on_w, True);
             if (fsa[cur_pos].protocol_options2 & FTP_SEND_UTF8_ON)
             {
@@ -1966,9 +1965,6 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
             {
                XtVaSetValues(send_utf8_on_w, XmNset, False, NULL);
             }
-#else
-            XtSetSensitive(send_utf8_on_w, False);
-#endif
             XtSetSensitive(ssl_ccc_w, True);
             if (fsa[cur_pos].protocol_options & FTP_CCC_OPTION)
             {
@@ -3486,9 +3482,7 @@ submite_button(Widget w, XtPointer client_data, XtPointer call_data)
          }
          if (ce[i].value_changed3 & SEND_UTF8_ON_CHANGED)
          {
-#ifdef NEW_FSA
             fsa[i].protocol_options2 ^= FTP_SEND_UTF8_ON;
-#endif
             changes++;
          }
          if (ce[i].value_changed2 & STRICT_TLS_CHANGED)

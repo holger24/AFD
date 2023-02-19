@@ -1177,19 +1177,11 @@ main(int argc, char *argv[])
                 ((fra[de[i].fra_pos].dir_flag & INOTIFY_NEEDS_SCAN) ||
                  (fra[de[i].fra_pos].force_reread == YES) ||
                  (fra[de[i].fra_pos].force_reread == LOCAL_ONLY) ||
-#  ifdef NEW_FRA
                  (((fra[de[i].fra_pos].dir_options & INOTIFY_RENAME) == 0) &&
                   ((fra[de[i].fra_pos].dir_options & INOTIFY_CLOSE) == 0) &&
                   ((fra[de[i].fra_pos].dir_options & INOTIFY_CREATE) == 0) &&
                   ((fra[de[i].fra_pos].dir_options & INOTIFY_DELETE) == 0) &&
                   ((fra[de[i].fra_pos].dir_options & INOTIFY_ATTRIB) == 0))) &&
-#  else
-                 (((fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME) == 0) &&
-                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE) == 0) &&
-                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE) == 0) &&
-                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE) == 0) &&
-                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_ATTRIB) == 0))) &&
-#  endif
 # endif
                 ((fra[de[i].fra_pos].fsa_pos != -1) ||
                  (fra[de[i].fra_pos].no_of_time_entries == 0) ||
@@ -1275,19 +1267,11 @@ main(int argc, char *argv[])
                  (fra[de[i].fra_pos].force_reread == YES) ||
                  (fra[de[i].fra_pos].force_reread == LOCAL_ONLY) ||
                  (fra[de[i].fra_pos].dir_flag & FILES_IN_QUEUE) ||
-#  ifdef NEW_FRA
                  (((fra[de[i].fra_pos].dir_options & INOTIFY_RENAME) == 0) &&
                   ((fra[de[i].fra_pos].dir_options & INOTIFY_CLOSE) == 0) &&
                   ((fra[de[i].fra_pos].dir_options & INOTIFY_CREATE) == 0) &&
                   ((fra[de[i].fra_pos].dir_options & INOTIFY_DELETE) == 0) &&
                   ((fra[de[i].fra_pos].dir_options & INOTIFY_ATTRIB) == 0))) &&
-#  else
-                 (((fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME) == 0) &&
-                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE) == 0) &&
-                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE) == 0) &&
-                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE) == 0) &&
-                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_ATTRIB) == 0))) &&
-#  endif
 # endif
                 ((fra[de[i].fra_pos].fsa_pos != -1) ||
                  (fra[de[i].fra_pos].no_of_time_entries == 0) ||

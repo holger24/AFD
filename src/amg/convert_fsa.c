@@ -1,6 +1,6 @@
 /*
  *  convert_fsa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -412,7 +412,6 @@ struct filetransfer_status_3
           struct status_3 job_status[MAX_NO_PARALLEL_JOBS_3];
        };
 
-#ifdef NEW_FSA
 /* Version 4 */
 #define MAX_REAL_HOSTNAME_LENGTH_4 MAX_REAL_HOSTNAME_LENGTH /* Changed. */
 #define MAX_PROXY_NAME_LENGTH_4    MAX_PROXY_NAME_LENGTH
@@ -509,7 +508,6 @@ struct filetransfer_status_4
 /*        off_t           mc_ctrl_per_process; */ /* Removed. */
           struct status_4 job_status[MAX_NO_PARALLEL_JOBS_4];
        };
-#endif
 
 
 /*############################ convert_fsa() ############################*/
@@ -1983,7 +1981,6 @@ convert_fsa(int           old_fsa_fd,
                       "Converted FSA from verion %d to %d.",
                       (int)old_version, (int)new_version);
         }
-#ifdef NEW_FSA
    else if ((old_version == 0) && (new_version == 4))
         {
            struct filetransfer_status_0 *old_fsa;
@@ -2899,7 +2896,6 @@ convert_fsa(int           old_fsa_fd,
                       "Converted FSA from verion %d to %d.",
                       (int)old_version, (int)new_version);
         }
-#endif
         else
         {
            system_log(ERROR_SIGN, NULL, 0,

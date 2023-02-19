@@ -634,9 +634,7 @@ main(int argc, char *argv[])
                hl[i].dup_check_timeout   = fsa[i].dup_check_timeout;
 #endif
                hl[i].protocol_options    = fsa[i].protocol_options;
-#ifdef NEW_FSA
                hl[i].protocol_options2   = fsa[i].protocol_options2;
-#endif
                hl[i].host_status = 0;
                if (fsa[i].host_status & HOST_ERROR_OFFLINE_STATIC)
                {
@@ -1136,9 +1134,7 @@ main(int argc, char *argv[])
                              hl[i].dup_check_timeout   = fsa[i].dup_check_timeout;
 #endif
                              hl[i].protocol_options    = fsa[i].protocol_options;
-#ifdef NEW_FSA
                              hl[i].protocol_options2   = fsa[i].protocol_options2;
-#endif
                              hl[i].host_status = 0;
                              if (fsa[i].host_status & HOST_ERROR_OFFLINE_STATIC)
                              {

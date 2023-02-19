@@ -827,13 +827,12 @@ main(int argc, char *argv[])
          }
       }
 
-#ifdef NEW_FSA
-# ifdef _WITH_BURST_2
+#ifdef _WITH_BURST_2
       if ((fsa->protocol_options2 & FTP_SEND_UTF8_ON) &&
           (burst_2_counter == 0))
-# else
+#else
       if (fsa->protocol_options2 & FTP_SEND_UTF8_ON)
-# endif
+#endif
       {
          if ((status = ftp_set_utf8_on()) != SUCCESS)
          {
@@ -850,7 +849,6 @@ main(int argc, char *argv[])
             }
          }
       }
-#endif
 
 #ifdef _WITH_BURST_2
       if ((burst_2_counter != 0) && (db.transfer_mode == 'I') &&

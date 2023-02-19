@@ -1,6 +1,6 @@
 /*
  *  check_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1169,11 +1169,7 @@ check_files(struct directory_entry *p_de,
                                (fra[p_de->fra_pos].protocol != LOC))
                            {
                               if ((p_de->flag & IN_SAME_FILESYSTEM) &&
-#ifdef NEW_FRA
                                   ((fra[p_de->fra_pos].dir_options & DO_NOT_MOVE) == 0))
-#else
-                                  ((fra[p_de->fra_pos].dir_flag & DO_NOT_MOVE) == 0))
-#endif
                               {
                                  ret = move_file(fullname, tmp_file_dir);
                                  if (ret == DATA_COPIED)

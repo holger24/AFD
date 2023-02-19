@@ -455,32 +455,6 @@ main(int argc, char *argv[])
             {
                (void)fprintf(stdout, "DIR_DISABLED_STATIC ");
             }
-#ifndef NEW_FRA
-            if (fra[i].dir_flag & ACCEPT_DOT_FILES)
-            {
-               (void)fprintf(stdout, "ACCEPT_DOT_FILES ");
-            }
-            if (fra[i].dir_flag & DONT_GET_DIR_LIST)
-            {
-               (void)fprintf(stdout, "DONT_GET_DIR_LIST ");
-            }
-            if (fra[i].dir_flag & URL_CREATES_FILE_NAME)
-            {
-               (void)fprintf(stdout, "URL_CREATES_FILE_NAME ");
-            }
-            if (fra[i].dir_flag & URL_WITH_INDEX_FILE_NAME)
-            {
-               (void)fprintf(stdout, "URL_WITH_INDEX_FILE_NAME ");
-            }
-            if (fra[i].dir_flag & NO_DELIMITER)
-            {
-               (void)fprintf(stdout, "NO_DELIMITER ");
-            }
-            if (fra[i].dir_flag & KEEP_PATH)
-            {
-               (void)fprintf(stdout, "KEEP_PATH ");
-            }
-#endif
             if (fra[i].dir_flag & DIR_ERROR_SET)
             {
                (void)fprintf(stdout, "DIR_ERROR_SET ");
@@ -514,28 +488,6 @@ main(int argc, char *argv[])
             {
                (void)fprintf(stdout, "INOTIFY_NEEDS_SCAN ");
             }
-# ifndef NEW_FRA
-            if (fra[i].dir_flag & INOTIFY_RENAME)
-            {
-               (void)fprintf(stdout, "INOTIFY_RENAME ");
-            }
-            if (fra[i].dir_flag & INOTIFY_CLOSE)
-            {
-               (void)fprintf(stdout, "INOTIFY_CLOSE ");
-            }
-            if (fra[i].dir_flag & INOTIFY_CREATE)
-            {
-               (void)fprintf(stdout, "INOTIFY_CREATE ");
-            }
-            if (fra[i].dir_flag & INOTIFY_DELETE)
-            {
-               (void)fprintf(stdout, "INOTIFY_DELETE ");
-            }
-            if (fra[i].dir_flag & INOTIFY_ATTRIB)
-            {
-               (void)fprintf(stdout, "INOTIFY_ATTRIB ");
-            }
-# endif
 #endif
             if (fra[i].dir_flag & ALL_DISABLED)
             {
@@ -545,23 +497,8 @@ main(int argc, char *argv[])
             {
                (void)fprintf(stdout, "INFO_TIME_REACHED ");
             }
-#ifndef NEW_FRA
-            if (fra[i].dir_flag & DO_NOT_PARALLELIZE)
-            {
-               (void)fprintf(stdout, "DO_NOT_PARALLELIZE ");
-            }
-            if (fra[i].dir_flag & DO_NOT_MOVE)
-            {
-               (void)fprintf(stdout, "DO_NOT_MOVE ");
-            }
-            if (fra[i].dir_flag & ONE_PROCESS_JUST_SCANNING)
-            {
-               (void)fprintf(stdout, "ONE_PROCESS_JUST_SCANNING ");
-            }
-#endif
             (void)fprintf(stdout, "\n");
          }
-#ifdef NEW_FRA
          if (fra[i].dir_options == 0)
          {
             (void)fprintf(stdout, "Dir options   (    0): None\n");
@@ -593,7 +530,7 @@ main(int argc, char *argv[])
             {
                (void)fprintf(stdout, "KEEP_PATH ");
             }
-# ifdef WITH_INOTIFY
+#ifdef WITH_INOTIFY
             if (fra[i].dir_options & INOTIFY_RENAME)
             {
                (void)fprintf(stdout, "INOTIFY_RENAME ");
@@ -614,7 +551,7 @@ main(int argc, char *argv[])
             {
                (void)fprintf(stdout, "INOTIFY_ATTRIB ");
             }
-# endif
+#endif
             if (fra[i].dir_options & DO_NOT_PARALLELIZE)
             {
                (void)fprintf(stdout, "DO_NOT_PARALLELIZE ");
@@ -628,7 +565,6 @@ main(int argc, char *argv[])
                (void)fprintf(stdout, "ONE_PROCESS_JUST_SCANNING ");
             }
          }
-#endif
          if (fra[i].in_dc_flag == 0)
          {
             (void)fprintf(stdout, "In DIR_CONFIG flag   : None\n");

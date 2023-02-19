@@ -1,6 +1,6 @@
 /*
  *  fd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -646,9 +646,6 @@ main(int argc, char *argv[])
       int j;
 
       fsa[i].active_transfers = 0;
-#ifndef NEW_FSA
-      fsa[i].mc_nack_counter = 0;
-#endif
       if ((no_of_trl_groups > 0) ||
           (fsa[i].transfer_rate_limit > 0))
       {
@@ -657,9 +654,6 @@ main(int argc, char *argv[])
       else
       {
          fsa[i].trl_per_process = 0;
-#ifndef NEW_FSA
-         fsa[i].mc_ctrl_per_process = 0;
-#endif
       }
       for (j = 0; j < MAX_NO_PARALLEL_JOBS; j++)
       {
@@ -1615,9 +1609,6 @@ system_log(DEBUG_SIGN, NULL, 0,
             else
             {
                fsa[i].trl_per_process = 0;
-#ifndef NEW_FSA
-               fsa[i].mc_ctrl_per_process = 0;
-#endif
             }
          }
          host_config_counter = (int)*(unsigned char *)((char *)fsa - AFD_WORD_OFFSET + SIZEOF_INT);
@@ -6590,9 +6581,6 @@ fd_exit(void)
    {
       fsa[i].active_transfers = 0;
       fsa[i].trl_per_process = 0;
-#ifndef NEW_FSA
-      fsa[i].mc_ctrl_per_process = 0;
-#endif
       for (j = 0; j < MAX_NO_PARALLEL_JOBS; j++)
       {
          fsa[i].job_status[j].no_of_files = 0;

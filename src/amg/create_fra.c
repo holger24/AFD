@@ -472,86 +472,43 @@ create_fra(int no_of_dirs)
          fra[i].queued                 = 0;
          fra[i].error_counter          = 0;
 
-#ifdef NEW_FRA
          fra[i].dir_flag               = 0;
          fra[i].dir_options            = 0;
          if (dd[i].accept_dot_files == YES)
          {
             fra[i].dir_options |= ACCEPT_DOT_FILES;
          }
-#else
-         if (dd[i].accept_dot_files == NO)
-         {
-            fra[i].dir_flag            = 0;
-         }
-         else
-         {
-            fra[i].dir_flag            = ACCEPT_DOT_FILES;
-         }
-#endif
          if (dd[i].do_not_parallelize == YES)
          {
-#ifdef NEW_FRA
             fra[i].dir_options |= DO_NOT_PARALLELIZE;
-#else
-            fra[i].dir_flag |= DO_NOT_PARALLELIZE;
-#endif
          }
          if (dd[i].do_not_move == YES)
          {
-#ifdef NEW_FRA
             fra[i].dir_options |= DO_NOT_MOVE;
-#else
-            fra[i].dir_flag |= DO_NOT_MOVE;
-#endif
          }
          if (dd[i].do_not_get_dir_list == YES)
          {
-#ifdef NEW_FRA
             fra[i].dir_options |= DONT_GET_DIR_LIST;
-#else
-            fra[i].dir_flag |= DONT_GET_DIR_LIST;
-#endif
          }
          if (dd[i].url_creates_file_name == YES)
          {
-#ifdef NEW_FRA
             fra[i].dir_options |= URL_CREATES_FILE_NAME;
-#else
-            fra[i].dir_flag |= URL_CREATES_FILE_NAME;
-#endif
          }
          if (dd[i].url_with_index_file_name == YES)
          {
-#ifdef NEW_FRA
             fra[i].dir_options |= URL_WITH_INDEX_FILE_NAME;
-#else
-            fra[i].dir_flag |= URL_WITH_INDEX_FILE_NAME;
-#endif
          }
          if (dd[i].no_delimiter == YES)
          {
-#ifdef NEW_FRA
             fra[i].dir_options |= NO_DELIMITER;
-#else
-            fra[i].dir_flag |= NO_DELIMITER;
-#endif
          }
          if (dd[i].keep_path == YES)
          {
-#ifdef NEW_FRA
             fra[i].dir_options |= KEEP_PATH;
-#else
-            fra[i].dir_flag |= KEEP_PATH;
-#endif
          }
          if (dd[i].one_process_just_scaning == YES)
          {
-#ifdef NEW_FRA
             fra[i].dir_options |= ONE_PROCESS_JUST_SCANNING;
-#else
-            fra[i].dir_flag |= ONE_PROCESS_JUST_SCANNING;
-#endif
          }
          if (dd[i].create_source_dir == YES)
          {
@@ -567,43 +524,23 @@ create_fra(int no_of_dirs)
 #ifdef WITH_INOTIFY
          if (dd[i].inotify_flag & INOTIFY_RENAME_FLAG)
          {
-# ifdef NEW_FRA
             fra[i].dir_options |= INOTIFY_RENAME;
-# else
-            fra[i].dir_flag |= INOTIFY_RENAME;
-# endif
          }
          if (dd[i].inotify_flag & INOTIFY_CLOSE_FLAG)
          {
-# ifdef NEW_FRA
             fra[i].dir_options |= INOTIFY_CLOSE;
-# else
-            fra[i].dir_flag |= INOTIFY_CLOSE;
-# endif
          }
          if (dd[i].inotify_flag & INOTIFY_CREATE_FLAG)
          {
-# ifdef NEW_FRA
             fra[i].dir_options |= INOTIFY_CREATE;
-# else
-            fra[i].dir_flag |= INOTIFY_CREATE;
-# endif
          }
          if (dd[i].inotify_flag & INOTIFY_DELETE_FLAG)
          {
-# ifdef NEW_FRA
             fra[i].dir_options |= INOTIFY_DELETE;
-# else
-            fra[i].dir_flag |= INOTIFY_DELETE;
-# endif
          }
          if (dd[i].inotify_flag & INOTIFY_ATTRIB_FLAG)
          {
-# ifdef NEW_FRA
             fra[i].dir_options |= INOTIFY_ATTRIB;
-# else
-            fra[i].dir_flag |= INOTIFY_ATTRIB;
-# endif
          }
 #endif
          if (fra[i].no_of_time_entries > 0)
@@ -727,7 +664,6 @@ create_fra(int no_of_dirs)
             fra[i].dir_status             = old_fra[k].dir_status;
             fra[i].dir_flag               = old_fra[k].dir_flag;
             fra[i].error_counter          = old_fra[k].error_counter;
-#ifdef NEW_FRA
             fra[i].dir_options            = old_fra[k].dir_options;
             if (((fra[i].dir_options & ACCEPT_DOT_FILES) &&
                  (dd[i].accept_dot_files == NO)) ||
@@ -792,71 +728,6 @@ create_fra(int no_of_dirs)
             {
                fra[i].dir_options ^= ONE_PROCESS_JUST_SCANNING;
             }
-#else
-            if (((fra[i].dir_flag & ACCEPT_DOT_FILES) &&
-                 (dd[i].accept_dot_files == NO)) ||
-                (((fra[i].dir_flag & ACCEPT_DOT_FILES) == 0) &&
-                 (dd[i].accept_dot_files == YES)))
-            {
-               fra[i].dir_flag ^= ACCEPT_DOT_FILES;
-            }
-            if (((fra[i].dir_flag & DO_NOT_PARALLELIZE) &&
-                 (dd[i].do_not_parallelize == NO)) ||
-                (((fra[i].dir_flag & DO_NOT_PARALLELIZE) == 0) &&
-                 (dd[i].do_not_parallelize == YES)))
-            {
-               fra[i].dir_flag ^= DO_NOT_PARALLELIZE;
-            }
-            if (((fra[i].dir_flag & DO_NOT_MOVE) &&
-                 (dd[i].do_not_move == NO)) ||
-                (((fra[i].dir_flag & DO_NOT_MOVE) == 0) &&
-                 (dd[i].do_not_move == YES)))
-            {
-               fra[i].dir_flag ^= DO_NOT_MOVE;
-            }
-            if (((fra[i].dir_flag & DONT_GET_DIR_LIST) &&
-                 (dd[i].do_not_get_dir_list == NO)) ||
-                (((fra[i].dir_flag & DONT_GET_DIR_LIST) == 0) &&
-                 (dd[i].do_not_get_dir_list == YES)))
-            {
-               fra[i].dir_flag ^= DONT_GET_DIR_LIST;
-            }
-            if (((fra[i].dir_flag & URL_CREATES_FILE_NAME) &&
-                 (dd[i].url_creates_file_name == NO)) ||
-                (((fra[i].dir_flag & URL_CREATES_FILE_NAME) == 0) &&
-                 (dd[i].url_creates_file_name == YES)))
-            {
-               fra[i].dir_flag ^= URL_CREATES_FILE_NAME;
-            }
-            if (((fra[i].dir_flag & URL_WITH_INDEX_FILE_NAME) &&
-                 (dd[i].url_with_index_file_name == NO)) ||
-                (((fra[i].dir_flag & URL_WITH_INDEX_FILE_NAME) == 0) &&
-                 (dd[i].url_with_index_file_name == YES)))
-            {
-               fra[i].dir_flag ^= URL_WITH_INDEX_FILE_NAME;
-            }
-            if (((fra[i].dir_flag & NO_DELIMITER) &&
-                 (dd[i].no_delimiter == NO)) ||
-                (((fra[i].dir_flag & NO_DELIMITER) == 0) &&
-                 (dd[i].no_delimiter == YES)))
-            {
-               fra[i].dir_flag ^= NO_DELIMITER;
-            }
-            if (((fra[i].dir_flag & KEEP_PATH) &&
-                 (dd[i].keep_path == NO)) ||
-                (((fra[i].dir_flag & KEEP_PATH) == 0) &&
-                 (dd[i].keep_path == YES)))
-            {
-               fra[i].dir_flag ^= KEEP_PATH;
-            }
-            if (((fra[i].dir_flag & ONE_PROCESS_JUST_SCANNING) &&
-                 (dd[i].one_process_just_scaning == NO)) ||
-                (((fra[i].dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) &&
-                 (dd[i].one_process_just_scaning == YES)))
-            {
-               fra[i].dir_flag ^= ONE_PROCESS_JUST_SCANNING;
-            }
-#endif
             if ((dd[i].create_source_dir == NO) &&
                 (fra[i].dir_mode != 0))
             {
@@ -896,7 +767,6 @@ create_fra(int no_of_dirs)
                          fra[i].dir_alias);
             }
 #ifdef WITH_INOTIFY
-# ifdef NEW_FRA
             if ((fra[i].dir_options & INOTIFY_RENAME) &&
                 ((dd[i].inotify_flag & INOTIFY_RENAME_FLAG) == 0))
             {
@@ -947,58 +817,6 @@ create_fra(int no_of_dirs)
                  {
                     fra[i].dir_options |= INOTIFY_ATTRIB;
                  }
-# else
-            if ((fra[i].dir_flag & INOTIFY_RENAME) &&
-                ((dd[i].inotify_flag & INOTIFY_RENAME_FLAG) == 0))
-            {
-               fra[i].dir_flag &= ~INOTIFY_RENAME;
-            }
-            else if (((fra[i].dir_flag & INOTIFY_RENAME) == 0) &&
-                     (dd[i].inotify_flag & INOTIFY_RENAME_FLAG))
-                 {
-                    fra[i].dir_flag |= INOTIFY_RENAME;
-                 }
-            if ((fra[i].dir_flag & INOTIFY_CLOSE) &&
-                ((dd[i].inotify_flag & INOTIFY_CLOSE_FLAG) == 0))
-            {
-               fra[i].dir_flag &= ~INOTIFY_CLOSE;
-            }
-            else if (((fra[i].dir_flag & INOTIFY_CLOSE) == 0) &&
-                     (dd[i].inotify_flag & INOTIFY_CLOSE_FLAG))
-                 {
-                    fra[i].dir_flag |= INOTIFY_CLOSE;
-                 }
-            if ((fra[i].dir_flag & INOTIFY_CREATE) &&
-                ((dd[i].inotify_flag & INOTIFY_CREATE_FLAG) == 0))
-            {
-               fra[i].dir_flag &= ~INOTIFY_CREATE;
-            }
-            else if (((fra[i].dir_flag & INOTIFY_CREATE) == 0) &&
-                     (dd[i].inotify_flag & INOTIFY_CREATE_FLAG))
-                 {
-                    fra[i].dir_flag |= INOTIFY_CREATE;
-                 }
-            if ((fra[i].dir_flag & INOTIFY_DELETE) &&
-                ((dd[i].inotify_flag & INOTIFY_DELETE_FLAG) == 0))
-            {
-               fra[i].dir_flag &= ~INOTIFY_DELETE;
-            }
-            else if (((fra[i].dir_flag & INOTIFY_DELETE) == 0) &&
-                     (dd[i].inotify_flag & INOTIFY_DELETE_FLAG))
-                 {
-                    fra[i].dir_flag |= INOTIFY_DELETE;
-                 }
-            if ((fra[i].dir_flag & INOTIFY_ATTRIB) &&
-                ((dd[i].inotify_flag & INOTIFY_ATTRIB_FLAG) == 0))
-            {
-               fra[i].dir_flag &= ~INOTIFY_ATTRIB;
-            }
-            else if (((fra[i].dir_flag & INOTIFY_ATTRIB) == 0) &&
-                     (dd[i].inotify_flag & INOTIFY_ATTRIB_FLAG))
-                 {
-                    fra[i].dir_flag |= INOTIFY_ATTRIB;
-                 }
-# endif
 #endif
             fra[i].queued                 = old_fra[k].queued;
             (void)memcpy(&fra[i].ate, &old_fra[k].ate,
@@ -1018,86 +836,43 @@ create_fra(int no_of_dirs)
             fra[i].bytes_in_queue         = 0;
             fra[i].dir_status             = NORMAL_STATUS;
             fra[i].error_counter          = 0;
-#ifdef NEW_FRA
             fra[i].dir_options            = 0;
             fra[i].dir_flag               = 0;
             if (dd[i].accept_dot_files == YES)
             {
                fra[i].dir_options |= ACCEPT_DOT_FILES;
             }
-#else
-            if (dd[i].accept_dot_files == NO)
-            {
-               fra[i].dir_flag            = 0;
-            }
-            else
-            {
-               fra[i].dir_flag            = ACCEPT_DOT_FILES;
-            }
-#endif
             if (dd[i].do_not_parallelize == YES)
             {
-#ifdef NEW_FRA
                fra[i].dir_options |= DO_NOT_PARALLELIZE;
-#else
-               fra[i].dir_flag |= DO_NOT_PARALLELIZE;
-#endif
             }
             if (dd[i].do_not_move == YES)
             {
-#ifdef NEW_FRA
                fra[i].dir_options |= DO_NOT_MOVE;
-#else
-               fra[i].dir_flag |= DO_NOT_MOVE;
-#endif
             }
             if (dd[i].do_not_get_dir_list == YES)
             {
-#ifdef NEW_FRA
                fra[i].dir_options |= DONT_GET_DIR_LIST;
-#else
-               fra[i].dir_flag |= DONT_GET_DIR_LIST;
-#endif
             }
             if (dd[i].url_creates_file_name == YES)
             {
-#ifdef NEW_FRA
                fra[i].dir_options |= URL_CREATES_FILE_NAME;
-#else
-               fra[i].dir_flag |= URL_CREATES_FILE_NAME;
-#endif
             }
             if (dd[i].url_with_index_file_name == YES)
             {
-#ifdef NEW_FRA
                fra[i].dir_options |= URL_WITH_INDEX_FILE_NAME;
-#else
-               fra[i].dir_flag |= URL_WITH_INDEX_FILE_NAME;
-#endif
             }
             if (dd[i].no_delimiter == YES)
             {
-#ifdef NEW_FRA
                fra[i].dir_options |= NO_DELIMITER;
-#else
-               fra[i].dir_flag |= NO_DELIMITER;
-#endif
             }
             if (dd[i].keep_path == YES)
             {
-#ifdef NEW_FRA
                fra[i].dir_options |= KEEP_PATH;
-#else
-               fra[i].dir_flag |= KEEP_PATH;
-#endif
             }
             if (dd[i].one_process_just_scaning == YES)
             {
-#ifdef NEW_FRA
                fra[i].dir_options |= ONE_PROCESS_JUST_SCANNING;
-#else
-               fra[i].dir_flag |= ONE_PROCESS_JUST_SCANNING;
-#endif
             }
             if (dd[i].create_source_dir == YES)
             {
@@ -1113,43 +888,23 @@ create_fra(int no_of_dirs)
 #ifdef WITH_INOTIFY
             if (dd[i].inotify_flag & INOTIFY_RENAME_FLAG)
             {
-# ifdef NEW_FRA
                fra[i].dir_options |= INOTIFY_RENAME;
-# else
-               fra[i].dir_flag |= INOTIFY_RENAME;
-# endif
             }
             if (dd[i].inotify_flag & INOTIFY_CLOSE_FLAG)
             {
-# ifdef NEW_FRA
                fra[i].dir_options |= INOTIFY_CLOSE;
-# else
-               fra[i].dir_flag |= INOTIFY_CLOSE;
-# endif
             }
             if (dd[i].inotify_flag & INOTIFY_CREATE_FLAG)
             {
-# ifdef NEW_FRA
                fra[i].dir_options |= INOTIFY_CREATE;
-# else
-               fra[i].dir_flag |= INOTIFY_CREATE;
-# endif
             }
             if (dd[i].inotify_flag & INOTIFY_DELETE_FLAG)
             {
-# ifdef NEW_FRA
                fra[i].dir_options |= INOTIFY_DELETE;
-# else
-               fra[i].dir_flag |= INOTIFY_DELETE;
-# endif
             }
             if (dd[i].inotify_flag & INOTIFY_ATTRIB_FLAG)
             {
-# ifdef NEW_FRA
                fra[i].dir_options |= INOTIFY_ATTRIB;
-# else
-               fra[i].dir_flag |= INOTIFY_ATTRIB;
-# endif
             }
 #endif
             fra[i].queued                 = 0;

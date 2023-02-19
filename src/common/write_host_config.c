@@ -518,48 +518,24 @@ write_host_config(int              no_of_hosts,
 #endif
                            MAX_INT_LENGTH +
                            MAX_TIME_T_LENGTH +
-#ifdef NEW_FSA
                            MAX_INT_LENGTH +
-# ifdef WITH_DUP_CHECK
+#ifdef WITH_DUP_CHECK
                            23 +
-# else
-                           21 +
-# endif
 #else
-# ifdef WITH_DUP_CHECK
-                           22 +
-# else
-                           20 +
-# endif
+                           21 +
 #endif
                            2,
-#ifdef NEW_FSA
-# ifdef WITH_DUP_CHECK
-#  if SIZEOF_TIME_T == 4
+#ifdef WITH_DUP_CHECK
+# if SIZEOF_TIME_T == 4
                            "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%ld:%u:%u:%ld:%u\n",
-#  else
-                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%lld:%u:%u:%lld:%u\n",
-#  endif
 # else
-#  if SIZEOF_TIME_T == 4
-                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%u:%ld:%u\n",
-#  else
-                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%u:%lld:%u\n",
-#  endif
+                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%lld:%u:%u:%lld:%u\n",
 # endif
 #else
-# ifdef WITH_DUP_CHECK
-#  if SIZEOF_TIME_T == 4
-                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%ld:%u:%u:%ld\n",
-#  else
-                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%lld:%u:%u:%lld\n",
-#  endif
+# if SIZEOF_TIME_T == 4
+                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%u:%ld:%u\n",
 # else
-#  if SIZEOF_TIME_T == 4
-                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%u:%ld\n",
-#  else
-                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%u:%lld\n",
-#  endif
+                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%u:%lld:%u\n",
 # endif
 #endif
                            p_hl[i].host_alias,
@@ -590,12 +566,8 @@ write_host_config(int              no_of_hosts,
                            p_hl[i].dup_check_flag,
 #endif
                            p_hl[i].keep_connected,
-#ifdef NEW_FSA
                            (pri_time_t)p_hl[i].warn_time,
                            p_hl[i].protocol_options2);
-#else
-                           (pri_time_t)p_hl[i].warn_time);
-#endif
       }
 
       if (write(fd, line_buffer, length) != length)

@@ -1,6 +1,6 @@
 /*
  *  handle_delete_fifo.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -298,9 +298,6 @@ handle_delete_fifo(int delete_jobs_fd, size_t fifo_size, char *file_dir)
                   fsa[fsa_pos].total_file_counter = 0;
                   fsa[fsa_pos].total_file_size = 0;
                   fsa[fsa_pos].active_transfers = 0;
-#ifndef NEW_FSA
-                  fsa[fsa_pos].mc_nack_counter = 0;
-#endif
                   if ((fsa[fsa_pos].transfer_rate_limit > 0) ||
                       (no_of_trl_groups > 0))
                   {

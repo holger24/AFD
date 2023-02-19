@@ -565,9 +565,6 @@ wmod_exit(void)
                              fsa_pos, fsa[fsa_pos].active_transfers);
                   fsa[fsa_pos].active_transfers = 0;
                   fsa[fsa_pos].trl_per_process = fsa[fsa_pos].transfer_rate_limit;
-#ifndef NEW_FSA
-                  fsa[fsa_pos].mc_ctrl_per_process = fsa[fsa_pos].mc_ct_rate_limit;
-#endif
                }
                else
                {
@@ -575,17 +572,10 @@ wmod_exit(void)
                   {
                      fsa[fsa_pos].trl_per_process = fsa[fsa_pos].transfer_rate_limit /
                                                     fsa[fsa_pos].active_transfers;
-#ifndef NEW_FSA
-                     fsa[fsa_pos].mc_ctrl_per_process = fsa[fsa_pos].mc_ct_rate_limit /
-                                                        fsa[fsa_pos].active_transfers;
-#endif
                   }
                   else
                   {
                      fsa[fsa_pos].trl_per_process = fsa[fsa_pos].transfer_rate_limit;
-#ifndef NEW_FSA
-                     fsa[fsa_pos].mc_ctrl_per_process = fsa[fsa_pos].mc_ct_rate_limit;
-#endif
                   }
                }
                fsa[fsa_pos].job_status[pl[i].job_pos].connect_status = DISCONNECT;
@@ -634,9 +624,6 @@ zombie_check(void)
                           fsa_pos, fsa[fsa_pos].active_transfers);
                fsa[fsa_pos].active_transfers = 0;
                fsa[fsa_pos].trl_per_process = fsa[fsa_pos].transfer_rate_limit;
-#ifndef NEW_FSA
-               fsa[fsa_pos].mc_ctrl_per_process = fsa[fsa_pos].mc_ct_rate_limit;
-#endif
             }
             else
             {
@@ -644,17 +631,10 @@ zombie_check(void)
                {
                   fsa[fsa_pos].trl_per_process = fsa[fsa_pos].transfer_rate_limit /
                                                  fsa[fsa_pos].active_transfers;
-#ifndef NEW_FSA
-                  fsa[fsa_pos].mc_ctrl_per_process = fsa[fsa_pos].mc_ct_rate_limit /
-                                                     fsa[fsa_pos].active_transfers;
-#endif
                }
                else
                {
                   fsa[fsa_pos].trl_per_process = fsa[fsa_pos].transfer_rate_limit;
-#ifndef NEW_FSA
-                  fsa[fsa_pos].mc_ctrl_per_process = fsa[fsa_pos].mc_ct_rate_limit;
-#endif
                }
             }
          }
@@ -671,9 +651,6 @@ zombie_check(void)
                                 fsa_pos, fsa[fsa_pos].active_transfers);
                      fsa[fsa_pos].active_transfers = 0;
                      fsa[fsa_pos].trl_per_process = fsa[fsa_pos].transfer_rate_limit;
-#ifndef NEW_FSA
-                     fsa[fsa_pos].mc_ctrl_per_process = fsa[fsa_pos].mc_ct_rate_limit;
-#endif
                   }
                   else
                   {
@@ -681,17 +658,10 @@ zombie_check(void)
                      {
                         fsa[fsa_pos].trl_per_process = fsa[fsa_pos].transfer_rate_limit /
                                                        fsa[fsa_pos].active_transfers;
-#ifndef NEW_FSA
-                        fsa[fsa_pos].mc_ctrl_per_process = fsa[fsa_pos].mc_ct_rate_limit /
-                                                           fsa[fsa_pos].active_transfers;
-#endif
                      }
                      else
                      {
                         fsa[fsa_pos].trl_per_process = fsa[fsa_pos].transfer_rate_limit;
-#ifndef NEW_FSA
-                        fsa[fsa_pos].mc_ctrl_per_process = fsa[fsa_pos].mc_ct_rate_limit;
-#endif
                      }
                   }
                }

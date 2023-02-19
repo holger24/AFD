@@ -385,12 +385,10 @@ main(int argc, char *argv[])
          {
             (void)fprintf(stdout, "disable_mlst ");
          }
-#ifdef NEW_FSA
          if (fsa[j].protocol_options2 & FTP_SEND_UTF8_ON)
          {
             (void)fprintf(stdout, "send_utf8_on ");
          }
-#endif
          if (fsa[j].protocol_options & IMPLICIT_FTPS)
          {
             (void)fprintf(stdout, "implicit_ftps ");
@@ -923,10 +921,6 @@ main(int argc, char *argv[])
                     fsa[j].bytes_send);
       (void)fprintf(stdout, "Connections          : %u\n",
                     fsa[j].connections);
-#ifndef NEW_FSA
-      (void)fprintf(stdout, "MC NACK counter      : %u\n",
-                    fsa[j].mc_nack_counter);
-#endif
       (void)fprintf(stdout, "Jobs queued          : %u\n",
                     fsa[j].jobs_queued);
       (void)fprintf(stdout, "Active transfers     : %d\n",
@@ -938,23 +932,11 @@ main(int argc, char *argv[])
                     (pri_off_t)fsa[j].transfer_rate_limit);
       (void)fprintf(stdout, "Rate limit per proc  : %ld\n",
                     (pri_off_t)fsa[j].trl_per_process);
-# ifndef NEW_FSA
-      (void)fprintf(stdout, "MC Rate limit        : %ld\n",
-                    (pri_off_t)fsa[j].mc_ct_rate_limit);
-      (void)fprintf(stdout, "MC Rate limit/proc   : %ld\n",
-                    (pri_off_t)fsa[j].mc_ctrl_per_process);
-# endif
 #else
       (void)fprintf(stdout, "Rate limit           : %lld\n",
                     (pri_off_t)fsa[j].transfer_rate_limit);
       (void)fprintf(stdout, "Rate limit per proc  : %lld\n",
                     (pri_off_t)fsa[j].trl_per_process);
-# ifndef NEW_FSA
-      (void)fprintf(stdout, "MC Rate limit        : %lld\n",
-                    (pri_off_t)fsa[j].mc_ct_rate_limit);
-      (void)fprintf(stdout, "MC Rate limit/proc   : %lld\n",
-                    (pri_off_t)fsa[j].mc_ctrl_per_process);
-# endif
 #endif
 
       if (fsa[j].real_hostname[0][0] != GROUP_IDENTIFIER)

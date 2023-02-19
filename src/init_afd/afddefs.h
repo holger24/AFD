@@ -27,8 +27,6 @@
 #define DESCR__S_M3             /* Start for Subroutines Man Page.  */
 #define DESCR__E_M3             /* End for Subroutines Man Page.    */
 
-/* #define NEW_FRA */
-/* #define NEW_FSA */
 /* #define NEW_PWB */    /* Nothing new yet! */
 
 #define WITH_TIMEZONE 1
@@ -262,11 +260,7 @@ typedef unsigned long       u_long_64;
  *           README.configure to correct the values there too.
  */
 #ifndef MAX_REAL_HOSTNAME_LENGTH
-# if defined NEW_FSA && defined NEW_FRA
-#  define MAX_REAL_HOSTNAME_LENGTH 70
-# else
-#  define MAX_REAL_HOSTNAME_LENGTH 40
-# endif
+# define MAX_REAL_HOSTNAME_LENGTH 70
 #endif
 
 /* Define the names of the program's. */
@@ -2503,11 +2497,7 @@ typedef unsigned long       u_long_64;
 #define AFD_START_ERROR_OFFSET_END    10 /* From end   */
 
 /* Structure that holds status of the file transfer for each host. */
-#ifdef NEW_FSA
-# define CURRENT_FSA_VERSION 4
-#else
-# define CURRENT_FSA_VERSION 3
-#endif
+#define CURRENT_FSA_VERSION 4
 struct status
        {
           pid_t         proc_id;            /* Process ID of transfering */
@@ -2521,13 +2511,11 @@ struct status
                                             /* etc), each of these is    */
                                             /* identified by this number.*/
 #endif
-#ifdef NEW_FSA
           unsigned char special_flag;       /*+-----+-------------------+*/
                                             /*| Bit |      Meaning      |*/
                                             /*+-----+-------------------+*/
                                             /*| 1-8 | Not used.         |*/
                                             /*+-----+-------------------+*/
-#endif
           char          connect_status;     /* The status of what        */
                                             /* sf_xxx() is doing.        */
           int           no_of_files;        /* Total number of all files */
@@ -2676,7 +2664,6 @@ struct filetransfer_status
                                             /*|    2| SET_IDLE_TIME     |*/
                                             /*|    1| FTP_PASSIVE_MODE  |*/
                                             /*+-----+-------------------+*/
-#ifdef NEW_FSA
           unsigned int   protocol_options2; /* More special options for  */
                                             /* the protocols:            */
                                             /*+-----+-------------------+*/
@@ -2685,7 +2672,6 @@ struct filetransfer_status
                                             /*| 2-32| Not used.         |*/
                                             /*|    1| FTP_SEND_UTF8_ON  |*/
                                             /*+-----+-------------------+*/
-#endif
           unsigned int   socksnd_bufsize;   /* Socket buffer size for    */
                                             /* sending data. 0 is default*/
                                             /* which is the socket buffer*/
@@ -2811,11 +2797,6 @@ struct filetransfer_status
           unsigned int   file_counter_done; /* No. of files done so far. */
           u_off_t        bytes_send;        /* No. of bytes send so far. */
           unsigned int   connections;       /* No. of connections.       */
-#ifndef NEW_FSA /* Remove! */
-          unsigned int   mc_nack_counter;   /* Multicast Negative        */
-                                            /* Acknowledge Counter.      */
-                                            /* NOTE: Unused!             */
-#endif
           int            active_transfers;  /* No. of jobs transferring  */
                                             /* data.                     */
           int            allowed_transfers; /* Maximum no. of parallel   */
@@ -2827,15 +2808,6 @@ struct filetransfer_status
                                             /* second.                   */
           off_t          trl_per_process;   /* Transfer rate limit per   */
                                             /* active process.           */
-#ifndef NEW_FSA /* Remove! */
-          off_t          mc_ct_rate_limit;  /* Multicast current transfer*/
-                                            /* rate limit.               */
-                                            /* NOTE: Unused!             */
-          off_t          mc_ctrl_per_process;/* Multicast current        */
-                                            /* transfer rate limit per   */
-                                            /* process.                  */
-                                            /* NOTE: Unused!             */
-#endif
           struct status  job_status[MAX_NO_PARALLEL_JOBS];
        };
 
@@ -2960,11 +2932,7 @@ struct bd_time_entry
        };
 
 /* Structure holding all neccessary data for retrieving files. */
-#ifdef NEW_FRA
-# define CURRENT_FRA_VERSION     8
-#else
-# define CURRENT_FRA_VERSION     7
-#endif
+#define CURRENT_FRA_VERSION     8
 #define MAX_FRA_TIME_ENTRIES     12
 #define MAX_FRA_TIME_ENTRIES_STR "MAX_FRA_TIME_ENTRIES"
 #define MAX_WAIT_FOR_LENGTH      64
@@ -3075,7 +3043,6 @@ struct fileretrieve_status
                                             /* is being used.            */
           unsigned int  files_received;     /* No. of files received so  */
                                             /* far.                      */
-#ifdef NEW_FRA
           unsigned int  dir_options;
                                             /*+-----+-------------------+*/
                                             /*| Bit |      Meaning      |*/
@@ -3102,7 +3069,6 @@ struct fileretrieve_status
                                             /*|    6| ACCEPT_DOT_FILES  |*/
                                             /*|  1-5| Not used.         |*/
                                             /*+-----+-------------------+*/
-#endif
           unsigned int  dir_flag;           /* Flag for this directory   */
                                             /* informing about the       */
                                             /* following status:         */

@@ -2288,7 +2288,6 @@ eval_host_config(int              *hosts_found,
          }
       }
 
-#ifdef NEW_FSA
       /* Store the protocol options 2. */
       i = 0; ptr++;
       while ((*ptr != ':') && (*ptr != '\n') && (*ptr != '\0') &&
@@ -2348,7 +2347,6 @@ eval_host_config(int              *hosts_found,
                        DEFAULT_PROTOCOL_OPTIONS2);
          (*hl)[host_counter].protocol_options2 = DEFAULT_PROTOCOL_OPTIONS2;
       }
-#endif
 
       /* Ignore the rest of the line. We have everything we need. */
       while ((*ptr != '\n') && (*ptr != '\0'))
