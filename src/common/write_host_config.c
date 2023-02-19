@@ -86,7 +86,7 @@ DESCR__E_M3
 #                Host configuration file for the AFD\n\
 #                ===================================\n\
 #\n\
-# There are 22 parameters that can be configured for each remote\n\
+# There are 24 parameters that can be configured for each remote\n\
 # host. They are:\n\
 #\n\
 # Protocol options 2      <-----------------------------------------------------+\n\
@@ -131,7 +131,7 @@ DESCR__E_M3
 #                Host configuration file for the AFD\n\
 #                ===================================\n\
 #\n\
-# There are 20 parameters that can be configured for each remote\n\
+# There are 22 parameters that can be configured for each remote\n\
 # host. They are:\n\
 #\n\
 # Protocol options 2      <-----------------------------------------------+\n\
@@ -191,7 +191,7 @@ DESCR__E_M3
 #                          DEFAULT: None (Empty)\n\
 # Allowed transfers      - The maximum number of parallel transfers for this\n\
 #                          host.\n\
-#                          DEFAULT: 2\n\
+#                          DEFAULT: 3\n\
 # Max. errors            - If max. errors is reached the destination identifier\n\
 #                          turns 'red'. If error retries reaches twice max.\n\
 #                          errors the queue of this host will be paused.\n\
@@ -287,7 +287,7 @@ DESCR__E_M3
 #                          23(4194304) - TLS uses strict verification of host.\n\
 #                          24(8388608) - Disables FTP MLST for directory listing.\n\
 #                          25(16777216)- Disconnect after given keep connected time.\n\
-#                          26(33554432)- Disable SSH stricht host key checking.\n\
+#                          26(33554432)- Disable SSH strict host key checking.\n\
 #                          27(67108864)- Enable FTP STAT listing.\n\
 #                          28(134217728)- Set implicit FTPS.\n\
 #                          30(536870912)- Do not use HTTP expect.\n\
@@ -295,9 +295,9 @@ DESCR__E_M3
 #                          32(2147483648)- TLS legacy renegotiation.\n\
 #                          DEFAULT: 1\n\
 # Transfer rate limit    - The maximum number of kilobytes that may be\n\
-#                          transfered per second.\n\
+#                          transferred per second.\n\
 #                          DEFAULT: 0 (Disabled)\n\
-# TTL                    - The time-to-live for outgoing multicasts.\n\
+# TTL                    - The time-to-live for outgoing multicast.\n\
 # Socket send buffer     - How large the socket send buffer should be in\n\
 #                          bytes. If this is zero it will leave it unchanged\n\
 #                          ie. it will leave the system default.\n\

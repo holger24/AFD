@@ -10,7 +10,7 @@
 The second configuration file for the AFD is used to do a configuration
 by host name. There can be as many entries as you want and it must
 not always have a corresponding host name in the DIR_CONFIG file or
-visa versa. This file consists of a table with 17 entries for each
+visa versa. This file consists of a table with 24 entries for each
 host. See below for a description of each entry.
 </p>
 <pre>
@@ -92,7 +92,7 @@ host. See below for a description of each entry.
    <th valign=top><a name="allowed_transfers">Allowed Transfers</a></th>
    <td>The maximum number of parallel transfers for this host. On very
        slow connection it is best to allow just one. The default here is
-       two.</td>
+       three.</td>
 </tr>
 <tr>
    <th valign=top><a name="max_errors">Max. Errors</a></th>
@@ -111,7 +111,7 @@ host. See below for a description of each entry.
        value is 4096 (DEFAULT_TRANSFER_BLOCKSIZE).</td>
 </tr>
 <tr>
-   <th valign=top><a name="sucessful_retries">Successful Retries</a></th>
+   <th valign=top><a name="successful_retries">Successful Retries</a></th>
    <td>This is the number of successful retries to the secondary host
        before it will try to send to the original host to see if it
        has become available again. If a value of less then one is specified
@@ -354,7 +354,7 @@ host. See below for a description of each entry.
               the LIST command and evaluates this listing (the output
               of the dir command of an ftp client). This can be far less
               accurate with regard to time and size, depending on FTP
-              server and confiuration of it. Some represent larger size
+              server and configuration of it. Some represent larger size
               values in human readable form kilobytes, megabytes, etc.
               Some FTP servers represent the date of a file different
               when the file reaches a certain date.</td>
@@ -396,7 +396,7 @@ host. See below for a description of each entry.
           <td align=center>28</td>
           <td align=center>134217728</td>
           <td>If <a href="edit_hc.html#implicit_ftps">Implicit</a>
-              is set implisit FTPS is used to connect.</td>
+              is set implicit FTPS is used to connect.</td>
        </tr>
        <tr>
           <td align=center>30</td>
@@ -423,7 +423,7 @@ host. See below for a description of each entry.
 </tr>
 <tr>
    <th valign=top><a name="ttl">TTL</a></th>
-   <td>The time-to-live for outgoing multicasts. Currently this is not
+   <td>The time-to-live for outgoing multicast. Currently this is not
        used.</td>
 </tr>
 <tr>
@@ -451,7 +451,7 @@ host. See below for a description of each entry.
        <pre>
       1 (1)          - Only do CRC checksum for filename.
       2 (2)          - Only do CRC checksum for file content.
-      3 (4)          - Cecksum for filename and content.
+      3 (4)          - Checksum for filename and content.
       4 (8)          - Checksum of filename without last suffix.
       5 (16)         - Checksum of filename and size.
       16(32768)      - Do a CRC32 checksum.
@@ -491,7 +491,7 @@ host. See below for a description of each entry.
        <tr>
           <td align=center>1</td>
           <td align=center>1</td>
-          <td>Sends OPTS UTF8 ON.</td>
+          <td>Sends OPTS UTF8 ON to the FTP server.</td>
        </tr>
        </table>
        The default is 0.</td>
@@ -503,7 +503,7 @@ host. See below for a description of each entry.
    <td width="90%"><small><address>
    Copyright &copy; 1997 - 2023 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 18.02.2023
+   Last updated: 19.02.2023
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
