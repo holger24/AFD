@@ -317,9 +317,9 @@
 --with-rpm-binary-group=GROUP        - Group name of binaries in RPM.
                                        [Default: OWNER]
 --with-max-no-of-parallel-jobs=N     - Maximum number of parallel transfer per
-                                       host alias. [Default: 5]
+                                       host alias. [Default: 9]
 --with-default-no-of-parallel-jobs=N - Default number of parallel transfers
-                                       per host alias. [Default: 2]
+                                       per host alias. [Default: 3]
 --with-default-archive-unit=N        - The default archive unit in seconds.
                                        [Default: 86400]
 --with-max-hostname-length=N         - The maximum length that the host

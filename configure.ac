@@ -690,22 +690,22 @@ AC_ARG_WITH(max-no-of-parallel-jobs,
             [],
             if test "$ac_cv_with_afdbench_settings" = "yes"
             then
-               with_max_no_of_parallel_jobs=10
+               with_max_no_of_parallel_jobs=12
             else
-               with_max_no_of_parallel_jobs=5
+               with_max_no_of_parallel_jobs=9
             fi)
 AC_DEFINE_UNQUOTED([MAX_NO_PARALLEL_JOBS], [$with_max_no_of_parallel_jobs], [
   The value of MAX_NO_PARALLEL_JOBS determines the number of parallel
-  transfers per host. The default is 5, which should be enough in most
+  transfers per host. The default is 9, which should be enough in most
   cases. However, on some long distance lines or lines with high latencies
   it might be necessary to increase this value.])
 AC_ARG_WITH(default-no-of-parallel-jobs,
             AS_HELP_STRING([--with-default-no-of-parallel-jobs=N],
-                           [default number of parallel transfers per host (default=2)]),
-            , with_default_no_of_parallel_jobs=2)
+                           [default number of parallel transfers per host (default=3)]),
+            , with_default_no_of_parallel_jobs=3)
 AC_DEFINE_UNQUOTED([DEFAULT_NO_PARALLEL_JOBS], [$with_default_no_of_parallel_jobs], [
   The value of DEFAULT_NO_PARALLEL_JOBS determines the default number of
-  parallel transfers per host. The default is 2.])
+  parallel transfers per host. The default is 3.])
 AC_ARG_WITH(default-archive-unit,
             AS_HELP_STRING([--with-default-archive-unit=N],
                            [default archive unit in seconds (default=86400)]),

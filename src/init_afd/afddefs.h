@@ -235,7 +235,7 @@ typedef unsigned long       u_long_64;
  * The default number of parallel jobs per host.
  */
 #ifndef DEFAULT_NO_PARALLEL_JOBS
-# define DEFAULT_NO_PARALLEL_JOBS 2
+# define DEFAULT_NO_PARALLEL_JOBS 3
 #endif
 /*
  * The maximum length of the host name (alias) that is displayed by
@@ -1589,9 +1589,9 @@ typedef unsigned long       u_long_64;
                                             /* event reason.                */
 #ifndef MAX_NO_PARALLEL_JOBS
 # ifdef AFDBENCH_CONFIG
-#  define MAX_NO_PARALLEL_JOBS       10
+#  define MAX_NO_PARALLEL_JOBS       12
 # else
-#  define MAX_NO_PARALLEL_JOBS       5      /* Maximum number of parallel   */
+#  define MAX_NO_PARALLEL_JOBS       9      /* Maximum number of parallel   */
                                             /* jobs per host alias.         */
 # endif
 #endif
