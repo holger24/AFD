@@ -1,6 +1,6 @@
 /*
  *  print_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -54,13 +54,13 @@ DESCR__E_M3
 #include "show_cmd.h"
 
 /* External global variables. */
-extern Widget  cmd_output,
-               printshell,
-               statusbox_w;
-extern char    file_name[];
-extern int     device_type,
-               range_type;
-extern FILE    *fp;
+extern Widget      cmd_output,
+                   printshell,
+                   statusbox_w;
+extern char        file_name[];
+extern XT_PTR_TYPE device_type,
+                   range_type;
+extern FILE        *fp;
 
 
 /*######################### print_data_button() #########################*/

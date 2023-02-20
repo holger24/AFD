@@ -1,6 +1,6 @@
 /*
  *  mafd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -788,43 +788,47 @@ main(int argc, char *argv[])
          exit(INCORRECT);
       }
 
+#ifdef HAVE_STATX
+      if ((statx(0, probe_only_fifo, AT_STATX_SYNC_AS_STAT,
+                 STATX_MODE, &stat_buf) == -1) ||
+          (!S_ISFIFO(stat_buf.stx_mode)))
+#else
+      if ((stat(probe_only_fifo, &stat_buf) == -1) ||
+          (!S_ISFIFO(stat_buf.st_mode)))
+#endif
+      {
+         if (make_fifo(probe_only_fifo) < 0)
+         {
+            (void)fprintf(stderr,
+                          "Could not create fifo %s. (%s %d)\n",
+                          probe_only_fifo, __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
+      }
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+      if (open_fifo_rw(probe_only_fifo, &readfd, &writefd) == -1)
+#else
+      if ((readfd = coe_open(probe_only_fifo, O_RDWR)) == -1)
+#endif
+      {
+         (void)fprintf(stderr, "Could not open fifo %s : %s (%s %d)\n",
+                       probe_only_fifo, strerror(errno), __FILE__, __LINE__);
+         exit(INCORRECT);
+      }
+
       if (ret == ACKN_STOPPED)
       {
          if (send_afdmon_start() != 1)
          {
+            (void)close(readfd);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+            (void)close(writefd);
+#endif
             exit(1);
          }
       }
       else
       {
-#ifdef HAVE_STATX
-         if ((statx(0, probe_only_fifo, AT_STATX_SYNC_AS_STAT,
-                    STATX_MODE, &stat_buf) == -1) ||
-             (!S_ISFIFO(stat_buf.stx_mode)))
-#else
-         if ((stat(probe_only_fifo, &stat_buf) == -1) ||
-             (!S_ISFIFO(stat_buf.st_mode)))
-#endif
-         {
-            if (make_fifo(probe_only_fifo) < 0)
-            {
-               (void)fprintf(stderr,
-                             "Could not create fifo %s. (%s %d)\n",
-                             probe_only_fifo, __FILE__, __LINE__);
-               exit(INCORRECT);
-            }
-         }
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-         if (open_fifo_rw(probe_only_fifo, &readfd, &writefd) == -1)
-#else
-         if ((readfd = coe_open(probe_only_fifo, O_RDWR)) == -1)
-#endif
-         {
-            (void)fprintf(stderr, "Could not open fifo %s : %s (%s %d)\n",
-                          probe_only_fifo, strerror(errno), __FILE__, __LINE__);
-            exit(INCORRECT);
-         }
-
          /* Start AFD_MON. */
          (void)strcpy(exec_cmd, AFD_MON);
          system_log(INFO_SIGN, NULL, 0,

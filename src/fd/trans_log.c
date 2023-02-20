@@ -1,6 +1,6 @@
 /*
  *  trans_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -61,15 +61,15 @@ DESCR__E_M3
 #include <errno.h>
 #include "fddefs.h"
 
-extern int                        timeout_flag,
+extern int                        *p_no_of_hosts,
+                                  timeout_flag,
                                   trans_db_log_fd,
 #ifdef WITHOUT_FIFO_RW_SUPPORT
                                   trans_db_log_readfd,
 #endif
                                   transfer_log_fd;
 extern long                       transfer_timeout;
-extern char                       *p_no_of_hosts,
-                                  *p_work_dir,
+extern char                       *p_work_dir,
                                   tr_hostname[];
 extern struct job                 db;
 extern struct filetransfer_status *fsa;

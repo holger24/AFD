@@ -1,6 +1,6 @@
 /*
  *  xsend_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -140,7 +140,7 @@ static void      init_xsend_file(int *, char **, char *, char *),
 int
 main(int argc, char *argv[])
 {
-   char            window_title[40];
+   char            window_title[11 + MAX_AFD_NAME_LENGTH + 1];
    static String   fallback_res[] =
                    {
                       ".xsend_file*mwmDecorations : 110",
@@ -1136,7 +1136,7 @@ init_xsend_file(int  *argc,
    (void)strcpy(title_name, "xsend_file ");
    if (get_afd_name(&title_name[11]) == INCORRECT)
    {
-      (void)gethostname(&title_name[11], 29);
+      (void)gethostname(&title_name[11], MAX_AFD_NAME_LENGTH - 11);
    }
 
    if ((db = malloc(sizeof(struct send_data))) == NULL)

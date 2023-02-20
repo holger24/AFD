@@ -207,6 +207,7 @@ reread_host_config(time_t           *hc_old_time,
       {
          system_log(DEBUG_SIGN, __FILE__, __LINE__,
                     "Hmm, no old HOST_CONFIG data!");
+         *old_no_of_hosts = 0;
       }
 
       /*
@@ -238,7 +239,7 @@ reread_host_config(time_t           *hc_old_time,
       /* First lets search if any host_alias has been removed */
       /* that is still in DIR_CONFIG. If that is the case     */
       /* put it back into the HOST_CONFIG.                    */
-      (void)memset(mark_list, NO, *old_no_of_hosts);
+      (void)memset(mark_list, NO, (unsigned int)(*old_no_of_hosts));
       for (i = 0; i < new_no_of_hosts; i++)
       {
          for (j = 0; j < *old_no_of_hosts; j++)
@@ -251,6 +252,7 @@ reread_host_config(time_t           *hc_old_time,
             }
          }
       }
+      p_host_list_put_back = host_list_put_back;
       for (i = 0; i < *old_no_of_hosts; i++)
       {
          if (mark_list[i] == NO)
@@ -305,7 +307,6 @@ reread_host_config(time_t           *hc_old_time,
                                       strerror(errno));
                            exit(INCORRECT);
                         }
-                        p_host_list_put_back = host_list_put_back;
                         p_host_list_put_back += snprintf(host_list_put_back,
                                                          MAX_HOSTNAME_LENGTH + 1,
                                                          "%s",
@@ -337,7 +338,7 @@ reread_host_config(time_t           *hc_old_time,
       }
 #endif /* CHECK_HOST_REMOVED_BUT_STILL_IN_DIR_CONFIG */
 
-      (void)memset(mark_list, NO, *old_no_of_hosts);
+      (void)memset(mark_list, NO, (unsigned int)(*old_no_of_hosts));
       for (i = 0; i < new_no_of_hosts; i++)
       {
          host_pos = INCORRECT;

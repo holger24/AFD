@@ -1,6 +1,6 @@
 /*
  *  select_event_actions.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -63,20 +63,20 @@ DESCR__E_M3
 #define NO_OF_COLUMNS 3
 
 /* Global variables. */
-int                 toggle_counter;
-Widget              selectshell = (Widget)NULL,
-                    *toggle_w = NULL;
+int                toggle_counter;
+Widget             selectshell = (Widget)NULL,
+                   *toggle_w = NULL;
 
 /* External global variables. */
-extern unsigned int dr_toggles_set;
-extern Display      *display;
-extern Widget       appshell;
-extern char         font_name[];
+extern XT_PTR_TYPE dr_toggles_set;
+extern Display     *display;
+extern Widget      appshell;
+extern char        font_name[];
 
 /* Local function prototypes. */
-static void         done_button(Widget, XtPointer, XtPointer),
-                    dr_toggle_all(Widget, XtPointer, XtPointer),
-                    dr_toggled(Widget, XtPointer, XtPointer);
+static void        done_button(Widget, XtPointer, XtPointer),
+                   dr_toggle_all(Widget, XtPointer, XtPointer),
+                   dr_toggled(Widget, XtPointer, XtPointer);
 
 
 

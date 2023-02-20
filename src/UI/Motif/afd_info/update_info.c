@@ -1,6 +1,6 @@
 /*
  *  update_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -60,8 +60,8 @@ extern char                       host_name[],
                                   host_alias_1[],
                                   host_alias_2[],
                                   *info_data,
-                                  label_l[NO_OF_FSA_ROWS][40],
-                                  label_r[NO_OF_FSA_ROWS][40],
+                                  label_l[NO_OF_FSA_ROWS][46],
+                                  label_r[NO_OF_FSA_ROWS][46],
                                   protocol_label_str[];
 extern Display                    *display;
 extern XtIntervalId               interval_id_host;

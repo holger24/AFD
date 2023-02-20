@@ -1591,7 +1591,7 @@ main(int argc, char *argv[])
                                 {
                                    if (dc_changed == YES)
                                    {
-                                      int              old_no_of_hosts,
+                                      int              old_no_of_hosts = 0,
                                                        old_using_groups = using_groups,
                                                        rewrite_host_config = NO;
                                       size_t           old_size = 0;

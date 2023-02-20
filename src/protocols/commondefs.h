@@ -1,6 +1,6 @@
 /*
  *  commondefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 # include <openssl/ssl.h>
 #endif
 
-#define MAX_CONTENT_TYPE_LENGTH 25
+#define MAX_CONTENT_TYPE_LENGTH 30
 
 /* Function prototypes. */
 extern void    get_content_type(char *, char *, int);
