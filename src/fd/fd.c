@@ -73,6 +73,8 @@ DESCR__S_M1
  **                      error situation.
  **   28.02.2022 H.Kiehl Inform user if we have reached maximum number
  **                      of parallel transfers.
+ **   16.02.2023 H.Kiehl If CREATE_TARGET_DIR is not found in AFD_CONFIG
+ **                      do not disable it in feature flag of FSA.
  **
  */
 DESCR__E_M1
@@ -5503,10 +5505,6 @@ get_afd_config_value(void)
                *(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) |= ENABLE_CREATE_TARGET_DIR;
             }
          }
-      }
-      else
-      {
-         *(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) &= ~ENABLE_CREATE_TARGET_DIR;
       }
       if (get_definition(buffer, SIMULATE_SEND_MODE_DEF,
                          config_file, MAX_INT_LENGTH) != NULL)
