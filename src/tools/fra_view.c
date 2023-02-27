@@ -564,6 +564,7 @@ main(int argc, char *argv[])
             {
                (void)fprintf(stdout, "ONE_PROCESS_JUST_SCANNING ");
             }
+            (void)fprintf(stdout, "\n");
          }
          if (fra[i].in_dc_flag == 0)
          {
