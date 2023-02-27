@@ -1,6 +1,6 @@
 /*
  *  afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1361,7 +1361,8 @@ usage(char *progname)
    (void)fprintf(stderr, _("                              level of initialization. The higher the number\n"));
    (void)fprintf(stderr, _("                              the more data will be deleted. If no number is\n"));
    (void)fprintf(stderr, _("                              specified the level will be 5. 9 is the same\n"));
-   (void)fprintf(stderr, _("                              as -I below.\n"));
+   (void)fprintf(stderr, _("                              as -I below. As of a level 7 it will not try\n"));
+   (void)fprintf(stderr, _("                              to restore any values set via afdcfg.\n"));
    (void)fprintf(stderr, _("    -I                        initialize AFD, by deleting everything\n"));
    (void)fprintf(stderr, _("                              except for etc directory\n"));
    (void)fprintf(stderr, _("    -n                        in combination with -i or -I just print\n"));

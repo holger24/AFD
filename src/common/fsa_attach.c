@@ -1,6 +1,6 @@
 /*
  *  fsa_attach.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@ DESCR__S_M3
  ** SYNOPSIS
  **   int fsa_attach(char *who)
  **   int fsa_attach_passive(int silent, char *who)
+ **   int fsa_attach_features(char *who)
+ **   int fsa_attach_features_passive(int silent, char *who)
  **
  ** DESCRIPTION
  **   Attaches to the memory mapped area of the FSA (File Transfer
@@ -50,8 +52,11 @@ DESCR__S_M3
  **           |               |  3 | ENABLE_CREATE_TARGET_DIR
  **           |               |  4 | DISABLE_HOST_WARN_TIME
  **           |               |  5 | DISABLE_CREATE_SOURCE_DIR
+ **           |               |  6 | ENABLE_SIMULATE_SEND_MODE
  **    -------+---------------+---------------------------------------
- **       7   | unsigned char | Not used.
+ **       7   | unsigned char | The number of errors that are shown
+ **           |               | in offline mode. 0 (default) means all
+ **           |               | are shown as errors/warning.
  **    -------+---------------+---------------------------------------
  **       8   | unsigned char | Version of the FSA structure.
  **   --------+---------------+--------------------------------------
@@ -87,6 +92,10 @@ DESCR__S_M3
  **   29.04.2003 H.Kiehl Added function fsa_attach_passive().
  **   05.02.2013 H.Kiehl Added parameter who so we can see who tried to
  **                      attach.
+ **   24.02.2024 H.Kiehl Added fsa_attach_features() and
+ **                      fsa_attach_features_passive() to attach only
+ **                      to the first AFD_WORD_OFFSET bytes at the
+ **                      begining.
  **
  */
 DESCR__E_M3
@@ -623,6 +632,379 @@ fsa_attach_passive(int silent, char *who)
 # else
       fsa_size = stat_buf.st_size;
 # endif
+#endif
+   } while (no_of_hosts <= 0);
+
+   return(SUCCESS);
+}
+
+
+/*######################## fsa_attach_features() ########################*/
+int
+fsa_attach_features(char *who)
+{
+   int          fd,
+                loop_counter,
+                retries = 0,
+                tmp_errno,
+                timeout_loops = 0;
+   char         *ptr = NULL,
+                *p_fsa_stat_file,
+                fsa_id_file[MAX_PATH_LENGTH],
+                fsa_stat_file[MAX_PATH_LENGTH];
+   struct flock wlock = {F_WRLCK, SEEK_SET, 0, 1},
+                ulock = {F_UNLCK, SEEK_SET, 0, 1};
+
+   /* Get absolute path of FSA_ID_FILE. */
+   (void)strcpy(fsa_id_file, p_work_dir);
+   (void)strcat(fsa_id_file, FIFO_DIR);
+   (void)strcpy(fsa_stat_file, fsa_id_file);
+   (void)strcat(fsa_stat_file, FSA_STAT_FILE);
+   p_fsa_stat_file = fsa_stat_file + strlen(fsa_stat_file);
+   (void)strcat(fsa_id_file, FSA_ID_FILE);
+
+   do
+   {
+      /* Make sure this is not the case when the */
+      /* no_of_hosts is stale.                   */
+      if ((no_of_hosts < 0) && (fsa != NULL))
+      {
+         /* Unmap from FSA. */
+         ptr = (char *)fsa - AFD_WORD_OFFSET;
+#ifdef HAVE_MMAP
+         if (munmap(ptr, fsa_size) == -1)
+#else
+         if (munmap_emu((void *)ptr) == -1)
+#endif
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       _("Failed to munmap() `%s' [%s] : %s"),
+                       fsa_stat_file, who, strerror(errno));
+         }
+         else
+         {
+            fsa = NULL;
+         }
+
+         timeout_loops++;
+         if (timeout_loops > 200)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       _("Unable to attach to a new FSA [%s]."), who);
+            return(INCORRECT);
+         }
+
+         /* No need to speed things up here. */
+         my_usleep(400000L);
+      }
+
+      /*
+       * Retrieve the FSA (Filetransfer Status Area) ID from FSA_ID_FILE.
+       * Make sure that it is not locked.
+       */
+      loop_counter = 0;
+      while ((fd = coe_open(fsa_id_file, O_RDWR)) == -1)
+      {
+         tmp_errno = errno;
+         if (errno == ENOENT)
+         {
+            my_usleep(400000L);
+            if (loop_counter++ > 24)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          _("Failed to open() `%s' [%s] : %s"),
+                          fsa_id_file, who, strerror(errno));
+               return(tmp_errno);
+            }
+         }
+         else
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       _("Failed to open() `%s' [%s] : %s"),
+                       fsa_id_file, who, strerror(errno));
+            return(tmp_errno);
+         }
+      }
+
+      /* Check if its locked. */
+      if (fcntl(fd, F_SETLKW, &wlock) == -1)
+      {
+         tmp_errno = errno;
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    _("Could not set write lock for `%s' [%s] : %s"),
+                    fsa_id_file, who, strerror(errno));
+         (void)close(fd);
+         return(tmp_errno);
+      }
+
+      /* Read the fsa_id. */
+      if (read(fd, &fsa_id, sizeof(int)) < 0)
+      {
+         tmp_errno = errno;
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    _("Could not read the value of the fsa_id [%s] : %s"),
+                    who, strerror(errno));
+         (void)close(fd);
+         return(tmp_errno);
+      }
+
+      /* Unlock file and close it. */
+      if (fcntl(fd, F_SETLKW, &ulock) == -1)
+      {
+         tmp_errno = errno;
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    _("Could not unlock `%s' [%s] : %s"),
+                    fsa_id_file, who, strerror(errno));
+         (void)close(fd);
+         return(tmp_errno);
+      }
+      if (close(fd) == -1)
+      {
+         system_log(WARN_SIGN, __FILE__, __LINE__,
+                    _("Could not close() `%s' [%s] : %s"),
+                    fsa_id_file, who, strerror(errno));
+      }
+
+      (void)snprintf(p_fsa_stat_file,
+                     MAX_PATH_LENGTH - (p_fsa_stat_file - fsa_stat_file),
+                     ".%d", fsa_id);
+
+      if (fsa_fd > 0)
+      {
+         if (close(fsa_fd) == -1)
+         {
+            system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                       _("close() error [%s] : %s"), who, strerror(errno));
+         }
+      }
+
+      if ((fsa_fd = coe_open(fsa_stat_file, O_RDWR)) == -1)
+      {
+         tmp_errno = errno;
+         if (errno == ENOENT)
+         {
+            if (retries++ > 8)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          _("Failed to open() `%s' [%s] : %s"),
+                          fsa_stat_file, who, strerror(errno));
+               return(tmp_errno);
+            }
+            else
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          _("Failed to open() `%s' [%s] : %s"),
+                          fsa_stat_file, who, strerror(errno));
+               (void)sleep(1);
+               continue;
+            }
+         }
+         else
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       _("Failed to open() `%s' [%s] : %s"),
+                       fsa_stat_file, who, strerror(errno));
+            return(tmp_errno);
+         }
+      }
+
+#ifdef HAVE_MMAP
+      if ((ptr = mmap(NULL,
+                      AFD_WORD_OFFSET, (PROT_READ | PROT_WRITE),
+                      MAP_SHARED, fsa_fd, 0)) == (caddr_t) -1)
+#else
+      if ((ptr = mmap_emu(NULL,
+                          AFD_WORD_OFFSET, (PROT_READ | PROT_WRITE),
+                          MAP_SHARED, fsa_stat_file, 0)) == (caddr_t) -1)
+#endif
+      {
+         tmp_errno = errno;
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    _("mmap() error [%s] : %s"), who, strerror(errno));
+         (void)close(fsa_fd);
+         fsa_fd = -1;
+         return(tmp_errno);
+      }
+
+      /* Read number of current hosts. */
+      no_of_hosts = *(int *)ptr;
+
+      ptr += AFD_WORD_OFFSET;
+      fsa = (struct filetransfer_status *)ptr;
+#ifdef HAVE_MMAP
+      fsa_size = AFD_WORD_OFFSET;
+#endif
+   } while (no_of_hosts <= 0);
+
+   return(SUCCESS);
+}
+
+
+/*##################### fsa_attach_features_passive() #####################*/
+int
+fsa_attach_features_passive(int silent, char *who)
+{
+   int          fd,
+                retries = 0,
+                timeout_loops = 0,
+                tmp_errno;
+   char         *ptr = NULL,
+                *p_fsa_stat_file,
+                fsa_id_file[MAX_PATH_LENGTH],
+                fsa_stat_file[MAX_PATH_LENGTH];
+   struct flock rlock = {F_RDLCK, SEEK_SET, 0, 1};
+
+   /* Get absolute path of FSA_ID_FILE. */
+   (void)strcpy(fsa_id_file, p_work_dir);
+   (void)strcat(fsa_id_file, FIFO_DIR);
+   (void)strcpy(fsa_stat_file, fsa_id_file);
+   (void)strcat(fsa_stat_file, FSA_STAT_FILE);
+   p_fsa_stat_file = fsa_stat_file + strlen(fsa_stat_file);
+   (void)strcat(fsa_id_file, FSA_ID_FILE);
+
+   do
+   {
+      /* Make sure this is not the case when the */
+      /* no_of_hosts is stale.                   */
+      if ((no_of_hosts < 0) && (fsa != NULL))
+      {
+         /* Unmap from FSA. */
+         ptr = (char *)fsa - AFD_WORD_OFFSET;
+#ifdef HAVE_MMAP
+         if (munmap(ptr, fsa_size) == -1)
+#else
+         if (munmap_emu((void *)ptr) == -1)
+#endif
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       _("Failed to munmap() `%s' [%s] : %s"),
+                       fsa_stat_file, who, strerror(errno));
+         }
+         else
+         {
+            fsa = NULL;
+         }
+
+         timeout_loops++;
+         if (timeout_loops > 200)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       _("Unable to attach to a new FSA [%s]."), who);
+            return(INCORRECT);
+         }
+
+         /* No need to speed things up here. */
+         my_usleep(400000L);
+      }
+
+      /* Read the FSA ID. */
+      if ((fd = coe_open(fsa_id_file, O_RDONLY)) == -1)
+      {
+         tmp_errno = errno;
+         if (silent == NO)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       _("Failed to open() `%s' [%s] : %s"),
+                       fsa_id_file, who, strerror(errno));
+         }
+         return(tmp_errno);
+      }
+
+      if (fcntl(fd, F_SETLKW, &rlock) == -1)
+      {
+         tmp_errno = errno;
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    _("Could not get read lock for `%s' [%s] : %s"),
+                    fsa_id_file, who, strerror(errno));
+         (void)close(fd);
+         return(tmp_errno);
+      }
+      if (read(fd, &fsa_id, sizeof(int)) < 0)
+      {
+         tmp_errno = errno;
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    _("Could not read the value of the fsa_id [%s] : %s"),
+                    who, strerror(errno));
+         (void)close(fd);
+         return(tmp_errno);
+      }
+      if (close(fd) == -1)
+      {
+         system_log(WARN_SIGN, __FILE__, __LINE__,
+                    _("Could not close() `%s' [%s] : %s"),
+                    fsa_id_file, who, strerror(errno));
+      }
+      (void)snprintf(p_fsa_stat_file,
+                     MAX_PATH_LENGTH - (p_fsa_stat_file - fsa_stat_file),
+                     ".%d", fsa_id);
+
+      if (fsa_fd > 0)
+      {
+         if (close(fsa_fd) == -1)
+         {
+            system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                       _("close() error [%s] : %s"), who, strerror(errno));
+         }
+      }
+
+      if ((fsa_fd = coe_open(fsa_stat_file, O_RDONLY)) == -1)
+      {
+         tmp_errno = errno;
+         if (errno == ENOENT)
+         {
+            if (retries++ > 8)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          _("Failed to open() `%s' [%s] : %s"),
+                          fsa_stat_file, who, strerror(errno));
+               return(tmp_errno);
+            }
+            else
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          _("Failed to open() `%s' [%s] : %s"),
+                          fsa_stat_file, who, strerror(errno));
+               (void)sleep(1);
+               continue;
+            }
+         }
+         else
+         {
+            if (silent == NO)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          _("Failed to open() `%s' [%s] : %s"),
+                          fsa_stat_file, who, strerror(errno));
+            }
+            return(tmp_errno);
+         }
+      }
+
+#ifdef HAVE_MMAP
+      if ((ptr = mmap(NULL,
+                      AFD_WORD_OFFSET, PROT_READ,
+                      MAP_SHARED, fsa_fd, 0)) == (caddr_t) -1)
+#else
+      if ((ptr = mmap_emu(NULL,
+                          AFD_WORD_OFFSET, PROT_READ,
+                          MAP_SHARED, fsa_stat_file, 0)) == (caddr_t) -1)
+#endif
+      {
+         tmp_errno = errno;
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    _("mmap() error [%s] : %s"), who, strerror(errno));
+         (void)close(fsa_fd);
+         fsa_fd = -1;
+         return(tmp_errno);
+      }
+
+      /* Read number of current FSA. */
+      no_of_hosts = *(int *)ptr;
+
+      ptr += AFD_WORD_OFFSET;
+      fsa = (struct filetransfer_status *)ptr;
+#ifdef HAVE_MMAP
+      fsa_size = AFD_WORD_OFFSET;
 #endif
    } while (no_of_hosts <= 0);
 

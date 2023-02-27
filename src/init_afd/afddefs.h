@@ -386,6 +386,7 @@ typedef unsigned long       u_long_64;
 #define MON_CTRL                   "mon_ctrl"
 #define MON_INFO                   "mon_info"
 #define AFD_CMD                    "afdcmd"
+#define AFDCFG                     "afdcfg"
 #define VIEW_DC                    "view_dc"
 #define GET_DC_DATA                "get_dc_data"
 #define GET_DC_DATA_LENGTH         (sizeof(GET_DC_DATA) - 1)
@@ -1919,6 +1920,7 @@ typedef unsigned long       u_long_64;
 #define AFD_STATUS_FILE              "afd.status"
 #define AFD_STATUS_FILE_LENGTH       (sizeof(AFD_STATUS_FILE) - 1)
 #define AFD_STATUS_FILE_ALL          "/afd.status.*"
+#define AFDCFG_RECOVER               "/afdcfg.recover"
 #define NNN_FILE                     "/nnn"
 #define NNN_ASSEMBLE_FILE            "/nnn.assemble"
 #define NNN_FILE_ALL                 "/nnn.*"
@@ -2491,10 +2493,10 @@ typedef unsigned long       u_long_64;
  *           |               | list.
  *-----------------------------------------------------------------------*/
 #define AFD_WORD_OFFSET               (SIZEOF_INT + 4 + SIZEOF_INT + 4)
-#define AFD_FEATURE_FLAG_OFFSET_START 5  /* From start */
-#define AFD_FEATURE_FLAG_OFFSET_END   11 /* From end   */
-#define AFD_START_ERROR_OFFSET_START  6  /* From start */
-#define AFD_START_ERROR_OFFSET_END    10 /* From end   */
+#define AFD_FEATURE_FLAG_OFFSET_START (SIZEOF_INT + 1)                      /* From start */
+#define AFD_FEATURE_FLAG_OFFSET_END   (SIZEOF_INT + SIZEOF_INT + 1 + 1 + 1) /* From end   */
+#define AFD_START_ERROR_OFFSET_START  (SIZEOF_INT + 1 + 1)                  /* From start */
+#define AFD_START_ERROR_OFFSET_END    (SIZEOF_INT + SIZEOF_INT + 1 + 1)     /* From end   */
 
 /* Structure that holds status of the file transfer for each host. */
 #define CURRENT_FSA_VERSION 4
@@ -2932,7 +2934,7 @@ struct bd_time_entry
        };
 
 /* Structure holding all neccessary data for retrieving files. */
-#define CURRENT_FRA_VERSION     8
+#define CURRENT_FRA_VERSION      8
 #define MAX_FRA_TIME_ENTRIES     12
 #define MAX_FRA_TIME_ENTRIES_STR "MAX_FRA_TIME_ENTRIES"
 #define MAX_WAIT_FOR_LENGTH      64
@@ -4289,9 +4291,13 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
 #endif
                             int, int, int *, off_t *),
                     fra_attach(void),
+                    fra_attach_features(void),
+                    fra_attach_features_passive(void),
                     fra_attach_passive(void),
                     fra_detach(void),
                     fsa_attach(char *),
+                    fsa_attach_features(char *),
+                    fsa_attach_features_passive(int, char *),
                     fsa_attach_passive(int, char *),
                     fsa_detach(int),
                     get_afd_name(char *),
@@ -4398,6 +4404,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                     startup_afd(void),
                     url_compare(char *, char *),
                     wmo2ascii(char *, char *, off_t *),
+                    write_system_data(struct afd_status *, int, int),
                     write_typesize_data(void),
                     xor_decrypt(unsigned char *, int, unsigned char *),
                     xor_encrypt(unsigned char *, int, unsigned char *);
@@ -4566,8 +4573,7 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
                     validate_error_queue(int, unsigned int *, int,
                                          struct filetransfer_status *, int),
 #endif
-                    wmoheader_from_grib(char *, char *, char *),
-                    write_system_data(struct afd_status *, int, int);
+                    wmoheader_from_grib(char *, char *, char *);
 #ifdef _FIFO_DEBUG
 extern void         show_fifo_data(char, char *, char *, int, char *, int);
 #endif

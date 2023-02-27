@@ -63,7 +63,7 @@ DESCR__S_M1
  **   16.05.2002 H.Kiehl Included a heartbeat counter in AFD_ACTIVE_FILE.
  **   25.08.2002 H.Kiehl Addition of process rename_log.
  **   12.08.2004 H.Kiehl Replace rec() with system_log().
- **   05.06.2007 H.Kiehl Systems like HPUX have problems when writting
+ **   05.06.2007 H.Kiehl Systems like HPUX have problems when writing
  **                      the pid's to AFD_ACTIVE file with write(). Using
  **                      mmap() instead, seems to solve the problem.
  **   03.02.2009 H.Kiehl In case the AFD_ACTIVE file gets deleted while
@@ -81,6 +81,9 @@ DESCR__S_M1
  **   15.08.2022 H.Kiehl Allow user to specify the interface to bind to.
  **   18.02.2023 H.Kiehl Only start certain process when AMG sends
  **                      AMG_READY.
+ **   26.02.2023 H.Kiehl In stop_afd() fsa_detach() was called to early.
+ **                      For this reason write_system_data() was never
+ **                      called.
  **
  */
 DESCR__E_M1
@@ -3412,7 +3415,6 @@ stop_afd(void)
       system_log(INFO_SIGN, NULL, 0,
                  _("Stopped %s. (%s)"), AFD, PACKAGE_VERSION);
 
-      (void)fsa_detach(YES);
       if (afd_active_fd == -1)
       {
          int read_fd;
@@ -3664,17 +3666,27 @@ stop_afd(void)
 
       /*
        * As the last step store all important values in a machine
-       * indepandant format.
+       * independent format.
        */
       (void)check_fsa(NO, AFD);
       if (fsa != NULL)
       {
          (void)fra_attach_passive();
-         write_system_data(p_afd_status,
-                           (int)*((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END),
-                           (int)*((char *)fra - AFD_FEATURE_FLAG_OFFSET_END));
+         if (write_system_data(p_afd_status,
+                               (int)*((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END),
+                               (int)*((char *)fra - AFD_FEATURE_FLAG_OFFSET_END)) == SUCCESS)
+         {
+            system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                       "Saved system data in a machine independent format.");
+         }
          fra_detach();
       }
+      else
+      {
+         system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                    "Unable to write_system_data() since fsa is NULL.");
+      }
+      (void)fsa_detach(YES);
 
 #ifdef HAVE_MMAP
       if (msync((void *)p_afd_status, sizeof(struct afd_status), MS_SYNC) == -1)
@@ -3741,7 +3753,7 @@ stop_afd(void)
          }
       }
 
-      /* At this point writting to sys log Fifo is dangerous   */
+      /* At this point writing to sys log Fifo is dangerous    */
       /* since it will block because there is no reader. Lets  */
       /* try to write to $AFD_WORK_DIR/log/DAEMON_LOG.init_afd.*/
       /* If this somehow fails, write to STDERR_FILENO.        */

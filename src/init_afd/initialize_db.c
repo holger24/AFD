@@ -1,6 +1,6 @@
 /*
  *  initialize_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,6 +42,8 @@ DESCR__S_M3
  **   20.11.2018 H.Kiehl Since at startup function check_typesize_data()
  **                      converts the password database, we no longer
  **                      must delete it here.
+ **   24.02.2023 H.Kiehl When initialize below level 7, try to store
+ **                      afdcfg values.
  **
  */
 DESCR__E_M3
@@ -163,7 +165,8 @@ extern int  sys_log_fd;
 extern char *p_work_dir;
 
 /* Local function prototypes. */
-static void delete_fifodir_files(char *, int, char *, char *, int),
+static void afdcfg_save_status(void),
+            delete_fifodir_files(char *, int, char *, char *, int, int),
             delete_log_files(char *, int, int);
 
 
@@ -480,7 +483,8 @@ initialize_db(int init_level, int *old_value_list, int dry_run)
    }
 
    offset = snprintf(dirs, MAX_PATH_LENGTH, "%s%s", p_work_dir, FIFO_DIR);
-   delete_fifodir_files(dirs, offset, filelistflag, mfilelistflag, dry_run);
+   delete_fifodir_files(dirs, offset, filelistflag, mfilelistflag,
+                        init_level, dry_run);
    if (delete_dir & AFD_MSG_DIR_FLAG)
    {
       (void)snprintf(dirs, MAX_PATH_LENGTH, "%s%s", p_work_dir, AFD_MSG_DIR);
@@ -641,6 +645,7 @@ delete_fifodir_files(char *fifodir,
                      int  offset,
                      char *filelistflag,
                      char *mfilelistflag,
+                     int  init_level,
                      int  dry_run)
 {
    int  i,
@@ -778,6 +783,13 @@ delete_fifodir_files(char *fifodir,
 
    file_ptr = fifodir + offset;
 
+   if ((init_level < 8) && (dry_run != YES) &&
+       ((mfilelistflag[FSA_STAT_FILE_ALL_NO] == YES) ||
+        (mfilelistflag[FRA_STAT_FILE_ALL_NO] == YES)))
+   {
+      afdcfg_save_status();
+   }
+
    /* Delete single files. */
    for (i = 0; i < (sizeof(filelist) / sizeof(*filelist)); i++)
    {
@@ -821,7 +833,56 @@ delete_fifodir_files(char *fifodir,
 }
 
 
-/*++++++++++++++++++++++++++++ delete_log_files() +++++++++++++++++++++++*/
+/*------------------------ afdcfg_save_status() -------------------------*/
+static void
+afdcfg_save_status(void)
+{
+   char exec_cmd[MAX_PATH_LENGTH];
+   FILE *fp;
+
+   /* Call 'afdcfg --save_status' */
+   (void)snprintf(exec_cmd, MAX_PATH_LENGTH,
+                  "%s -w %s --save_status %s%s%s 2>&1",
+                  AFDCFG, p_work_dir, p_work_dir, FIFO_DIR, AFDCFG_RECOVER);
+   if ((fp = popen(exec_cmd, "r")) == NULL)
+   {
+      (void)fprintf(stderr, "Failed to popen() `%s' : %s\n",
+                    exec_cmd, strerror(errno));
+   }
+   else
+   {
+      int status = 0;
+
+      exec_cmd[0] = '\0';
+      while (fgets(exec_cmd, MAX_PATH_LENGTH, fp) != NULL)
+      {
+         ;
+      }
+      if (exec_cmd[0] != '\0')
+      {
+         (void)fprintf(stderr, "%s failed : `%s'\n", AFDCFG, exec_cmd);
+         status = 1;
+      }
+      if (ferror(fp))
+      {
+         (void)fprintf(stderr, "ferror() error : %s\n", strerror(errno));
+         status |= 2;
+      }
+      if (pclose(fp) == -1)
+      {
+         (void)fprintf(stderr, "Failed to pclose() : %s\n", strerror(errno));
+      }
+      if (status == 0)
+      {
+         (void)fprintf(stderr, "DEBUG: %s saved status\n", AFDCFG);
+      }
+   }
+
+   return;
+}
+
+
+/*++++++++++++++++++++++++++ delete_log_files() +++++++++++++++++++++++++*/
 static void
 delete_log_files(char *logdir, int offset, int dry_run)
 {

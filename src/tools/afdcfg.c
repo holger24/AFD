@@ -1,6 +1,6 @@
 /*
  *  afdcfg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2000 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -27,23 +27,25 @@ DESCR__S_M1
  **
  ** SYNOPSIS
  **   afdcfg [-w <working directory>] [-u[ <fake user>]] option
- **           -a                    enable archive
- **           -A                    disable archive
- **           -b                    enable create source dir
- **           -B                    disable create source dir
- **           -c                    enable create target dir
- **           -C                    disable create target dir
- **           -d                    enable directory warn time
- **           -du                   enable + update directory warn time
- **           -D                    disable directory warn time
- **           -h                    enable host warn time
- **           -H                    disable host warn time
- **           -i                    enable simulate send mode
- **           -I                    disable simulate send mode
- **           -o <errors offline>   modify first errors offline\n"));
- **           -r                    enable retrieving of files
- **           -R                    disable retrieving of files
- **           -s                    status of the above flags
+ **           -a                      enable archive
+ **           -A                      disable archive
+ **           -b                      enable create source dir
+ **           -B                      disable create source dir
+ **           -c                      enable create target dir
+ **           -C                      disable create target dir
+ **           -d                      enable directory warn time
+ **           -du                     enable + update directory warn time
+ **           -D                      disable directory warn time
+ **           -h                      enable host warn time
+ **           -H                      disable host warn time
+ **           -i                      enable simulate send mode
+ **           -I                      disable simulate send mode
+ **           -o <errors offline>     modify first errors offline\n"));
+ **           -r                      enable retrieving of files
+ **           -R                      disable retrieving of files
+ **           -s                      status of the above flags
+ **           --save_status <name>    store status in given file <name>
+ **           --recover_status <name> recover status from file <name>
  **
  ** DESCRIPTION
  **
@@ -63,13 +65,14 @@ DESCR__S_M1
  **   08.05.2008 H.Kiehl Added enable + update directory warn time (-du).
  **   09.05.2011 H.Kiehl Added enable + disable source dir
  **   15.09.2014 H.Kiehl Added enable + disable simulate send mode.
+ **   21.02.2023 H.Kiehl Added --save_status and --recover_status.
  **
  */
 DESCR__E_M1
 
 #include <stdio.h>                       /* fprintf(), stderr            */
 #include <string.h>                      /* strcpy(), strerror()         */
-#include <stdlib.h>                      /* atoi()                       */
+#include <stdlib.h>                      /* atoi(), strtoul()            */
 #include <time.h>                        /* time()                       */
 #include <ctype.h>                       /* isdigit()                    */
 #include <sys/types.h>
@@ -117,6 +120,27 @@ static void                usage(char *);
 #define DISABLE_SIMULATE_SEND_MODE_SEL  15
 #define MODIFY_ERRORS_OFFLINE_SEL       16
 #define STATUS_SEL                      17
+#define STORE_STATUS_SEL                18
+#define RECOVER_STATUS_SEL              19
+
+#define AFDCFG_OPEN_ERROR                    3
+#define AFDCFG_STORE_FILENAME                "afdcfg_saved_values"
+#define AFDCFG_ARCHIVE_STR                   "Archiving disabled"
+#define AFDCFG_ARCHIVE_STR_LENGTH            (sizeof(AFDCFG_ARCHIVE_STR) - 1)
+#define AFDCFG_RETRIEVE_STR                  "Retrieving disabled"
+#define AFDCFG_RETRIEVE_STR_LENGTH           (sizeof(AFDCFG_RETRIEVE_STR) - 1)
+#define AFDCFG_HOST_WARN_TIME_STR            "Host warn time disabled"
+#define AFDCFG_HOST_WARN_TIME_STR_LENGTH     (sizeof(AFDCFG_HOST_WARN_TIME_STR) - 1)
+#define AFDCFG_DIR_WARN_TIME_STR             "Dir warn time disabled"
+#define AFDCFG_DIR_WARN_TIME_STR_LENGTH      (sizeof(AFDCFG_DIR_WARN_TIME_STR) - 1)
+#define AFDCFG_CREATE_SOURCE_DIR_STR         "Create source dir disabled"
+#define AFDCFG_CREATE_SOURCE_DIR_STR_LENGTH  (sizeof(AFDCFG_CREATE_SOURCE_DIR_STR) - 1)
+#define AFDCFG_CREATE_TARGET_DIR_STR         "Create target dir enabled"
+#define AFDCFG_CREATE_TARGET_DIR_STR_LENGTH  (sizeof(AFDCFG_CREATE_TARGET_DIR_STR) - 1)
+#define AFDCFG_SIMULATE_SEND_MODE_STR        "Simulate mode enabled"
+#define AFDCFG_SIMULATE_SEND_MODE_STR_LENGTH (sizeof(AFDCFG_SIMULATE_SEND_MODE_STR) - 1)
+#define AFDCFG_ERRORS_OFFLINE_STR            "First errors offline"
+#define AFDCFG_ERRORS_OFFLINE_STR_LENGTH     (sizeof(AFDCFG_ERRORS_OFFLINE_STR) - 1)
 
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ afdcfg() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
@@ -128,6 +152,7 @@ main(int argc, char *argv[])
         ret,
         user_offset;
    char fake_user[MAX_FULL_USER_ID_LENGTH],
+        name[MAX_PATH_LENGTH],
         *perm_buffer,
         profile[MAX_PROFILE_NAME_LENGTH + 1],
         *ptr_fra = NULL, /* Silence compiler. */
@@ -166,6 +191,7 @@ main(int argc, char *argv[])
       usage(argv[0]);
       exit(INCORRECT);
    }
+   name[0] = '\0';
    if (get_arg(&argc, argv, "-a", NULL, 0) != SUCCESS)
    {
       if (get_arg(&argc, argv, "-A", NULL, 0) != SUCCESS)
@@ -202,8 +228,22 @@ main(int argc, char *argv[])
                                                 {
                                                    if (get_arg(&argc, argv, "-s", NULL, 0) != SUCCESS)
                                                    {
-                                                      usage(argv[0]);
-                                                      exit(INCORRECT);
+                                                      if (get_arg(&argc, argv, "--save_status", name, MAX_PATH_LENGTH) != SUCCESS)
+                                                      {
+                                                         if (get_arg(&argc, argv, "--recover_status", name, MAX_PATH_LENGTH) != SUCCESS)
+                                                         {
+                                                            usage(argv[0]);
+                                                            exit(INCORRECT);
+                                                         }
+                                                         else
+                                                         {
+                                                            action = RECOVER_STATUS_SEL;
+                                                         }
+                                                      }
+                                                      else
+                                                      {
+                                                         action = STORE_STATUS_SEL;
+                                                      }
                                                    }
                                                    else
                                                    {
@@ -368,57 +408,39 @@ main(int argc, char *argv[])
          exit(INCORRECT);
    }
 
-   if (action == STATUS_SEL)
+   if ((action == STATUS_SEL) || (action == STORE_STATUS_SEL))
    {
-      if ((ret = fsa_attach_passive(NO, "afdcfg")) != SUCCESS)
+      if ((ret = fsa_attach_features_passive(NO, "afdcfg")) != SUCCESS)
       {
-         if (ret == INCORRECT_VERSION)
+         if (ret < 0)
          {
             (void)fprintf(stderr,
-                          _("ERROR   : This program is not able to attach to the FSA due to incorrect version. (%s %d)\n"),
+                          _("ERROR   : Failed to attach to FSA. (%s %d)\n"),
                           __FILE__, __LINE__);
          }
          else
          {
-            if (ret < 0)
-            {
-               (void)fprintf(stderr,
-                             _("ERROR   : Failed to attach to FSA. (%s %d)\n"),
-                             __FILE__, __LINE__);
-            }
-            else
-            {
-               (void)fprintf(stderr,
-                             _("ERROR   : Failed to attach to FSA : %s (%s %d)\n"),
-                             strerror(ret), __FILE__, __LINE__);
-            }
+            (void)fprintf(stderr,
+                          _("ERROR   : Failed to attach to FSA : %s (%s %d)\n"),
+                          strerror(ret), __FILE__, __LINE__);
          }
          exit(INCORRECT);
       }
       ptr_fsa = (char *)fsa - AFD_FEATURE_FLAG_OFFSET_END;
 
-      if ((ret = fra_attach_passive()) != SUCCESS)
+      if ((ret = fra_attach_features_passive()) != SUCCESS)
       {
-         if (ret == INCORRECT_VERSION)
+         if (ret < 0)
          {
             (void)fprintf(stderr,
-                          _("ERROR   : This program is not able to attach to the FRA due to incorrect version. (%s %d)\n"),
+                          _("ERROR   : Failed to attach to FRA. (%s %d)\n"),
                           __FILE__, __LINE__);
          }
          else
          {
-            if (ret < 0)
-            {
-               (void)fprintf(stderr,
-                             _("ERROR   : Failed to attach to FRA. (%s %d)\n"),
-                             __FILE__, __LINE__);
-            }
-            else
-            {
-               (void)fprintf(stderr,
-                             _("ERROR   : Failed to attach to FRA : %s (%s %d)\n"),
-                             strerror(ret), __FILE__, __LINE__);
-            }
+            (void)fprintf(stderr,
+                          _("ERROR   : Failed to attach to FRA : %s (%s %d)\n"),
+                          strerror(ret), __FILE__, __LINE__);
          }
          exit(INCORRECT);
       }
@@ -436,30 +458,22 @@ main(int argc, char *argv[])
           (action == ENABLE_RETRIEVE_SEL) || (action == DISABLE_RETRIEVE_SEL) ||
           (action == ENABLE_SIMULATE_SEND_MODE_SEL) ||
           (action == DISABLE_SIMULATE_SEND_MODE_SEL) ||
-          (action == MODIFY_ERRORS_OFFLINE_SEL))
+          (action == MODIFY_ERRORS_OFFLINE_SEL) ||
+          (action == RECOVER_STATUS_SEL))
       {
-         if ((ret = fsa_attach("afdcfg")) != SUCCESS)
+         if ((ret = fsa_attach_features("afdcfg")) != SUCCESS)
          {
-            if (ret == INCORRECT_VERSION)
+            if (ret < 0)
             {
                (void)fprintf(stderr,
-                             _("ERROR   : This program is not able to attach to the FSA due to incorrect version. (%s %d)\n"),
+                             _("ERROR   : Failed to attach to FSA. (%s %d)\n"),
                              __FILE__, __LINE__);
             }
             else
             {
-               if (ret < 0)
-               {
-                  (void)fprintf(stderr,
-                                _("ERROR   : Failed to attach to FSA. (%s %d)\n"),
-                                __FILE__, __LINE__);
-               }
-               else
-               {
-                  (void)fprintf(stderr,
-                                _("ERROR   : Failed to attach to FSA : %s (%s %d)\n"),
-                                strerror(ret), __FILE__, __LINE__);
-               }
+               (void)fprintf(stderr,
+                             _("ERROR   : Failed to attach to FSA : %s (%s %d)\n"),
+                             strerror(ret), __FILE__, __LINE__);
             }
             exit(INCORRECT);
          }
@@ -468,30 +482,22 @@ main(int argc, char *argv[])
 
       if ((action == ENABLE_DIR_WARN_TIME_SEL) ||
           (action == ENABLE_UPDATE_DIR_WARN_TIME_SEL) ||
-          (action == DISABLE_DIR_WARN_TIME_SEL))
+          (action == DISABLE_DIR_WARN_TIME_SEL) ||
+          (action == RECOVER_STATUS_SEL))
       {
-         if ((ret = fra_attach()) != SUCCESS)
+         if ((ret = fra_attach_features()) != SUCCESS)
          {
-            if (ret == INCORRECT_VERSION)
+            if (ret < 0)
             {
                (void)fprintf(stderr,
-                             _("ERROR   : This program is not able to attach to the FRA due to incorrect version. (%s %d)\n"),
+                             _("ERROR   : Failed to attach to FRA. (%s %d)\n"),
                              __FILE__, __LINE__);
             }
             else
             {
-               if (ret < 0)
-               {
-                  (void)fprintf(stderr,
-                                _("ERROR   : Failed to attach to FRA. (%s %d)\n"),
-                                __FILE__, __LINE__);
-               }
-               else
-               {
-                  (void)fprintf(stderr,
-                                _("ERROR   : Failed to attach to FRA : %s (%s %d)\n"),
-                                strerror(ret), __FILE__, __LINE__);
-               }
+               (void)fprintf(stderr,
+                             _("ERROR   : Failed to attach to FRA : %s (%s %d)\n"),
+                             strerror(ret), __FILE__, __LINE__);
             }
             exit(INCORRECT);
          }
@@ -499,6 +505,7 @@ main(int argc, char *argv[])
       }
    }
 
+   ret = SUCCESS;
    switch (action)
    {
       case ENABLE_ARCHIVE_SEL :
@@ -515,7 +522,7 @@ main(int argc, char *argv[])
             (void)fprintf(stdout, _("Archiving is already enabled.\n"));
          }
          break;
-         
+
       case DISABLE_ARCHIVE_SEL :
          if (*ptr_fsa & DISABLE_ARCHIVE)
          {
@@ -545,7 +552,7 @@ main(int argc, char *argv[])
             (void)fprintf(stdout, _("Simulate send is already enabled.\n"));
          }
          break;
-         
+
       case DISABLE_SIMULATE_SEND_MODE_SEL :
          if (*ptr_fsa & EA_ENABLE_SIMULATE_SEND_MODE)
          {
@@ -758,7 +765,7 @@ main(int argc, char *argv[])
             (void)fprintf(stdout, _("Retrieving is already enabled.\n"));
          }
          break;
-         
+
       case DISABLE_RETRIEVE_SEL :
          if (*ptr_fsa & DISABLE_RETRIEVE)
          {
@@ -795,7 +802,7 @@ main(int argc, char *argv[])
             }
          }
          break;
-         
+
       case STATUS_SEL :
          if (*ptr_fsa & DISABLE_ARCHIVE)
          {
@@ -854,12 +861,298 @@ main(int argc, char *argv[])
             (void)fprintf(stdout, _("Simulate mode       : Disabled\n"));
          }
          (void)fprintf(stdout, _("First errors offline: %d\n"),
-                       *(unsigned char *)((char *)fsa - AFD_WORD_OFFSET  + SIZEOF_INT + 1 + 1));
+                       *(unsigned char *)((char *)fsa - AFD_WORD_OFFSET + SIZEOF_INT + 1 + 1));
          break;
-         
+
+      case STORE_STATUS_SEL :
+         {
+            FILE *fp;
+
+            if ((fp = fopen(name, "w+")) == NULL)
+            {
+               (void)fprintf(stderr, "Failed to fopen() %s : %s (%s %d)\n",
+                             name, strerror(errno), __FILE__, __LINE__);
+               ret = AFDCFG_OPEN_ERROR;
+            }
+            else
+            {
+               (void)fprintf(fp, "%s : %d\n", AFDCFG_ARCHIVE_STR,
+                             (*ptr_fsa & DISABLE_ARCHIVE) ? 1 : 0);
+               (void)fprintf(fp, "%s : %d\n", AFDCFG_RETRIEVE_STR,
+                             (*ptr_fsa & DISABLE_RETRIEVE) ? 1 : 0);
+               (void)fprintf(fp, "%s : %d\n", AFDCFG_HOST_WARN_TIME_STR,
+                             (*ptr_fsa & DISABLE_HOST_WARN_TIME) ? 1 : 0);
+               (void)fprintf(fp, "%s : %d\n", AFDCFG_DIR_WARN_TIME_STR,
+                             (*ptr_fra & DISABLE_DIR_WARN_TIME) ? 1 : 0);
+               (void)fprintf(fp, "%s : %d\n", AFDCFG_CREATE_SOURCE_DIR_STR,
+                             (*ptr_fsa & DISABLE_CREATE_SOURCE_DIR) ? 1 : 0);
+               (void)fprintf(fp, "%s : %d\n", AFDCFG_CREATE_TARGET_DIR_STR,
+                             (*ptr_fsa & ENABLE_CREATE_TARGET_DIR) ? 1 : 0);
+               (void)fprintf(fp, "%s : %d\n", AFDCFG_SIMULATE_SEND_MODE_STR,
+                             (*ptr_fsa & ENABLE_SIMULATE_SEND_MODE) ? 1 : 0);
+               (void)fprintf(fp, "%s : %d\n", AFDCFG_ERRORS_OFFLINE_STR,
+                             *(unsigned char *)((char *)fsa - AFD_WORD_OFFSET + SIZEOF_INT + 1 + 1));
+               if (fclose(fp) == EOF)
+               {
+                  (void)fprintf(stderr, "Failed to fclose() %s : %s (%s %d)\n",
+                                name, strerror(errno),
+                                __FILE__, __LINE__);
+               }
+            }
+         }
+         break;
+
+      case RECOVER_STATUS_SEL :
+         {
+            FILE *fp;
+
+            if ((fp = fopen(name, "r")) == NULL)
+            {
+               (void)fprintf(stderr, "Failed to fopen() %s : %s (%s %d)\n",
+                             name, strerror(errno), __FILE__, __LINE__);
+               ret = AFDCFG_OPEN_ERROR;
+            }
+            else
+            {
+#ifdef HAVE_GETLINE
+               size_t line_length = 0;
+               char   *line = NULL;
+#else
+               char   line[MAX_LINE_LENGTH];
+#endif
+
+#ifdef HAVE_GETLINE
+               while (getline(&line, &line_length, fp) != -1)
+#else
+               while (fgets(line, MAX_LINE_LENGTH, fp) != NULL)
+#endif
+               {
+                  if (line[0] != '#')
+                  {
+                     if (strncmp(line, AFDCFG_ARCHIVE_STR,
+                                 AFDCFG_ARCHIVE_STR_LENGTH) == 0)
+                     {
+                        if ((line[AFDCFG_ARCHIVE_STR_LENGTH] == ' ') &&
+                            (line[AFDCFG_ARCHIVE_STR_LENGTH + 1] == ':') &&
+                            (line[AFDCFG_ARCHIVE_STR_LENGTH + 2] == ' ') &&
+                            ((line[AFDCFG_ARCHIVE_STR_LENGTH + 3] == '0') ||
+                             (line[AFDCFG_ARCHIVE_STR_LENGTH + 3] == '1')))
+                        {
+                           if (line[AFDCFG_ARCHIVE_STR_LENGTH + 3] == '0')
+                           {
+                              if (*ptr_fsa & DISABLE_ARCHIVE)
+                              {
+                                 *ptr_fsa &= ~DISABLE_ARCHIVE; /* unset */
+                              }
+                           }
+                           else
+                           {
+                              if ((*ptr_fsa & DISABLE_ARCHIVE) == 0)
+                              {
+                                 *ptr_fsa |= DISABLE_ARCHIVE; /* set */
+                              }
+                           }
+                        }
+                     }
+                     else if (strncmp(line, AFDCFG_RETRIEVE_STR,
+                                      AFDCFG_RETRIEVE_STR_LENGTH) == 0)
+                          {
+                             if ((line[AFDCFG_RETRIEVE_STR_LENGTH] == ' ') &&
+                                 (line[AFDCFG_RETRIEVE_STR_LENGTH + 1] == ':') &&
+                                 (line[AFDCFG_RETRIEVE_STR_LENGTH + 2] == ' ') &&
+                                 ((line[AFDCFG_RETRIEVE_STR_LENGTH + 3] == '0') ||
+                                  (line[AFDCFG_RETRIEVE_STR_LENGTH + 3] == '1')))
+                             {
+                                if (line[AFDCFG_RETRIEVE_STR_LENGTH + 3] == '0')
+                                {
+                                   if (*ptr_fsa & DISABLE_RETRIEVE)
+                                   {
+                                      *ptr_fsa &= ~DISABLE_RETRIEVE; /* unset */
+                                   }
+                                }
+                                else
+                                {
+                                   if ((*ptr_fsa & DISABLE_RETRIEVE) == 0)
+                                   {
+                                      *ptr_fsa |= DISABLE_RETRIEVE; /* set */
+                                   }
+                                }
+                             }
+                          }
+                     else if (strncmp(line, AFDCFG_HOST_WARN_TIME_STR,
+                                      AFDCFG_HOST_WARN_TIME_STR_LENGTH) == 0)
+                          {
+                             if ((line[AFDCFG_HOST_WARN_TIME_STR_LENGTH] == ' ') &&
+                                 (line[AFDCFG_HOST_WARN_TIME_STR_LENGTH + 1] == ':') &&
+                                 (line[AFDCFG_HOST_WARN_TIME_STR_LENGTH + 2] == ' ') &&
+                                 ((line[AFDCFG_HOST_WARN_TIME_STR_LENGTH + 3] == '0') ||
+                                  (line[AFDCFG_HOST_WARN_TIME_STR_LENGTH + 3] == '1')))
+                             {
+                                if (line[AFDCFG_HOST_WARN_TIME_STR_LENGTH + 3] == '0')
+                                {
+                                   if (*ptr_fsa & DISABLE_HOST_WARN_TIME)
+                                   {
+                                      *ptr_fsa &= ~DISABLE_HOST_WARN_TIME; /* unset */
+                                   }
+                                }
+                                else
+                                {
+                                   if ((*ptr_fsa & DISABLE_HOST_WARN_TIME) == 0)
+                                   {
+                                      *ptr_fsa |= DISABLE_HOST_WARN_TIME; /* set */
+                                   }
+                                }
+                             }
+                          }
+                     else if (strncmp(line, AFDCFG_DIR_WARN_TIME_STR,
+                                      AFDCFG_DIR_WARN_TIME_STR_LENGTH) == 0)
+                          {
+                             if ((line[AFDCFG_DIR_WARN_TIME_STR_LENGTH] == ' ') &&
+                                 (line[AFDCFG_DIR_WARN_TIME_STR_LENGTH + 1] == ':') &&
+                                 (line[AFDCFG_DIR_WARN_TIME_STR_LENGTH + 2] == ' ') &&
+                                 ((line[AFDCFG_DIR_WARN_TIME_STR_LENGTH + 3] == '0') ||
+                                  (line[AFDCFG_DIR_WARN_TIME_STR_LENGTH + 3] == '1')))
+                             {
+                                if (line[AFDCFG_DIR_WARN_TIME_STR_LENGTH + 3] == '0')
+                                {
+                                   if (*ptr_fsa & DISABLE_DIR_WARN_TIME)
+                                   {
+                                      *ptr_fsa &= ~DISABLE_DIR_WARN_TIME; /* unset */
+                                   }
+                                }
+                                else
+                                {
+                                   if ((*ptr_fsa & DISABLE_DIR_WARN_TIME) == 0)
+                                   {
+                                      *ptr_fsa |= DISABLE_DIR_WARN_TIME; /* set */
+                                   }
+                                }
+                             }
+                          }
+                     else if (strncmp(line, AFDCFG_CREATE_SOURCE_DIR_STR,
+                                      AFDCFG_CREATE_SOURCE_DIR_STR_LENGTH) == 0)
+                          {
+                             if ((line[AFDCFG_CREATE_SOURCE_DIR_STR_LENGTH] == ' ') &&
+                                 (line[AFDCFG_CREATE_SOURCE_DIR_STR_LENGTH + 1] == ':') &&
+                                 (line[AFDCFG_CREATE_SOURCE_DIR_STR_LENGTH + 2] == ' ') &&
+                                 ((line[AFDCFG_CREATE_SOURCE_DIR_STR_LENGTH + 3] == '0') ||
+                                  (line[AFDCFG_CREATE_SOURCE_DIR_STR_LENGTH + 3] == '1')))
+                             {
+                                if (line[AFDCFG_CREATE_SOURCE_DIR_STR_LENGTH + 3] == '0')
+                                {
+                                   if (*ptr_fsa & DISABLE_CREATE_SOURCE_DIR)
+                                   {
+                                      *ptr_fsa &= ~DISABLE_CREATE_SOURCE_DIR; /* unset */
+                                   }
+                                }
+                                else
+                                {
+                                   if ((*ptr_fsa & DISABLE_CREATE_SOURCE_DIR) == 0)
+                                   {
+                                      *ptr_fsa |= DISABLE_CREATE_SOURCE_DIR; /* set */
+                                   }
+                                }
+                             }
+                          }
+                     else if (strncmp(line, AFDCFG_CREATE_TARGET_DIR_STR,
+                                      AFDCFG_CREATE_TARGET_DIR_STR_LENGTH) == 0)
+                          {
+                             if ((line[AFDCFG_CREATE_TARGET_DIR_STR_LENGTH] == ' ') &&
+                                 (line[AFDCFG_CREATE_TARGET_DIR_STR_LENGTH + 1] == ':') &&
+                                 (line[AFDCFG_CREATE_TARGET_DIR_STR_LENGTH + 2] == ' ') &&
+                                 ((line[AFDCFG_CREATE_TARGET_DIR_STR_LENGTH + 3] == '0') ||
+                                  (line[AFDCFG_CREATE_TARGET_DIR_STR_LENGTH + 3] == '1')))
+                             {
+                                if (line[AFDCFG_CREATE_TARGET_DIR_STR_LENGTH + 3] == '0')
+                                {
+                                   if (*ptr_fsa & ENABLE_CREATE_TARGET_DIR)
+                                   {
+                                      *ptr_fsa &= ~ENABLE_CREATE_TARGET_DIR; /* unset */
+                                   }
+                                }
+                                else
+                                {
+                                   if ((*ptr_fsa & ENABLE_CREATE_TARGET_DIR) == 0)
+                                   {
+                                      *ptr_fsa |= ENABLE_CREATE_TARGET_DIR; /* set */
+                                   }
+                                }
+                             }
+                          }
+                     else if (strncmp(line, AFDCFG_SIMULATE_SEND_MODE_STR,
+                                      AFDCFG_SIMULATE_SEND_MODE_STR_LENGTH) == 0)
+                          {
+                             if ((line[AFDCFG_SIMULATE_SEND_MODE_STR_LENGTH] == ' ') &&
+                                 (line[AFDCFG_SIMULATE_SEND_MODE_STR_LENGTH + 1] == ':') &&
+                                 (line[AFDCFG_SIMULATE_SEND_MODE_STR_LENGTH + 2] == ' ') &&
+                                 ((line[AFDCFG_SIMULATE_SEND_MODE_STR_LENGTH + 3] == '0') ||
+                                  (line[AFDCFG_SIMULATE_SEND_MODE_STR_LENGTH + 3] == '1')))
+                             {
+                                if (line[AFDCFG_SIMULATE_SEND_MODE_STR_LENGTH + 3] == '0')
+                                {
+                                   if (*ptr_fsa & ENABLE_SIMULATE_SEND_MODE)
+                                   {
+                                      *ptr_fsa &= ~ENABLE_SIMULATE_SEND_MODE; /* unset */
+                                   }
+                                }
+                                else
+                                {
+                                   if ((*ptr_fsa & ENABLE_SIMULATE_SEND_MODE) == 0)
+                                   {
+                                      *ptr_fsa |= ENABLE_SIMULATE_SEND_MODE; /* set */
+                                   }
+                                }
+                             }
+                          }
+                     else if (strncmp(line, AFDCFG_ERRORS_OFFLINE_STR,
+                                      AFDCFG_ERRORS_OFFLINE_STR_LENGTH) == 0)
+                          {
+                             if ((line[AFDCFG_ERRORS_OFFLINE_STR_LENGTH] == ' ') &&
+                                 (line[AFDCFG_ERRORS_OFFLINE_STR_LENGTH + 1] == ':') &&
+                                 (line[AFDCFG_ERRORS_OFFLINE_STR_LENGTH + 2] == ' '))
+                             {
+                                int  i, j;
+                                char string[MAX_INT_LENGTH];
+
+                                i = 3;
+                                j = 0;
+                                while ((j < MAX_INT_LENGTH) &&
+                                       (isdigit((int)line[AFDCFG_ERRORS_OFFLINE_STR_LENGTH + i])))
+                                {
+                                   string[j] = line[AFDCFG_ERRORS_OFFLINE_STR_LENGTH + i];
+                                   i++; j++;
+                                }
+                                if (j > 0)
+                                {
+                                   string[j] = '\0';
+                                   *(unsigned char *)((char *)fsa - AFD_WORD_OFFSET  + SIZEOF_INT + 1 + 1) = (unsigned char)strtoul(string, NULL, 10);
+                                }
+                             }
+                          }
+                  }
+               }
+#ifdef HAVE_GETLINE
+               free(line);
+#endif
+               clearerr(fp);
+               if (fclose(fp) == EOF)
+               {
+                  (void)fprintf(stderr, "Failed to fclose() %s : %s (%s %d)\n",
+                                name, strerror(errno), __FILE__, __LINE__);
+               }
+               if (unlink(name) != 0)
+               {
+                  (void)fprintf(stderr, "Failed to unlink() %s : %s (%s %d)\n",
+                                name, strerror(errno), __FILE__, __LINE__);
+               }
+            }
+         }
+         break;
+
       default :
          (void)fprintf(stderr, _("Impossible! (%s %d)\n"), __FILE__, __LINE__);
-         exit(INCORRECT);
+         ret = INCORRECT;
+         break;
    }
 
    if ((action == ENABLE_ARCHIVE_SEL) || (action == DISABLE_ARCHIVE_SEL) ||
@@ -879,7 +1172,7 @@ main(int argc, char *argv[])
       (void)fra_detach();
    }
 
-   exit(SUCCESS);
+   exit(ret);
 }
 
 
@@ -890,22 +1183,24 @@ usage(char *progname)
    (void)fprintf(stderr,
                  _("SYNTAX  : %s [-w working directory] [-p <user profile>] [-u [<fake user>]] options\n"),
                  progname);
-   (void)fprintf(stderr, _("          -a                    enable archive\n"));
-   (void)fprintf(stderr, _("          -A                    disable archive\n"));
-   (void)fprintf(stderr, _("          -b                    enable create source dir\n"));
-   (void)fprintf(stderr, _("          -B                    disable create source dir\n"));
-   (void)fprintf(stderr, _("          -c                    enable create target dir\n"));
-   (void)fprintf(stderr, _("          -C                    disable create target dir\n"));
-   (void)fprintf(stderr, _("          -d                    enable directory warn time\n"));
-   (void)fprintf(stderr, _("          -du                   enable + update directory warn time\n"));
-   (void)fprintf(stderr, _("          -D                    disable directory warn time\n"));
-   (void)fprintf(stderr, _("          -h                    enable host warn time\n"));
-   (void)fprintf(stderr, _("          -H                    disable host warn time\n"));
-   (void)fprintf(stderr, _("          -i                    enable simulate send mode\n"));
-   (void)fprintf(stderr, _("          -I                    disable simulate send mode\n"));
-   (void)fprintf(stderr, _("          -o <errors offline>   modify first errors offline\n"));
-   (void)fprintf(stderr, _("          -r                    enable retrieving of files\n"));
-   (void)fprintf(stderr, _("          -R                    disable retrieving of files\n"));
-   (void)fprintf(stderr, _("          -s                    status of the above flags\n"));
+   (void)fprintf(stderr, _("          -a                      enable archive\n"));
+   (void)fprintf(stderr, _("          -A                      disable archive\n"));
+   (void)fprintf(stderr, _("          -b                      enable create source dir\n"));
+   (void)fprintf(stderr, _("          -B                      disable create source dir\n"));
+   (void)fprintf(stderr, _("          -c                      enable create target dir\n"));
+   (void)fprintf(stderr, _("          -C                      disable create target dir\n"));
+   (void)fprintf(stderr, _("          -d                      enable directory warn time\n"));
+   (void)fprintf(stderr, _("          -du                     enable + update directory warn time\n"));
+   (void)fprintf(stderr, _("          -D                      disable directory warn time\n"));
+   (void)fprintf(stderr, _("          -h                      enable host warn time\n"));
+   (void)fprintf(stderr, _("          -H                      disable host warn time\n"));
+   (void)fprintf(stderr, _("          -i                      enable simulate send mode\n"));
+   (void)fprintf(stderr, _("          -I                      disable simulate send mode\n"));
+   (void)fprintf(stderr, _("          -o <errors offline>     modify first errors offline\n"));
+   (void)fprintf(stderr, _("          -r                      enable retrieving of files\n"));
+   (void)fprintf(stderr, _("          -R                      disable retrieving of files\n"));
+   (void)fprintf(stderr, _("          -s                      status of the above flags\n"));
+   (void)fprintf(stderr, _("          --save_status <name>    store status of the above flags to file <name>\n"));
+   (void)fprintf(stderr, _("          --recover_status <name> recover status from file <name>\n"));
    return;
 }

@@ -1,6 +1,6 @@
 /*
  *  create_sa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@ DESCR__S_M3
  **
  ** HISTORY
  **   27.03.2000 H.Kiehl Created
+ **   25.02.2023 H.Kiehl Added recovery of afdcfg values.
  **
  */
 DESCR__E_M3
@@ -59,10 +60,13 @@ DESCR__E_M3
 
 
 /* External global variables. */
-extern char       *p_work_dir;
+extern char *p_work_dir;
 
 /* Global variables. */
-int               first_time = YES;
+int         first_time = YES;
+
+/* Local function prototypes. */
+static void afdcfg_recover_status(void);
 
 
 /*############################# create_sa() #############################*/
@@ -71,6 +75,7 @@ create_sa(int no_of_dirs)
 {
    create_fsa();
    create_fra(no_of_dirs);
+   afdcfg_recover_status();
 
    /* If this is the first time that the FSA is */
    /* created, notify AFD that we are done.     */
@@ -137,6 +142,65 @@ create_sa(int no_of_dirs)
       {
          system_log(DEBUG_SIGN, __FILE__, __LINE__,
                     "close() error : %s", strerror(errno));
+      }
+   }
+
+   return;
+}
+
+
+/*+++++++++++++++++++++++ afdcfg_recover_status() +++++++++++++++++++++++*/
+static void
+afdcfg_recover_status(void)
+{
+   char afdcfg_recover_name[MAX_PATH_LENGTH];
+
+   (void)snprintf(afdcfg_recover_name, MAX_PATH_LENGTH, "%s%s%s",
+                  p_work_dir, FIFO_DIR, AFDCFG_RECOVER);
+   if (access(afdcfg_recover_name, R_OK) == 0)
+   {
+      char exec_cmd[MAX_PATH_LENGTH + MAX_PATH_LENGTH];
+      FILE *fp;
+
+      /* Call 'afdcfg --recover_status' */
+      (void)snprintf(exec_cmd, MAX_PATH_LENGTH + MAX_PATH_LENGTH,
+                     "%s -w %s --recover_status %s 2>&1",
+                     AFDCFG, p_work_dir, afdcfg_recover_name);
+      if ((fp = popen(exec_cmd, "r")) == NULL)
+      {
+         system_log(WARN_SIGN, __FILE__, __LINE__,
+                    "Failed to popen() `%s' : %s", exec_cmd, strerror(errno));
+      }
+      else
+      {
+         int status = 0;
+
+         exec_cmd[0] = '\0';
+         while (fgets(exec_cmd, MAX_PATH_LENGTH, fp) != NULL)
+         {
+            ;
+         }
+         if (exec_cmd[0] != '\0')
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       "%s printed : `%s'", AFDCFG, exec_cmd);
+            status = 1;
+         }
+         if (ferror(fp))
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       "ferror() error : %s", strerror(errno));
+            status |= 2;
+         }
+         if (pclose(fp) == -1)
+         {
+            system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                       "Failed to pclose() : %s", strerror(errno));
+         }
+         if (status == 0)
+         {
+            system_log(INFO_SIGN, NULL, 0, "Recovered afdcfg values.");
+         }
       }
    }
 
