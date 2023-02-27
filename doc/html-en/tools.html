@@ -78,23 +78,25 @@ annoying. The syntax of afdcfg is as follows:
 </p>
 <pre>
    SYNTAX  : afdcfg [-w working directory] [-p <user profile>] [-u [<fake user>]] options
-             -a                    enable archive
-             -A                    disable archive
-             -b                    enable create source dir
-             -B                    disable create source dir
-             -c                    enable create target dir
-             -C                    disable create target dir
-             -d                    enable directory warn time
-             -du                   enable + update directory warn time
-             -D                    disable directory warn time
-             -h                    enable host warn time
-             -H                    disable host warn time
-             -i                    enable simulate send mode
-             -I                    disable simulate send mode
-             -o &lt;errors offline&gt;   modify first errors offline
-             -r                    enable retrieving of files
-             -R                    disable retrieving of files
-             -s                    status of the above flags
+             -a                      enable archive
+             -A                      disable archive
+             -b                      enable create source dir
+             -B                      disable create source dir
+             -c                      enable create target dir
+             -C                      disable create target dir
+             -d                      enable directory warn time
+             -du                     enable + update directory warn time
+             -D                      disable directory warn time
+             -h                      enable host warn time
+             -H                      disable host warn time
+             -i                      enable simulate send mode
+             -I                      disable simulate send mode
+             -o &lt;errors offline&gt;     modify first errors offline
+             -r                      enable retrieving of files
+             -R                      disable retrieving of files
+             -s                      status of the above flags
+             --save_status &lt;name&gt;    store status of the above flags to file &lt;name&gt;
+             --recover_status &lt;name&gt; recover status from file &lt;name&gt;
 </pre>
 <h3 align=center><a name="fsa_view"><u>View FSA (fsa_view)</u></a></h3>
 <p>
@@ -102,35 +104,35 @@ To view the content of the FSA (Filetransfer Status Area) there is a
 program called fsa_view. An example output might look as follows:
 </p>
 <pre>
-afd@r2d2:~$ fsa_view fiau_
-    Number of hosts: 34   FSA ID: 1  Struct Version: 3  Pagesize: 4096
-    First errors offline: 0
+afd@kamino:~$ fsa_view fiau_
+    Number of hosts: 91   FSA ID: 13  Struct Version: 4  Pagesize: 4096
+    First errors offline: 2
 
-=============================&gt; fiau_ &lt;=============================
+=============================&gt; fiau_ (1) &lt;=============================
 Host alias CRC       : e831dc61
-Real hostname 1      : 127.0.0.1
+Real hostname 1      : localhost
 Real hostname 2      :
 Hostname (display)   : &gt;fiau_&lt;
 Host toggle          : HOST_ONE
 Auto toggle          : OFF
 Original toggle      : NONE
 Toggle position      : 5
-Protocol(   40000001): FTP active fast_move fast_cd
+Protocol(   40000081): FTP passive check_size SFTP
 Direction            : SEND
 Socket send buffer   : Not set
 Socket rcv buffer    : Not set
-Keep connected       : Not set
+Keep connected       : 120
 Proxy name           : &gt;$Udwd@ifu;$Pgtswetter&lt;
 Debug mode           : OFF
 Dupcheck timeout     : Disabled
-Host status (   0)   : NORMAL_STATUS
-Transfer timeout     : 120
-File size offset     : -2
+Host status ( 147456): STORE_IP WARNING_STATUS
+Transfer timeout     : 10
+File size offset     : -1
 Successful retries   : 0
 MaxSuccessful ret.   : 10
 Special flag ( 64)   : HOST_IN_DIR_CONFIG
 Error counter        : 0
-Total errors         : 7
+Total errors         : 0
 Max. errors          : 10
 Error history        : 000 -&gt; Transfer success
                        000 -&gt; Transfer success
@@ -138,31 +140,29 @@ Error history        : 000 -&gt; Transfer success
                        000 -&gt; Transfer success
                        000 -&gt; Transfer success
 Retry interval       : 600
-Transfer block size  : 4096
+Transfer block size  : 524288
 TTL                  : 0
-Time of last retry   : Sat Apr  8 23:36:41 2006
-Last connection      : Sat Apr  8 23:36:41 2006
+Time of last retry   : Sat Aug 28 14:22:25 2021
+Last connection      : Sat Aug 28 14:22:25 2021
 First error time     : Not set.
 Start event handle   : Not set.
 End event handle     : Not set.
-Warn time            : Not set.
+Warn time            : 86400
 Total file counter   : 0
 Total file size      : 0
-File counter done    : 104
-Bytes send           : 3100838
-Connections          : 26
-MC NACK counter      : 0
+File counter done    : 0
+Bytes send           : 0
+Connections          : 0
 Jobs queued          : 0
 Active transfers     : 0
 Allowed transfers    : 2
 Rate limit           : 0
 Rate limit per proc  : 0
-MC Rate limit        : 0
-MC Rate limit/proc   : 0
                     |   Job 0   |   Job 1   
 --------------------+-----------+-----------
 PID                 |        -1 |        -1 
 Connect status      |DISCONNECT |DISCONNECT 
+Special flag        |         0 |         0 
 Number of files     |         0 |         0 
 No. of files done   |         0 |         0 
 File size           |         0 |         0 
@@ -182,6 +182,7 @@ To view the full name use the '-l' option to show the long view:
 -------- Job  0 -----+------------------------------------------------------
 PID                  : -1
 Connect status       : DISCONNECT
+Special flag         : 0
 Number of files      : 0
 No. of files done    : 0
 File size            : 0
@@ -195,6 +196,7 @@ Job ID               : 0
 -------- Job  1 -----+------------------------------------------------------
 PID                  : -1
 Connect status       : DISCONNECT
+Special flag         : 0
 Number of files      : 0
 No. of files done    : 0
 File size            : 0
@@ -213,19 +215,19 @@ monitored by AFD, there is a program called fra_view. The output looks as
 follows:
 </p>
 <pre>
-afd@r2d2:~$ fra_view 3
-     Number of directories: 42   FRA ID: 32  Struct Version: 5
+afd@kamino:~$ fra_view testmaus
+     Number of directories: 108   FRA ID: 13  Struct Version: 8  Pagesize: 4096
 
-============================&gt; testmaus (4) &lt;============================
+=============================&gt; testmaus (8) &lt;=============================
 Directory alias      : testmaus
-Directory ID         : 99ca01ad
-URL                  : ftp://funk:bla@testmaus
+Directory ID         : eaa95f01
+URL                  : ftp://wfunk@testmaus
 Dir mtime            : 0
 ls data alias        :
 Retrieve work dir    : /home/afd
 Host alias           : testmaus
-Wait for             : 
-FSA position         : 25
+Wait for             :
+FSA position         : 29
 Priority             : 9
 Number of process    : 0
 Max number of process: 10
@@ -240,16 +242,17 @@ Accumulate           : 0
 gt_lt_sign           : 0
 Create Dir Mode      : 0
 Max errors           : 10
-Error counter        : 0A
+Error counter        : 0
 Info time            : 0
 Warn time            : 0
 Keep connected       : 0
-Ignore size          : 0
+Ignore size          : -1
 Ignore file time     : 0
 Max files            : 100
 Max size             : 104857600
-Directory status( 12): NORMAL_STATUS
-Directory flag(  8)  : LINK_NO_EXEC
+Directory status( 12): NORMAL STATUS
+Directory flag(16392): LINK_NO_EXEC
+Dir options   (16384): INOTIFY_RENAME
 In DIR_CONFIG flag   : DIR_ALIAS
 Dupcheck timeout     : Disabled
 Force reread         : NO
@@ -263,9 +266,9 @@ Important directory  : NO
 End character        : NONE
 Timezone             : Not set, taking system default
 Time option          : 1
-Next check time      : Sun Jun 19 11:32:00 2005
-Minute (long long)   : 01000000 00001000 00100001 10000100 00010000 01000010 00001000 00100001
-Continues (long long): 01000000 00001000 00100001 10000100 00010000 01000010 00001000 00100001
+Next check time      : Sun Feb 26 14:17:00 2023
+Minute (long long)   : 00000010 00010000 10000100 00100001 00001000 01000010 00010000 10000100
+Continues (long long): 00000010 00010000 10000100 00100001 00001000 01000010 00010000 10000100
 Hour (uint)          : 00000000 11111111 11111111 11111111
 Day of month (uint)  : 01111111 11111111 11111111 11111111
 Month (short)        : 00001111 11111111
@@ -276,7 +279,7 @@ Hour (uint)          : 00000000 00000000 00000000 00000000
 Day of month (uint)  : 00000000 00000000 00000000 00000000
 Month (short)        : 00000000 00000000
 Day of week (uchar)  : 00000000
-Last retrieval       : Sun Jun 19 10:39:10 2005
+Last retrieval       : Thu Jan  1 01:00:00 1970
 </pre>
 <p>
 This program can take two parameters -s and -d. -s will only print out the
@@ -296,12 +299,14 @@ AMG                   : 1
 AMG jobs status flag  : 0
 FD                    : 1
 System log            : 1
+Maintainer log        : 1
 Event log             : 1
 Transfer log          : 1
 Trans debug log       : 1
 Archive watch         : 1
 afd_stat              : 1
 afdd                  : 1
+afdds                 : 1
 input_log             : 1
 output_log            : 1
 delete_log            : 1
@@ -712,6 +717,7 @@ user interaction, so it can be used from any shell scripts or programs such as
                                           mode when doing the data connection.
      -X                                 - Use extended mode active or passive
                                           (-x) mode.
+     -y                                 - Use TLS legacy renegotiation.
      -Y                                 - Use strict SSL/TLS checks. 
      -z                                 - Use SSL/TLS for control connection.
      -Z                                 - Use SSL/TLS for control and data
@@ -807,7 +813,7 @@ user interaction, so it can be used from any shell scripts or programs such as
 <a href="xsend_file.html">xsend_file</a>. The syntax of asmtp is as follows:
 </p>
 <pre>
-   SYNTAX: asmtp [options] file(s)
+   SYNTAX: asmtp [options] [file(s)]
 
      OPTIONS                      DESCRIPTION
      --version                  - Show current version
@@ -835,6 +841,7 @@ user interaction, so it can be used from any shell scripts or programs such as
      -u &lt;user&gt;                  - The user who should get the mail.
      -v                         - Verbose. Shows all SMTP commands and
                                   the reply from the SMTP server.
+     -x                         - Use TLS legacy renegotiation.
      -y                         - File name is user.
      -Y                         - Use strict SSL/TLS verification.
      -?                         - Display this help and exit.
@@ -842,8 +849,6 @@ user interaction, so it can be used from any shell scripts or programs such as
           0 - File transmitted successfully.
           1 - Failed to connect.
           2 - User name wrong.
-          4 - Failed to set ascii/binary mode.
-          5 - Failed to send NLST command.
          10 - Failed to open remote file.
          11 - Error when writing into remote file.
          12 - Failed to close remote file.
@@ -855,8 +860,6 @@ user interaction, so it can be used from any shell scripts or programs such as
          29 - Connection refused.
          30 - Could not open source file.
          31 - Failed to read source file.
-         34 - System error malloc().
-         17 - System error stat().
          34 - System error malloc().
          40 - Failed to read file name file.
          50 - Failed to send remote mail address.
@@ -874,9 +877,12 @@ user interaction, so it can be used from any shell scripts or programs such as
 
      OPTIONS                              DESCRIPTION
      --version                          - Show current version
-     -a                                 - Wait for an acknowledge from server.
+     -A                                 - Wait for an acknowledge from server.
      -b &lt;block size&gt;                    - Transfer block size in bytes. Default 4096
                                           bytes.
+     -c &lt;config file&gt;                   - Configuration file holding user name,
+                                          password and target directory in URL
+                                          format.
      -f &lt;filename&gt;                      - File containing a list of filenames
                                           that are to be send.
      -h &lt;host name | IP number&gt;         - Hostname or IP number to which to
@@ -912,9 +918,9 @@ user interaction, so it can be used from any shell scripts or programs such as
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 2001 - 2020 by H.Kiehl<br>
+   Copyright &copy; 2001 - 2023 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 15.12.2020
+   Last updated: 27.02.2023
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

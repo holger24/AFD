@@ -15,6 +15,8 @@ used for this task. The program can take the following parameters:
 
       Other possible options:
        -a                        only start AFD
+       --all                     in combination with -s or -S, stop all process
+       -A                        only start AFD, but do not scan directories
        -b                        blocks starting of AFD
        -c[ &lt;timeout in seconds&gt;] only check if AFD is active
        -C[ &lt;timeout in seconds&gt;] check if AFD is active, if not start it
@@ -25,7 +27,8 @@ used for this task. The program can take the following parameters:
                                  level of initialization. The higher the number
                                  the more data will be deleted. If no number is
                                  specified the level will be 5. 9 is the same
-                                 as -I below.
+                                 as -I below. As of a level 7 it will not try
+                                 to restore any values set via afdcfg.
        -I                        initialize AFD, by deleting everything
                                  except for etc directory
        -n                        in combination with -i or -I just print
@@ -33,11 +36,21 @@ used for this task. The program can take the following parameters:
        -r                        removes blocking startup of AFD
        -s                        shutdown AFD
        -S                        silent AFD shutdown
+       -sn <name>                Provide a service name.
        -T                        check if data types match current binary
        -z                        set shutdown bit
        --help                    prints out this syntax
        -v                        just print version number
        --version                 show current version
+
+      Possible return values:
+       -2                       No DIR_CONFIG.
+       0                        Success.
+       5                        AFD is active.
+       6                        AFD is disabled by sysadm.
+       9                        AFD not responding.
+       10                       AFD not active.
+       11                       Not on correct host.
 </pre>
 <p>
 Before starting make sure that you have done the following:
@@ -102,9 +115,9 @@ by init_afd.
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 2005 - 2012 by H.Kiehl<br>
+   Copyright &copy; 2005 - 2023 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 29.11.2012
+   Last updated: 24.02.2023
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
