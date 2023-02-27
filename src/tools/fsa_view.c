@@ -1159,6 +1159,13 @@ main(int argc, char *argv[])
                }
             }
             (void)fprintf(stdout, "\n");
+            (void)fprintf(stdout, "Special flag        ");
+            for (i = 0; i < sfsa.allowed_transfers; i++)
+            {
+               (void)fprintf(stdout, "|%*d ", max_digits,
+                             (int)sfsa.job_status[i].special_flag);
+            }
+            (void)fprintf(stdout, "\n");
             (void)fprintf(stdout, "Number of files     ");
             for (i = 0; i < sfsa.allowed_transfers; i++)
             {
@@ -1413,6 +1420,8 @@ main(int argc, char *argv[])
                      (void)fprintf(stdout, "Connect status       : Unknown status\n");
                      break;
                }
+               (void)fprintf(stdout, "Special flag         : %d\n",
+                             (int)fsa[j].job_status[i].special_flag);
                (void)fprintf(stdout, "Number of files      : %d\n",
                              fsa[j].job_status[i].no_of_files);
                (void)fprintf(stdout, "No. of files done    : %d\n",
