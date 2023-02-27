@@ -53,6 +53,7 @@ DESCR__S_M1
  **   26.01.2019 H.Kiehl Added Version 7.
  **   01.08.2019 H.Kiehl Added pagesize.
  **   17.11.2021 H.Kiehl Added Version 8.
+ **   25.02.2023 H.Kiehl Restore feature flag.
  **
  */
 DESCR__E_M1
@@ -756,7 +757,8 @@ convert_fra(int           old_fra_fd,
    int          i,
                 pagesize;
    size_t       new_size;
-   char         *ptr;
+   char         *ptr,
+                old_features;
 #ifdef HAVE_STATX
    struct statx stat_buf;
 #else
@@ -3513,6 +3515,7 @@ convert_fra(int           old_fra_fd,
               }
            }
 
+           old_features = *(ptr + SIZEOF_INT + 1);
            ptr += AFD_WORD_OFFSET_4;
            old_fra = (struct fileretrieve_status_4 *)ptr;
 
@@ -3631,6 +3634,7 @@ convert_fra(int           old_fra_fd,
            (void)memcpy(ptr, new_fra, new_size);
            free((void *)new_fra);
            ptr -= AFD_WORD_OFFSET_5;
+           *(ptr + SIZEOF_INT + 1) = old_features;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
            *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
@@ -4525,6 +4529,7 @@ convert_fra(int           old_fra_fd,
               }
            }
 
+           old_features = *(ptr + SIZEOF_INT + 1);
            ptr += AFD_WORD_OFFSET_4;
            old_fra = (struct fileretrieve_status_4 *)ptr;
 
@@ -4649,6 +4654,7 @@ convert_fra(int           old_fra_fd,
            (void)memcpy(ptr, new_fra, new_size);
            free((void *)new_fra);
            ptr -= AFD_WORD_OFFSET_6;
+           *(ptr + SIZEOF_INT + 1) = old_features;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
            *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
@@ -4727,6 +4733,7 @@ convert_fra(int           old_fra_fd,
               }
            }
 
+           old_features = *(ptr + SIZEOF_INT + 1);
            ptr += AFD_WORD_OFFSET_5;
            old_fra = (struct fileretrieve_status_5 *)ptr;
 
@@ -4852,6 +4859,7 @@ convert_fra(int           old_fra_fd,
            (void)memcpy(ptr, new_fra, new_size);
            free((void *)new_fra);
            ptr -= AFD_WORD_OFFSET_6;
+           *(ptr + SIZEOF_INT + 1) = old_features;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
            *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
@@ -5750,6 +5758,7 @@ convert_fra(int           old_fra_fd,
               }
            }
 
+           old_features = *(ptr + SIZEOF_INT + 1);
            ptr += AFD_WORD_OFFSET_4;
            old_fra = (struct fileretrieve_status_4 *)ptr;
 
@@ -5875,6 +5884,7 @@ convert_fra(int           old_fra_fd,
            (void)memcpy(ptr, new_fra, new_size);
            free((void *)new_fra);
            ptr -= AFD_WORD_OFFSET_7;
+           *(ptr + SIZEOF_INT + 1) = old_features;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
            *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
@@ -5953,6 +5963,7 @@ convert_fra(int           old_fra_fd,
               }
            }
 
+           old_features = *(ptr + SIZEOF_INT + 1);
            ptr += AFD_WORD_OFFSET_5;
            old_fra = (struct fileretrieve_status_5 *)ptr;
 
@@ -6079,6 +6090,7 @@ convert_fra(int           old_fra_fd,
            (void)memcpy(ptr, new_fra, new_size);
            free((void *)new_fra);
            ptr -= AFD_WORD_OFFSET_7;
+           *(ptr + SIZEOF_INT + 1) = old_features;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
            *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
@@ -6157,6 +6169,7 @@ convert_fra(int           old_fra_fd,
               }
            }
 
+           old_features = *(ptr + SIZEOF_INT + 1);
            ptr += AFD_WORD_OFFSET_6;
            old_fra = (struct fileretrieve_status_6 *)ptr;
 
@@ -6283,6 +6296,7 @@ convert_fra(int           old_fra_fd,
            (void)memcpy(ptr, new_fra, new_size);
            free((void *)new_fra);
            ptr -= AFD_WORD_OFFSET_7;
+           *(ptr + SIZEOF_INT + 1) = old_features;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
            *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
@@ -7185,6 +7199,7 @@ convert_fra(int           old_fra_fd,
               }
            }
 
+           old_features = *(ptr + SIZEOF_INT + 1);
            ptr += AFD_WORD_OFFSET_4;
            old_fra = (struct fileretrieve_status_4 *)ptr;
 
@@ -7311,6 +7326,7 @@ convert_fra(int           old_fra_fd,
            (void)memcpy(ptr, new_fra, new_size);
            free((void *)new_fra);
            ptr -= AFD_WORD_OFFSET_8;
+           *(ptr + SIZEOF_INT + 1) = old_features;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
            *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
@@ -7389,6 +7405,7 @@ convert_fra(int           old_fra_fd,
               }
            }
 
+           old_features = *(ptr + SIZEOF_INT + 1);
            ptr += AFD_WORD_OFFSET_5;
            old_fra = (struct fileretrieve_status_5 *)ptr;
 
@@ -7516,6 +7533,7 @@ convert_fra(int           old_fra_fd,
            (void)memcpy(ptr, new_fra, new_size);
            free((void *)new_fra);
            ptr -= AFD_WORD_OFFSET_8;
+           *(ptr + SIZEOF_INT + 1) = old_features;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
            *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
@@ -7594,6 +7612,7 @@ convert_fra(int           old_fra_fd,
               }
            }
 
+           old_features = *(ptr + SIZEOF_INT + 1);
            ptr += AFD_WORD_OFFSET_6;
            old_fra = (struct fileretrieve_status_6 *)ptr;
 
@@ -7722,6 +7741,7 @@ convert_fra(int           old_fra_fd,
            (void)memcpy(ptr, new_fra, new_size);
            free((void *)new_fra);
            ptr -= AFD_WORD_OFFSET_8;
+           *(ptr + SIZEOF_INT + 1) = old_features;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
            *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
@@ -7800,6 +7820,7 @@ convert_fra(int           old_fra_fd,
               }
            }
 
+           old_features = *(ptr + SIZEOF_INT + 1);
            ptr += AFD_WORD_OFFSET_7;
            old_fra = (struct fileretrieve_status_7 *)ptr;
 
@@ -7927,6 +7948,7 @@ convert_fra(int           old_fra_fd,
            (void)memcpy(ptr, new_fra, new_size);
            free((void *)new_fra);
            ptr -= AFD_WORD_OFFSET_8;
+           *(ptr + SIZEOF_INT + 1) = old_features;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
            *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
