@@ -84,6 +84,9 @@ DESCR__S_M1
  **   26.02.2023 H.Kiehl In stop_afd() fsa_detach() was called to early.
  **                      For this reason write_system_data() was never
  **                      called.
+ **   01.03.2023 H.Kiehl Call set_afd_euid() before check_typesize_data(),
+ **                      otherwise some files converted will belong
+ **                      to root when compiled with WITH_SETUID_PROGS.
  **
  */
 DESCR__E_M1
@@ -282,6 +285,11 @@ main(int argc, char *argv[])
       service_name = NULL;
    }
 
+#ifdef WITH_SETUID_PROGS
+   set_afd_euid(work_dir);
+#endif
+   (void)umask(0);
+
    /* Check if the working directory does exists and has */
    /* the correct permissions set. If not it is created. */
    p_work_dir = work_dir;
@@ -307,11 +315,6 @@ main(int argc, char *argv[])
          (void)write_typesize_data();
       }
    }
-
-#ifdef WITH_SETUID_PROGS
-   set_afd_euid(work_dir);
-#endif
-   (void)umask(0);
 
    /* Initialise variables. */
    (void)strcpy(afd_status_file, work_dir);
