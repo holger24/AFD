@@ -1,6 +1,6 @@
 /*
  *  production_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -513,6 +513,7 @@ production_log_exit(void)
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                     "fclose() error : %s", strerror(errno));
       }
+      production_file = NULL;
    }
 
    return;

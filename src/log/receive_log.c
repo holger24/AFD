@@ -1,6 +1,6 @@
 /*
  *  receive_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -302,6 +302,7 @@ main(int argc, char *argv[])
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        "fclose() error : %s", strerror(errno));
          }
+         receive_file = NULL;
          if (max_receive_log_files > 1)
          {
             reshuffel_log_files(log_number, log_file, p_end, 0, 0);
@@ -549,6 +550,7 @@ sig_exit(int signo)
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                     "fclose() error : %s", strerror(errno));
       }
+      receive_file = NULL;
    }
    (void)fprintf(stderr,
 #if SIZEOF_PID_T == 4

@@ -1,6 +1,6 @@
 /*
  *  input_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -546,6 +546,7 @@ input_log_exit(void)
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                     "fclose() error : %s", strerror(errno));
       }
+      input_file = NULL;
    }
 
    return;
