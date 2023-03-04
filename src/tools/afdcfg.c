@@ -410,7 +410,7 @@ main(int argc, char *argv[])
 
    if ((action == STATUS_SEL) || (action == STORE_STATUS_SEL))
    {
-      if ((ret = fsa_attach_features_passive(NO, "afdcfg")) != SUCCESS)
+      if ((ret = fsa_attach_features_passive(NO, AFDCFG)) != SUCCESS)
       {
          if (ret < 0)
          {
@@ -461,21 +461,43 @@ main(int argc, char *argv[])
           (action == MODIFY_ERRORS_OFFLINE_SEL) ||
           (action == RECOVER_STATUS_SEL))
       {
-         if ((ret = fsa_attach_features("afdcfg")) != SUCCESS)
+         if (action == DISABLE_HOST_WARN_TIME_SEL)
          {
-            if (ret < 0)
+            if ((ret = fsa_attach(AFDCFG)) != SUCCESS)
             {
-               (void)fprintf(stderr,
-                             _("ERROR   : Failed to attach to FSA. (%s %d)\n"),
-                             __FILE__, __LINE__);
+               if (ret < 0)
+               {
+                  (void)fprintf(stderr,
+                                _("ERROR   : Failed to attach to FSA. (%s %d)\n"),
+                                __FILE__, __LINE__);
+               }
+               else
+               {
+                  (void)fprintf(stderr,
+                                _("ERROR   : Failed to attach to FSA : %s (%s %d)\n"),
+                                strerror(ret), __FILE__, __LINE__);
+               }
+               exit(INCORRECT);
             }
-            else
+         }
+         else
+         {
+            if ((ret = fsa_attach_features(AFDCFG)) != SUCCESS)
             {
-               (void)fprintf(stderr,
-                             _("ERROR   : Failed to attach to FSA : %s (%s %d)\n"),
-                             strerror(ret), __FILE__, __LINE__);
+               if (ret < 0)
+               {
+                  (void)fprintf(stderr,
+                                _("ERROR   : Failed to attach to FSA. (%s %d)\n"),
+                                __FILE__, __LINE__);
+               }
+               else
+               {
+                  (void)fprintf(stderr,
+                                _("ERROR   : Failed to attach to FSA : %s (%s %d)\n"),
+                                strerror(ret), __FILE__, __LINE__);
+               }
+               exit(INCORRECT);
             }
-            exit(INCORRECT);
          }
          ptr_fsa = (char *)fsa - AFD_FEATURE_FLAG_OFFSET_END;
       }
@@ -485,21 +507,44 @@ main(int argc, char *argv[])
           (action == DISABLE_DIR_WARN_TIME_SEL) ||
           (action == RECOVER_STATUS_SEL))
       {
-         if ((ret = fra_attach_features()) != SUCCESS)
+         if ((action == ENABLE_UPDATE_DIR_WARN_TIME_SEL) ||
+             (action == DISABLE_DIR_WARN_TIME_SEL))
          {
-            if (ret < 0)
+            if ((ret = fra_attach()) != SUCCESS)
             {
-               (void)fprintf(stderr,
-                             _("ERROR   : Failed to attach to FRA. (%s %d)\n"),
-                             __FILE__, __LINE__);
+               if (ret < 0)
+               {
+                  (void)fprintf(stderr,
+                                _("ERROR   : Failed to attach to FRA. (%s %d)\n"),
+                                __FILE__, __LINE__);
+               }
+               else
+               {
+                  (void)fprintf(stderr,
+                                _("ERROR   : Failed to attach to FRA : %s (%s %d)\n"),
+                                strerror(ret), __FILE__, __LINE__);
+               }
+               exit(INCORRECT);
             }
-            else
+         }
+         else
+         {
+            if ((ret = fra_attach_features()) != SUCCESS)
             {
-               (void)fprintf(stderr,
-                             _("ERROR   : Failed to attach to FRA : %s (%s %d)\n"),
-                             strerror(ret), __FILE__, __LINE__);
+               if (ret < 0)
+               {
+                  (void)fprintf(stderr,
+                                _("ERROR   : Failed to attach to FRA features. (%s %d)\n"),
+                                __FILE__, __LINE__);
+               }
+               else
+               {
+                  (void)fprintf(stderr,
+                                _("ERROR   : Failed to attach to FRA features : %s (%s %d)\n"),
+                                strerror(ret), __FILE__, __LINE__);
+               }
+               exit(INCORRECT);
             }
-            exit(INCORRECT);
          }
          ptr_fra = (char *)fra - AFD_FEATURE_FLAG_OFFSET_END;
       }
