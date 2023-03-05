@@ -284,8 +284,7 @@ only possible to have one of this dialog open at the same time.
 <tr>
    <td><a name="protocol_specific_options">&nbsp<b>11</b>&nbsp</a></td>
    <td>Protocol specific</td>
-   <td>Protocol specific options. Currently these are only for FTP and FTPS,
-       except for Fast cd which can also be used for SFTP.
+   <td>Protocol specific options.
        <table border>
        <tr>
           <td><a name="ftp_mode">FTP Mode</a></td>
@@ -325,13 +324,18 @@ only possible to have one of this dialog open at the same time.
               are broken and can be disabled with this option.</td>
        </tr>
        <tr>
+          <td><a name="send_utf8_on">Send UTF8 on</a></td>
+          <td>Some FTP servers need an 'OPTS UTF8 ON' for filenames
+              being created correctly.</td>
+       </tr>
+       <tr>
           <td><a name="ccc">Clear Control Connection</a></td>
           <td>With FTPS it is always a problem to get it running
               behind a firewall, because the firewall cannot read
               which data port is going to be opened for transmitting
               the data, since the control connection is encrypted.
               When this option is set AFD will drop encryption
-              by sending the CCC comand, after having logged in
+              by sending the CCC command, after having logged in
               successfully.</td>
        </tr>
        <tr>
@@ -401,6 +405,14 @@ only possible to have one of this dialog open at the same time.
               is in the hostname one does not need to set this option.</td>
        </tr>
        <tr>
+          <td><a name="no_expect">No expect</a></td>
+          <td>When sending a file via HTTP one can send a
+              "Expect: 100-continue". This makes it easier to transmit
+              large files. It is set by default. Some servers do not
+              handle this correctly or do not know this option. So
+              here you can disable it.</td>
+       </tr>
+       <tr>
           <td><a name="seq_locking">Seq. Locking</a></td>
           <td>When transmitting file "xxxx.yyyy" it adds the number of
               retries to the end of the file name "xxxx.yyyy-<retries>"
@@ -456,12 +468,9 @@ only possible to have one of this dialog open at the same time.
           <td>Checks if the server provides a valid certificate.</td>
        </tr>
        <tr>
-          <td><a name="no_expect">No expect</a></td>
-          <td>When sending a file via HTTP one can send a
-              "Expect: 100-continue". This makes it easier to transmit
-              large files. It is set by default. Some servers do not
-              handle this correctly or do not know this option. So
-              here you can disable it.</td>
+          <td><a name="legacy_renegotiation">Legacy renegotiation</a></td>
+          <td>Some combination of openssl and HTTP servers need this
+              set to successfully connect. By default tis is off.</td>
        </tr>
        </table>
    </td>
@@ -485,9 +494,9 @@ only possible to have one of this dialog open at the same time.
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 1997 - 2022 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2023 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 19.03.2022
+   Last updated: 05.03.2023
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
