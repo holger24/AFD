@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -125,6 +125,7 @@ extern time_t                     start_time_val,
 extern size_t                     search_file_size;
 extern char                       font_name[],
                                   header_line[],
+                                  multi_search_separator,
                                   *p_work_dir,
                                   **search_file_name,
                                   **search_dir,
@@ -610,7 +611,7 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                {
                   nots++;
                }
-               while ((*ptr != '\0') && (*ptr != ','))
+               while ((*ptr != '\0') && (*ptr != multi_search_separator))
                {
                   if (*ptr == '\\')
                   {
@@ -646,7 +647,7 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                for (;;)
                {
                   i = 0;
-                  while ((*ptr != '\0') && (*ptr != ','))
+                  while ((*ptr != '\0') && (*ptr != multi_search_separator))
                   {
                      if (*ptr == '\\')
                      {
@@ -656,7 +657,7 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                      ptr++; i++;
                   }
                   search_file_name[ii][i] = '\0';
-                  if (*ptr == ',')
+                  if (*ptr == multi_search_separator)
                   {
                      ii++; ptr++;
                      while ((*ptr == ' ') || (*ptr == '\t'))
@@ -1000,8 +1001,7 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
             ptr = value;
             for (;;)
             {
-               while ((*ptr != '\0') &&
-                      (*ptr != ','))
+               while ((*ptr != '\0') && (*ptr != ','))
                {
                   if (*ptr == '\\')
                   {
@@ -1048,8 +1048,7 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                      ptr++;
                      search_user[ii][i] = '\0';
                      ptr_start = ptr;;
-                     while ((*ptr != '\0') &&
-                            (*ptr != ','))
+                     while ((*ptr != '\0') && (*ptr != ','))
                      {
                         if (*ptr == '\\')
                         {

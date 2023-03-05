@@ -1,6 +1,6 @@
 /*
  *  show_elog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -459,7 +459,7 @@ main(int argc, char *argv[])
    argcount++;
    selectionbox_w = XmCreateForm(mainform_w, "selectionbox", args, argcount);
 
-   host_label_w = XtVaCreateManagedWidget("Host :",
+   host_label_w = XtVaCreateManagedWidget("Host (,):",
                            xmLabelGadgetClass,  selectionbox_w,
                            XmNfontList,         fontlist,
                            XmNtopAttachment,    XmATTACH_POSITION,
@@ -469,7 +469,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_POSITION,
                            XmNleftPosition,     0,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    8,
+                           XmNrightPosition,    9,
                            XmNalignment,        XmALIGNMENT_END,
                            NULL);
    host_alias_w = XtVaCreateManagedWidget("",
@@ -492,7 +492,7 @@ main(int argc, char *argv[])
    XtAddCallback(host_alias_w, XmNactivateCallback, save_input,
                  (XtPointer)HOST_ALIAS);
 
-   dir_label_w = XtVaCreateManagedWidget("Dir :",
+   dir_label_w = XtVaCreateManagedWidget("Dir (,):",
                            xmLabelGadgetClass,  selectionbox_w,
                            XmNfontList,         fontlist,
                            XmNtopAttachment,    XmATTACH_POSITION,
@@ -502,7 +502,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_POSITION,
                            XmNleftPosition,     32,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    38,
+                           XmNrightPosition,    40,
                            XmNalignment,        XmALIGNMENT_END,
                            NULL);
    dir_alias_w = XtVaCreateManagedWidget("",

@@ -1,6 +1,6 @@
 /*
  *  show_plog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -152,6 +152,7 @@ double                     search_cpu_time = -1.0,
                            search_prod_time = -1.0;
 char                       font_name[40],
                            header_line[MAX_PRODUCTION_LINE_LENGTH + SHOW_LONG_FORMAT + 1 + SHOW_LONG_FORMAT + 1],
+                           multi_search_separator = DEFAULT_MULTI_SEARCH_SEPARATOR,
                            *p_work_dir,
                            **search_new_file_name,
                            **search_orig_file_name,
@@ -183,7 +184,8 @@ static void                eval_permissions(char *),
 int
 main(int argc, char *argv[])
 {
-   char            window_title[MAX_WNINDOW_TITLE_LENGTH],
+   char            ms_label_str[MAX_MS_LABEL_STR_LENGTH],
+                   window_title[MAX_WNINDOW_TITLE_LENGTH],
                    work_dir[MAX_PATH_LENGTH],
                    *radio_label[] = {"Short", "Med", "Long"};
    static String   fallback_res[] =
@@ -531,7 +533,9 @@ main(int argc, char *argv[])
    argcount++;
    criteriabox_w = XmCreateForm(mainform_w, "criteriabox", args, argcount);
 
-   label_w = XtVaCreateManagedWidget("Orig File name:",
+   (void)snprintf(ms_label_str, MAX_MS_LABEL_STR_LENGTH,
+                  "Orig File name (%c):", multi_search_separator);
+   label_w = XtVaCreateManagedWidget(ms_label_str,
                            xmLabelGadgetClass,  criteriabox_w,
                            XmNfontList,         fontlist,
                            XmNtopAttachment,    XmATTACH_POSITION,
@@ -541,7 +545,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_POSITION,
                            XmNleftPosition,     0,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    29,
+                           XmNrightPosition,    32,
                            XmNalignment,        XmALIGNMENT_END,
                            NULL);
    orig_file_name_w = XtVaCreateManagedWidget("",
@@ -564,7 +568,9 @@ main(int argc, char *argv[])
    XtAddCallback(orig_file_name_w, XmNactivateCallback, save_input,
                  (XtPointer)ORIG_FILE_NAME);
 
-   label_w = XtVaCreateManagedWidget("New File name :",
+   (void)snprintf(ms_label_str, MAX_MS_LABEL_STR_LENGTH,
+                  "New File name  (%c):", multi_search_separator);
+   label_w = XtVaCreateManagedWidget(ms_label_str,
                            xmLabelGadgetClass,  criteriabox_w,
                            XmNfontList,         fontlist,
                            XmNalignment,        XmALIGNMENT_END,
@@ -575,7 +581,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_POSITION,
                            XmNleftPosition,     0,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    29,
+                           XmNrightPosition,    32,
                            NULL);
    new_file_name_w = XtVaCreateManagedWidget("",
                            xmTextWidgetClass,   criteriabox_w,
@@ -597,7 +603,7 @@ main(int argc, char *argv[])
    XtAddCallback(new_file_name_w, XmNactivateCallback, save_input,
                  (XtPointer)NEW_FILE_NAME);
 
-   label_w = XtVaCreateManagedWidget("Directory     :",
+   label_w = XtVaCreateManagedWidget("Directory      (,):",
                            xmLabelGadgetClass,  criteriabox_w,
                            XmNfontList,         fontlist,
                            XmNalignment,        XmALIGNMENT_END,
@@ -608,7 +614,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_POSITION,
                            XmNleftPosition,     0,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    29,
+                           XmNrightPosition,    32,
                            NULL);
    directory_w = XtVaCreateManagedWidget("",
                            xmTextWidgetClass,   criteriabox_w,
@@ -630,7 +636,7 @@ main(int argc, char *argv[])
    XtAddCallback(directory_w, XmNactivateCallback, save_input,
                  (XtPointer)DIRECTORY_NAME);
 
-   label_w = XtVaCreateManagedWidget("Command       :",
+   label_w = XtVaCreateManagedWidget("Command        (,):",
                            xmLabelGadgetClass,  criteriabox_w,
                            XmNfontList,         fontlist,
                            XmNalignment,        XmALIGNMENT_END,
@@ -641,7 +647,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_POSITION,
                            XmNleftPosition,     0,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    29,
+                           XmNrightPosition,    32,
                            NULL);
    command_w = XtVaCreateManagedWidget("",
                            xmTextWidgetClass,   criteriabox_w,
@@ -663,7 +669,7 @@ main(int argc, char *argv[])
    XtAddCallback(command_w, XmNactivateCallback, save_input,
                  (XtPointer)COMMAND_NAME);
 
-   label_w = XtVaCreateManagedWidget("Orig File Size:",
+   label_w = XtVaCreateManagedWidget("Orig File Size   :",
                            xmLabelGadgetClass,  criteriabox_w,
                            XmNfontList,         fontlist,
                            XmNalignment,        XmALIGNMENT_END,
@@ -696,7 +702,7 @@ main(int argc, char *argv[])
    XtAddCallback(orig_file_size_w, XmNactivateCallback, save_input,
                  (XtPointer)ORIG_FILE_SIZE);
 
-   label_w = XtVaCreateManagedWidget("New File Size :",
+   label_w = XtVaCreateManagedWidget("New File Size    :",
                            xmLabelGadgetClass,  criteriabox_w,
                            XmNfontList,         fontlist,
                            XmNalignment,        XmALIGNMENT_END,
@@ -729,7 +735,7 @@ main(int argc, char *argv[])
    XtAddCallback(new_file_size_w, XmNactivateCallback, save_input,
                  (XtPointer)NEW_FILE_SIZE);
 
-   label_w = XtVaCreateManagedWidget("Recipient :",
+   label_w = XtVaCreateManagedWidget("Recipient (,):",
                            xmLabelGadgetClass,  criteriabox_w,
                            XmNfontList,         fontlist,
                            XmNalignment,        XmALIGNMENT_END,
@@ -762,7 +768,9 @@ main(int argc, char *argv[])
    XtAddCallback(recipient_w, XmNactivateCallback, save_input,
                  (XtPointer)RECIPIENT_NAME);
 
-   label_w = XtVaCreateManagedWidget("Job ID :",
+   (void)snprintf(ms_label_str, MAX_MS_LABEL_STR_LENGTH,
+                  "Job ID    (%c):", multi_search_separator);
+   label_w = XtVaCreateManagedWidget("Job ID    (,):",
                            xmLabelGadgetClass,  criteriabox_w,
                            XmNfontList,         fontlist,
                            XmNalignment,        XmALIGNMENT_END,

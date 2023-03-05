@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -111,6 +111,7 @@ extern time_t                     start_time_val,
                                   end_time_val;
 extern size_t                     search_file_size;
 extern char                       header_line[],
+                                  multi_search_separator,
                                   **search_file_name,
                                   **search_dir,
                                   *search_dir_filter,
@@ -544,7 +545,7 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                {
                   nots++;
                }
-               while ((*ptr != '\0') && (*ptr != ','))
+               while ((*ptr != '\0') && (*ptr != multi_search_separator))
                {
                   if (*ptr == '\\')
                   {
@@ -580,7 +581,7 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                for (;;)
                {
                   i = 0;
-                  while ((*ptr != '\0') && (*ptr != ','))
+                  while ((*ptr != '\0') && (*ptr != multi_search_separator))
                   {
                      if (*ptr == '\\')
                      {
@@ -590,7 +591,7 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                      ptr++; i++;
                   }
                   search_file_name[ii][i] = '\0';
-                  if (*ptr == ',')
+                  if (*ptr == multi_search_separator)
                   {
                      ii++; ptr++;
                      while ((*ptr == ' ') || (*ptr == '\t'))

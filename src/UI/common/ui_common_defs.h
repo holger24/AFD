@@ -1,6 +1,6 @@
 /*
  *  ui_common_defs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -61,6 +61,9 @@
 #else
 # define MIN_ALIAS_DISPLAY_LENGTH        MAX_HOSTNAME_LENGTH
 #endif
+
+/* Separator character when inserting multiple values in show_xlog. */
+#define DEFAULT_MULTI_SEARCH_SEPARATOR   '|'
 
 /* Definitions for the printer interface. */
 #define SELECTION_TOGGLE                 1

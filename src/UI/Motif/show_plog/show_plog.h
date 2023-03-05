@@ -1,6 +1,6 @@
 /*
  *  show_plog.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2016, 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2016 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -67,6 +67,7 @@
 
 #define NO_OF_VISIBLE_LINES        20
 
+#define MAX_MS_LABEL_STR_LENGTH    20
 #define LINES_BUFFERED             1000
 #define MAX_DISPLAYED_RATIO        7
 #define MAX_DISPLAYED_COMMAND      18

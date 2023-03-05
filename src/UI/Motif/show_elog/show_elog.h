@@ -1,6 +1,6 @@
 /*
  *  show_elog.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,6 +59,7 @@
 
 #define NO_OF_VISIBLE_LINES      20
 
+#define MAX_MS_LABEL_STR_LENGTH  10
 #define LINES_BUFFERED           1000
 
 #define LOG_CHECK_INTERVAL       1000L  /* Default interval in milli-    */

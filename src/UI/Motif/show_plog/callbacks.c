@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2016 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2016 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -143,6 +143,7 @@ extern size_t                     search_new_file_size,
 extern double                     search_cpu_time,
                                   search_prod_time;
 extern char                       header_line[],
+                                  multi_search_separator,
                                   **search_production_cmd,
                                   **search_new_file_name,
                                   **search_orig_file_name,
@@ -756,7 +757,7 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                {
                   nots++;
                }
-               while ((*ptr != '\0') && (*ptr != ','))
+               while ((*ptr != '\0') && (*ptr != multi_search_separator))
                {
                   if (*ptr == '\\')
                   {
@@ -793,7 +794,7 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                for (;;)
                {
                   i = 0;
-                  while ((*ptr != '\0') && (*ptr != ','))
+                  while ((*ptr != '\0') && (*ptr != multi_search_separator))
                   {
                      if (*ptr == '\\')
                      {
@@ -803,7 +804,7 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                      ptr++; i++;
                   }
                   search_orig_file_name[ii][i] = '\0';
-                  if (*ptr == ',')
+                  if (*ptr == multi_search_separator)
                   {
                      ii++; ptr++;
                      while ((*ptr == ' ') || (*ptr == '\t'))
@@ -856,7 +857,7 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                {
                   nots++;
                }
-               while ((*ptr != '\0') && (*ptr != ','))
+               while ((*ptr != '\0') && (*ptr != multi_search_separator))
                {
                   if (*ptr == '\\')
                   {
@@ -893,7 +894,7 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                for (;;)
                {
                   i = 0;
-                  while ((*ptr != '\0') && (*ptr != ','))
+                  while ((*ptr != '\0') && (*ptr != multi_search_separator))
                   {
                      if (*ptr == '\\')
                      {
@@ -903,7 +904,7 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                      ptr++; i++;
                   }
                   search_new_file_name[ii][i] = '\0';
-                  if (*ptr == ',')
+                  if (*ptr == multi_search_separator)
                   {
                      ii++; ptr++;
                      while ((*ptr == ' ') || (*ptr == '\t'))

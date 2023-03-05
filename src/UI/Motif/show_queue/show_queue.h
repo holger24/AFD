@@ -1,6 +1,6 @@
 /*
  *  show_queue.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,6 +53,7 @@
 
 #define NO_OF_VISIBLE_LINES     20
 
+#define MAX_MS_LABEL_STR_LENGTH 15
 #define LINES_BUFFERED          1000
 #define MAX_DISPLAYED_FILE_SIZE 12
 #define MAX_OUTPUT_LINE_LENGTH  20 + MAX_HOSTNAME_LENGTH + 1 + 4 + 1 + MAX_DISPLAYED_FILE_SIZE + 1
