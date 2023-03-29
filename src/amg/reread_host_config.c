@@ -252,7 +252,6 @@ reread_host_config(time_t           *hc_old_time,
             }
          }
       }
-      p_host_list_put_back = host_list_put_back;
       for (i = 0; i < *old_no_of_hosts; i++)
       {
          if (mark_list[i] == NO)
@@ -307,10 +306,11 @@ reread_host_config(time_t           *hc_old_time,
                                       strerror(errno));
                            exit(INCORRECT);
                         }
-                        p_host_list_put_back += snprintf(host_list_put_back,
-                                                         MAX_HOSTNAME_LENGTH + 1,
-                                                         "%s",
-                                                         (*old_hl)[i].host_alias);
+                        p_host_list_put_back = host_list_put_back +
+                                               snprintf(host_list_put_back,
+                                                        MAX_HOSTNAME_LENGTH + 1,
+                                                        "%s",
+                                                        (*old_hl)[i].host_alias);
                      }
                      else
                      {
