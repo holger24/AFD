@@ -725,7 +725,7 @@ eval_dir_config(off_t        db_size,
                     tmp_location[MAX_PATH_LENGTH];
 
                (void)memcpy(dir->orig_dir_name, dir->location,
-                            dir->location_length);
+                            dir->location_length + 1);
                tmp_ptr = dir->location;
                while ((*tmp_ptr != '/') && (*tmp_ptr != '\n') &&
                       (*tmp_ptr != '\0') && (*tmp_ptr != ' ') &&
@@ -794,7 +794,7 @@ eval_dir_config(off_t        db_size,
             else if (dir->location[0] == '/')
                  {
                     (void)memcpy(dir->orig_dir_name, dir->location,
-                                 dir->location_length);
+                                 dir->location_length + 1);
                     dir->location_length = optimise_dir(dir->location);
                     dir->type = LOCALE_DIR;
                     dir->protocol = LOC;
@@ -834,7 +834,7 @@ eval_dir_config(off_t        db_size,
                     else if (dir->scheme & LOC_FLAG)
                          {
                             (void)memcpy(dir->orig_dir_name, dir->location,
-                                         dir->location_length);
+                                         dir->location_length + 1);
                             dir->type = LOCALE_DIR;
                             dir->protocol = LOC;
                             if ((dir->real_hostname[0] != '\0') &&
@@ -892,7 +892,7 @@ eval_dir_config(off_t        db_size,
                                }
                             }
                             (void)memcpy(dir->orig_dir_name, dir->location,
-                                         dir->location_length);
+                                         dir->location_length + 1);
                             if (directory[0] == '\0')
                             {
                                (void)strcpy(dir->location, prev_user_dir);
