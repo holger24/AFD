@@ -1,6 +1,6 @@
 /*
  *  sftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -89,6 +89,9 @@ DESCR__S_M3
  **   16.04.2015 H.Kiehl Added function sftp_nocd().
  **   23.04.2018 H.Kiehl Show better error message when remote server just
  **                      closes connection.
+ **   05.04.2023 H.Kiehl If timeout_flag is not OFF, do not close remote
+ **                      directory and do not wait so long for the ssh
+ **                      process to terminate.
  **
  */
 DESCR__E_M3
@@ -3468,7 +3471,8 @@ sftp_quit(void)
       free(scd.file_handle);
       scd.file_handle = NULL;
    }
-   if ((scd.dir_handle != NULL) && (scd.pipe_broken == NO))
+   if ((timeout_flag == OFF) &&
+       (scd.dir_handle != NULL) && (scd.pipe_broken == NO))
    {
       (void)sftp_close_dir();
    }
@@ -3518,7 +3522,14 @@ sftp_quit(void)
 
       errno = 0;
       loop_counter = 0;
-      max_waitpid_loops = (transfer_timeout / 2) * 10;
+      if (timeout_flag == OFF)
+      {
+         max_waitpid_loops = (transfer_timeout / 2) * 10;
+      }
+      else
+      {
+         max_waitpid_loops = 1;
+      }
       while ((waitpid(data_pid, NULL, WNOHANG) != data_pid) &&
              (loop_counter < max_waitpid_loops))
       {
