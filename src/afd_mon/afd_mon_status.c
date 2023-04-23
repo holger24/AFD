@@ -1,6 +1,6 @@
 /*
  *  afd_mon_status.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005, 2006 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ DESCR__S_M1
  **
  ** HISTORY
  **   10.06.2005 H.Kiehl Created
+ **   22.04.2023 H.Kiehl Added process aldad.
  **
  */
 
@@ -86,6 +87,8 @@ main(int argc, char *argv[])
                  (int)p_afd_mon_status->mon_sys_log);
    (void)fprintf(stdout, "Monitor Log          : %d\n",
                  (int)p_afd_mon_status->mon_log);
+   (void)fprintf(stdout, "ALDA daemon          : %d\n",
+                 (int)p_afd_mon_status->aldad);
    (void)fprintf(stdout, "Monsyslog indicator  : %u <",
                  p_afd_mon_status->mon_sys_log_ec);
    for (i = 0; i < LOG_FIFO_SIZE; i++)

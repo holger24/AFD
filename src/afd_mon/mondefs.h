@@ -553,6 +553,7 @@ struct afd_mon_status
           signed char  afd_mon;
           signed char  mon_sys_log;
           signed char  mon_log;
+          signed char  aldad;
           unsigned int mon_sys_log_ec;  /* Mon system log entry counter. */
           char         mon_sys_log_fifo[LOG_FIFO_SIZE + 1];
           unsigned int mon_log_ec;      /* Mon log entry counter.        */

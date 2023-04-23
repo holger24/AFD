@@ -1,6 +1,6 @@
 /*
  *  start_process.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2007 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ DESCR__S_M3
  ** HISTORY
  **   30.08.1998 H.Kiehl Created
  **   21.03.2007 H.Kiehl Added start_log_process().
+ **   22.04.2023 H.Kiehl Add parameter to aldad.
  **
  */
 DESCR__E_M3
@@ -77,14 +78,19 @@ start_process(char *progname, int afd)
             (void)execlp(progname, progname, WORK_DIR_ID,
                          p_work_dir, (char *)0);
          }
-         else
-         {
-            char str_afd_num[MAX_INT_LENGTH];
+         else if (afd == -2)
+              {
+                 (void)execlp(progname, progname, "--afdmon", WORK_DIR_ID,
+                              p_work_dir, (char *)0);
+              }
+              else
+              {
+                 char str_afd_num[MAX_INT_LENGTH];
 
-            (void)sprintf(str_afd_num, "%d", afd);
-            (void)execlp(progname, progname, WORK_DIR_ID,
-                         p_work_dir, str_afd_num, (char *)0);
-         }
+                 (void)sprintf(str_afd_num, "%d", afd);
+                 (void)execlp(progname, progname, WORK_DIR_ID,
+                                p_work_dir, str_afd_num, (char *)0);
+              }
          _exit(INCORRECT);
 
       default : /* Parent process. */

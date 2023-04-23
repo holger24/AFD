@@ -1,6 +1,6 @@
 /*
  *  stop_process.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ DESCR__S_M3
  **   09.02.2021 H.Kiehl Kill all process that do not want to stop
  **                      after some time with a SIGKILL.
  **   04.03.2021 H.Kiehl Remove PROC_TERM.
+ **   22.04.2023 H.Kiehl Addied support for aldad.
  **
  */
 DESCR__E_M3
@@ -82,7 +83,8 @@ extern int                    systemd_watchdog_enabled;
 extern char                   mon_active_file[],
                               *p_work_dir,
                               *service_name;
-extern pid_t                  mon_log_pid,
+extern pid_t                  aldad_pid,
+                              mon_log_pid,
                               sys_log_pid;
 extern struct process_list    *pl;
 extern struct mon_status_area *msa;
@@ -441,6 +443,59 @@ stop_process(int process, int shutdown)
       if (p_afd_mon_status != NULL)
       {
          p_afd_mon_status->mon_log = STOPPED;
+      }
+
+      if (aldad_pid > 0)
+      {
+         int j;
+
+         if (kill(aldad_pid, SIGINT) == -1)
+         {
+            if (errno != ESRCH)
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+#if SIZEOF_PID_T == 4
+                          "Failed to kill monitor log process (%d) : %s",
+#else
+                          "Failed to kill monitor log process (%lld) : %s",
+#endif
+                          (pri_pid_t)aldad_pid, strerror(errno));
+            }
+         }
+
+         /* Wait for the child to terminate. */
+         for (j = 0; j < MAX_SHUTDOWN_TIME;  j++)
+         {
+            if (waitpid(aldad_pid, NULL, WNOHANG) == aldad_pid)
+            {
+               aldad_pid = NOT_RUNNING;
+               break;
+            }
+            else
+            {
+               my_usleep(100000L);
+            }
+         }
+         if (aldad_pid != NOT_RUNNING)
+         {
+            if (kill(aldad_pid, SIGKILL) != -1)
+            {
+               system_log(DEBUG_SIGN, __FILE__, __LINE__,
+#if SIZEOF_PID_T == 4
+                          _("Killed %s (%d) the hard way!"),
+#else
+                          _("Killed %s (%lld) the hard way!"),
+#endif
+                          ALDAD, aldad_pid);
+               my_usleep(100000);
+               (void)waitpid(aldad_pid, NULL, WNOHANG);
+            }
+         }
+         aldad_pid = 0;
+      }
+      if (p_afd_mon_status != NULL)
+      {
+         p_afd_mon_status->aldad = STOPPED;
       }
 
       if (msa != NULL)

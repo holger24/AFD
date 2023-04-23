@@ -1,6 +1,6 @@
 /*
  *  afd_mon.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -85,6 +85,7 @@ DESCR__S_M1
  **   14.02.2015 H.Kiehl In system log show total no_of_hosts, no_of_dirs
  **                      and no_of_jobs.
  **   01.08.2020 H.Kiehl Added support for systemd.
+ **   22.04.2023 H.Kiehl Add support for aldad.
  **
  */
 DESCR__E_M1
@@ -143,7 +144,8 @@ int                    daemon_log_fd = -1,
 long                   tcp_timeout = 120L;     /* not used (mon_log()) */
 off_t                  msa_size;
 size_t                 proc_list_size;
-pid_t                  mon_log_pid,
+pid_t                  aldad_pid,
+                       mon_log_pid,
                        own_pid,
                        sys_log_pid;
 time_t                 afd_mon_db_time;
@@ -956,6 +958,42 @@ zombie_check(time_t now)
            system_log(ERROR_SIGN, __FILE__, __LINE__,
                       "waitpid() error : %s", strerror(errno));
         }
+   if ((ret = waitpid(aldad_pid, &status, WNOHANG)) == aldad_pid)
+   {
+      int ret_stat;
+
+      p_afd_mon_status->aldad = OFF;
+      if ((ret_stat = WIFEXITED(status)))
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "ALDA daemon of %s terminated with %d.", AFD_MON, ret_stat);
+         aldad_pid = 0;
+      }
+      else if (WIFSIGNALED(status))
+           {
+              /* Abnormal termination. */
+              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                         "Abnormal termination of ALDA daemon of %s, caused by signal %d.",
+                         AFD_MON, WTERMSIG(status));
+              aldad_pid = 0;
+           }
+
+      /* Restart log process. */
+      system_log(INFO_SIGN, NULL, 0,
+                 "Restart %s aldad process.", AFD_MON);
+      if ((aldad_pid = start_process(ALDAD, -2)) < 0)
+      {
+         system_log(FATAL_SIGN, __FILE__, __LINE__,
+                    "Could not start ALDA daemon process for AFD_MON.");
+         exit(INCORRECT);
+      }
+      p_afd_mon_status->aldad = ON;
+   }
+   else if (ret == -1)
+        {
+           system_log(ERROR_SIGN, __FILE__, __LINE__,
+                      "waitpid() error : %s", strerror(errno));
+        }
 
    /*
     * Now check if all mon processes are still alive.
@@ -1271,6 +1309,14 @@ start_afdmon(int *group_elements)
          exit(INCORRECT);
       }
       p_afd_mon_status->mon_log = ON;
+      if ((aldad_pid = start_process(ALDAD, -2)) < 0)
+      {
+         (void)fprintf(stderr,
+                       "ERROR   : Could not start ALDA daemon for AFD_MON. (%s %d)\n",
+                       __FILE__, __LINE__);
+         exit(INCORRECT);
+      }
+      p_afd_mon_status->aldad = ON;
 
       p_afd_mon_status->start_time = time(NULL);
       system_log(INFO_SIGN, NULL, 0,
@@ -1350,7 +1396,7 @@ mon_active(void)
                  "Failed to create %s : %s", mon_active_file, strerror(errno));
       exit(INCORRECT);
    }
-   size = ((3 + no_of_afds + no_of_afds) * sizeof(pid_t)) + sizeof(int) + 1;
+   size = ((4 + no_of_afds + no_of_afds) * sizeof(pid_t)) + sizeof(int) + 1;
    if ((buffer = malloc(size)) == NULL)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -1365,6 +1411,8 @@ mon_active(void)
    *(pid_t *)ptr = sys_log_pid;
    ptr += sizeof(pid_t);
    *(pid_t *)ptr = mon_log_pid;
+   ptr += sizeof(pid_t);
+   *(pid_t *)ptr = aldad_pid;
    ptr += sizeof(pid_t);
    *(int *)ptr = no_of_afds;
    ptr += sizeof(int);
