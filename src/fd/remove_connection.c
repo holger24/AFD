@@ -1,6 +1,6 @@
 /*
  *  remove_connection.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -199,8 +199,8 @@ remove_connection(struct connection *p_con, int faulty, time_t now)
 
                (void)strcpy(tr_hostname, fsa[p_con->fsa_pos].host_dsp_name);
                (void)rec(transfer_log_fd, INFO_SIGN,
-                         "%-*s[%d]: Automatic host switch initiated for host %s\n",
-                         MAX_HOSTNAME_LENGTH, tr_hostname, p_con->job_no,
+                         "%-*s[%c]: Automatic host switch initiated for host %s\n",
+                         MAX_HOSTNAME_LENGTH, tr_hostname, p_con->job_no + '0',
                          fsa[p_con->fsa_pos].host_dsp_name);
                if (fsa[p_con->fsa_pos].host_toggle == HOST_ONE)
                {

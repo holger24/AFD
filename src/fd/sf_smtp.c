@@ -1,6 +1,6 @@
 /*
  *  sf_smtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -2878,8 +2878,8 @@ main(int argc, char *argv[])
          if (close(fd) == -1)
          {
             (void)rec(transfer_log_fd, WARN_SIGN,
-                      "%-*s[%d]: Failed to close() local file %s : %s (%s %d)\n",
-                      MAX_HOSTNAME_LENGTH, tr_hostname, (int)db.job_no,
+                      "%-*s[%c]: Failed to close() local file %s : %s (%s %d)\n",
+                      MAX_HOSTNAME_LENGTH, tr_hostname, db.job_no + '0',
                       final_filename, strerror(errno), __FILE__, __LINE__);
             /*
              * Since we usually do not send more then 100 files and

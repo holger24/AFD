@@ -1,6 +1,6 @@
 /*
  *  sf_wmo.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -880,8 +880,8 @@ main(int argc, char *argv[])
             if (close(fd) == -1)
             {
                (void)rec(transfer_log_fd, WARN_SIGN,
-                         "%-*s[%d]: Failed to close() local file %s : %s (%s %d)\n",
-                         MAX_HOSTNAME_LENGTH, tr_hostname, (int)db.job_no,
+                         "%-*s[%c]: Failed to close() local file %s : %s (%s %d)\n",
+                         MAX_HOSTNAME_LENGTH, tr_hostname, db.job_no + '0',
                          p_file_name_buffer, strerror(errno),
                          __FILE__, __LINE__);
                /*

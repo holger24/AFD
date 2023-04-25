@@ -4437,9 +4437,9 @@ zombie_check(struct connection *p_con,
                         (void)my_strncpy(tr_hostname, fsa[p_con->fsa_pos].host_dsp_name,
                                          MAX_HOSTNAME_LENGTH + 2);
                         (void)rec(transfer_log_fd, INFO_SIGN,
-                                  "%-*s[%d]: Switching back to host <%s> after successful transfer.\n",
+                                  "%-*s[%c]: Switching back to host <%s> after successful transfer.\n",
                                   MAX_HOSTNAME_LENGTH, tr_hostname,
-                                  p_con->job_no,
+                                  p_con->job_no + '0',
                                   fsa[p_con->fsa_pos].host_dsp_name);
                      }
                   }
@@ -4507,9 +4507,9 @@ zombie_check(struct connection *p_con,
                      (void)my_strncpy(tr_hostname, fsa[p_con->fsa_pos].host_dsp_name,
                                       MAX_HOSTNAME_LENGTH + 2);
                      (void)rec(transfer_log_fd, WARN_SIGN,
-                               "%-*s[%d]: Syntax for calling program wrong. (%s %d)\n",
-                               MAX_HOSTNAME_LENGTH, tr_hostname, p_con->job_no,
-                               __FILE__, __LINE__);
+                               "%-*s[%c]: Syntax for calling program wrong. (%s %d)\n",
+                               MAX_HOSTNAME_LENGTH, tr_hostname,
+                               p_con->job_no + '0', __FILE__, __LINE__);
                   }
                   break;
 
@@ -4590,9 +4590,9 @@ zombie_check(struct connection *p_con,
                      (void)my_strncpy(tr_hostname, fsa[p_con->fsa_pos].host_dsp_name,
                                       MAX_HOSTNAME_LENGTH + 2);
                      (void)rec(transfer_log_fd, WARN_SIGN,
-                               "%-*s[%d]: Failed to send mail. (%s %d)\n",
-                               MAX_HOSTNAME_LENGTH, tr_hostname, p_con->job_no,
-                               __FILE__, __LINE__);
+                               "%-*s[%c]: Failed to send mail. (%s %d)\n",
+                               MAX_HOSTNAME_LENGTH, tr_hostname,
+                               p_con->job_no + '0', __FILE__, __LINE__);
                   }
                   break;
 
@@ -4821,9 +4821,9 @@ zombie_check(struct connection *p_con,
                         fsa[p_con->fsa_pos].first_error_time = now;
                      }
                      (void)rec(transfer_log_fd, WARN_SIGN,
-                               "%-*s[%d]: Disconnected. Could not stat() local file. (%s %d)\n",
-                               MAX_HOSTNAME_LENGTH, tr_hostname, p_con->job_no,
-                               __FILE__, __LINE__);
+                               "%-*s[%c]: Disconnected. Could not stat() local file. (%s %d)\n",
+                               MAX_HOSTNAME_LENGTH, tr_hostname,
+                               p_con->job_no + '0', __FILE__, __LINE__);
                   }
                   break;
 
@@ -4834,9 +4834,9 @@ zombie_check(struct connection *p_con,
                      (void)my_strncpy(tr_hostname, fsa[p_con->fsa_pos].host_dsp_name,
                                       MAX_HOSTNAME_LENGTH + 2);
                      (void)rec(transfer_log_fd, WARN_SIGN,
-                               "%-*s[%d]: Disconnected. Failed to lock region. (%s %d)\n",
-                               MAX_HOSTNAME_LENGTH, tr_hostname, p_con->job_no,
-                               __FILE__, __LINE__);
+                               "%-*s[%c]: Disconnected. Failed to lock region. (%s %d)\n",
+                               MAX_HOSTNAME_LENGTH, tr_hostname,
+                               p_con->job_no + '0', __FILE__, __LINE__);
                   }
                   break;
 
@@ -4847,9 +4847,9 @@ zombie_check(struct connection *p_con,
                      (void)my_strncpy(tr_hostname, fsa[p_con->fsa_pos].host_dsp_name,
                                       MAX_HOSTNAME_LENGTH + 2);
                      (void)rec(transfer_log_fd, WARN_SIGN,
-                               "%-*s[%d]: Disconnected. Failed to unlock region. (%s %d)\n",
-                               MAX_HOSTNAME_LENGTH, tr_hostname, p_con->job_no,
-                               __FILE__, __LINE__);
+                               "%-*s[%c]: Disconnected. Failed to unlock region. (%s %d)\n",
+                               MAX_HOSTNAME_LENGTH, tr_hostname,
+                               p_con->job_no + '0', __FILE__, __LINE__);
                   }
                   break;
 
@@ -4967,9 +4967,9 @@ zombie_check(struct connection *p_con,
                      (void)my_strncpy(tr_hostname, fsa[p_con->fsa_pos].host_dsp_name,
                                       MAX_HOSTNAME_LENGTH + 2);
                      (void)rec(transfer_log_fd, WARN_SIGN,
-                               "%-*s[%d]: Failed to allocate memory. (%s %d)\n",
-                               MAX_HOSTNAME_LENGTH, tr_hostname, p_con->job_no,
-                               __FILE__, __LINE__);
+                               "%-*s[%c]: Failed to allocate memory. (%s %d)\n",
+                               MAX_HOSTNAME_LENGTH, tr_hostname,
+                               p_con->job_no + '0', __FILE__, __LINE__);
                   }
                   break;
 
@@ -4980,9 +4980,10 @@ zombie_check(struct connection *p_con,
                      (void)my_strncpy(tr_hostname, fsa[p_con->fsa_pos].host_dsp_name,
                                       MAX_HOSTNAME_LENGTH + 2);
                      (void)rec(transfer_log_fd, WARN_SIGN,
-                               "%-*s[%d]: Disconnected due to an unknown error (%d). (%s %d)\n",
-                               MAX_HOSTNAME_LENGTH, tr_hostname, p_con->job_no,
-                               exit_status, __FILE__, __LINE__);
+                               "%-*s[%c]: Disconnected due to an unknown error (%d). (%s %d)\n",
+                               MAX_HOSTNAME_LENGTH, tr_hostname,
+                               p_con->job_no + '0', exit_status,
+                               __FILE__, __LINE__);
                   }
                   break;
             }
@@ -5070,23 +5071,25 @@ zombie_check(struct connection *p_con,
                  {
                     (void)rec(transfer_log_fd, DEBUG_SIGN,
 #if SIZEOF_PID_T == 4
-                              "%-*s[%d]: Abnormal termination (by signal %d) of transfer job (%d). (%s %d)\n",
+                              "%-*s[%c]: Abnormal termination (by signal %d) of transfer job (%d). (%s %d)\n",
 #else
-                              "%-*s[%d]: Abnormal termination (by signal %d) of transfer job (%lld). (%s %d)\n",
+                              "%-*s[%c]: Abnormal termination (by signal %d) of transfer job (%lld). (%s %d)\n",
 #endif
-                              MAX_HOSTNAME_LENGTH, tr_hostname, p_con->job_no,
-                              signum, (pri_pid_t)p_con->pid, __FILE__, __LINE__);
+                              MAX_HOSTNAME_LENGTH, tr_hostname,
+                              p_con->job_no + '0', signum,
+                              (pri_pid_t)p_con->pid, __FILE__, __LINE__);
                  }
                  else
                  {
                     (void)rec(transfer_log_fd, WARN_SIGN,
 #if SIZEOF_PID_T == 4
-                              "%-*s[%d]: Abnormal termination (by signal %d) of transfer job (%d). (%s %d)\n",
+                              "%-*s[%c]: Abnormal termination (by signal %d) of transfer job (%d). (%s %d)\n",
 #else
-                              "%-*s[%d]: Abnormal termination (by signal %d) of transfer job (%lld). (%s %d)\n",
+                              "%-*s[%c]: Abnormal termination (by signal %d) of transfer job (%lld). (%s %d)\n",
 #endif
-                              MAX_HOSTNAME_LENGTH, tr_hostname, p_con->job_no,
-                              signum, (pri_pid_t)p_con->pid, __FILE__, __LINE__);
+                              MAX_HOSTNAME_LENGTH, tr_hostname,
+                              p_con->job_no + '0', signum,
+                              (pri_pid_t)p_con->pid, __FILE__, __LINE__);
                  }
               }
          else if (WIFSTOPPED(status))
@@ -5097,12 +5100,12 @@ zombie_check(struct connection *p_con,
                                   MAX_HOSTNAME_LENGTH + 2);
                  (void)rec(transfer_log_fd, WARN_SIGN,
 #if SIZEOF_PID_T == 4
-                           "%-*s[%d]: Process stopped by signal %d for transfer job (%d). (%s %d)\n",
+                           "%-*s[%c]: Process stopped by signal %d for transfer job (%d). (%s %d)\n",
 #else
-                           "%-*s[%d]: Process stopped by signal %d for transfer job (%lld). (%s %d)\n",
+                           "%-*s[%c]: Process stopped by signal %d for transfer job (%lld). (%s %d)\n",
 #endif
                            MAX_HOSTNAME_LENGTH, tr_hostname,
-                           p_con->job_no, WSTOPSIG(status),
+                           p_con->job_no + '0', WSTOPSIG(status),
                            (pri_pid_t)p_con->pid, __FILE__, __LINE__);
               }
 
