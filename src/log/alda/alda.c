@@ -1,6 +1,6 @@
 /*
  *  alda.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -387,154 +387,160 @@ main(int argc, char *argv[])
             {
                detach_ahl();
             }
-# ifdef _INPUT_LOG
-            if (input.fp != NULL)
+            if ((start_search_counter > 1) ||
+                (((mode & ALDA_CONTINUOUS_MODE) == 0) &&
+                 ((mode & ALDA_CONTINUOUS_DAEMON_MODE) == 0)))
             {
-               if (fclose(input.fp) == EOF)
+# ifdef _INPUT_LOG
+               if (input.fp != NULL)
                {
-                  (void)fprintf(stderr,
-                                "Failed to fclose() `%s' : %s (%s %d)\n",
-                                input.log_dir, strerror(errno),
-                                __FILE__, __LINE__);
+                  if (fclose(input.fp) == EOF)
+                  {
+                     (void)fprintf(stderr,
+                                   "Failed to fclose() `%s' : %s (%s %d)\n",
+                                   input.log_dir, strerror(errno),
+                                   __FILE__, __LINE__);
+                  }
+                  input.fp = NULL;
+                  input.bytes_read = 0;
                }
-               input.fp = NULL;
-               input.bytes_read = 0;
-            }
 # endif
 # ifdef _DISTRIBUTION_LOG
-            if ((trace_mode == ON) && (mode & ALDA_FORWARD_MODE))
-            {
-               if (ucache != NULL)
+               if ((trace_mode == ON) && (mode & ALDA_FORWARD_MODE))
                {
-                  free(ucache);
-                  ucache = NULL;
-               }
-               if (upl != NULL)
-               {
-                  int i;
-
-                  for (i = 0; i < distribution.max_log_files; i++)
+                  if (ucache != NULL)
                   {
-                     free(upl[i]);
+                     free(ucache);
+                     ucache = NULL;
                   }
-                  free(upl);
-                  upl = NULL;
+                  if (upl != NULL)
+                  {
+                     int i;
+
+                     for (i = 0; i < distribution.max_log_files; i++)
+                     {
+                        free(upl[i]);
+                     }
+                     free(upl);
+                     upl = NULL;
+                  }
                }
-            }
-            if (distribution.fp != NULL)
-            {
-               if (fclose(distribution.fp) == EOF)
+               if (distribution.fp != NULL)
                {
-                  (void)fprintf(stderr,
-                                "Failed to fclose() `%s' : %s (%s %d)\n",
-                                distribution.log_dir, strerror(errno),
-                                __FILE__, __LINE__);
+                  if (fclose(distribution.fp) == EOF)
+                  {
+                     (void)fprintf(stderr,
+                                   "Failed to fclose() `%s' : %s (%s %d)\n",
+                                   distribution.log_dir, strerror(errno),
+                                   __FILE__, __LINE__);
+                  }
+                  distribution.fp = NULL;
+                  distribution.bytes_read = 0;
                }
-               distribution.fp = NULL;
-               distribution.bytes_read = 0;
-            }
 # endif
 # ifdef _PRODUCTION_LOG
-            if ((trace_mode == ON) && (mode & ALDA_FORWARD_MODE))
-            {
-               if (pcache != NULL)
+               if ((trace_mode == ON) && (mode & ALDA_FORWARD_MODE))
                {
-                  free(pcache);
-                  pcache = NULL;
-               }
-               if (ppl != NULL)
-               {
-                  int i;
-
-                  for (i = 0; i < production.max_log_files; i++)
+                  if (pcache != NULL)
                   {
-                     free(ppl[i]);
+                     free(pcache);
+                     pcache = NULL;
                   }
-                  free(ppl);
-                  ppl = NULL;
+                  if (ppl != NULL)
+                  {
+                     int i;
+
+                     for (i = 0; i < production.max_log_files; i++)
+                     {
+                        free(ppl[i]);
+                     }
+                     free(ppl);
+                     ppl = NULL;
+                  }
                }
-            }
-            if (production.fp != NULL)
-            {
-               if (fclose(production.fp) == EOF)
+               if (production.fp != NULL)
                {
-                  (void)fprintf(stderr,
-                                "Failed to fclose() `%s' : %s (%s %d)\n",
-                                production.log_dir, strerror(errno),
-                                __FILE__, __LINE__);
+                  if (fclose(production.fp) == EOF)
+                  {
+                     (void)fprintf(stderr,
+                                   "Failed to fclose() `%s' : %s (%s %d)\n",
+                                   production.log_dir, strerror(errno),
+                                   __FILE__, __LINE__);
+                  }
+                  production.fp = NULL;
+                  production.bytes_read = 0;
                }
-               production.fp = NULL;
-               production.bytes_read = 0;
-            }
 # endif
 # ifdef _OUTPUT_LOG
-            if ((trace_mode == ON) && (mode & ALDA_FORWARD_MODE))
-            {
-               if (ocache != NULL)
+               if ((trace_mode == ON) && (mode & ALDA_FORWARD_MODE))
                {
-                  free(ocache);
-                  ocache = NULL;
-               }
-               if (opl != NULL)
-               {
-                  int i;
-
-                  for (i = 0; i < output.max_log_files; i++)
+                  if (ocache != NULL)
                   {
-                     free(opl[i]);
+                     free(ocache);
+                     ocache = NULL;
                   }
-                  free(opl);
-                  opl = NULL;
+                  if (opl != NULL)
+                  {
+                     int i;
+
+                     for (i = 0; i < output.max_log_files; i++)
+                     {
+                        free(opl[i]);
+                     }
+                     free(opl);
+                     opl = NULL;
+                  }
                }
-            }
-            if (output.fp != NULL)
-            {
-               if (fclose(output.fp) == EOF)
+               if (output.fp != NULL)
                {
-                  (void)fprintf(stderr,
-                                "Failed to fclose() `%s' : %s (%s %d)\n",
-                                output.log_dir, strerror(errno),
-                                __FILE__, __LINE__);
+                  if (fclose(output.fp) == EOF)
+                  {
+                     (void)fprintf(stderr,
+                                   "Failed to fclose() `%s' : %s (%s %d)\n",
+                                   output.log_dir, strerror(errno),
+                                   __FILE__, __LINE__);
+                  }
+                  output.fp = NULL;
+                  output.bytes_read = 0;
                }
-               output.fp = NULL;
-               output.bytes_read = 0;
-            }
 # endif
 # ifdef _DELETE_LOG
-            if ((trace_mode == ON) && (mode & ALDA_FORWARD_MODE))
-            {
-               if (dcache != NULL)
+               if ((trace_mode == ON) && (mode & ALDA_FORWARD_MODE))
                {
-                  free(dcache);
-                  dcache = NULL;
-               }
-               if (dpl != NULL)
-               {
-                  int i;
-
-                  for (i = 0; i < delete.max_log_files; i++)
+                  if (dcache != NULL)
                   {
-                     free(dpl[i]);
+                     free(dcache);
+                     dcache = NULL;
                   }
-                  free(dpl);
-                  dpl = NULL;
+                  if (dpl != NULL)
+                  {
+                     int i;
+
+                     for (i = 0; i < delete.max_log_files; i++)
+                     {
+                        free(dpl[i]);
+                     }
+                     free(dpl);
+                     dpl = NULL;
+                  }
                }
-            }
-            if (delete.fp != NULL)
-            {
-               if (fclose(delete.fp) == EOF)
+               if (delete.fp != NULL)
                {
-                  (void)fprintf(stderr,
-                                "Failed to fclose() `%s' : %s (%s %d)\n",
-                                delete.log_dir, strerror(errno),
-                                __FILE__, __LINE__);
+                  if (fclose(delete.fp) == EOF)
+                  {
+                     (void)fprintf(stderr,
+                                   "Failed to fclose() `%s' : %s (%s %d)\n",
+                                   delete.log_dir, strerror(errno),
+                                   __FILE__, __LINE__);
+                  }
+                  delete.fp = NULL;
+                  delete.bytes_read = 0;
                }
-               delete.fp = NULL;
-               delete.bytes_read = 0;
-            }
 # endif
+            }
          }
 #endif
+         (void)msa_detach();
       }
       else
       {
