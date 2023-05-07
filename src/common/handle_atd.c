@@ -1,6 +1,6 @@
 /*
  *  handle_atd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ DESCR__S_M1
  **
  ** HISTORY
  **   23.03.2014 H.Kiehl Created
+ **   23.04.2023 H.Kiehl Close file descriptor in detach_atd().
  **
  */
 DESCR__E_M1
@@ -46,7 +47,7 @@ DESCR__E_M1
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>                    /* access()                       */
+#include <unistd.h>                    /* access(), close()              */
 #ifdef HAVE_MMAP
 # include <sys/mman.h>                 /* munmap()                       */
 #endif
@@ -55,7 +56,7 @@ DESCR__E_M1
 #include "mondefs.h"
 
 /* Local global variables. */
-static int                      atd_fd;
+static int                      atd_fd = -1;
 static off_t                    atd_size;
 
 /* External global variables. */
@@ -80,6 +81,7 @@ attach_atd(char *alias)
          (void)fprintf(stderr, "Failed to map_file() %s (%s %d)\n",
                        file_name, __FILE__, __LINE__);
          atd = NULL;
+         atd_fd = -1;
       }
       else
       {
@@ -117,6 +119,16 @@ detach_atd(void)
                        strerror(errno), __FILE__, __LINE__);
       }
       atd = NULL;
+      if (atd_fd != -1)
+      {
+         if (close(atd_fd) == -1)
+         {
+            (void)fprintf(stderr,
+                          "Failed to close() ATD file : %s (%s %d)\n",
+                          strerror(errno), __FILE__, __LINE__);
+         }
+         atd_fd = -1;
+      }
    }
 
    return;

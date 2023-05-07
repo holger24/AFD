@@ -1,6 +1,6 @@
 /*
  *  handle_ahl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2009 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ DESCR__S_M1
  **
  ** HISTORY
  **   07.12.2009 H.Kiehl Created
+ **   23.04.2023 H.Kiehl Close file descriptor in detach_ahl().
  **
  */
 DESCR__E_M1
@@ -45,6 +46,7 @@ DESCR__E_M1
 #include <stdio.h>                     /* fprintf()                      */
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>                    /* close()                        */
 #include <fcntl.h>
 #ifdef HAVE_MMAP
 # include <sys/mman.h>                 /* munmap()                       */
@@ -54,7 +56,7 @@ DESCR__E_M1
 #include "mondefs.h"
 
 /* Local global variables. */
-static int                  ahl_fd;
+static int                  ahl_fd = -1;
 static off_t                ahl_size;
 
 /* External global variables. */
@@ -78,6 +80,7 @@ attach_ahl(char *alias)
       (void)fprintf(stderr, "Failed to map_file() %s (%s %d)\n",
                     file_name, __FILE__, __LINE__);
       ahl = NULL;
+      ahl_fd = -1;
    }
    else
    {
@@ -107,6 +110,16 @@ detach_ahl(void)
       }
       ahl = NULL;
       ahl_entries = 0;
+      if (ahl_fd != -1)
+      {
+         if (close(ahl_fd) == -1)
+         {
+            (void)fprintf(stderr,
+                          "Failed to close() AHL file : %s (%s %d)\n",
+                          strerror(errno), __FILE__, __LINE__);
+         }
+         ahl_fd = -1;
+      }
    }
 
    return;
