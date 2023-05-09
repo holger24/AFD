@@ -38,6 +38,9 @@ DESCR__S_M3
  **   17.01.2009 H.Kiehl Created
  **   22.04.2023 H.Kiehl Added option --afdmon to read configuration
  **                      from MON_CONFIG_FILE.
+ **   09.05.2023 H.Kiehl If all entries are removed and realloc() returns
+ **                      NULL, evaluate errno to check if this is the
+ **                      case.
  **
  */
 DESCR__E_M3
@@ -248,10 +251,13 @@ main(int argc, char *argv[])
                               if ((apl = realloc(apl,
                                                  (no_of_process * sizeof(struct aldad_proc_list)))) == NULL)
                               {
-                                 system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                            "Failed to realloc() memory : %s",
-                                            strerror(errno));
-                                 exit(INCORRECT);
+                                 if (errno != 0)
+                                 {
+                                    system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                               "Failed to realloc() memory : %s",
+                                               strerror(errno));
+                                    exit(INCORRECT);
+                                 }
                               }
                            }
                         }
@@ -285,10 +291,13 @@ main(int argc, char *argv[])
                            if ((apl = realloc(apl,
                                               (no_of_process * sizeof(struct aldad_proc_list)))) == NULL)
                            {
-                              system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                         "Failed to realloc() memory : %s",
-                                         strerror(errno));
-                              exit(INCORRECT);
+                              if (errno != 0)
+                              {
+                                 system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                            "Failed to realloc() memory : %s",
+                                            strerror(errno));
+                                 exit(INCORRECT);
+                              }
                            }
                         }
                      }
