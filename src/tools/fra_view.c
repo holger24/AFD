@@ -747,6 +747,10 @@ main(int argc, char *argv[])
               {
                  (void)fprintf(stdout, "Stupid mode          : GET_ONCE_ONLY\n");
               }
+         else if (fra[i].stupid_mode == APPEND_ONLY)
+              {
+                 (void)fprintf(stdout, "Stupid mode          : APPEND_ONLY\n");
+              }
               else
               {
                  (void)fprintf(stdout, "Stupid mode          : YES\n");
