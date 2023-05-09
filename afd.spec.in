@@ -1,12 +1,11 @@
 Summary: A file distribution and fetching system
 Name: afd
 Version: @AFD_VERSION@
-Release: @AFD_RELEASE@%{?dist}
+Release: 1%{?dist}
 License: GPLv2
 Group: Applications/Communications
-BuildRoot: %{_builddir}/%{name}-root
 Prefix: @prefix@
-Source0: %{name}-%{version}-@AFD_RELEASE@.tar.bz2
+Source0: %{name}-%{version}.tar.bz2
 Requires: @REQUIRES@
 %if 0%{?rhl}%{?fedora}
 BuildRequires: @BUILD_REQUIRES_REDHAT@
@@ -59,7 +58,7 @@ sftp and http supported with the mailto://user@domain and
 ftp://user:password@host URL conventions).
 
 %prep
-%setup -n %{name}-%{version}-@AFD_RELEASE@
+%setup -n %{name}-%{version}
 
 %build
 if [ -x %{bindir}/getconf ]; then
@@ -161,7 +160,6 @@ if [ ! "$RPM_BUILD_ROOT" = "/" ]
 then
    rm -rf $RPM_BUILD_ROOT
 fi
-rm -rf $RPM_BUILD_ROOT/%{name}-%{version}-@AFD_RELEASE@
 
 
 %post

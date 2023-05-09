@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.59])
-AC_INIT([afd],[1.4.8-3],[Holger.Kiehl@dwd.de])
+AC_INIT([afd],[1.4.8],[Holger.Kiehl@dwd.de])
 AC_CONFIG_SRCDIR(src/init_afd/afd.c)
 AC_CONFIG_AUX_DIR(ac-tools)
 dnl# AC_PREFIX_DEFAULT("/usr/local/afd")
@@ -14,11 +14,8 @@ REQUIRES=""
 BUILD_REQUIRES=""
 BUILD_REQUIRES_REDHAT=""
 
-afd_full_version="$VERSION"
-AFD_VERSION=`echo $VERSION | cut -d '-' -f 1`
+AFD_VERSION="$VERSION"
 AC_SUBST(AFD_VERSION)
-AFD_RELEASE=`echo $VERSION | cut -d '-' -f 2`
-AC_SUBST(AFD_RELEASE)
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[long long i;]])],[AC_DEFINE(HAVE_LONG_LONG, 1, Define if C compiler supports long long type.)],[])
 
@@ -1798,7 +1795,7 @@ echo "    Source code location             : ${srcdir}"
 echo "    Install path bin + sbin          : ${prefix}/bin ${prefix}/sbin"
 echo "    Install path doc                 : ${docdir}"
 echo "    Install path man                 : ${mandir}"
-echo "    AFD Version                      : ${afd_full_version}"
+echo "    AFD Version                      : $VERSION"
 echo "    Compiler                         : ${CC}"
 echo "    Compiler flags                   : ${CFLAGS}"
 echo "    GUI                              : ${GUIS_STRING}"
