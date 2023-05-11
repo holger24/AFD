@@ -240,7 +240,7 @@ main(int argc, char *argv[])
 #ifdef WITH_AFD_MON
                            if ((apl[no_of_process - 1].pid = make_process(apl[no_of_process - 1].parameters, remote_log_data)) == 0)
 #else
-                           if ((apl[no_of_process - 1].pid = make_process(apl[no_of_process - 1].parameters) == 0)
+                           if ((apl[no_of_process - 1].pid = make_process(apl[no_of_process - 1].parameters)) == 0)
 #endif
                            {
                               system_log(ERROR_SIGN, __FILE__, __LINE__,
