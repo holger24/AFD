@@ -539,8 +539,8 @@ main(int argc, char *argv[])
 # endif
             }
          }
-#endif
          (void)msa_detach();
+#endif
       }
       else
       {
