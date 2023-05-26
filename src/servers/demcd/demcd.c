@@ -66,7 +66,7 @@ DESCR__E_M1
 int                    dqb_fd = -1,
                        *no_demcd_queued,
                        sys_log_fd = STDERR_FILENO;
-char                   afd_config_file[MAX_PATH_LENGTH],
+char                   afd_config_file[MAX_PATH_LENGTH + ETC_DIR_LENGTH + AFD_CONFIG_FILE_LENGTH],
                        *p_work_dir,
                        *p_work_dir_end;
 struct afd_status      *p_afd_status;
@@ -455,8 +455,9 @@ get_demcd_config_value(char *mail_file, long *time_up)
 {
    char *buffer = NULL;
 
-   (void)snprintf(afd_config_file, MAX_PATH_LENGTH, "%s%s%s",
-                  p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
+   (void)snprintf(afd_config_file,
+                  MAX_PATH_LENGTH + ETC_DIR_LENGTH + AFD_CONFIG_FILE_LENGTH,
+                  "%s%s%s", p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
    if ((eaccess(afd_config_file, F_OK) == 0) &&
        (read_file_no_cr(afd_config_file, &buffer, YES,
                         __FILE__, __LINE__) != INCORRECT))

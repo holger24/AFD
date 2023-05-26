@@ -72,7 +72,7 @@ int               number_of_trusted_ips,
                   sys_log_fd = STDERR_FILENO;
 clock_t           clktck;
 pid_t             *pid;
-char              afd_config_file[MAX_PATH_LENGTH],
+char              afd_config_file[MAX_PATH_LENGTH + ETC_DIR_LENGTH + AFD_CONFIG_FILE_LENGTH],
                   afd_name[MAX_AFD_NAME_LENGTH],
                   hostname[MAX_FULL_USER_ID_LENGTH],
                   *p_work_dir,
@@ -509,8 +509,9 @@ get_atpd_config_value(char *port_no, int *max_atpd_connections)
 {
    char *buffer;
 
-   (void)snprintf(afd_config_file, MAX_PATH_LENGTH, "%s%s%s",
-                  p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
+   (void)snprintf(afd_config_file,
+                  MAX_PATH_LENGTH + ETC_DIR_LENGTH + AFD_CONFIG_FILE_LENGTH,
+                  "%s%s%s", p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
    if ((eaccess(afd_config_file, F_OK) == 0) &&
        (read_file_no_cr(afd_config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
    {
