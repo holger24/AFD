@@ -294,6 +294,12 @@ retry_connect:
       scd.cwd                = NULL;
       scd.file_handle        = NULL;
       scd.dir_handle         = NULL;
+      scd.nl_length          = 0;
+      scd.nl                 = NULL;
+      for (status = 0; status < MAX_SFTP_REPLY_BUFFER; status++)
+      {
+         scd.sm[status].sm_buffer = NULL;
+      }
       scd.debug              = debug;
       scd.pipe_broken        = NO;
 
@@ -386,6 +392,7 @@ retry_connect:
 #endif
                      if (msg[0] == SSH_FXP_VERSION)
                      {
+                        int  i;
                         char *ptr,
                              *p_xfer_str = NULL;
 
@@ -535,6 +542,12 @@ retry_connect:
                         scd.cwd            = NULL;
                         scd.file_handle    = NULL;
                         scd.dir_handle     = NULL;
+                        scd.nl_length      = 0;
+                        scd.nl             = NULL;
+                        for (i = 0; i < MAX_SFTP_REPLY_BUFFER; i++)
+                        {
+                           scd.sm[i].sm_buffer = NULL;
+                        }
                         if (p_xfer_str != NULL)
                         {
                            free(p_xfer_str);
@@ -1938,6 +1951,7 @@ sftp_close_dir(void)
       {
          free(scd.nl[i].name);
       }
+      scd.nl_length = 0;
       free(scd.nl);
       scd.nl = NULL;
    }
@@ -3017,6 +3031,7 @@ sftp_readdir(char *name, struct stat *p_stat_buf)
       {
          free(scd.nl[i].name);
       }
+      scd.nl_length = scd.nl_pos = 0;
       free(scd.nl);
       scd.nl = NULL;
    }
@@ -3054,49 +3069,72 @@ sftp_flush(void)
          {
             if (scd.sm[i].message_length > 4)
             {
-               gotcha = NO;
-               reply_id = get_xfer_uint(&scd.sm[i].sm_buffer[1]);
-               for (j = 0; j < scd.pending_write_counter; j++)
+               if (scd.sm[i].sm_buffer == NULL)
                {
-                  if (reply_id == scd.pending_write_id[j])
-                  {
-#ifdef WITH_TRACE
-                     if ((scd.debug == TRACE_MODE) ||
-                         (scd.debug == FULL_TRACE_MODE))
-                     {
-                        (void)memcpy(msg, scd.sm[i].sm_buffer,
-                                     scd.sm[i].message_length);
-                        show_sftp_cmd(scd.sm[i].message_length, R_TRACE,
-                                      SSC_FROM_BUFFER);
-                     }
-#endif
-                     if ((scd.pending_write_counter > 1) &&
-                         (j != (scd.pending_write_counter - 1)))
-                     {
-                        move_size = (scd.pending_write_counter - 1 - j) *
-                                    sizeof(unsigned int);
-                        (void)memmove(&scd.pending_write_id[j],
-                                      &scd.pending_write_id[j + 1],
-                                      move_size);
-                     }
-                     scd.pending_write_counter--;
-                     gotcha = YES;
-                     break;
-                  }
-               }
-               if (gotcha == YES)
-               {
-                  /* Remove reply from buffer and free its memory. */
-                  free(scd.sm[i].sm_buffer);
+                  trans_log(WARN_SIGN, __FILE__, __LINE__, "sftp_flush", NULL,
+                            "sm_buffer is NULL, but message_length is %u (i=%d request_id=%u stored_replies=%u)",
+                            scd.sm[i].message_length, i, scd.sm[i].request_id,
+                            scd.stored_replies);
+
+                  /* Delete it. */
                   if ((scd.stored_replies > 1) &&
                       (i != (scd.stored_replies - 1)))
                   {
-                     move_size = (scd.stored_replies - 1 - i) *
-                                 sizeof(struct stored_messages);
+                     size_t move_size = (scd.stored_replies - 1 - i) *
+                                        sizeof(struct stored_messages);
+
                      (void)memmove(&scd.sm[i], &scd.sm[i + 1], move_size);
                   }
                   scd.stored_replies--;
                   i--;
+               }
+               else
+               {
+                  gotcha = NO;
+                  reply_id = get_xfer_uint(&scd.sm[i].sm_buffer[1]);
+                  for (j = 0; j < scd.pending_write_counter; j++)
+                  {
+                     if (reply_id == scd.pending_write_id[j])
+                     {
+#ifdef WITH_TRACE
+                        if ((scd.debug == TRACE_MODE) ||
+                            (scd.debug == FULL_TRACE_MODE))
+                        {
+                           (void)memcpy(msg, scd.sm[i].sm_buffer,
+                                        scd.sm[i].message_length);
+                           show_sftp_cmd(scd.sm[i].message_length, R_TRACE,
+                                         SSC_FROM_BUFFER);
+                        }
+#endif
+                        if ((scd.pending_write_counter > 1) &&
+                            (j != (scd.pending_write_counter - 1)))
+                        {
+                           move_size = (scd.pending_write_counter - 1 - j) *
+                                       sizeof(unsigned int);
+                           (void)memmove(&scd.pending_write_id[j],
+                                         &scd.pending_write_id[j + 1],
+                                         move_size);
+                        }
+                        scd.pending_write_counter--;
+                        gotcha = YES;
+                        break;
+                     }
+                  }
+                  if (gotcha == YES)
+                  {
+                     /* Remove reply from buffer and free its memory. */
+                     free(scd.sm[i].sm_buffer);
+                     scd.sm[i].sm_buffer = NULL;
+                     if ((scd.stored_replies > 1) &&
+                         (i != (scd.stored_replies - 1)))
+                     {
+                        move_size = (scd.stored_replies - 1 - i) *
+                                    sizeof(struct stored_messages);
+                        (void)memmove(&scd.sm[i], &scd.sm[i + 1], move_size);
+                     }
+                     scd.stored_replies--;
+                     i--;
+                  }
                }
             }
          }
@@ -3488,13 +3526,24 @@ sftp_quit(void)
 #ifdef WITH_TRACE
          if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
          {
-            (void)memcpy(msg, scd.sm[i].sm_buffer, scd.sm[i].message_length);
-            show_sftp_cmd(scd.sm[i].message_length, R_TRACE, SSC_DELETED);
+            if (scd.sm[i].sm_buffer == NULL)
+            {
+               trans_log(WARN_SIGN, __FILE__, __LINE__, "sftp_quit", NULL,
+                         "sm_buffer is NULL, but message_length is %u (i=%d request_id=%u stored_replies=%u)",
+                         scd.sm[i].message_length, i, scd.sm[i].request_id,
+                         scd.stored_replies);
+            }
+            else
+            {
+               (void)memcpy(msg, scd.sm[i].sm_buffer, scd.sm[i].message_length);
+               show_sftp_cmd(scd.sm[i].message_length, R_TRACE, SSC_DELETED);
+            }
          }
 #endif
          free(scd.sm[i].sm_buffer);
-         scd.stored_replies = 0;
+         scd.sm[i].sm_buffer = NULL;
       }
+      scd.stored_replies = 0;
    }
    if (msg != NULL)
    {
@@ -3612,34 +3661,56 @@ get_reply(unsigned int id, int line)
       {
          if (scd.sm[i].request_id == id)
          {
-            /* Save content of stored message to buffer msg. */
-            (void)memcpy(msg, scd.sm[i].sm_buffer, scd.sm[i].message_length);
-#ifdef WITH_TRACE
-            if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+            if (scd.sm[i].sm_buffer == NULL)
             {
-               msg_length = scd.sm[i].message_length;
+               trans_log(WARN_SIGN, __FILE__, __LINE__, "get_reply", NULL,
+                         "sm_buffer is NULL, but message_length is %u (i=%d request_id=%u stored_replies=%u line=%d)",
+                         scd.sm[i].message_length, i, scd.sm[i].request_id,
+                         scd.stored_replies, line);
+
+               /* Delete it. */
+               if ((scd.stored_replies > 1) && (i != (scd.stored_replies - 1)))
+               {
+                  size_t move_size = (scd.stored_replies - 1 - i) *
+                                     sizeof(struct stored_messages);
+
+                  (void)memmove(&scd.sm[i], &scd.sm[i + 1], move_size);
+               }
+               scd.stored_replies--;
+               i--;
             }
+            else
+            {
+               /* Save content of stored message to buffer msg. */
+               (void)memcpy(msg, scd.sm[i].sm_buffer, scd.sm[i].message_length);
+#ifdef WITH_TRACE
+               if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+               {
+                  msg_length = scd.sm[i].message_length;
+               }
 #endif
 
-            /* Remove reply from buffer and free its memory. */
-            free(scd.sm[i].sm_buffer);
-            if ((scd.stored_replies > 1) && (i != (scd.stored_replies - 1)))
-            {
-               size_t move_size = (scd.stored_replies - 1 - i) *
-                                  sizeof(struct stored_messages);
+               /* Remove reply from buffer and free its memory. */
+               free(scd.sm[i].sm_buffer);
+               scd.sm[i].sm_buffer = NULL;
+               if ((scd.stored_replies > 1) && (i != (scd.stored_replies - 1)))
+               {
+                  size_t move_size = (scd.stored_replies - 1 - i) *
+                                     sizeof(struct stored_messages);
 
-               (void)memmove(&scd.sm[i], &scd.sm[i + 1], move_size);
-            }
-            scd.stored_replies--;
+                  (void)memmove(&scd.sm[i], &scd.sm[i + 1], move_size);
+               }
+               scd.stored_replies--;
 
 #ifdef WITH_TRACE
-            if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
-            {
-               show_sftp_cmd(msg_length, R_TRACE, SSC_FROM_BUFFER);
-            }
+               if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+               {
+                  show_sftp_cmd(msg_length, R_TRACE, SSC_FROM_BUFFER);
+               }
 #endif
 
-            return(SUCCESS);
+               return(SUCCESS);
+            }
          }
       }
    }
@@ -4481,6 +4552,7 @@ show_sftp_cmd(unsigned int ui_var, int type, int mode)
                     {
                        free(scd.nl[i].name);
                     }
+                    scd.nl_length = scd.nl_pos = 0;
                     free(scd.nl);
                     scd.nl = NULL;
                     length = 0;
@@ -5029,7 +5101,16 @@ get_xfer_names(unsigned int no_of_names, char *msg)
    int    status = SUCCESS;
    size_t length;
 
-   free(scd.nl);
+   if (scd.nl != NULL)
+   {
+      int i;
+
+      for (i = 0; i < scd.nl_length; i++)
+      {
+         free(scd.nl[i].name);
+      }
+      free(scd.nl);
+   }
    scd.nl_length = no_of_names;
    length = no_of_names * sizeof(struct name_list);
    if ((scd.nl = malloc(length)) == NULL)
