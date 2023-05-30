@@ -1,6 +1,6 @@
 /*
  *  asftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2015 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -188,11 +188,59 @@ main(int argc, char *argv[])
    }
    else
    {
+      int max_blocksize;
+
+      if (db.exec_mode == RETRIEVE_MODE)
+      {
+         max_blocksize = sftp_max_read_length();
+      }
+      else
+      {
+         max_blocksize = sftp_max_write_length();
+      }
+
       if (db.verbose == YES)
       {
+         sftp_features();
          trans_log(INFO_SIGN, NULL, 0, NULL, msg_str,
                    _("Connected. Agreed on SFTP version %u."), sftp_version());
+         msg_str[0] = '\0';
       }
+
+      /*
+       * SFTP is very sensitive for the blocksize used. Newer
+       * versions of openssh allow us to retrieve the maximum
+       * allowed. Ensure we do not exceed this limit.
+       *
+       * On the other hand a value too low hurts throughput.
+       * So also make sure the value is not to low.
+       */
+      if (db.blocksize < MIN_SFTP_BLOCKSIZE)
+      {
+         int old_blocksize = db.blocksize;
+
+         if (MIN_SFTP_BLOCKSIZE > max_blocksize)
+         {
+            db.blocksize = max_blocksize;
+         }
+         else
+         {
+            db.blocksize = MIN_SFTP_BLOCKSIZE;
+         }
+         if (db.blocksize != old_blocksize)
+         {
+            trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                      "Changing block size from %d to %d",
+                      old_blocksize, db.blocksize);
+         }
+      }
+      else if (db.blocksize > max_blocksize)
+           {
+              trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                        "Decreasing block size from %d to %d",
+                        db.blocksize, max_blocksize);
+              db.blocksize = max_blocksize;
+           }
 
       if (db.special_flag & CREATE_TARGET_DIR)
       {

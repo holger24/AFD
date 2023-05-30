@@ -1,6 +1,6 @@
 /*
  *  sftpdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,7 +20,8 @@
 #ifndef __sftpdefs_h
 #define __sftpdefs_h
 
-#define MAX_SFTP_MSG_LENGTH                 MAX_TRANSFER_BLOCKSIZE
+#define INITIAL_SFTP_MSG_LENGTH             34000 + 1024
+#define MIN_SFTP_BLOCKSIZE                  32768     /*  32 KBytes */
 #define MAX_SFTP_BLOCKSIZE                  262144    /* 256 KBytes */
 #define MAX_PENDING_WRITE_BUFFER            786432    /* 768 KBytes */
 #define MAX_PENDING_WRITES                  (MAX_PENDING_WRITE_BUFFER / 16384)
@@ -199,6 +200,14 @@
 #define OPENSSH_HARDLINK_EXT_LENGTH     (sizeof(OPENSSH_HARDLINK_EXT) - 1)
 #define OPENSSH_FSYNC_EXT               "fsync@openssh.com"
 #define OPENSSH_FSYNC_EXT_LENGTH        (sizeof(OPENSSH_FSYNC_EXT) - 1)
+#define OPENSSH_LSETSTAT_EXT            "lsetstat@openssh.com"
+#define OPENSSH_LSETSTAT_EXT_LENGTH     (sizeof(OPENSSH_LSETSTAT_EXT) - 1)
+#define OPENSSH_LIMITS_EXT              "limits@openssh.com"
+#define OPENSSH_LIMITS_EXT_LENGTH       (sizeof(OPENSSH_LIMITS_EXT) - 1)
+#define OPENSSH_EXPAND_PATH_EXT         "expand-path@openssh.com"
+#define OPENSSH_EXPAND_PATH_EXT_LENGTH  (sizeof(OPENSSH_EXPAND_PATH_EXT) - 1)
+#define COPY_DATA_EXT                   "copy-data"
+#define COPY_DATA_EXT_LENGTH            (sizeof(COPY_DATA_EXT) - 1)
 
 /* Different modes for function show_sftp_cmd() */
 #define SSC_HANDLED     1
@@ -214,6 +223,14 @@ struct name_list
           unsigned int stat_flag;
        };
 
+struct openssh_sftp_limits
+       {
+          u_long_64 max_packet_length; /* Used   */
+          u_long_64 max_read_length;   /* Used   */
+          u_long_64 max_write_length;  /* Used   */
+          u_long_64 max_open_handles;  /* Unused */
+       };
+
 struct stored_messages
        {
           unsigned int request_id;
@@ -223,43 +240,49 @@ struct stored_messages
 
 struct sftp_connect_data
        {
-          unsigned int           version;
-          unsigned int           request_id;
-          unsigned int           stored_replies;
-          unsigned int           file_handle_length;
-          unsigned int           dir_handle_length;
-          unsigned int           stat_flag;
-          unsigned int           pending_write_id[MAX_PENDING_WRITES];
-          unsigned int           pending_read_id[MAX_PENDING_READS];
-          unsigned int           reads_todo;
-          unsigned int           reads_done;
-          unsigned int           nl_pos;     /* Name list position. */
-          unsigned int           nl_length;  /* Name list length. */
-          int                    pending_write_counter;
-          int                    max_pending_writes;
-          int                    max_pending_reads;
-          int                    current_max_pending_reads;
-          int                    pending_id_read_pos;
-          int                    pending_id_end_pos;
-          int                    reads_queued;
-          int                    reads_low_water_mark;
-          int                    blocksize;
-          off_t                  file_offset;
-          off_t                  bytes_to_do;
-          char                   *cwd;           /* Current working dir. */
-          char                   *file_handle;
-          char                   *dir_handle;
-          struct name_list       *nl;
-          struct stat            stat_buf;
-          struct stored_messages sm[MAX_SFTP_REPLY_BUFFER];
-          char                   debug;
-          char                   pipe_broken;
-          unsigned char          posix_rename;  /* Used   */
-          unsigned char          statvfs;       /* Unused */
-          unsigned char          fstatvfs;      /* Unused */
-          unsigned char          hardlink;      /* Unused */
-          unsigned char          fsync;         /* Unused */
-          unsigned char          unknown;       /* Used   */
+          unsigned int               version;
+          unsigned int               request_id;
+          unsigned int               stored_replies;
+          unsigned int               file_handle_length;
+          unsigned int               dir_handle_length;
+          unsigned int               stat_flag;
+          unsigned int               pending_write_id[MAX_PENDING_WRITES];
+          unsigned int               pending_read_id[MAX_PENDING_READS];
+          unsigned int               reads_todo;
+          unsigned int               reads_done;
+          unsigned int               nl_pos;     /* Name list position. */
+          unsigned int               nl_length;  /* Name list length. */
+          unsigned int               max_sftp_msg_length;
+          int                        pending_write_counter;
+          int                        max_pending_writes;
+          int                        max_pending_reads;
+          int                        current_max_pending_reads;
+          int                        pending_id_read_pos;
+          int                        pending_id_end_pos;
+          int                        reads_queued;
+          int                        reads_low_water_mark;
+          int                        blocksize;
+          off_t                      file_offset;
+          off_t                      bytes_to_do;
+          char                       *cwd;           /* Current working dir. */
+          char                       *file_handle;
+          char                       *dir_handle;
+          struct name_list           *nl;
+          struct stat                stat_buf;
+          struct stored_messages     sm[MAX_SFTP_REPLY_BUFFER];
+          struct openssh_sftp_limits oss_limits;
+          char                       debug;
+          char                       pipe_broken;
+          unsigned char              posix_rename;  /* Used   */
+          unsigned char              statvfs;       /* Unused */
+          unsigned char              fstatvfs;      /* Unused */
+          unsigned char              hardlink;      /* Used   */
+          unsigned char              fsync;         /* Unused */
+          unsigned char              lsetstat;      /* Unused */
+          unsigned char              limits;        /* Used   */
+          unsigned char              expand_path;   /* Unused */
+          unsigned char              copy_data;     /* Unused */
+          unsigned char              unknown;       /* Used   */
        };
 
 
@@ -277,6 +300,9 @@ extern int          sftp_cd(char *, int, mode_t, char *),
 #endif
                     sftp_dele(char *),
                     sftp_flush(void),
+                    sftp_hardlink(char *, char *, int, mode_t, char *),
+                    sftp_max_read_length(void),
+                    sftp_max_write_length(void),
                     sftp_mkdir(char *, mode_t),
                     sftp_move(char *, char *, int, mode_t, char *),
                     sftp_multi_read_catch(char *),
@@ -291,6 +317,7 @@ extern int          sftp_cd(char *, int, mode_t, char *),
                     sftp_readdir(char *, struct stat *),
                     sftp_set_file_time(char *, time_t, time_t),
                     sftp_stat(char *, struct stat *),
+                    sftp_symlink(char *, char *, int, mode_t, char *),
                     sftp_write(char *, int);
 extern void         sftp_features(void),
                     sftp_multi_read_discard(int),

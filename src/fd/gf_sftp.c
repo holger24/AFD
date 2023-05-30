@@ -241,26 +241,6 @@ main(int argc, char *argv[])
                     strerror(errno));
          exit(INCORRECT);
       }
-      if (fsa->trl_per_process < fsa->block_size)
-      {
-         blocksize = fsa->trl_per_process;
-      }
-      else
-      {
-         blocksize = fsa->block_size;
-      }
-   }
-   else
-   {
-      blocksize = fsa->block_size;
-   }
-   /* Fixme. SFTP can only handle a maximum of 262144 bytes. */
-   if (blocksize > MAX_SFTP_BLOCKSIZE)
-   {
-      trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
-                "Decreasing block size from %d to %d",
-                blocksize, MAX_SFTP_BLOCKSIZE);
-      blocksize = MAX_SFTP_BLOCKSIZE;
    }
 
    if ((signal(SIGINT, sig_kill) == SIG_ERR) ||
@@ -338,12 +318,65 @@ main(int argc, char *argv[])
    }
    else
    {
+      int max_blocksize = sftp_max_read_length();
+
       if (fsa->debug > NORMAL_MODE)
       {
          sftp_features();
          trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
                       "Connected. Agreed on SFTP version %u. [%s]",
                       sftp_version(), msg_str);
+      }
+
+      /*
+       * SFTP is very sensitive for the blocksize used. Newer
+       * versions of openssh allow us to retrieve the maximum
+       * allowed. Ensure we do not exceed this limit.
+       *
+       * On the other hand a value too low hurts throughput.
+       * So also make sure the value is not to low.
+       */
+      if ((fsa->trl_per_process > 0) &&
+          (fsa->trl_per_process < fsa->block_size))
+      {
+         blocksize = fsa->trl_per_process;
+         if (blocksize > max_blocksize)
+         {
+            trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                      "Decreasing block size from %d to %u",
+                      blocksize, max_blocksize);
+            blocksize = max_blocksize;
+         }
+      }
+      else
+      {
+         blocksize = fsa->block_size;
+         if (blocksize < MIN_SFTP_BLOCKSIZE)
+         {
+            int old_blocksize = blocksize;
+
+            if (MIN_SFTP_BLOCKSIZE > max_blocksize)
+            {
+               blocksize = max_blocksize;
+            }
+            else
+            {
+               blocksize = MIN_SFTP_BLOCKSIZE;
+            }
+            if (blocksize != old_blocksize)
+            {
+               trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                         "Changing block size from %d to %d",
+                         old_blocksize, blocksize);
+            }
+         }
+         else if (blocksize > max_blocksize)
+              {
+                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                           "Decreasing block size from %d to %d",
+                           blocksize, max_blocksize);
+                 blocksize = max_blocksize;
+              }
       }
    }
    connected = time(NULL);
