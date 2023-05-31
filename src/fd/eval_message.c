@@ -184,6 +184,8 @@ static char *store_mail_address(char *, char **, char *, unsigned int);
 #define SILENT_DEF_NO_LOCK_FLAG     1024
 #define TRANS_SRENAME_FLAG          2048
 #define GROUP_TO_FLAG               4096
+#define REMOTE_HARDLINK_FLAG        8192
+#define REMOTE_SYMLINK_FLAG         16384
 
 
 #define MAX_HUNK                    4096
@@ -1092,6 +1094,164 @@ eval_message(char *message_name, struct job *p_db)
                        ptr++;
                     }
                  }
+            else if (((used2 & REMOTE_HARDLINK_FLAG) == 0) &&
+                     (CHECK_STRNCMP(ptr, REMOTE_HARDLINK_ID,
+                                    REMOTE_HARDLINK_ID_LENGTH) == 0))
+                 {
+                    int length = 0,
+                        max_length = 0;
+
+                    used2 |= REMOTE_HARDLINK_FLAG;
+                    ptr += REMOTE_HARDLINK_ID_LENGTH;
+                    while ((*ptr == ' ') || (*ptr == '\t'))
+                    {
+                       ptr++;
+                    }
+
+                    /*
+                     * First determine the number of file names and the
+                     * length of the longest file name, so we can allocate
+                     * the necessary memory.
+                     */
+                    p_db->no_of_rhardlinks = 0;
+                    end_ptr = ptr;
+                    while ((*end_ptr != '\n') && (*end_ptr != '\0'))
+                    {
+                      if (*end_ptr == ' ')
+                      {
+                         if ((end_ptr != ptr) && (*(end_ptr - 1) == '\\'))
+                         {
+                            /* Name with space. */;
+                         }
+                         else
+                         {
+                            *end_ptr = '\0';
+                            p_db->no_of_rhardlinks++;
+                            if (length > max_length)
+                            {
+                               max_length = length;
+                            }
+                         }
+                      }
+                      end_ptr++;
+                      length++;
+                    }
+                    if (length > max_length)
+                    {
+                       max_length = length;
+                    }
+                    if (max_length > 0)
+                    {
+                       int  i, j;
+                       char tmp_char = *end_ptr;
+
+                       *end_ptr = '\0';
+                       p_db->no_of_rhardlinks++;
+                       max_length++;
+                       RT_ARRAY(p_db->hardlinks, p_db->no_of_rhardlinks,
+                                max_length, char);
+
+                       for (i = 0; i < p_db->no_of_rhardlinks; i++)
+                       {
+                          j = 0;
+                          while ((j < max_length) && (*ptr != '\0'))
+                          {
+                             if (*ptr == '\\')
+                             {
+                                ptr++;
+                             }
+                             else
+                             {
+                                p_db->hardlinks[i][j] = *ptr;
+                                ptr++; j++;
+                             }
+                          }
+                          p_db->hardlinks[i][j] = '\0';
+                          ptr++;
+                       }
+                       *end_ptr = tmp_char;
+                    }
+                    ptr = end_ptr + 1;
+                 }
+            else if (((used2 & REMOTE_SYMLINK_FLAG) == 0) &&
+                     (CHECK_STRNCMP(ptr, REMOTE_SYMLINK_ID,
+                                    REMOTE_SYMLINK_ID_LENGTH) == 0))
+                 {
+                    int length = 0,
+                        max_length = 0;
+
+                    used2 |= REMOTE_SYMLINK_FLAG;
+                    ptr += REMOTE_SYMLINK_ID_LENGTH;
+                    while ((*ptr == ' ') || (*ptr == '\t'))
+                    {
+                       ptr++;
+                    }
+
+                    /*
+                     * First determine the number of file names and the
+                     * length of the longest file name, so we can allocate
+                     * the necessary memory.
+                     */
+                    p_db->no_of_rsymlinks = 0;
+                    end_ptr = ptr;
+                    while ((*end_ptr != '\n') && (*end_ptr != '\0'))
+                    {
+                      if (*end_ptr == ' ')
+                      {
+                         if ((end_ptr != ptr) && (*(end_ptr - 1) == '\\'))
+                         {
+                            /* Name with space. */;
+                         }
+                         else
+                         {
+                            *end_ptr = '\0';
+                            p_db->no_of_rsymlinks++;
+                            if (length > max_length)
+                            {
+                               max_length = length;
+                            }
+                         }
+                      }
+                      end_ptr++;
+                      length++;
+                    }
+                    if (length > max_length)
+                    {
+                       max_length = length;
+                    }
+                    if (max_length > 0)
+                    {
+                       char tmp_char = *end_ptr;
+                       int  i, j;
+
+                       *end_ptr = '\0';
+                       p_db->no_of_rsymlinks++;
+                       max_length++;
+                       RT_ARRAY(p_db->symlinks, p_db->no_of_rsymlinks,
+                                max_length, char);
+
+                       for (i = 0; i < p_db->no_of_rsymlinks; i++)
+                       {
+                          j = 0;
+                          while ((j < max_length) && (*ptr != '\0'))
+                          {
+                             if (*ptr == '\\')
+                             {
+                                ptr++;
+                             }
+                             else
+                             {
+                                p_db->symlinks[i][j] = *ptr;
+                                ptr++; j++;
+                             }
+                          }
+                          p_db->symlinks[i][j] = '\0';
+                          ptr++;
+                       }
+                       *end_ptr = tmp_char;
+                    }
+                    ptr = end_ptr + 1;
+                 }
             else if (((used & RESTART_FILE_FLAG) == 0) &&
                      (CHECK_STRNCMP(ptr, RESTART_FILE_ID,
                                     RESTART_FILE_ID_LENGTH) == 0))
@@ -1134,7 +1294,8 @@ eval_message(char *message_name, struct job *p_db)
                     if (max_length > 0)
                     {
                        int  i;
-                       char *tmp_ptr;
+                       char tmp_char = *end_ptr,
+                            *tmp_ptr;
 
                        *end_ptr = '\0';
                        p_db->no_of_restart_files++;
@@ -1171,6 +1332,7 @@ eval_message(char *message_name, struct job *p_db)
                           }
                           NEXT(ptr);
                        }
+                       *end_ptr = tmp_char;
                     }
                     ptr = end_ptr;
                  }

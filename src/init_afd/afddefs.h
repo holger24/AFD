@@ -1178,6 +1178,10 @@ typedef unsigned long       u_long_64;
 #define ULOCK_ID_LENGTH                  (sizeof(ULOCK_ID) - 1)
 #define LOCK_POSTFIX_ID                  "lockp"
 #define LOCK_POSTFIX_ID_LENGTH           (sizeof(LOCK_POSTFIX_ID) - 1)
+#define REMOTE_HARDLINK_ID               "hardlink"
+#define REMOTE_HARDLINK_ID_LENGTH        (sizeof(REMOTE_HARDLINK_ID) - 1)
+#define REMOTE_SYMLINK_ID                "symlink"
+#define REMOTE_SYMLINK_ID_LENGTH         (sizeof(REMOTE_SYMLINK_ID) - 1)
 #define RESTART_FILE_ID                  "restart"
 #define RESTART_FILE_ID_LENGTH           (sizeof(RESTART_FILE_ID) - 1)
 #define TRANS_RENAME_ID                  "trans_rename"

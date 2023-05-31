@@ -1,6 +1,6 @@
 /*
  *  fddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -464,6 +464,12 @@ struct job
           int            trans_rule_pos;
           int            user_rule_pos;
           int            mail_header_rule_pos;
+          int            no_of_rhardlinks;
+          int            no_of_rsymlinks;
+          char           **hardlinks;    /* List of hardlinks to create  */
+                                         /* on remote site.              */
+          char           **symlinks;     /* List of symlinks to create   */
+                                         /* on remote site.              */
           char           **restart_file;
                                          /* When a transmission fails    */
                                          /* while it was transmitting a  */

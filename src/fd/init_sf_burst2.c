@@ -1,6 +1,6 @@
 /*
  *  init_sf_burst2.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -175,6 +175,26 @@ init_sf_burst2(struct job   *p_new_db,
       }
       db.group_list = p_new_db->group_list;
       db.no_listed = p_new_db->no_listed;
+      if (db.no_of_rhardlinks > 0)
+      {
+         FREE_RT_ARRAY(db.hardlinks);
+         db.hardlinks = NULL;
+      }
+      db.no_of_rhardlinks = p_new_db->no_of_rhardlinks;
+      if (db.no_of_rhardlinks > 0)
+      {
+         db.hardlinks = p_new_db->hardlinks;
+      }
+      if (db.no_of_rsymlinks > 0)
+      {
+         FREE_RT_ARRAY(db.symlinks);
+         db.symlinks = NULL;
+      }
+      db.no_of_rsymlinks = p_new_db->no_of_rsymlinks;
+      if (db.no_of_rsymlinks > 0)
+      {
+         db.symlinks = p_new_db->symlinks;
+      }
       if (db.no_of_restart_files > 0)
       {
          FREE_RT_ARRAY(db.restart_file);

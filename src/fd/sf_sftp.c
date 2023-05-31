@@ -1749,6 +1749,78 @@ main(int argc, char *argv[])
             }
          }
 
+         if (db.no_of_rhardlinks > 0)
+         {
+            int k;
+
+            for (k = 0; k < db.no_of_rhardlinks; k++)
+            {
+               if ((status = sftp_hardlink(remote_filename, db.hardlinks[k],
+                                           (db.special_flag & CREATE_TARGET_DIR) ? YES : NO,
+                                           db.dir_mode, created_path)) != SUCCESS)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                            "Failed to create a hardlink from %s to %s (%d)",
+                            remote_filename, db.hardlinks[k], status);
+                  rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                  *p_file_size_buffer);
+                  sftp_quit();
+                  exit(eval_timeout(SYNTAX_ERROR));
+               }
+               else
+               {
+                  if (fsa->debug > NORMAL_MODE)
+                  {
+                     trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                  "Created hardlink from `%s' to `%s'",
+                                  remote_filename, db.hardlinks[k]);
+                  }
+                  if ((created_path != NULL) && (created_path[0] != '\0'))
+                  {
+                     trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "Created directory `%s'.", created_path);
+                     created_path[0] = '\0';
+                  }
+               }
+            }
+         }
+
+         if (db.no_of_rsymlinks > 0)
+         {
+            int k;
+
+            for (k = 0; k < db.no_of_rsymlinks; k++)
+            {
+               if ((status = sftp_symlink(remote_filename, db.symlinks[k],
+                                          (db.special_flag & CREATE_TARGET_DIR) ? YES : NO,
+                                          db.dir_mode, created_path)) != SUCCESS)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                            "Failed to create a symlink from `%s' to `%s' (%d)",
+                            remote_filename, db.symlinks[k], status);
+                  rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                  *p_file_size_buffer);
+                  sftp_quit();
+                  exit(eval_timeout(SYNTAX_ERROR));
+               }
+               else
+               {
+                  if (fsa->debug > NORMAL_MODE)
+                  {
+                     trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                  "Created symlink from `%s' to `%s'",
+                                  remote_filename, db.symlinks[k]);
+                  }
+                  if ((created_path != NULL) && (created_path[0] != '\0'))
+                  {
+                     trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "Created directory `%s'.", created_path);
+                     created_path[0] = '\0';
+                  }
+               }
+            }
+         }
+
          /* Update FSA, one file transmitted. */
          if (gsf_check_fsa(p_db) != NEITHER)
          {

@@ -3653,7 +3653,7 @@ retry_hardlink:
          {
             to_length = snprintf(fullname, MAX_PATH_LENGTH, "%s/%s",
                                  scd.cwd, to);
-            set_xfer_str(&msg[pos], fullname, to_length);
+            set_xfer_str(&msg[pos + 4 + from_length], fullname, to_length);
 #ifdef WITH_TRACE
             if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
             {
@@ -3881,7 +3881,7 @@ retry_symlink:
          {
             to_length = snprintf(fullname, MAX_PATH_LENGTH, "%s/%s",
                                  scd.cwd, to);
-            set_xfer_str(&msg[pos], fullname, to_length);
+            set_xfer_str(&msg[pos + 4 + from_length], fullname, to_length);
 #ifdef WITH_TRACE
             if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
             {
