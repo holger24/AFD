@@ -101,6 +101,9 @@ DESCR__S_M3
  **   21.08.2021 H.Kiehl When all host are disabled and 'do not remove' is
  **                      set, don't delete the files for local dirs.
  **   27.11.2022 H.Kiehl Use statx() when available.
+ **   16.06.2023 H.Kiehl Do not delete UNKNOWN_FILES inotify files
+ **                      immediately by default. del_unknown_inotify_files()
+ **                      will remove those files.
  **
  */
 DESCR__E_M3
@@ -1547,9 +1550,6 @@ check_files(struct directory_entry *p_de,
                         diff_time = current_time - stat_buf.st_mtime;
 #endif
                         if ((fra[p_de->fra_pos].unknown_file_time == -2) ||
-#ifdef WITH_INOTIFY
-                            (fra[p_de->fra_pos].dir_flag & INOTIFY_NEEDS_SCAN) ||
-#endif
                             ((diff_time > fra[p_de->fra_pos].unknown_file_time) &&
                              (diff_time > DEFAULT_TRANSFER_TIMEOUT)))
                         {
@@ -1585,33 +1585,17 @@ check_files(struct directory_entry *p_de,
                               *dl.split_job_counter = 0;
                               *dl.unique_number = 0;
                               *dl.file_name_length = file_name_length;
-# ifdef WITH_INOTIFY
-                              if (fra[p_de->fra_pos].dir_flag & INOTIFY_NEEDS_SCAN)
-                              {
-                                 dl_real_size = *dl.file_name_length + dl.size +
-                                                snprintf((dl.file_name + *dl.file_name_length + 1),
-                                                         MAX_FILENAME_LENGTH + 1,
-                                                         "%s%cinotify immediate del (%s %d)",
-                                                         DIR_CHECK, SEPARATOR_CHAR,
-                                                         __FILE__, __LINE__);
-                              }
-                              else
-                              {
-# endif
-                                 dl_real_size = *dl.file_name_length + dl.size +
-                                                snprintf((dl.file_name + *dl.file_name_length + 1),
-                                                         MAX_FILENAME_LENGTH + 1,
+                              dl_real_size = *dl.file_name_length + dl.size +
+                                             snprintf((dl.file_name + *dl.file_name_length + 1),
+                                                      MAX_FILENAME_LENGTH + 1,
 # if SIZEOF_TIME_T == 4
-                                                         "%s%c>%ld (%s %d)",
+                                                      "%s%c>%ld (%s %d)",
 # else
-                                                         "%s%c>%lld (%s %d)",
+                                                      "%s%c>%lld (%s %d)",
 # endif
-                                                         DIR_CHECK, SEPARATOR_CHAR,
-                                                         (pri_time_t)diff_time,
-                                                         __FILE__, __LINE__);
-# ifdef WITH_INOTIFY
-                              }
-# endif
+                                                      DIR_CHECK, SEPARATOR_CHAR,
+                                                      (pri_time_t)diff_time,
+                                                      __FILE__, __LINE__);
                               if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
                               {
                                  system_log(ERROR_SIGN, __FILE__, __LINE__,
