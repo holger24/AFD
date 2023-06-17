@@ -208,6 +208,28 @@
 #define OPENSSH_EXPAND_PATH_EXT_LENGTH  (sizeof(OPENSSH_EXPAND_PATH_EXT) - 1)
 #define COPY_DATA_EXT                   "copy-data"
 #define COPY_DATA_EXT_LENGTH            (sizeof(COPY_DATA_EXT) - 1)
+#define SUPPORTED2_EXT                  "supported2"
+#define SUPPORTED2_EXT_LENGTH           (sizeof(SUPPORTED2_EXT) - 1)
+
+/* Definitions for support2 structure (Version 6). */
+#define S2_SUPPORTED_ATTRIBUTE_MASK           "supported-attribute-mask"
+#define S2_SUPPORTED_ATTRIBUTE_MASK_LENGTH    (sizeof(S2_SUPPORTED_ATTRIBUTE_MASK) - 1)
+#define S2_SUPPORTED_ATTRIBUTE_BITS           "supported-attribute-bits"
+#define S2_SUPPORTED_ATTRIBUTE_BITS_LENGTH    (sizeof(S2_SUPPORTED_ATTRIBUTE_BITS) - 1)
+#define S2_SUPPORTED_OPEN_FLAGS               "supported-open-flags"
+#define S2_SUPPORTED_OPEN_FLAGS_LENGTH        (sizeof(S2_SUPPORTED_OPEN_FLAGS) - 1)
+#define S2_SUPPORTED_ACCESS_MASK              "supported-access-mask"
+#define S2_SUPPORTED_ACCESS_MASK_LENGTH       (sizeof(S2_SUPPORTED_ACCESS_MASK) - 1)
+#define S2_MAX_READ_SIZE                      "max-read-size"
+#define S2_MAX_READ_SIZE_LENGTH               (sizeof(S2_MAX_READ_SIZE) - 1)
+#define S2_SUPPORTED_OPEN_BLOCK_VECTOR        "supported-open-block-vector"
+#define S2_SUPPORTED_OPEN_BLOCK_VECTOR_LENGTH (sizeof(S2_SUPPORTED_OPEN_BLOCK_VECTOR) - 1)
+#define S2_SUPPORTED_BLOCK_VECTOR             "supported-block-vector"
+#define S2_SUPPORTED_BLOCK_VECTOR_LENGTH      (sizeof(S2_SUPPORTED_BLOCK_VECTOR) - 1)
+#define S2_ATTRIB_EXTENSION_NAME              "attrib-extension-name"
+#define S2_ATTRIB_EXTENSION_NAME_LENGTH       (sizeof(S2_ATTRIB_EXTENSION_NAME) - 1)
+#define S2_EXTENSION_NAME                     "extension-name"
+#define S2_EXTENSION_NAME_LENGTH              (sizeof(S2_EXTENSION_NAME) - 1)
 
 /* Different modes for function show_sftp_cmd() */
 #define SSC_HANDLED     1
@@ -236,6 +258,19 @@ struct stored_messages
           unsigned int request_id;
           unsigned int message_length;
           char         *sm_buffer;      /* Stored message buffer. */
+       };
+
+struct supported2
+       {
+          unsigned int   supported_attribute_mask;    /* Unused */
+          unsigned int   supported_attribute_bits;    /* Unused */
+          unsigned int   supported_open_flags;        /* Unused */
+          unsigned int   supported_access_mask;       /* Unused */
+          unsigned int   max_read_size;               /* Unused */
+          unsigned short supported_open_block_vector; /* Unused */
+          unsigned short supported_block_vector;      /* Unused */
+          unsigned int   attrib_extension_count;      /* Unused */
+          unsigned int   extension_count;             /* Unused */
        };
 
 struct sftp_connect_data
@@ -271,6 +306,7 @@ struct sftp_connect_data
           struct stat                stat_buf;
           struct stored_messages     sm[MAX_SFTP_REPLY_BUFFER];
           struct openssh_sftp_limits oss_limits;
+          struct supported2          supports;      /* Version 6 */
           char                       debug;
           char                       pipe_broken;
           unsigned char              posix_rename;  /* Used   */
