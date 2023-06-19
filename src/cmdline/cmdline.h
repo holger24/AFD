@@ -1,6 +1,6 @@
 /*
  *  cmdline.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -77,6 +77,7 @@
 # define READ_LOCAL_ERROR           31
 # define ALLOC_ERROR                35
 # define SYNTAX_ERROR               60
+# define SET_BLOCKSIZE_ERROR        65
 
 /* Runtime array */
 # define RT_ARRAY(name, rows, columns, type)                                 \

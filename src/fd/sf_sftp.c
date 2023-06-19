@@ -1,6 +1,6 @@
 /*
  *  sf_sftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -373,7 +373,8 @@ main(int argc, char *argv[])
    }
    else
    {
-      int max_blocksize = sftp_max_write_length();
+      int max_blocksize = sftp_max_write_length(),
+          orig_blocksize;
 
       if (fsa->debug > NORMAL_MODE)
       {
@@ -432,6 +433,25 @@ main(int argc, char *argv[])
                            blocksize, max_blocksize);
                  blocksize = max_blocksize;
               }
+      }
+      orig_blocksize = blocksize;
+      if ((status = sftp_set_blocksize(&blocksize)) != SUCCESS)
+      {
+         if (status == SFTP_BLOCKSIZE_CHANGED)
+         {
+            if (fsa->debug > NORMAL_MODE)
+            {
+               trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                            "Changed blocksize from %d to %d, due to server request.",
+                            orig_blocksize, blocksize);
+            }
+         }
+         else
+         {
+            /* sftp_set_blocksize() already printed why it failed. */
+            sftp_quit();
+            exit(SET_BLOCKSIZE_ERROR);
+         }
       }
 
       if (db.special_flag & CREATE_TARGET_DIR)

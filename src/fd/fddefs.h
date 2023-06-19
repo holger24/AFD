@@ -224,6 +224,8 @@
 #define NOOP_ERROR_STR           "Noop error"
 #define DELETE_REMOTE_ERROR      64
 #define DELETE_REMOTE_ERROR_STR  "Delete error"
+#define SET_BLOCKSIZE_ERROR      65
+#define SET_BLOCKSIZE_ERROR_STR  "Set blocksize error"
 /* NOTE: MAX_ERROR_STR_LENGTH    35 is defined in afddefs.h! */
 
 #ifdef _WITH_WMO_SUPPORT

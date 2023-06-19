@@ -981,6 +981,72 @@ get_limits(void)
 }
 
 
+/*######################### sftp_set_blocksize() ########################*/
+int
+sftp_set_blocksize(int *blocksize)
+{
+   if (scd.limits == 1)
+   {
+      if ((*blocksize + DEFAULT_ADD_SFTP_HEADER_LENGTH) > scd.oss_limits.max_packet_length)
+      {
+         if (DEFAULT_ADD_SFTP_HEADER_LENGTH >= scd.oss_limits.max_packet_length)
+         {
+            trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                      "sftp_set_blocksize", NULL,
+                      _("Unable to set blocksize to %d. DEFAULT_ADD_SFTP_HEADER_LENGTH (%d) is less then what server claims it can handle %u."),
+                      *blocksize, DEFAULT_ADD_SFTP_HEADER_LENGTH,
+                      scd.oss_limits.max_packet_length);
+            return(INCORRECT);
+         }
+         else
+         {
+            *blocksize = scd.oss_limits.max_packet_length - DEFAULT_ADD_SFTP_HEADER_LENGTH;
+            if (scd.max_sftp_msg_length < scd.oss_limits.max_packet_length)
+            {
+               scd.max_sftp_msg_length = scd.oss_limits.max_packet_length;
+               if ((msg = realloc(msg, scd.max_sftp_msg_length)) == NULL)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                            "sftp_set_blocksize", NULL,
+                           _("realloc() error : %s"), strerror(errno));
+                  return(INCORRECT);
+               }
+            }
+            return(SFTP_BLOCKSIZE_CHANGED);
+         }
+      }
+      else
+      {
+         if ((*blocksize + DEFAULT_ADD_SFTP_HEADER_LENGTH) > scd.max_sftp_msg_length)
+         {
+            scd.max_sftp_msg_length = *blocksize + DEFAULT_ADD_SFTP_HEADER_LENGTH + 1;
+            if ((msg = realloc(msg, scd.max_sftp_msg_length)) == NULL)
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_set_blocksize", NULL,
+                         _("realloc() error : %s"), strerror(errno));
+               return(INCORRECT);
+            }
+         }
+      }
+   }
+   else
+   {
+      if ((*blocksize + DEFAULT_ADD_SFTP_HEADER_LENGTH) > scd.max_sftp_msg_length)
+      {
+         scd.max_sftp_msg_length = *blocksize + DEFAULT_ADD_SFTP_HEADER_LENGTH + 1;
+         if ((msg = realloc(msg, scd.max_sftp_msg_length)) == NULL)
+         {
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_set_blocksize", NULL,
+                      _("realloc() error : %s"), strerror(errno));
+            return(INCORRECT);
+         }
+      }
+   }
+
+   return(SUCCESS);
+}
+
+
 /*########################### sftp_features() ###########################*/
 void
 sftp_features(void)
@@ -1023,7 +1089,14 @@ sftp_max_write_length(void)
 {
    if (scd.limits == 1)
    {
-      return((int)scd.oss_limits.max_write_length);
+      if (scd.oss_limits.max_write_length > 0)
+      {
+         return((int)scd.oss_limits.max_write_length);
+      }
+      else
+      {
+         return(MIN_SFTP_BLOCKSIZE);
+      }
    }
    else
    {
@@ -1038,7 +1111,14 @@ sftp_max_read_length(void)
 {
    if (scd.limits == 1)
    {
-      return((int)scd.oss_limits.max_read_length);
+      if (scd.oss_limits.max_read_length > 0)
+      {
+         return((int)scd.oss_limits.max_read_length);
+      }
+      else
+      {
+         return(MIN_SFTP_BLOCKSIZE);
+      }
    }
    else
    {

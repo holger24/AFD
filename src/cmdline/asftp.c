@@ -242,6 +242,13 @@ main(int argc, char *argv[])
               db.blocksize = max_blocksize;
            }
 
+      if (sftp_set_blocksize(&db.blocksize) == INCORRECT)
+      {
+         /* sftp_set_blocksize() already printed why it failed. */
+         sftp_quit();
+         exit(SET_BLOCKSIZE_ERROR);
+      }
+
       if (db.special_flag & CREATE_TARGET_DIR)
       {
          if ((created_path = malloc(2048)) == NULL)

@@ -1,6 +1,6 @@
 /*
  *  init_asftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2015-2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015-2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -685,6 +685,7 @@ usage(void)
    (void)fprintf(stderr, _("      %2d - System error malloc().\n"), ALLOC_ERROR);
    (void)fprintf(stderr, _("      %2d - Failed to read file name file.\n"), FILE_NAME_FILE_ERROR);
    (void)fprintf(stderr, _("      %2d - Syntax wrong.\n"), SYNTAX_ERROR);
+   (void)fprintf(stderr, _("      %2d - Set blocksize error.\n"), SET_BLOCKSIZE_ERROR);
 
    return;
 }

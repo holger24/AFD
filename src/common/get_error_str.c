@@ -1,6 +1,6 @@
 /*
  *  get_error_str.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -113,6 +113,7 @@ get_error_str(int error_code)
       case STILL_FILES_TO_SEND : return(STILL_FILES_TO_SEND_STR);          /* 62 */
       case NOOP_ERROR : return(NOOP_ERROR_STR);                            /* 63 */
       case DELETE_REMOTE_ERROR : return(DELETE_REMOTE_ERROR_STR);          /* 64 */
+      case SET_BLOCKSIZE_ERROR : return(SET_BLOCKSIZE_ERROR_STR);          /* 65 */
    }
    return(_("Unknown error"));
 }

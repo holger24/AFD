@@ -20,7 +20,8 @@
 #ifndef __sftpdefs_h
 #define __sftpdefs_h
 
-#define INITIAL_SFTP_MSG_LENGTH             34000 + 1024
+#define DEFAULT_ADD_SFTP_HEADER_LENGTH      1024
+#define INITIAL_SFTP_MSG_LENGTH             (34000 + DEFAULT_ADD_SFTP_HEADER_LENGTH)
 #define MIN_SFTP_BLOCKSIZE                  32768     /*  32 KBytes */
 #define MAX_SFTP_BLOCKSIZE                  262144    /* 256 KBytes */
 #define MAX_PENDING_WRITE_BUFFER            786432    /* 768 KBytes */
@@ -237,6 +238,9 @@
 #define SSC_FROM_BUFFER 3
 #define SSC_DELETED     4
 
+/* Local function return definitions. */
+#define SFTP_BLOCKSIZE_CHANGED    3
+
 /* Storage for whats returned in SSH_FXP_NAME reply. */
 struct name_list
        {
@@ -351,6 +355,7 @@ extern int          sftp_cd(char *, int, mode_t, char *),
                     sftp_pwd(void),
                     sftp_read(char *, int),
                     sftp_readdir(char *, struct stat *),
+                    sftp_set_blocksize(int *),
                     sftp_set_file_time(char *, time_t, time_t),
                     sftp_stat(char *, struct stat *),
                     sftp_symlink(char *, char *, int, mode_t, char *),
