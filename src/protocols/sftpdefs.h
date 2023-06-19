@@ -20,20 +20,21 @@
 #ifndef __sftpdefs_h
 #define __sftpdefs_h
 
-#define DEFAULT_ADD_SFTP_HEADER_LENGTH      1024
-#define INITIAL_SFTP_MSG_LENGTH             (34000 + DEFAULT_ADD_SFTP_HEADER_LENGTH)
-#define MIN_SFTP_BLOCKSIZE                  32768     /*  32 KBytes */
-#define MAX_SFTP_BLOCKSIZE                  262144    /* 256 KBytes */
-#define MAX_PENDING_WRITE_BUFFER            786432    /* 768 KBytes */
-#define MAX_PENDING_WRITES                  (MAX_PENDING_WRITE_BUFFER / 16384)
-#define MAX_PENDING_READS                   64
-#define MAX_SFTP_REPLY_BUFFER               MAX_PENDING_READS + 10
-#define SFTP_READ_STEP_SIZE                 4
+#define DEFAULT_ADD_SFTP_HEADER_LENGTH  1024
+#define MIN_SFTP_BLOCKSIZE              32768     /*  32 KBytes */
+#define MAX_SFTP_BLOCKSIZE              262144    /* 256 KBytes */
+#define MAX_PENDING_WRITE_BUFFER        786432    /* 768 KBytes */
+#define INITIAL_SFTP_MSG_LENGTH         (MIN_SFTP_BLOCKSIZE + DEFAULT_ADD_SFTP_HEADER_LENGTH)
+#define MAX_PENDING_WRITES              (MAX_PENDING_WRITE_BUFFER / 16384)
+#define SFTP_DEFAULT_MAX_OPEN_REQUEST   64
+#define MAX_PENDING_READS               SFTP_DEFAULT_MAX_OPEN_REQUEST
+#define MAX_SFTP_REPLY_BUFFER           (SFTP_DEFAULT_MAX_OPEN_REQUEST + 10)
+#define SFTP_READ_STEP_SIZE             4
 
-#define SFTP_WRITE_FILE                     1 /* Open file for writting. */
-#define SFTP_READ_FILE                      2 /* Open file for reading.  */
-#define SFTP_DO_SINGLE_READS                -4
-#define SFTP_EOF                            -5
+#define SFTP_WRITE_FILE                 1 /* Open file for writting. */
+#define SFTP_READ_FILE                  2 /* Open file for reading.  */
+#define SFTP_DO_SINGLE_READS            -4
+#define SFTP_EOF                        -5
 
 #define SSH_FILEXFER_VERSION                6
 
@@ -251,10 +252,10 @@ struct name_list
 
 struct openssh_sftp_limits
        {
-          u_long_64 max_packet_length; /* Used   */
-          u_long_64 max_read_length;   /* Used   */
-          u_long_64 max_write_length;  /* Used   */
-          u_long_64 max_open_handles;  /* Unused */
+          u_long_64 max_packet_length; /* Used */
+          u_long_64 max_read_length;   /* Used */
+          u_long_64 max_write_length;  /* Used */
+          u_long_64 max_open_handles;  /* Used */
        };
 
 struct stored_messages
@@ -281,6 +282,7 @@ struct sftp_connect_data
        {
           unsigned int               version;
           unsigned int               request_id;
+          unsigned int               max_open_handles;
           unsigned int               stored_replies;
           unsigned int               file_handle_length;
           unsigned int               dir_handle_length;

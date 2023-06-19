@@ -299,10 +299,10 @@ retry_connect:
       scd.fsync                                = 1;
       scd.lsetstat                             = 1;
       scd.limits                               = 1;
-      scd.oss_limits.max_packet_length         = 34000;
-      scd.oss_limits.max_read_length           = 32768;
-      scd.oss_limits.max_write_length          = 32768;
-      scd.oss_limits.max_open_handles          = 0; /* no limits */
+      scd.oss_limits.max_packet_length         = INITIAL_SFTP_MSG_LENGTH;
+      scd.oss_limits.max_read_length           = MIN_SFTP_BLOCKSIZE;
+      scd.oss_limits.max_write_length          = MIN_SFTP_BLOCKSIZE;
+      scd.oss_limits.max_open_handles          = SFTP_DEFAULT_MAX_OPEN_REQUEST;
       scd.expand_path                          = 1;
       scd.copy_data                            = 1;
       scd.unknown                              = 0;
@@ -316,6 +316,7 @@ retry_connect:
       scd.supports.attrib_extension_count      = 0;
       scd.supports.extension_count             = 0;
       scd.request_id                           = 0;
+      scd.max_open_handles                     = MAX_SFTP_REPLY_BUFFER;
       scd.stored_replies                       = 0;
       scd.file_handle_length                   = 0;
       scd.dir_handle_length                    = 0;
@@ -426,13 +427,14 @@ retry_connect:
 
                         eval_version_extensions(msg, ui_var);
 
-                        scd.request_id     = 0;
-                        scd.stored_replies = 0;
-                        scd.cwd            = NULL;
-                        scd.file_handle    = NULL;
-                        scd.dir_handle     = NULL;
-                        scd.nl_length      = 0;
-                        scd.nl             = NULL;
+                        scd.request_id       = 0;
+                        scd.max_open_handles = MAX_SFTP_REPLY_BUFFER;
+                        scd.stored_replies   = 0;
+                        scd.cwd              = NULL;
+                        scd.file_handle      = NULL;
+                        scd.dir_handle       = NULL;
+                        scd.nl_length        = 0;
+                        scd.nl               = NULL;
                         for (i = 0; i < MAX_SFTP_REPLY_BUFFER; i++)
                         {
                            scd.sm[i].sm_buffer = NULL;
@@ -443,10 +445,10 @@ retry_connect:
                            if (get_limits() != SUCCESS)
                            {
                               /* Set some default values. */
-                              scd.oss_limits.max_packet_length = 34000;
-                              scd.oss_limits.max_read_length   = 32768;
-                              scd.oss_limits.max_write_length  = 32768;
-                              scd.oss_limits.max_open_handles  = 0; /* no limits */
+                              scd.oss_limits.max_packet_length = INITIAL_SFTP_MSG_LENGTH;
+                              scd.oss_limits.max_read_length   = MIN_SFTP_BLOCKSIZE;
+                              scd.oss_limits.max_write_length  = MIN_SFTP_BLOCKSIZE;
+                              scd.oss_limits.max_open_handles  = SFTP_DEFAULT_MAX_OPEN_REQUEST;
                            }
                            if ((scd.oss_limits.max_packet_length == 0) ||
                                (scd.oss_limits.max_packet_length > MAX_TRANSFER_BLOCKSIZE))
@@ -941,6 +943,11 @@ get_limits(void)
                scd.oss_limits.max_read_length = get_xfer_uint64(&msg[5 + 8]);
                scd.oss_limits.max_write_length = get_xfer_uint64(&msg[5 + 8 + 8]);
                scd.oss_limits.max_open_handles = get_xfer_uint64(&msg[5 + 8 + 8 + 8]);
+               if ((scd.oss_limits.max_open_handles > 0) &&
+                   (scd.oss_limits.max_open_handles < MAX_SFTP_REPLY_BUFFER))
+               {
+                  scd.max_open_handles = scd.oss_limits.max_open_handles;
+               }
             }
             else
             {
@@ -964,10 +971,10 @@ get_limits(void)
       }
       else if (status == SIMULATION)
            {
-              scd.oss_limits.max_packet_length = 34000;
-              scd.oss_limits.max_read_length   = 32768;
-              scd.oss_limits.max_write_length  = 32768;
-              scd.oss_limits.max_open_handles  = 0; /* no limits */
+              scd.oss_limits.max_packet_length = INITIAL_SFTP_MSG_LENGTH;
+              scd.oss_limits.max_read_length   = MIN_SFTP_BLOCKSIZE;
+              scd.oss_limits.max_write_length  = MIN_SFTP_BLOCKSIZE;
+              scd.oss_limits.max_open_handles  = SFTP_DEFAULT_MAX_OPEN_REQUEST;
               status = SUCCESS;
            }
    }
@@ -4650,7 +4657,7 @@ get_reply(unsigned int id, unsigned int *ret_msg_length, int line)
    {
       int i;
 
-      for (i = 0; i < scd.stored_replies && i < MAX_SFTP_REPLY_BUFFER; i++)
+      for (i = 0; i < scd.stored_replies && i < scd.max_open_handles; i++)
       {
          if (scd.sm[i].request_id == id)
          {
@@ -4721,11 +4728,24 @@ retry:
             reply_id = get_xfer_uint(&msg[1]);
             if (reply_id != id)
             {
-               if (scd.stored_replies == MAX_SFTP_REPLY_BUFFER)
+               if (scd.stored_replies == scd.max_open_handles)
                {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "get_reply", NULL,
-                            _("Only able to queue %d replies, try increase MAX_SFTP_REPLY_BUFFER and recompile. [%d]"),
-                            MAX_SFTP_REPLY_BUFFER, line);
+                  if ((scd.limits == 1) &&
+                      (scd.oss_limits.max_open_handles > 0) &&
+                      (scd.oss_limits.max_open_handles < MAX_SFTP_REPLY_BUFFER))
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, "get_reply", NULL,
+                               _("Only able to queue %d replies, remote server sets limit to %u. [%d]"),
+                               scd.stored_replies,
+                               (unsigned int)scd.oss_limits.max_open_handles,
+                               line);
+                  }
+                  else
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, "get_reply", NULL,
+                               _("Only able to queue %d replies, try increase MAX_SFTP_REPLY_BUFFER and recompile. [%d]"),
+                               MAX_SFTP_REPLY_BUFFER, line);
+                  }
                   reply = INCORRECT;
                }
                else
@@ -4861,12 +4881,24 @@ get_write_reply(unsigned int id, int line)
                            show_sftp_cmd(msg_length, R_TRACE, SSC_TO_BUFFER);
                         }
 #endif
-                        if (scd.stored_replies == MAX_SFTP_REPLY_BUFFER)
+                        if (scd.stored_replies == scd.max_open_handles)
                         {
-                           trans_log(ERROR_SIGN, __FILE__, __LINE__,
-                                     "get_write_reply", NULL,
-                                     _("Only able to queue %d replies, try increase MAX_SFTP_REPLY_BUFFER and recompile. [%d]"),
-                                     MAX_SFTP_REPLY_BUFFER, line);
+                           if ((scd.limits == 1) &&
+                               (scd.oss_limits.max_open_handles > 0) &&
+                               (scd.oss_limits.max_open_handles < MAX_SFTP_REPLY_BUFFER))
+                           {
+                              trans_log(ERROR_SIGN, __FILE__, __LINE__, "get_reply", NULL,
+                                        _("Only able to queue %d replies, remote server sets limit to %u. [%d]"),
+                                        scd.stored_replies,
+                                        (unsigned int)scd.oss_limits.max_open_handles,
+                                        line);
+                           }
+                           else
+                           {
+                              trans_log(ERROR_SIGN, __FILE__, __LINE__, "get_reply", NULL,
+                                        _("Only able to queue %d replies, try increase MAX_SFTP_REPLY_BUFFER and recompile. [%d]"),
+                                        MAX_SFTP_REPLY_BUFFER, line);
+                           }
                            reply = INCORRECT;
                         }
                         else
