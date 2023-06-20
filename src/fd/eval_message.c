@@ -1335,6 +1335,14 @@ eval_message(char *message_name, struct job *p_db)
                        *end_ptr = tmp_char;
                     }
                     ptr = end_ptr;
+                    while ((*ptr != '\n') && (*ptr != '\0'))
+                    {
+                       ptr++;
+                    }
+                    while (*ptr == '\n')
+                    {
+                       ptr++;
+                    }
                  }
 #ifdef WITH_DUP_CHECK
             else if (((used & DUPCHECK_FLAG) == 0) &&
