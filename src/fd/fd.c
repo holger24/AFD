@@ -4263,8 +4263,8 @@ check_zombie_queue(time_t now, int qb_pos)
             qb_pos_pid(connection[zwl[i]].pid, &tmp_qb_pos);
             if (tmp_qb_pos != -1)
             {
-               if ((faulty = zombie_check(&connection[zwl[i]], now, &tmp_qb_pos,
-                                          WNOHANG)) == NO)
+               if ((faulty = zombie_check(&connection[zwl[i]], now,
+                                          &tmp_qb_pos, WNOHANG)) == NO)
                {
 #ifdef _WITH_BURST_MISS_CHECK
                   int do_remove_msg = YES;
@@ -4600,70 +4600,6 @@ zombie_check(struct connection *p_con,
                case CONNECTION_RESET_ERROR: /* Connection reset by peer. */
                case CONNECT_ERROR         : /* Failed to connect to remote host. */
                case CONNECTION_REFUSED_ERROR: /* Connection refused. */
-#ifdef WITH_SSL
-               case AUTH_ERROR            : /* SSL/TLS authentication error. */
-#endif
-               case TYPE_ERROR            : /* Setting transfer type failed. */
-               case DATA_ERROR            : /* Failed to send data command. */
-               case READ_LOCAL_ERROR      : /* */
-               case WRITE_LOCAL_ERROR     : /* */
-               case READ_REMOTE_ERROR     : /* */
-               case SIZE_ERROR            : /* */
-               case DATE_ERROR            : /* */
-               case OPEN_LOCAL_ERROR      : /* */
-               case WRITE_LOCK_ERROR      : /* */
-               case CHOWN_ERROR           : /* sf_loc function check_create_path. */
-#ifdef _WITH_WMO_SUPPORT
-               case CHECK_REPLY_ERROR     : /* Did not get a correct reply. */
-#endif
-               case REMOVE_LOCKFILE_ERROR : /* */
-               case QUIT_ERROR            : /* Failed to disconnect. */
-               case RENAME_ERROR          : /* Rename file locally. */
-               case SELECT_ERROR          : /* Selecting on sf_xxx command fifo. */
-#ifdef _WITH_WMO_SUPPORT
-               case SIG_PIPE_ERROR        : /* When sf_wmo receives a SIGPIPE. */
-#endif
-#ifdef _WITH_MAP_SUPPORT
-               case MAP_FUNCTION_ERROR    : /* MAP function call has failed. */
-#endif
-               case FILE_SIZE_MATCH_ERROR : /* Local and remote file size do */
-                                            /* not match.                    */
-                  if ((remove_error_jobs_not_in_queue == YES) &&
-                      (mdb[qb[*qb_pos].pos].in_current_fsa != YES) &&
-                      (p_con->fra_pos == -1))
-                  {
-                     char del_dir[MAX_PATH_LENGTH];
-
-                     (void)snprintf(del_dir, MAX_PATH_LENGTH, "%s%s%s/%s",
-                                    p_work_dir, AFD_FILE_DIR, OUTGOING_DIR,
-                                    p_con->msg_name);
-#ifdef _DELETE_LOG
-                     extract_cus(p_con->msg_name, dl.input_time,
-                                 dl.split_job_counter, dl.unique_number);
-                     remove_job_files(del_dir, -1,
-                                      fsa[p_con->fsa_pos].job_status[p_con->job_no].job_id,
-                                      FD, DELETE_STALE_ERROR_JOBS, -1,
-                                      __FILE__, __LINE__);
-#else
-                     remove_job_files(del_dir, -1, -1, __FILE__, __LINE__);
-#endif
-                  }
-                  else
-                  {
-                     if (fsa[p_con->fsa_pos].first_error_time == 0L)
-                     {
-                        fsa[p_con->fsa_pos].first_error_time = now;
-                     }
-#ifdef WITH_ERROR_QUEUE
-                     if (fsa[p_con->fsa_pos].host_status & ERROR_QUEUE_SET)
-                     {
-                        update_time_error_queue(dj_id,
-                                                now + fsa[p_con->fsa_pos].retry_interval);
-                     }
-#endif
-                  }
-                  break;
-
                case REMOTE_USER_ERROR     : /* Failed to send mail address. */
                case USER_ERROR            : /* User name wrong. */
                case PASSWORD_ERROR        : /* Password wrong. */
@@ -4721,7 +4657,8 @@ zombie_check(struct connection *p_con,
 
                               /*
                                * Increase the message number, so that this job
-                               * will decrease in priority and resort the queue.
+                               * will decrease in priority and resort the
+                               * queue.
                                */
                               if (qb[*qb_pos].retries < RETRY_THRESHOLD)
                               {
@@ -4807,6 +4744,70 @@ zombie_check(struct connection *p_con,
                      {
                         fsa[p_con->fsa_pos].first_error_time = now;
                      }
+                  }
+                  break;
+
+#ifdef WITH_SSL
+               case AUTH_ERROR            : /* SSL/TLS authentication error. */
+#endif
+               case TYPE_ERROR            : /* Setting transfer type failed. */
+               case DATA_ERROR            : /* Failed to send data command. */
+               case READ_LOCAL_ERROR      : /* */
+               case WRITE_LOCAL_ERROR     : /* */
+               case READ_REMOTE_ERROR     : /* */
+               case SIZE_ERROR            : /* */
+               case DATE_ERROR            : /* */
+               case OPEN_LOCAL_ERROR      : /* */
+               case WRITE_LOCK_ERROR      : /* */
+               case CHOWN_ERROR           : /* sf_loc function check_create_path. */
+#ifdef _WITH_WMO_SUPPORT
+               case CHECK_REPLY_ERROR     : /* Did not get a correct reply. */
+#endif
+               case REMOVE_LOCKFILE_ERROR : /* */
+               case QUIT_ERROR            : /* Failed to disconnect. */
+               case RENAME_ERROR          : /* Rename file locally. */
+               case SELECT_ERROR          : /* Selecting on sf_xxx command fifo. */
+#ifdef _WITH_WMO_SUPPORT
+               case SIG_PIPE_ERROR        : /* When sf_wmo receives a SIGPIPE. */
+#endif
+#ifdef _WITH_MAP_SUPPORT
+               case MAP_FUNCTION_ERROR    : /* MAP function call has failed. */
+#endif
+               case FILE_SIZE_MATCH_ERROR : /* Local and remote file size do */
+                                            /* not match.                    */
+                  if ((remove_error_jobs_not_in_queue == YES) &&
+                      (mdb[qb[*qb_pos].pos].in_current_fsa != YES) &&
+                      (p_con->fra_pos == -1))
+                  {
+                     char del_dir[MAX_PATH_LENGTH];
+
+                     (void)snprintf(del_dir, MAX_PATH_LENGTH, "%s%s%s/%s",
+                                    p_work_dir, AFD_FILE_DIR, OUTGOING_DIR,
+                                    p_con->msg_name);
+#ifdef _DELETE_LOG
+                     extract_cus(p_con->msg_name, dl.input_time,
+                                 dl.split_job_counter, dl.unique_number);
+                     remove_job_files(del_dir, -1,
+                                      fsa[p_con->fsa_pos].job_status[p_con->job_no].job_id,
+                                      FD, DELETE_STALE_ERROR_JOBS, -1,
+                                      __FILE__, __LINE__);
+#else
+                     remove_job_files(del_dir, -1, -1, __FILE__, __LINE__);
+#endif
+                  }
+                  else
+                  {
+                     if (fsa[p_con->fsa_pos].first_error_time == 0L)
+                     {
+                        fsa[p_con->fsa_pos].first_error_time = now;
+                     }
+#ifdef WITH_ERROR_QUEUE
+                     if (fsa[p_con->fsa_pos].host_status & ERROR_QUEUE_SET)
+                     {
+                        update_time_error_queue(dj_id,
+                                                now + fsa[p_con->fsa_pos].retry_interval);
+                     }
+#endif
                   }
                   break;
 
