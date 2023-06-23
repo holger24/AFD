@@ -4685,7 +4685,7 @@ zombie_check(struct connection *p_con,
                                                          now + fsa[p_con->fsa_pos].retry_interval);
 #endif
                                  qb[*qb_pos].msg_number += ((double)qb[*qb_pos].creation_time * 10000.0 *
-                                                           (double)(qb[*qb_pos].retries - RETRY_THRESHOLD - 1));
+                                                           (double)(qb[*qb_pos].retries + 1 - RETRY_THRESHOLD));
                               }
                               while ((i < *no_msg_queued) &&
                                      (qb[*qb_pos].msg_number > qb[i].msg_number))
