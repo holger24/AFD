@@ -4665,8 +4665,8 @@ zombie_check(struct connection *p_con,
 #ifdef WITH_ERROR_QUEUE
                                  if (qb[*qb_pos].retries == 1)
                                  {
-                                    add_to_error_queue(dj_id,
-                                                       fsa, p_con->fsa_pos, fsa_fd,
+                                    add_to_error_queue(dj_id, fsa,
+                                                       p_con->fsa_pos, fsa_fd,
                                                        exit_status,
                                                        now + fsa[p_con->fsa_pos].retry_interval);
                                  }
@@ -4701,7 +4701,8 @@ zombie_check(struct connection *p_con,
                                               sizeof(struct queue_buf));
                                  i--;
                                  move_size = (i - *qb_pos) * sizeof(struct queue_buf);
-                                 (void)memmove(&qb[*qb_pos], &qb[*qb_pos + 1], move_size);
+                                 (void)memmove(&qb[*qb_pos], &qb[*qb_pos + 1],
+                                               move_size);
                                  (void)memcpy(&qb[i], &tmp_qb,
                                               sizeof(struct queue_buf));
                                  *qb_pos = i;
@@ -4714,8 +4715,8 @@ zombie_check(struct connection *p_con,
                               {
                                  if (qb[*qb_pos].retries == 1)
                                  {
-                                    add_to_error_queue(dj_id,
-                                                       fsa, p_con->fsa_pos, fsa_fd,
+                                    add_to_error_queue(dj_id, fsa,
+                                                       p_con->fsa_pos, fsa_fd,
                                                        exit_status,
                                                        now + fsa[p_con->fsa_pos].retry_interval);
                                  }
@@ -4730,8 +4731,8 @@ zombie_check(struct connection *p_con,
                                  if (update_time_error_queue(dj_id,
                                                              now + fsa[p_con->fsa_pos].retry_interval) == NEITHER)
                                  {
-                                    add_to_error_queue(dj_id,
-                                                       fsa, p_con->fsa_pos, fsa_fd,
+                                    add_to_error_queue(dj_id, fsa,
+                                                       p_con->fsa_pos, fsa_fd,
                                                        exit_status,
                                                        now + fsa[p_con->fsa_pos].retry_interval);
                                  }
