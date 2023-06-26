@@ -1,6 +1,6 @@
 /*
  *  jid_attach.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2019 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2019 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -135,7 +135,7 @@ jid_attach(int writeable, char *who)
                        stat_buf.st_size,
 # endif
                        (writeable == YES) ? (PROT_READ | PROT_WRITE) : PROT_READ,
-                       MAP_SHARED, afd_mon_status_file, 0)) == (caddr_t) -1)
+                       MAP_SHARED, jid_file, 0)) == (caddr_t) -1)
 #endif
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -165,7 +165,7 @@ jid_attach(int writeable, char *who)
                     _("Failed to munmap() JID [%s] : %s"),
                     who, strerror(errno));
       }
-      return(INCORRECT);
+      return(INCORRECT_VERSION);
    }
    no_of_job_ids = *(int *)ptr;
    ptr += AFD_WORD_OFFSET;
