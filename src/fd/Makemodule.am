@@ -182,6 +182,7 @@ bin_fd_SOURCES             = src/fd/check_fra_fd.c\
                              src/fd/init_msg_ptrs.c\
                              src/fd/lookup_job_id.c\
                              src/fd/manage_trl_process.c\
+                             src/fd/mdb_attach.c\
                              src/fd/read_current_msg_list.c\
                              src/fd/recount_jobs_queued.c\
                              src/fd/recreate_msg.c\

@@ -352,6 +352,7 @@ struct append_data
 #endif /* _NEW_STUFF */
 
 /* Structure that holds the message cache of the FD. */
+#define CURRENT_MDB_VERSION 0
 struct msg_cache_buf
        {
           char         host_name[MAX_HOSTNAME_LENGTH + 1];
@@ -909,6 +910,7 @@ extern int   append_compare(char *, char *),
              init_sf(int, char **, char *, int),
              init_sf_burst2(struct job *, char *, unsigned int *),
              lookup_job_id(unsigned int),
+             mdb_attach(void),
              noop_wrapper(void),
              read_current_msg_list(unsigned int **, int *),
              read_file_mask(char *, int *, struct file_mask **),

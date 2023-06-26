@@ -158,22 +158,12 @@ init_msg_buffer(void)
    /* If necessary attach to the buffers. */
    if (mdb_fd == -1)
    {
-      size_t new_size = (MSG_CACHE_BUF_SIZE * sizeof(struct msg_cache_buf)) +
-                        AFD_WORD_OFFSET;
-      char   fullname[MAX_PATH_LENGTH];
-
-      (void)snprintf(fullname, MAX_PATH_LENGTH, "%s%s%s",
-                     p_work_dir, FIFO_DIR, MSG_CACHE_FILE);
-      if ((ptr = attach_buf(fullname, &mdb_fd, &new_size, "FD",
-                            FILE_MODE, NO)) == (caddr_t) -1)
+      if (mdb_attach() != SUCCESS)
       {
          system_log(FATAL_SIGN, __FILE__, __LINE__,
-                    "Failed to mmap() `%s' : %s", fullname, strerror(errno));
+                    "Failed to attach to MDB.");
          exit(INCORRECT);
       }
-      no_msg_cached = (int *)ptr;
-      ptr += AFD_WORD_OFFSET;
-      mdb = (struct msg_cache_buf *)ptr;
    }
 
    if (qb_fd == -1)
