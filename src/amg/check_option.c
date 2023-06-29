@@ -47,6 +47,7 @@ DESCR__S_M3
  **                      errors to command line tools.
  **   07.07.2019 H.Kiehl Added trans_srename.
  **   31.05.2023 H.Kiehl Added hardlink and symlink.
+ **   27.05.2023 H.Kiehl Added ageing.
  **
  */
 DESCR__E_M3
@@ -308,6 +309,23 @@ check_option(char *option, FILE *cmd_fp)
                                   "Invalid age limit specified.");
                     return(INCORRECT);
               }
+           }
+        }
+   else if ((CHECK_STRNCMP(option, AGEING_ID, AGEING_ID_LENGTH) == 0) &&
+            ((*(option + AGEING_ID_LENGTH) == ' ') ||
+             (*(option + AGEING_ID_LENGTH) == '\t')))
+        {
+           ptr += AGEING_ID_LENGTH + 1;
+           while ((*ptr == ' ') || (*ptr == '\t'))
+           {
+              ptr++;
+           }
+           if ((*ptr < '0') || (*ptr > '9') ||
+               ((*(ptr + 1) != '\0') && (*(ptr + 1) != ' ')))
+           {
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                         "Invalid %s value.", AGEING_ID);
+              return(INCORRECT);
            }
         }
    else if ((CHECK_STRNCMP(option, ULOCK_ID, ULOCK_ID_LENGTH) == 0) &&

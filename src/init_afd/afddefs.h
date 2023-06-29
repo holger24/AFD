@@ -1266,6 +1266,14 @@ typedef unsigned long       u_long_64;
 #define MATCH_REMOTE_SIZE_ID_LENGTH      (sizeof(MATCH_REMOTE_SIZE_ID) - 1)
 #define SILENT_NOT_LOCKED_FILE_ID        "silent not locked"
 #define SILENT_NOT_LOCKED_FILE_ID_LENGTH (sizeof(SILENT_NOT_LOCKED_FILE_ID) - 1)
+#define AGEING_ID                        "ageing"
+#define AGEING_ID_LENGTH                 (sizeof(AGEING_ID) - 1)
+
+/* Definitions for ageing. */
+#define DEFAULT_AGEING                   6
+#define MIN_AGEING_VALUE                 0
+#define MAX_AGEING_VALUE                 9
+#define AGEING_TABLE_LENGTH              10
 
 /* Default definitions. */
 #define AFD_CONFIG_FILE                  "/AFD_CONFIG"

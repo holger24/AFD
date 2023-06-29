@@ -237,6 +237,7 @@ struct afd_status          *p_afd_status;
 struct connection          *connection = NULL;
 struct queue_buf           *qb;
 struct msg_cache_buf       *mdb;
+struct ageing_table        at[AGEING_TABLE_LENGTH];
 #ifdef _DELETE_LOG
 struct delete_log          dl;
 #endif
@@ -677,6 +678,9 @@ main(int argc, char *argv[])
 
    /* Get value from AFD_CONFIG file. */
    get_afd_config_value();
+
+   /* Initialize ageing table with values. */
+   init_ageing_table();
 
    /* Attach/create memory area for message data and queue. */
    init_msg_buffer();
@@ -4637,7 +4641,8 @@ zombie_check(struct connection *p_con,
                   }
                   else
                   {
-                     if (fsa[p_con->fsa_pos].protocol_options & NO_AGEING_JOBS)
+                     if ((fsa[p_con->fsa_pos].protocol_options & NO_AGEING_JOBS) ||
+                         ((int)mdb[qb[*qb_pos].pos].ageing < 1))
                      {
 #ifdef WITH_ERROR_QUEUE
                         if (fsa[p_con->fsa_pos].host_status & ERROR_QUEUE_SET)
@@ -4660,7 +4665,7 @@ zombie_check(struct connection *p_con,
                                * will decrease in priority and resort the
                                * queue.
                                */
-                              if (qb[*qb_pos].retries < RETRY_THRESHOLD)
+                              if (qb[*qb_pos].retries < at[(int)mdb[qb[*qb_pos].pos].ageing].retry_threshold)
                               {
 #ifdef WITH_ERROR_QUEUE
                                  if (qb[*qb_pos].retries == 1)
@@ -4676,7 +4681,7 @@ zombie_check(struct connection *p_con,
                                                             now + fsa[p_con->fsa_pos].retry_interval);
                                  }
 #endif
-                                 qb[*qb_pos].msg_number += 60000000.0;
+                                 qb[*qb_pos].msg_number += at[(int)mdb[qb[*qb_pos].pos].ageing].before_threshold;
                               }
                               else
                               {
@@ -4684,8 +4689,8 @@ zombie_check(struct connection *p_con,
                                  update_time_error_queue(dj_id,
                                                          now + fsa[p_con->fsa_pos].retry_interval);
 #endif
-                                 qb[*qb_pos].msg_number += ((double)qb[*qb_pos].creation_time * 10000.0 *
-                                                           (double)(qb[*qb_pos].retries + 1 - RETRY_THRESHOLD));
+                                 qb[*qb_pos].msg_number += ((double)qb[*qb_pos].creation_time * at[(int)mdb[qb[*qb_pos].pos].ageing].after_threshold *
+                                                           (double)(qb[*qb_pos].retries + 1 - at[(int)mdb[qb[*qb_pos].pos].ageing].retry_threshold));
                               }
                               while ((i < *no_msg_queued) &&
                                      (qb[*qb_pos].msg_number > qb[i].msg_number))
@@ -4711,7 +4716,7 @@ zombie_check(struct connection *p_con,
 #ifdef WITH_ERROR_QUEUE
                            else
                            {
-                              if (qb[*qb_pos].retries < RETRY_THRESHOLD)
+                              if (qb[*qb_pos].retries < at[(int)mdb[qb[*qb_pos].pos].ageing].retry_threshold)
                               {
                                  if (qb[*qb_pos].retries == 1)
                                  {

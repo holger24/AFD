@@ -95,9 +95,6 @@
                                        /* FD.                            */
 #define CD_TIMEOUT               600   /* Timeout remote change          */
                                        /* directory (10min).             */
-#define RETRY_THRESHOLD          4     /* Threshold when to increase     */
-                                       /* aging factor for error jobs in */
-                                       /* queue.                         */
 
 /* Definitions of different exit status. */
 #define NO_MESSAGE               -2    /* When there are no more jobs to */
@@ -352,7 +349,7 @@ struct append_data
 #endif /* _NEW_STUFF */
 
 /* Structure that holds the message cache of the FD. */
-#define CURRENT_MDB_VERSION 0
+#define CURRENT_MDB_VERSION 1
 struct msg_cache_buf
        {
           char         host_name[MAX_HOSTNAME_LENGTH + 1];
@@ -365,6 +362,7 @@ struct msg_cache_buf
                                        /*       will be -1.               */
           unsigned int job_id;
           unsigned int age_limit;
+          char         ageing;
           char         type;           /* FTP, SMTP or LOC (file) */
           char         in_current_fsa;
        };
@@ -809,6 +807,13 @@ struct trl_cache
           off_t trl_per_process;
        };
 
+struct ageing_table
+       {
+          double before_threshold;
+          double after_threshold;
+          int    retry_threshold;
+       };
+
 #define CHECK_INCREMENT_JOB_QUEUED(value)                \
         {                                                \
            if (((value) < 0) || ((value) > no_of_hosts)) \
@@ -948,6 +953,7 @@ extern void  calc_trl_per_process(int),
              handle_dupcheck_delete(char *, char *, char *, char *,
                                     off_t, time_t, time_t),
              handle_proxy(void),
+             init_ageing_table(void),
              init_fra_data(void),
              init_gf(int, char **, int),
              init_gf_burst2(struct job *, unsigned int *),
@@ -996,4 +1002,6 @@ extern void  calc_trl_per_process(int),
                                      struct filetransfer_status *,
                                      struct job *),
              update_tfc(int, off_t, off_t *, int, int, time_t);
+extern char  *convert_mdb(int, char *, off_t *, int, unsigned char,
+                          unsigned char);
 #endif /* __fddefs_h */

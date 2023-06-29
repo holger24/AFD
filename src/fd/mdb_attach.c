@@ -204,17 +204,22 @@ mdb_attach(void)
    }
    if (created == YES)
    {
+      *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
+      *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
       *(ptr + SIZEOF_INT + 1 + 1 + 1) = CURRENT_MDB_VERSION;
+      (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+      *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
+      *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
+      *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
+      *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 3) = 0;        /* Not used. */
    }
    else
    {
       if (*(ptr + SIZEOF_INT + 1 + 1 + 1) != CURRENT_MDB_VERSION)
       {
-         system_log(WARN_SIGN, __FILE__, __LINE__,
-                    "This code is compiled for MDB version %d, but the MDB we try to attach is %d [FD].",
-                    CURRENT_MDB_VERSION, *(ptr + SIZEOF_INT + 1 + 1 + 1));
-         (void)close(mdb_fd);
-         mdb_fd = -1;
+         int           old_no_msg_cached = *(int *)ptr;
+         unsigned char old_version = *(ptr + SIZEOF_INT + 1 + 1 + 1);
+
 #ifdef HAVE_MMAP
          if (munmap(ptr, mdb_size) == -1)
 #else
@@ -225,7 +230,19 @@ mdb_attach(void)
                        _("Failed to munmap() MDB [FD] : %s"),
                        strerror(errno));
          }
-         return(INCORRECT_VERSION);
+
+         if ((ptr = convert_mdb(mdb_fd, mdb_file, &mdb_size,
+                                old_no_msg_cached, old_version,
+                                CURRENT_MDB_VERSION)) == NULL)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       "Failed to convert MDB file %s", mdb_file);
+            *no_msg_cached = 0;
+            (void)close(mdb_fd);
+            mdb_fd = -1;
+
+            return(INCORRECT);
+         }
       }
    }
    no_msg_cached = (int *)ptr;

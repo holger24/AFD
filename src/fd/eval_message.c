@@ -1,6 +1,6 @@
 /*
  *  eval_message.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -95,6 +95,7 @@ DESCR__S_M3
  **   06.07.2019 H.Kiehl Added support for trans_srename.
  **   22.06.2020 H.Kiehl Added option 'show no to line'.
  **   29.06.2020 H.Kiehl Added option 'group-to'.
+ **   29.06.2023 H.Kiehl Ignore FD option 'ageing'.
  **
  */
 DESCR__E_M3
@@ -3020,6 +3021,19 @@ eval_message(char *message_name, struct job *p_db)
                     p_db->rcvbuf_size = atoi(ptr);
                     *end_ptr = byte_buf;
                     ptr = end_ptr;
+                    while (*ptr == '\n')
+                    {
+                       ptr++;
+                    }
+                 }
+            else if (CHECK_STRNCMP(ptr, AGEING_ID, AGEING_ID_LENGTH) == 0)
+                 {
+                    /* This option is for process FD, so ignore it. */
+                    ptr += AGEING_ID_LENGTH;
+                    while ((*ptr != '\n') && (*ptr != '\0'))
+                    {
+                       ptr++;
+                    }
                     while (*ptr == '\n')
                     {
                        ptr++;
