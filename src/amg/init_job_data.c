@@ -1,6 +1,6 @@
 /*
  *  init_job_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,6 +49,9 @@ DESCR__E_M3
 #include <unistd.h>       /* read()                                      */
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
+#endif
+#ifdef HAVE_MMAP
+# include <sys/mman.h>    /* munmap()                                    */
 #endif
 #include <errno.h>
 #include "amgdefs.h"
@@ -141,6 +144,11 @@ init_job_data(void)
          }
          else
          {
+#ifdef HAVE_MMAP
+            off_t old_jid_size = new_size;
+#endif
+            char  *tmp_ptr = ptr;
+
             if ((ptr = convert_jid(jd_fd, job_id_data_file, &new_size,
                                    *no_of_job_ids,
                                    *(ptr + SIZEOF_INT + 1 + 1 + 1),
@@ -148,10 +156,22 @@ init_job_data(void)
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           "Failed to convert_jid() %s", job_id_data_file);
+               ptr = tmp_ptr;
+               no_of_job_ids = (int *)ptr;
                *no_of_job_ids = 0;
             }
             else
             {
+#ifdef HAVE_MMAP
+               if (munmap(tmp_ptr, old_jid_size) == -1)
+#else
+               if (munmap_emu(tmp_ptr) == -1)
+#endif
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             _("Failed to munmap() JID : %s"),
+                             strerror(errno));
+               }
                no_of_job_ids = (int *)ptr;
             }
          }
