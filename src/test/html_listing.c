@@ -232,9 +232,131 @@ eval_html_dir_list(char *html_buffer)
                               "<div id=\"downloadLinkArea\">",
                               27)) == NULL)
             {
-               (void)printf("Unknown HTML directory listing. Please send author a link so that this can be implemented. (%s %d)\n",
-                            __FILE__, __LINE__);
-               return(INCORRECT);
+               if ((ptr = llposi(html_buffer, bytes_buffered,
+                                 "<div id=\"contentDiv\">",
+                                 21)) == NULL)
+               {
+                  (void)printf("Unknown HTML directory listing. Please send author a link so that this can be implemented. (%s %d)\n",
+                               __FILE__, __LINE__);
+                  return(INCORRECT);
+               }
+               else
+               {
+                  int    exact_date = -1,
+                         file_name_length = -1;
+                  off_t  exact_size,
+                         file_size = -1;
+                  time_t file_mtime = -1;
+                  char   date_str[MAX_FILENAME_LENGTH],
+                         *end_ptr = html_buffer + bytes_buffered,
+                         file_name[MAX_FILENAME_LENGTH];
+
+                  while ((*ptr == '\n') || (*ptr == '\r'))
+                  {
+                     ptr++;
+                  }
+
+                  while ((ptr = llposi(ptr, bytes_buffered,
+                                       "<a href=\"", 9)) != NULL)
+                  {
+                     ptr--;
+                     file_name_length = 0;
+                     if (*ptr == '/')
+                     {
+                        ptr += 1;
+                     }
+                     while ((*ptr != '"') && (*ptr != '\n') &&
+                            (*ptr != '\r') && (*ptr != '\0'))
+                     {
+                        ptr++;
+                     }
+                     if (*ptr == '"')
+                     {
+                        ptr++;
+                        if (*ptr == '>')
+                        {
+                           ptr++;
+                           STORE_HTML_STRING(file_name, file_name_length,
+                                             MAX_FILENAME_LENGTH, '<');
+                           if (*ptr == '<')
+                           {
+                              while (*ptr == '<')
+                              {
+                                 ptr++;
+                                 while ((*ptr != '>') && (*ptr != '\n') &&
+                                        (*ptr != '\r') && (*ptr != '\0'))
+                                 {
+                                    ptr++;
+                                 }
+                                 if (*ptr == '>')
+                                 {
+                                    ptr++;
+                                    while (*ptr == ' ')
+                                    {
+                                       ptr++;
+                                    }
+                                 }
+                              }
+                           }
+                           if ((*ptr != '\n') && (*ptr != '\r') &&
+                               (*ptr != '\0'))
+                           {
+                              while (*ptr == ' ')
+                              {
+                                 ptr++;
+                              }
+
+                              /* Store date string. */
+                              if ((isdigit((int)(*ptr)) != 0) &&
+                                  (isdigit((int)(*(ptr + 15))) != 0) &&
+                                  (*(ptr + 16) == ' '))
+                              {
+                                 int i = 0;
+
+                                 memcpy(date_str, ptr, 16);
+                                 date_str[16] = '\0';
+                                 file_mtime = datestr2unixtime(date_str,
+                                                               &exact_date);
+                                 ptr += 16;
+                                 while (*ptr == ' ')
+                                 {
+                                    ptr++;
+                                 }
+                                 while ((i < MAX_FILENAME_LENGTH) &&
+                                        (isdigit((int)(*ptr)) != 0))
+                                 {
+                                    date_str[i] = *ptr;
+                                    ptr++; i++;
+                                 }
+                                 if (i > 0)
+                                 {
+                                    date_str[i] = '\0';
+                                    file_size = (off_t)str2offt(date_str, NULL, 10);
+                                    exact_size = 1;
+                                 }
+                              }
+                           }
+                           else
+                           {
+                              break;
+                           }
+                        }
+                        else
+                        {
+                           break;
+                        }
+                     }
+                     else
+                     {
+                        break;
+                     }
+                     (void)printf("name=%s length=%d mtime=%ld exact_date=%d exact_size=%ld file_size=%ld\n",
+                                  file_name, file_name_length, file_mtime,
+                                  exact_date, exact_size, file_size);
+
+                     bytes_buffered = end_ptr - ptr;
+                  } /* while "<a href=" */
+               }
             }
             else
             {
@@ -737,7 +859,7 @@ eval_html_dir_list(char *html_buffer)
              file_name_length;
       time_t file_mtime;
       off_t  exact_size,
-             file_size;
+             file_size = -1;
       char   date_str[MAX_FILENAME_LENGTH],
              file_name[MAX_FILENAME_LENGTH],
              size_str[MAX_FILENAME_LENGTH];

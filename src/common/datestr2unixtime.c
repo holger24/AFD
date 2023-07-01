@@ -1,6 +1,6 @@
 /*
  *  datestr2unixtime.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,14 +29,15 @@ DESCR__S_M3
  **
  ** DESCRIPTION
  **   The function datestr2unixtime() converts the string 'date_str'
- **   to a unix time. It is able to convert the following four time
+ **   to a unix time. It is able to convert the following seven time
  **   strings:
  **     1) RFC822 (HTTP/1.1)     Fri, 3 Oct 1997 02:15:31 GMT
  **     2) RFC850 (pre HTTP/1.1) Friday, 03-Oct-97 02:15:31 GMT
  **     3) asctime()             Fri Oct  3 02:15:31 1997
  **     4) HTML directory list   03-Oct-1997 02:15
  **     5) HTML directory list   2019-07-28 00:03
- **     6) AWS ISO 8601          2019-07-28T00:03:29.429Z
+ **     6) HTML directory list   28-07-2019 00:03
+ **     7) AWS ISO 8601          2019-07-28T00:03:29.429Z
  **
  **   Note that in format 2) we do NOT evaluate the year, instead we
  **   just take the current year.
@@ -60,6 +61,7 @@ DESCR__S_M3
  **   16.08.2006 H.Kiehl Created
  **   12.08.2021 H.Kiehl Add AWS ISO 8601.
  **   13.08.2021 H.Kiehl Added parameter accuracy.
+ **   30.06.2023 H.Kiehl Add another HTML directory list: 28-07-2019 00:03
  */
 DESCR__E_M3
 
@@ -304,7 +306,10 @@ datestr2unixtime(char *date_str, int *accuracy)
         }
         /* HTML directory list: 03-Oct-1997 02:15 */
    else if ((isdigit((int)(*ptr))) && (isdigit((int)(*(ptr + 1)))) &&
-            (*(ptr + 2) == '-'))
+            (*(ptr + 2) == '-') &&
+            (isalpha((int)(*(ptr + 3)))) && (isalpha((int)(*(ptr + 4)))) &&
+            (isalpha((int)(*(ptr + 5)))) &&
+            (*(ptr + 6) == '-'))
         {
            tp->tm_mday = ((*ptr - '0') * 10) + *(ptr + 1) - '0';
            ptr += 3;
@@ -443,6 +448,65 @@ datestr2unixtime(char *date_str, int *accuracy)
                     return(mktime(tp));
                  }
               }
+           }
+        }
+        /* HTML directory list: 28-07-2019 00:03 */
+   else if ((isdigit((int)(*ptr))) && (isdigit((int)(*(ptr + 1)))) &&
+            (*(ptr + 2) == '-') &&
+            (isdigit((int)(*(ptr + 3)))) && (isdigit((int)(*(ptr + 4)))) &&
+            (*(ptr + 5) == '-') &&
+            (isdigit((int)(*(ptr + 6)))) && (isdigit((int)(*(ptr + 7)))) &&
+            (isdigit((int)(*(ptr + 8)))) && (isdigit((int)(*(ptr + 9)))) &&
+            (*(ptr + 10) == ' '))
+        {
+           tp->tm_mday = ((*ptr - '0') * 10) + *(ptr + 1) - '0';
+           tp->tm_mon = ((*(ptr + 3) - '0') * 10) + *(ptr + 4) - '0' - 1;
+           tp->tm_year = (((*(ptr + 6) - '0') * 1000) +
+                          ((*(ptr + 7) - '0') * 100) +
+                          ((*(ptr + 8) - '0') * 10) +
+                          (*(ptr + 9) - '0')) - 1900;
+           if (*(ptr + 10) == ' ')
+           {
+              ptr += 11;
+              if ((isdigit((int)(*ptr))) && (*(ptr + 2) == ':') &&
+                  (isdigit((int)(*(ptr + 1)))))
+              {
+                 tp->tm_hour = ((*ptr - '0') * 10) + *(ptr + 1) - '0';
+                 ptr += 3;
+                 if ((isdigit((int)(*ptr))) && (isdigit((int)(*(ptr + 1)))))
+                 {
+                    tp->tm_min = ((*ptr - '0') * 10) + *(ptr + 1) - '0';
+                    ptr += 2;
+                    if ((*ptr == ':') && (isdigit((int)(*(ptr + 1)))) &&
+                        (isdigit((int)(*(ptr + 2)))))
+                    {
+                       tp->tm_sec = ((*(ptr + 1) - '0') * 10) +
+                                    *(ptr + 2) - '0';
+                       if (accuracy != NULL)
+                       {
+                          *accuracy = DS2UT_SECOND;
+                       }
+                    }
+                    else
+                    {
+                       tp->tm_sec = 0;
+                       if (accuracy != NULL)
+                       {
+                          *accuracy = DS2UT_MINUTE;
+                       }
+                    }
+                    return(mktime(tp));
+                 }
+              }
+           }
+           else
+           {
+              tp->tm_hour = tp->tm_min = tp->tm_sec = 0;
+              if (accuracy != NULL)
+              {
+                 *accuracy = DS2UT_DAY;
+              }
+              return(mktime(tp));
            }
         }
         else

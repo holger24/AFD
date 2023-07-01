@@ -51,6 +51,7 @@ DESCR__S_M3
  **                      seconds. Lets, see how this works and if
  **                      it increases the HEAD calls, remove it.
  **   29.10.2022 H.Kiehl Added support for downloadLinkArea listing.
+ **   30.06.2023 H.Kiehl Added support for contentDiv listing.
  **
  */
 DESCR__E_M3
@@ -1262,9 +1263,170 @@ eval_html_dir_list(char         *html_buffer,
                                  "<div id=\"downloadLinkArea\">",
                                  27)) == NULL)
                {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            "Unknown HTML directory listing. Please send author a link so that this can be implemented.");
-                  return(INCORRECT);
+                  if ((ptr = llposi(html_buffer, (size_t)bytes_buffered,
+                                    "<div id=\"contentDiv\">",
+                                    21)) == NULL)
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "Unknown HTML directory listing. Please send author a link so that this can be implemented.");
+                     return(INCORRECT);
+                  }
+                  else
+                  {
+                     int    exact_date = -1,
+                            file_name_length = -1;
+                     off_t  exact_size,
+                            file_size = -1;
+                     time_t file_mtime = -1;
+                     char   date_str[MAX_FILENAME_LENGTH],
+                            *end_ptr = html_buffer + bytes_buffered,
+                            file_name[MAX_FILENAME_LENGTH];
+
+                     while ((*ptr == '\n') || (*ptr == '\r'))
+                     {
+                        ptr++;
+                     }
+
+                     while ((ptr = llposi(ptr, bytes_buffered,
+                                          "<a href=\"", 9)) != NULL)
+                     {
+                        ptr--;
+                        file_name_length = 0;
+                        if (*ptr == '/')
+                        {
+                           ptr += 1;
+                        }
+                        while ((*ptr != '"') && (*ptr != '\n') &&
+                               (*ptr != '\r') && (*ptr != '\0'))
+                        {
+                           ptr++;
+                        }
+                        if (*ptr == '"')
+                        {
+                           ptr++;
+                           if (*ptr == '>')
+                           {
+                              ptr++;
+                              STORE_HTML_STRING(file_name, file_name_length,
+                                                MAX_FILENAME_LENGTH, '<');
+                              if (*ptr == '<')
+                              {
+                                 while (*ptr == '<')
+                                 {
+                                    ptr++;
+                                    while ((*ptr != '>') && (*ptr != '\n') &&
+                                           (*ptr != '\r') && (*ptr != '\0'))
+                                    {
+                                       ptr++;
+                                    }
+                                    if (*ptr == '>')
+                                    {
+                                       ptr++;
+                                       while (*ptr == ' ')
+                                       {
+                                          ptr++;
+                                       }
+                                    }
+                                 }
+                              }
+                              if ((*ptr != '\n') && (*ptr != '\r') &&
+                                  (*ptr != '\0'))
+                              {
+                                 while (*ptr == ' ')
+                                 {
+                                    ptr++;
+                                 }
+
+                                 /* Store date string. */
+                                 if ((isdigit((int)(*ptr)) != 0) &&
+                                     (isdigit((int)(*(ptr + 15))) != 0) &&
+                                     (*(ptr + 16) == ' '))
+                                 {
+                                    int i = 0;
+
+                                    memcpy(date_str, ptr, 16);
+                                    date_str[16] = '\0';
+                                    file_mtime = datestr2unixtime(date_str,
+                                                                  &exact_date);
+                                    ptr += 16;
+                                    while (*ptr == ' ')
+                                    {
+                                       ptr++;
+                                    }
+                                    while ((i < MAX_FILENAME_LENGTH) &&
+                                           (isdigit((int)(*ptr)) != 0))
+                                    {
+                                       date_str[i] = *ptr;
+                                       ptr++; i++;
+                                    }
+                                    if (i > 0)
+                                    {
+                                       date_str[i] = '\0';
+                                       file_size = (off_t)str2offt(date_str, NULL, 10);
+                                       exact_size = 1;
+                                    }
+                                 }
+                              }
+                              else
+                              {
+                                 break;
+                              }
+                           }
+                           else
+                           {
+                              break;
+                           }
+                        }
+                        else
+                        {
+                           break;
+                        }
+                        if (fsa->debug > DEBUG_MODE)
+                        {
+                           trans_db_log(DEBUG_SIGN, NULL, 0, NULL,
+#if SIZEOF_OFF_T == 4
+# if SIZEOF_TIME_T == 4
+                                        "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+# else
+                                        "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+# endif
+#else
+# if SIZEOF_TIME_T == 4
+                                        "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+# else
+                                        "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+# endif
+#endif
+                                        file_name, file_name_length,
+                                        (pri_time_t)file_mtime, exact_date,
+                                        (pri_off_t)file_size,
+                                        (pri_off_t)exact_size);
+                        }
+
+                        (*list_length)++;
+                        if (file_size > 0)
+                        {
+                           (*list_size) += file_size;
+                        }
+                        if (check_name(file_name, file_name_length,
+                                       file_size, file_mtime, files_deleted,
+                                       file_size_deleted) == YES)
+                        {
+                           (void)check_list(file_name, file_name_length,
+                                            file_mtime, exact_date,
+                                            exact_size, file_size,
+                                            files_to_retrieve,
+                                            file_size_to_retrieve,
+                                            more_files_in_list);
+                        }
+                        else
+                        {
+                           file_name[0] = '\0';
+                        }
+
+                        bytes_buffered = end_ptr - ptr;
+                     } /* while "<a href=" */
+                  }
                }
                else
                {
@@ -1477,13 +1639,22 @@ eval_html_dir_list(char         *html_buffer,
                                              trans_db_log(DEBUG_SIGN, NULL, 0,
                                                           NULL,
 #if SIZEOF_OFF_T == 4
+# if SIZEOF_TIME_T == 4
+                                                          "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+# else
                                                           "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+# endif
 #else
+# if SIZEOF_TIME_T == 4
+                                                          "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+# else
                                                           "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+# endif
 #endif
                                                           file_name,
                                                           file_name_length,
-                                                          file_mtime, exact_date,
+                                                          (pri_time_t)file_mtime,
+                                                          exact_date,
                                                           (pri_off_t)file_size,
                                                           (pri_off_t)exact_size);
                                           }
@@ -1796,11 +1967,20 @@ eval_html_dir_list(char         *html_buffer,
                      {
                         trans_db_log(DEBUG_SIGN, NULL, 0, NULL,
 #if SIZEOF_OFF_T == 4
+# if SIZEOF_TIME_T == 4
+                                     "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+# else
                                      "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+# endif
 #else
+# if SIZEOF_TIME_T == 4
+                                     "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+# else
                                      "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+# endif
 #endif
-                                     file_name, file_name_length, file_mtime,
+                                     file_name, file_name_length,
+                                     (pri_time_t)file_mtime,
                                      exact_date, (pri_off_t)file_size,
                                      (pri_off_t)exact_size);
                      }
@@ -2098,12 +2278,20 @@ eval_html_dir_list(char         *html_buffer,
                            {
                               trans_db_log(DEBUG_SIGN, NULL, 0, NULL,
 #if SIZEOF_OFF_T == 4
+# if SIZEOF_TIME_T == 4
+                                           "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+# else
                                            "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+# endif
 #else
+# if SIZEOF_TIME_T == 4
+                                           "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+# else
                                            "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+# endif
 #endif
                                            file_name, file_name_length,
-                                           file_mtime, exact_date,
+                                           (pri_time_t)file_mtime, exact_date,
                                            (pri_off_t)file_size,
                                            (pri_off_t)exact_size);
                            }
@@ -2339,12 +2527,20 @@ eval_html_dir_list(char         *html_buffer,
                           {
                              trans_db_log(DEBUG_SIGN, NULL, 0, NULL,
 #if SIZEOF_OFF_T == 4
+# if SIZEOF_TIME_T == 4
+                                          "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+# else
                                           "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+# endif
 #else
+# if SIZEOF_TIME_T == 4
+                                          "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+# else
                                           "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+# endif
 #endif
                                           file_name, file_name_length,
-                                          file_mtime, exact_date,
+                                          (pri_time_t)file_mtime, exact_date,
                                           (pri_off_t)file_size,
                                           (pri_off_t)exact_size);
                           }
@@ -2442,12 +2638,20 @@ eval_html_dir_list(char         *html_buffer,
                              {
                                 trans_db_log(DEBUG_SIGN, NULL, 0, NULL,
 #if SIZEOF_OFF_T == 4
+# if SIZEOF_TIME_T == 4
+                                             "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+# else
                                              "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+# endif
 #else
+# if SIZEOF_TIME_T == 4
+                                             "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+# else
                                              "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+# endif
 #endif
                                              file_name, file_name_length,
-                                             file_mtime, exact_date,
+                                             (pri_time_t)file_mtime, exact_date,
                                              (pri_off_t)file_size,
                                              (pri_off_t)exact_size);
                              }
