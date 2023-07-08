@@ -1978,6 +1978,7 @@ main(int argc, char *argv[])
                if (chunkbuffer != NULL)
                {
                   free(chunkbuffer);
+                  chunkbuffer = NULL;
                }
             }
             else
