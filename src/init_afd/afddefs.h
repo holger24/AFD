@@ -1270,7 +1270,7 @@ typedef unsigned long       u_long_64;
 #define AGEING_ID_LENGTH                 (sizeof(AGEING_ID) - 1)
 
 /* Definitions for ageing. */
-#define DEFAULT_AGEING                   6
+#define DEFAULT_AGEING                   5
 #define MIN_AGEING_VALUE                 0
 #define MAX_AGEING_VALUE                 9
 #define AGEING_TABLE_LENGTH              10
