@@ -127,6 +127,7 @@ DESCR__E_M1
 
 /* Global variables. */
 int                        crash = NO,
+                           default_ageing = DEFAULT_AGEING,
                            default_age_limit = DEFAULT_AGE_LIMIT,
                            delete_jobs_fd,
                            event_log_fd = STDERR_FILENO,
@@ -5459,6 +5460,11 @@ get_afd_config_value(void)
          default_age_limit = (unsigned int)atoi(config_file);
       }
       (void)snprintf(str_age_limit, MAX_INT_LENGTH, "%u", default_age_limit);
+      if (get_definition(buffer, DEFAULT_AGEING_DEF,
+                         config_file, MAX_INT_LENGTH) != NULL)
+      {
+         default_ageing = (unsigned int)atoi(config_file);
+      }
       if (get_definition(buffer, CREATE_TARGET_DIR_DEF,
                          config_file, MAX_INT_LENGTH) != NULL)
       {

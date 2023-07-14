@@ -99,6 +99,9 @@ struct msg_cache_buf_1
           char         in_current_fsa;
        };
 
+/* Global external variables. */
+extern int default_ageing;
+
 
 /*############################ convert_mdb() ############################*/
 char *
@@ -228,7 +231,7 @@ convert_mdb(int           old_mdb_fd,
          new_mdb[i].port               = old_mdb[i].port;
          new_mdb[i].job_id             = old_mdb[i].job_id;
          new_mdb[i].age_limit          = old_mdb[i].age_limit;
-         new_mdb[i].ageing             = DEFAULT_AGEING;
+         new_mdb[i].ageing             = default_ageing;
          new_mdb[i].type               = old_mdb[i].type;
          new_mdb[i].in_current_fsa     = old_mdb[i].in_current_fsa;
       }

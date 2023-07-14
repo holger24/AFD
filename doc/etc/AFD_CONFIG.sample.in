@@ -18,7 +18,7 @@
 ##########################################################################
 # The logs that may be requested from the given AFD_TCP_PORT. If this is #
 # defined, then it means for all hosts that connect to this port. With   #
-# the TRUSTED_REMOTE_IP it can be resticted to specific host(s). The     #
+# the TRUSTED_REMOTE_IP it can be restricted to specific host(s). The    #
 # value given is an integer bit mask, with the following meaning:        #
 #                                                                        #
 #   5 (16)    - System Log                                               #
@@ -201,7 +201,7 @@ AMG_DIR_RESCAN_TIME              5
 
 ##########################################################################
 # The minimum interval in seconds that all source directories must be    #
-# scanned. This can be usefull on systems that do not update the         #
+# scanned. This can be useful on systems that do not update the         #
 # directory modification time reliably (for example NFS when time of     #
 # client and server is out of sync). Setting this will generate a higher #
 # system load, since directories will be scanned more often.             #
@@ -213,7 +213,7 @@ AMG_DIR_RESCAN_TIME              5
 # Some default values for a new host in HOST_CONFIG.                     #
 #                                                                        #
 #    DEFAULT_NO_PARALLEL_JOBS   The default number of parallel jobs for  #
-#                               tranmitting data.                        #
+#                               transmitting data.                       #
 #                               Default: 2                               #
 #    DEFAULT_MAX_ERRORS         The default number of errors before the  #
 #                               host becomes red in afd_ctrl dialog.     #
@@ -244,25 +244,24 @@ AMG_DIR_RESCAN_TIME              5
 #DEFAULT_ERROR_OFFLINE            NO
 
 ##########################################################################
-# The time when AMG will send an info message in receive log that no data#
-# has been received in the specified directory. directory. This value    #
-# will be overridden by 'info time' value from DIR_CONFIG if set. The    #
-# unit is second.                                                        #
+# The time when AMG will send an info message in receive log that no     #
+# data has been received in the specified directory. This value will be  #
+# overridden by 'info time' value from DIR_CONFIG if set. The unit is    #
+# second.                                                                #
 # Default: 0 (disabled)                                                  #
 ##########################################################################
 #DEFAULT_DIR_INFO_TIME            0
 
 ##########################################################################
 # The time when AMG will warn in receive log that no data has been       #
-# received in the specified directory. directory. This value will be     #
-# overridden by 'warn time' value from DIR_CONFIG if set. The unit is    #
-# second.                                                                #
+# received in the specified directory. This value will be overridden     #
+# by 'warn time' value from DIR_CONFIG if set. The unit is in seconds.   #
 # Default: 0 (disabled)                                                  #
 ##########################################################################
 #DEFAULT_DIR_WARN_TIME            0
 
 ##########################################################################
-# What to do with files that a certain age but cannot be transmited      #
+# What to do with files that a certain age but cannot be transmitted     #
 # because either there is no rule (Unknown), they are being queued by    #
 # AFD (Queued), they are old locked files (Locked) or they old locked    #
 # files in a remote directory. By specifying  one of the above those     #
@@ -338,7 +337,7 @@ MAX_CONNECTIONS                  80
 # directory does not exist it will be created automatically, unless the  #
 # option 'do not create target dir' is set. If it is set to NO it will   #
 # not create the target directory.                                       #
-# With the option 'create target dir' this can be overriden.             #
+# With the option 'create target dir' this can be overridden.             #
 # Default: NO                                                            #
 ##########################################################################
 #CREATE_TARGET_DIR                775
@@ -351,6 +350,15 @@ MAX_CONNECTIONS                  80
 # Default: 0 (disabled)                                                  #
 ##########################################################################
 #DEFAULT_AGE_LIMIT                0
+
+##########################################################################
+# Process FD has a job queue where jobs can age when the transmission is #
+# not successful. How quickly a job ages is determined by the following  #
+# value. 9 is very quick ageing and will put the job almost to the end   #
+# on first error encountered. A value of 0 will disable ageing.          #
+# Default: 6                                                             #
+##########################################################################
+#DEFAULT_AGEING                   6
 
 ##########################################################################
 # When setting one of the exec options exec or pexec, the default is to  #
@@ -431,7 +439,7 @@ MAX_CONNECTIONS                  80
 ONE_DIR_COPY_TIMEOUT             5
 
 ##########################################################################
-# The timeout for scanning all directories. If set to 0 this is diasbled.#
+# The timeout for scanning all directories. If set to 0 this is disabled.#
 # When this is set it will only take effect if during a scan there are   #
 # directories which still have files to be distributed but could not     #
 # because of MAX_COPIED_FILES or some other limits. If FULL_SCAN_TIMEOUT #
@@ -544,7 +552,7 @@ TRACEROUTE_CMD                   @TRACEROUTE_CMD@
 #            parameters are to be added, put this in ". The filename to  #
 #            be shown can be added with %s.                              #
 # <pattern>  The filename pattern that applies for the above program     #
-#            name. Multiple patterns must be seperated with a pipe sign  #
+#            name. Multiple patterns must be separated with a pipe sign  #
 #            (|).                                                        #
 ##########################################################################
 #VIEW_DATA_PROG display *.jpg|*.png

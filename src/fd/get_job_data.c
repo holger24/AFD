@@ -61,7 +61,8 @@ DESCR__E_M3
 #include "fddefs.h"
 
 /* External global variables. */
-extern int                        mdb_fd,
+extern int                        default_ageing,
+                                  mdb_fd,
                                   no_of_hosts,
                                   *no_msg_cached;
 extern char                       msg_dir[],
@@ -407,7 +408,7 @@ retry:
       }
       if ((ptr = lposi(tmp_ptr, AGEING_ID, AGEING_ID_LENGTH)) == NULL)
       {
-         mdb[*no_msg_cached - 1].ageing = DEFAULT_AGEING;
+         mdb[*no_msg_cached - 1].ageing = default_ageing;
       }
       else
       {
@@ -430,12 +431,12 @@ retry:
             if ((mdb[*no_msg_cached - 1].ageing < MIN_AGEING_VALUE) ||
                 (mdb[*no_msg_cached - 1].ageing > MAX_AGEING_VALUE))
             {
-               mdb[*no_msg_cached - 1].ageing = DEFAULT_AGEING;
+               mdb[*no_msg_cached - 1].ageing = default_ageing;
             }
          }
          else
          {
-            mdb[*no_msg_cached - 1].ageing = DEFAULT_AGEING;
+            mdb[*no_msg_cached - 1].ageing = default_ageing;
          }
       }
       mdb[*no_msg_cached - 1].type = protocol;
@@ -479,7 +480,7 @@ retry:
       }
       if ((ptr = lposi(tmp_ptr, AGEING_ID, AGEING_ID_LENGTH)) == NULL)
       {
-         mdb[mdb_position].ageing = DEFAULT_AGEING;
+         mdb[mdb_position].ageing = default_ageing;
       }
       else
       {
@@ -502,12 +503,12 @@ retry:
             if ((mdb[mdb_position].ageing < MIN_AGEING_VALUE) ||
                 (mdb[mdb_position].ageing > MAX_AGEING_VALUE))
             {
-               mdb[mdb_position].ageing = DEFAULT_AGEING;
+               mdb[mdb_position].ageing = default_ageing;
             }
          }
          else
          {
-            mdb[mdb_position].ageing = DEFAULT_AGEING;
+            mdb[mdb_position].ageing = default_ageing;
          }
       }
       mdb[mdb_position].type = protocol;
