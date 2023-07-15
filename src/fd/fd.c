@@ -951,6 +951,15 @@ main(int argc, char *argv[])
               "FD configuration: FD rescan interval            %ld (sec)",
               FD_RESCAN_TIME);
    system_log(DEBUG_SIGN, NULL, 0,
+              "FD configuration: Default ageing                %d",
+              default_ageing);
+   if (default_age_limit > 0)
+   {
+      system_log(DEBUG_SIGN, NULL, 0,
+                 "FD configuration: Default age limit             %d",
+                 default_age_limit);
+   }
+   system_log(DEBUG_SIGN, NULL, 0,
               "FD configuration: Create target dir by default  %s",
               (*(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) & ENABLE_CREATE_TARGET_DIR) ? "Yes" : "No");
    if ((*(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) & ENABLE_CREATE_TARGET_DIR) &&
