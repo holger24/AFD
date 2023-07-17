@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -2252,6 +2252,7 @@ file_name_and_recipient(register char *ptr,
          }
          ptr += j;
          tmp_file_size = (off_t)str2offt((ptr - j), NULL, 16);
+         print_file_size(p_file_size, tmp_file_size);
 
          /* Write transfer duration, job ID and additional reason. */
          /* Also check if we have to check for directory name.     */
