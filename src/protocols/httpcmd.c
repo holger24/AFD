@@ -1257,7 +1257,8 @@ http_get(char  *path,
       /* close connection we need to reopen the connection.           */
       if ((reply = check_connection()) == CONNECTION_REOPENED)
       {
-         hmr.retries = 1;
+         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_get", NULL,
+                   _("Reconnected."));
       }
       else if (reply == INCORRECT)
            {
