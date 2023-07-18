@@ -130,7 +130,6 @@ DESCR__E_M3
 #include "commondefs.h"
 #include "httpdefs.h"
 
-#define CHECK_CONNECTION_WITH_GETSOCKOPT 1
 
 #ifdef WITH_SSL
 SSL                              *ssl_con = NULL;
@@ -3383,39 +3382,6 @@ check_connection(void)
    }
    else
    {
-#ifdef CHECK_CONNECTION_WITH_GETSOCKOPT
-      int       so_error;
-      socklen_t length = sizeof(so_error);
-
-      /*
-       * Check if connection is still up, by using getsockopt().
-       */
-      if (getsockopt(http_fd, SOL_SOCKET, SO_ERROR, &so_error, &length) != 0)
-      {
-         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "check_connection", NULL,
-                   "getsockopt() error : %s", strerror(errno));
-         connection_closed = YES;
-         hmr.free = NO;
-         http_quit();
-         hmr.free = YES;
-      }
-      else
-      {
-         if (so_error)
-         {
-            trans_log(DEBUG_SIGN, __FILE__, __LINE__, "check_connection", NULL,
-                      "socket error : %s", strerror(so_error));
-            connection_closed = YES;
-            hmr.free = NO;
-            http_quit();
-            hmr.free = YES;
-         }
-         else
-         {
-            connection_closed = NO;
-         }
-      }
-#else
       int ret;
 
       /*
@@ -3444,7 +3410,6 @@ check_connection(void)
          hmr.free = YES;
          timeout_flag = tmp_timeout_flag;
       }
-#endif
    }
    if (connection_closed == YES)
    {
