@@ -130,6 +130,8 @@ DESCR__E_M3
 #include "commondefs.h"
 #include "httpdefs.h"
 
+#define CHECK_CONNECTION_WITH_GETSOCKOPT 1
+
 #ifdef WITH_SSL
 SSL                              *ssl_con = NULL;
 #endif
@@ -3378,10 +3380,56 @@ check_connection(void)
    }
    else
    {
+#ifdef CHECK_CONNECTION_WITH_GETSOCKOPT
+      int       so_error;
+      socklen_t length = sizeof(so_error);
+
       /*
-       * TODO: We still need the code to check if connection is still up!
+       * Check if connection is still up, by using getsockopt().
        */
-      connection_closed = NO;
+      if (getsockopt(http_fd, SOL_SOCKET, SO_ERROR, &so_error, &length) != 0)
+      {
+         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "check_connection", NULL,
+                   "getsockopt() error : %s", strerror(errno));
+         connection_closed = YES;
+         hmr.free = NO;
+         http_quit();
+         hmr.free = YES;
+      }
+      else
+      {
+         if (so_error)
+         {
+            trans_log(DEBUG_SIGN, __FILE__, __LINE__, "check_connection", NULL,
+                      "socket error : %s", strerror(so_error));
+            connection_closed = YES;
+            hmr.free = NO;
+            http_quit();
+            hmr.free = YES;
+         }
+         else
+         {
+            connection_closed = NO;
+         }
+      }
+#else
+      /*
+       * Check if connection is still up, by using recv() with
+       * MSG_PEEK and MSG_DONT_WAIT and if that is 0 the connection
+       * is closed.
+       */
+      if (recv(http_fd, NULL, 1, MSG_PEEK | MSG_DONTWAIT) == 1)
+      {
+         connection_closed = NO;
+      }
+      else
+      {
+         connection_closed = YES;
+         hmr.free = NO;
+         http_quit();
+         hmr.free = YES;
+      }
+#endif
    }
    if (connection_closed == YES)
    {
