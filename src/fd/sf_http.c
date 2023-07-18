@@ -372,7 +372,7 @@ main(int argc, char *argv[])
 #ifdef WITH_SSL
                          db.ssh_protocol, db.service, db.region, db.tls_auth,
 #endif
-                         db.sndbuf_size, db.rcvbuf_size);
+                         db.sndbuf_size, db.rcvbuf_size, fsa->debug);
 #ifdef WITH_IP_DB
    if (get_and_reset_store_ip() == DONE)
    {

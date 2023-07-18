@@ -28,7 +28,7 @@ DESCR__S_M3
  **   int  http_connect(char *hostname, char *http_proxy, int port,
  **                     char *user, char *passwd, unsigned char auth_type,
  **                     int features, unsigned char service, char *region,
- **                     int ssl, int sndbuf_size, int rcvbuf_size)
+ **                     int ssl, int sndbuf_size, int rcvbuf_size, char debug)
  **   int  http_init_authentication(char *user, char *passwd)
  **   int  http_options(char *path)
  **   int  http_del(char *path, char *filename)
@@ -198,7 +198,8 @@ http_connect(char          *hostname,
              char          tls_auth,
 #endif
              int           sndbuf_size,
-             int           rcvbuf_size)
+             int           rcvbuf_size,
+             char          debug)
 {
    if (simulation_mode == YES)
    {
@@ -261,6 +262,7 @@ http_connect(char          *hostname,
          hmr.free = YES;
          hmr.fra_options = fra_options;
          hmr.features = features;
+         hmr.debug = debug;
 #ifdef WITH_SSL
          hmr.service_type = service;
          hmr.marker[0] = '\0';
@@ -833,6 +835,7 @@ http_connect(char          *hostname,
       hmr.bytes_buffered = 0;
       hmr.bytes_read = 0;
       hmr.filename = NULL;
+      hmr.debug = debug;
 #ifdef _WITH_EXTRA_CHECK
       hmr.http_etag[0] = '\0';
       hmr.http_weak_etag = YES;
@@ -3445,7 +3448,8 @@ check_connection(void)
                                  hmr.listobject_version, hmr.service_type,
                                  hmr.region, hmr.tls_auth,
 #endif
-                                 hmr.sndbuf_size, hmr.rcvbuf_size)) != SUCCESS)
+                                 hmr.sndbuf_size, hmr.rcvbuf_size,
+                                 hmr.debug)) != SUCCESS)
       {
          if (hmr.http_proxy[0] == '\0')
          {

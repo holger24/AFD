@@ -110,6 +110,7 @@ struct http_message_reply
           int           sndbuf_size;
           int           rcvbuf_size;
           int           retries;
+          char          debug;
           unsigned char auth_type;
           char          chunked;
           char          close;
@@ -133,7 +134,7 @@ extern int  basic_authentication(struct http_message_reply *),
 #ifdef WITH_SSL
                          unsigned char, unsigned char, char *, char,
 #endif
-                         int, int),
+                         int, int, char),
             http_del(char *, char *),
 #ifdef _WITH_EXTRA_CHECK
             http_get(char *, char *, char *, char *, off_t *, off_t),
