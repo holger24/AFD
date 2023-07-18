@@ -1,6 +1,6 @@
 /*
  *  common.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -556,7 +556,7 @@ ssl_connect(int  sock_fd,
 
             issuer = rfc2253_formatted(X509_get_issuer_name(cert));
             subject = rfc2253_formatted(X509_get_subject_name(cert));
-            trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_connect", NULL,
+            trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ssl_connect", NULL,
                       "<CERT subject: %s issuer: %s>", subject, issuer);
             free(subject);
 
