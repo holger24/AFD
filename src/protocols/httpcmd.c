@@ -3416,21 +3416,33 @@ check_connection(void)
          }
       }
 #else
+      int ret;
+
       /*
        * Check if connection is still up, by using recv() with
        * MSG_PEEK and MSG_DONT_WAIT and if that is 0 the connection
        * is closed.
        */
-      if (recv(http_fd, NULL, 1, MSG_PEEK | MSG_DONTWAIT) == 1)
+      if ((ret = recv(http_fd, NULL, 1, MSG_PEEK | MSG_DONTWAIT)) == 1)
       {
          connection_closed = NO;
       }
       else
       {
+         int tmp_timeout_flag;
+
+         if (hmr.debug > 0)
+         {
+            trans_log(DEBUG_SIGN, __FILE__, __LINE__, "check_connection", NULL,
+                      "recv() returned %d.", ret);
+         }
          connection_closed = YES;
-         hmr.free = NO;
+         tmp_timeout_flag = timeout_flag;
+         timeout_flag = ON; /* So http_quit() does not call shutdown. */
+         hmr.free = NO;     /* So http_quit() does not free hmr structure. */
          http_quit();
          hmr.free = YES;
+         timeout_flag = tmp_timeout_flag;
       }
 #endif
    }
