@@ -4026,7 +4026,6 @@ read_msg_again:
         {
            if (hmr.retries == 0)
            {
-              hmr.close = YES;
               if ((status_code = check_connection()) == CONNECTION_REOPENED)
               {
                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "get_http_reply", NULL,
