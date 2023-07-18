@@ -1255,21 +1255,21 @@ http_get(char  *path,
                return(reply);
             }
          }
-      }
 
-      /* If we have send a HEAD command the remote server indicates a */
-      /* close connection we need to reopen the connection.           */
-      if ((reply = check_connection()) == CONNECTION_REOPENED)
-      {
-         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_get", NULL,
-                   _("Reconnected."));
+         /* If we have send a HEAD command the remote server indicates a */
+         /* close connection we need to reopen the connection.           */
+         if ((reply = check_connection()) == CONNECTION_REOPENED)
+         {
+            trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_get", NULL,
+                      _("Reconnected."));
+         }
+         else if (reply == INCORRECT)
+              {
+                 trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_get", NULL,
+                           _("Failed to reconnect."));
+                 return(INCORRECT);
+              }
       }
-      else if (reply == INCORRECT)
-           {
-              trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_get", NULL,
-                        _("Failed to reconnect."));
-              return(INCORRECT);
-           }
 
       if ((offset) && (*content_length == offset))
       {
