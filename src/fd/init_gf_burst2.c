@@ -148,7 +148,11 @@ init_gf_burst2(struct job   *p_new_db,
       {
          if (db.no_of_time_entries != 0)
          {
-            free(db.te);
+            if (db.te_malloc == YES)
+            {
+               free(db.te);
+            }
+            db.te_malloc = NO;
             db.te = &fra->te[0];
             (void)strcpy(db.timezone, fra->timezone);
          }
@@ -161,9 +165,11 @@ init_gf_burst2(struct job   *p_new_db,
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           "Could not malloc() memory : %s", strerror(errno));
+               db.te_malloc = NO;
             }
             else
             {
+               db.te_malloc = YES;
                if (eval_time_str("* * * * *", db.te, NULL) != SUCCESS)
                {
                   system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -174,6 +180,11 @@ init_gf_burst2(struct job   *p_new_db,
          }
          else
          {
+            if (db.te_malloc == YES)
+            {
+               free(db.te);
+            }
+            db.te_malloc = NO;
             db.te = &fra->te[0];
             (void)strcpy(db.timezone, fra->timezone);
          }

@@ -458,6 +458,8 @@ struct job
           char           smtp_server[MAX_REAL_HOSTNAME_LENGTH];
                                          /* SMTP server name.            */
           char           timezone[MAX_TIMEZONE_LENGTH + 1];
+          char           te_malloc;      /* Flag to show if te pointer   */
+                                         /* was malloced.                */
           char           *group_mail_domain;
           char           *index_file;    /* HTTP directory listing.      */
           int            no_of_restart_files;

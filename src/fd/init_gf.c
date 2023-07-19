@@ -183,6 +183,7 @@ init_gf(int argc, char *argv[], int protocol)
                     "Could not malloc() memory : %s", strerror(errno));
          exit(ALLOC_ERROR);
       }
+      db.te_malloc = YES;
       if (eval_time_str("* * * * *", db.te, NULL) != SUCCESS)
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -193,6 +194,7 @@ init_gf(int argc, char *argv[], int protocol)
    }
    else
    {
+      db.te_malloc = NO;
       db.te = &fra->te[0];
       (void)strcpy(db.timezone, fra->timezone);
    }
