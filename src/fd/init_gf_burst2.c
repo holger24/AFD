@@ -1,6 +1,6 @@
 /*
  *  init_gf_burst2.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -150,6 +150,7 @@ init_gf_burst2(struct job   *p_new_db,
          {
             free(db.te);
             db.te = &fra->te[0];
+            (void)strcpy(db.timezone, fra->timezone);
          }
       }
       else
@@ -169,10 +170,12 @@ init_gf_burst2(struct job   *p_new_db,
                              "Failed to evaluate time string [* * * * *].");
                }
             }
+            db.timezone[0] = '\0';
          }
          else
          {
             db.te = &fra->te[0];
+            (void)strcpy(db.timezone, fra->timezone);
          }
       }
       if (db.index_file != NULL)
