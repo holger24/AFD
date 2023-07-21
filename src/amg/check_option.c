@@ -698,7 +698,10 @@ check_option(char *option, FILE *cmd_fp)
             ((*(option + TIMEZONE_ID_LENGTH) == ' ') ||
              (*(option + TIMEZONE_ID_LENGTH) == '\t')))
         {
-           int i;
+           int  i;
+# ifdef TZDIR
+           char timezone_name[MAX_TIMEZONE_LENGTH + 1];
+# endif
 
            ptr += TIMEZONE_ID_LENGTH + 1;
            while ((*ptr == ' ') || (*ptr == '\t'))
@@ -710,6 +713,9 @@ check_option(char *option, FILE *cmd_fp)
            while ((*(ptr + i) != '\0') && (isascii((int)(*(ptr + i)))) &&
                   (i < MAX_TIMEZONE_LENGTH))
            {
+# ifdef TZDIR
+              timezone_name[i] = *(ptr + i);
+# endif
               i++;
            }
            if (i == MAX_TIMEZONE_LENGTH)
@@ -724,6 +730,15 @@ check_option(char *option, FILE *cmd_fp)
                             "Invalid (%s) %s specified.", ptr, TIMEZONE_ID);
               return(INCORRECT);
            }
+# ifdef TZDIR
+           timezone_name[i] = '\0';
+           if (timezone_name_check(timezone_name) == INCORRECT)
+           {
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "Unable to find specified timezone (%s) in %s",
+                            timezone_name, TZDIR);
+           }
+# endif
         }
 #endif
 #ifdef _WITH_TRANS_EXEC

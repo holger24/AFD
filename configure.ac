@@ -1762,6 +1762,9 @@ then
    LIBS="$LIBS $LIBINTL"
 fi
 
+dnl Check for zoneinfo information
+AX_ZONEINFO()
+
 AC_CONFIG_FILES([Makefile
 po/Makefile.in
 doc/Makefile

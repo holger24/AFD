@@ -953,7 +953,8 @@ extern int    amg_zombie_check(pid_t *, int),
                                 struct host_list *),
               reread_host_config(time_t *, int *, int *, size_t *,
                                  struct host_list **, unsigned int *,
-                                 FILE *, int);
+                                 FILE *, int),
+              timezone_name_check(const char *);
 extern pid_t  make_process_amg(char *, char *, int, int, mode_t, pid_t);
 extern off_t  fax2gts(char *, char *, int);
 extern char   *check_paused_dir(struct directory_entry *, int *, int *, int *),

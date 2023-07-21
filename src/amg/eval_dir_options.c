@@ -1278,6 +1278,16 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
               if ((length > 0) && (length != MAX_TIMEZONE_LENGTH))
               {
                  dd[dir_pos].timezone[length] = '\0';
+#ifdef TZDIR
+                 if (timezone_name_check(dd[dir_pos].timezone) == INCORRECT)
+                 {
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Unable to find specified timezone (%s) in %s",
+                                  dd[dir_pos].timezone, TZDIR);
+                    problems_found++;
+                    dd[dir_pos].timezone[0] = '\0';
+                 }
+#endif
               }
               else
               {
