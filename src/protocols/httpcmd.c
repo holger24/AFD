@@ -130,6 +130,8 @@ DESCR__E_M3
 #include "commondefs.h"
 #include "httpdefs.h"
 
+#define FUB_DEBUG 1 /* Remove once bug is found! */
+
 
 #ifdef WITH_SSL
 SSL                              *ssl_con = NULL;
@@ -2679,6 +2681,20 @@ http_read(char *block, int blocksize)
          if (hmr.bytes_buffered > blocksize)
          {
             hmr.bytes_buffered -= blocksize;
+#ifdef FUB_DEBUG
+            if (hmr.bytes_buffered > MAX_RET_MSG_LENGTH)
+            {
+               trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_read", NULL,
+                         "Urghhhh!!! hmr.bytes_buffered (%d) > MAX_RET_MSG_LENGTH (%d)",
+                         hmr.bytes_buffered, MAX_RET_MSG_LENGTH);
+            }
+            if ((blocksize + hmr.bytes_buffered) > MAX_RET_MSG_LENGTH)
+            {
+               trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_read", NULL,
+                         "Nooooo! Reading beyond buffer (blocksize (%d) + hmr.bytes_buffered (%d)) > MAX_RET_MSG_LENGTH (%d)",
+                         blocksize, hmr.bytes_buffered, MAX_RET_MSG_LENGTH);
+            }
+#endif
             (void)memmove(msg_str, msg_str + blocksize, hmr.bytes_buffered);
          }
          else
@@ -2690,6 +2706,14 @@ http_read(char *block, int blocksize)
       }
       else
       {
+#ifdef FUB_DEBUG
+         if (hmr.bytes_buffered > MAX_RET_MSG_LENGTH)
+         {
+            trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_read", NULL,
+                      "Nooooo! Reading beyond buffer hmr.bytes_buffered (%d) > MAX_RET_MSG_LENGTH (%d)",
+                      hmr.bytes_buffered, MAX_RET_MSG_LENGTH);
+         }
+#endif
          memcpy(block, msg_str, hmr.bytes_buffered);
          bytes_read = hmr.bytes_buffered;
          hmr.bytes_buffered = 0;
@@ -3980,12 +4004,40 @@ read_msg_again:
             *ret_bytes_buffered = bytes_buffered - read_length - 1;
             if (msg_str[0] != '\0')
             {
+#ifdef FUB_DEBUG
+               if (*ret_bytes_buffered > MAX_RET_MSG_LENGTH)
+               {
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "get_http_reply", NULL,
+                            "Urghhhh!!! *ret_bytes_buffered (%d) > MAX_RET_MSG_LENGTH (%d)",
+                            *ret_bytes_buffered, MAX_RET_MSG_LENGTH);
+               }
+               if ((read_length + 1 + *ret_bytes_buffered) > MAX_RET_MSG_LENGTH)
+               {
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "get_http_reply", NULL,
+                            "Nooooo! Reading beyond buffer (read_length (%d) + 1 + *ret_bytes_buffered (%d)) > MAX_RET_MSG_LENGTH (%d)",
+                            read_length, *ret_bytes_buffered, MAX_RET_MSG_LENGTH);
+               }
+#endif
                (void)memmove(msg_str, msg_str + read_length + 1,
                              *ret_bytes_buffered);
             }
          }
          if ((read_length == 1) && (msg_str[0] == '\0') && (msg_str[1] == '\n'))
          {
+#ifdef FUB_DEBUG
+            if ((bytes_buffered - 2) > MAX_RET_MSG_LENGTH)
+            {
+               trans_log(DEBUG_SIGN, __FILE__, __LINE__, "get_http_reply", NULL,
+                         "Urghhhh!!! (bytes_buffered (%d) - 2) > MAX_RET_MSG_LENGTH (%d)",
+                         bytes_buffered, MAX_RET_MSG_LENGTH);
+            }
+            if (bytes_buffered > MAX_RET_MSG_LENGTH)
+            {
+               trans_log(DEBUG_SIGN, __FILE__, __LINE__, "get_http_reply", NULL,
+                         "Nooooo! Reading beyond buffer bytes_buffered (%d) > MAX_RET_MSG_LENGTH (%d)",
+                         bytes_buffered, MAX_RET_MSG_LENGTH);
+            }
+#endif
             (void)memmove(msg_str, msg_str + 2, (bytes_buffered - 2));
             (void)read_msg(NULL, -2, line);
          }
@@ -4066,6 +4118,14 @@ read_msg(int *read_length, int offset, int line)
    }
    else
    {
+#ifdef FUB_DEBUG
+      if (hmr.bytes_read > MAX_RET_MSG_LENGTH)
+      {
+         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "read_msg", NULL,
+                   "Urghhhh!!! hmr.bytes_read (%d) > MAX_RET_MSG_LENGTH (%d)",
+                   hmr.bytes_read, MAX_RET_MSG_LENGTH);
+      }
+#endif
       (void)memmove(msg_str, read_ptr, hmr.bytes_read);
       bytes_buffered = hmr.bytes_read;
       read_ptr = msg_str;
@@ -4317,6 +4377,14 @@ clear_msg_str(void)
       {
          if (extra_msg[0] == '\0')
          {
+#ifdef FUB_DEBUG
+            if (hmr.header_length > MAX_RET_MSG_LENGTH)
+            {
+               trans_log(DEBUG_SIGN, __FILE__, __LINE__, "read_msg", NULL,
+                         "Urghhhh!!! hmr.header_length (%d) > MAX_RET_MSG_LENGTH (%d)",
+                         hmr.header_length, MAX_RET_MSG_LENGTH);
+            }
+#endif
             (void)memcpy(msg_str, hmr.msg_header, hmr.header_length);
          }
          else
@@ -4335,6 +4403,14 @@ clear_msg_str(void)
    {
       if ((msg_str[0] == '\0') && (hmr.header_length > 0))
       {
+#ifdef FUB_DEBUG
+         if (hmr.header_length > MAX_RET_MSG_LENGTH)
+         {
+            trans_log(DEBUG_SIGN, __FILE__, __LINE__, "read_msg", NULL,
+                      "Urghhhh!!! hmr.header_length (%d) > MAX_RET_MSG_LENGTH (%d)",
+                      hmr.header_length, MAX_RET_MSG_LENGTH);
+         }
+#endif
          (void)memcpy(msg_str, hmr.msg_header, hmr.header_length);
       }
    }
