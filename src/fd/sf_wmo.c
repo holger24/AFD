@@ -97,12 +97,9 @@ int                        counter_fd = -1,     /* NOT USED. */
 #ifdef _MAINTAINER_LOG
                            maintainer_log_fd = STDERR_FILENO,
 #endif
-                           no_of_dirs,
                            no_of_hosts,    /* This variable is not used */
                                            /* in this module.           */
                            *p_no_of_hosts = NULL,
-                           fra_fd = -1,
-                           fra_id,
                            fsa_fd = -1,
                            fsa_id,
                            fsa_pos_save = NO,
@@ -140,8 +137,7 @@ clock_t                    *ol_transfer_time;
 unsigned int               burst_2_counter = 0;
 #endif
 #ifdef HAVE_MMAP
-off_t                      fra_size,
-                           fsa_size;
+off_t                      fsa_size;
 #endif
 off_t                      *file_size_buffer = NULL;
 time_t                     *file_mtime_buffer = NULL;
@@ -152,7 +148,6 @@ char                       *p_work_dir = NULL,
                            line_buffer[4096],
                            *del_file_name_buffer = NULL, /* NOT USED. */
                            *file_name_buffer = NULL;
-struct fileretrieve_status *fra = NULL;
 struct filetransfer_status *fsa = NULL;
 struct job                 db;
 struct rule                *rule;

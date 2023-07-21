@@ -4491,7 +4491,6 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
 #endif
                     get_additional_locked_files(int *, int *, char **),
                     get_alias_names(void),
-                    get_dir_alias(unsigned, char *),
                     get_dir_options(unsigned int, struct dir_options *),
                     get_dc_result_str(char *, int, int, int *, int *),
                     get_file_mask_list(unsigned int, int *, char **),

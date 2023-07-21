@@ -203,7 +203,6 @@ lib_libafd_a_SOURCES  = src/common/attach_afd_status.c\
                         src/common/get_checksum_crc32c.c\
                         src/common/get_checksum_murmur3.c\
                         src/common/get_definition.c\
-                        src/common/get_dir_alias.c\
                         src/common/get_dir_number.c\
                         src/common/get_dir_options.c\
                         src/common/get_error_str.c\

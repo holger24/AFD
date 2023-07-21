@@ -436,7 +436,6 @@ bin_sf_map_SOURCES         = src/fd/append.c\
                              src/fd/handle_dupcheck_delete.c\
                              src/fd/init_sf.c\
                              src/fd/noop_wrapper_dummy.c\
-                             src/fd/receive_log.c\
                              src/fd/reset_fsa.c\
                              src/fd/rm_dupcheck_crc.c\
                              src/fd/send_proc_fin.c\
@@ -461,7 +460,6 @@ bin_sf_dfax_SOURCES        = src/fd/append.c\
                              src/fd/handle_dupcheck_delete.c\
                              src/fd/init_sf.c\
                              src/fd/noop_wrapper_dummy.c\
-                             src/fd/receive_log.c\
                              src/fd/reset_fsa.c\
                              src/fd/rm_dupcheck_crc.c\
                              src/fd/send_proc_fin.c\
@@ -491,7 +489,6 @@ bin_sf_loc_SOURCES         = src/fd/append.c\
                              src/fd/init_sf.c\
                              src/fd/init_sf_burst2.c\
                              src/fd/noop_wrapper_dummy.c\
-                             src/fd/receive_log.c\
                              src/fd/reset_fsa.c\
                              src/fd/rm_dupcheck_crc.c\
                              src/fd/send_proc_fin.c\
@@ -520,7 +517,6 @@ bin_sf_exec_SOURCES        = src/fd/append.c\
                              src/fd/init_sf.c\
                              src/fd/init_sf_burst2.c\
                              src/fd/noop_wrapper_dummy.c\
-                             src/fd/receive_log.c\
                              src/fd/reset_fsa.c\
                              src/fd/rm_dupcheck_crc.c\
                              src/fd/send_proc_fin.c\

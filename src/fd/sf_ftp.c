@@ -120,11 +120,8 @@ int                        counter_fd = -1,
 #ifdef _MAINTAINER_LOG
                            maintainer_log_fd = STDERR_FILENO,
 #endif
-                           no_of_dirs,
                            no_of_hosts,
                            *p_no_of_hosts = NULL,
-                           fra_fd = -1,
-                           fra_id,
                            fsa_fd = -1,
                            fsa_id,
                            fsa_pos_save = NO,
@@ -166,8 +163,7 @@ unsigned int               burst_2_counter = 0,
                            total_append_count = 0;
 #endif
 #ifdef HAVE_MMAP
-off_t                      fra_size,
-                           fsa_size;
+off_t                      fsa_size;
 #endif
 off_t                      append_offset = 0,
                            *file_size_buffer = NULL;
@@ -180,7 +176,6 @@ char                       *del_file_name_buffer = NULL,
                            msg_str[MAX_RET_MSG_LENGTH],
                            *p_work_dir = NULL,
                            tr_hostname[MAX_HOSTNAME_LENGTH + 2];
-struct fileretrieve_status *fra = NULL;
 struct filetransfer_status *fsa = NULL;
 struct job                 db;
 struct rule                *rule;

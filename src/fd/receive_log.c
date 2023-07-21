@@ -1,6 +1,6 @@
 /*
  *  receive_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,21 +48,31 @@ DESCR__S_M3
  */
 DESCR__E_M3
 
-#include <stdio.h>
-#include <string.h>                   /* memcpy()                        */
+#include <stdio.h>                    /* snprintf()                      */
+#include <string.h>                   /* strcpy(), strerror()            */
 #include <stdarg.h>                   /* va_start(), va_end()            */
 #include <time.h>                     /* time(), localtime()             */
 #include <sys/time.h>                 /* struct tm                       */
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include <sys/stat.h>                 /* fstat()                         */
+#include <fcntl.h>                    /* open(), close()                 */
 #include <unistd.h>                   /* write()                         */
+#include <sys/mman.h>                 /* mmap(), munmap()                */
 #include <errno.h>
 #include "fddefs.h"
 
-
 /* Global variables. */
-extern char *p_work_dir;
+int                        fra_fd,
+                           fra_id,
+                           no_of_dirs;
+off_t                      fra_size;
+struct fileretrieve_status *fra;
+
+/* External global variables. */
+extern char                *p_work_dir;
+
+/* Local function prototypes. */
+static void                get_dir_alias(unsigned, char *);
 
 
 /*########################### receive_log() #############################*/
@@ -228,6 +238,162 @@ receive_log(char         *sign,
                  "close() error : %s", strerror(errno));
    }
    errno = tmp_errno;
+
+   return;
+}
+
+
+/*+++++++++++++++++++++++++++ get_dir_alias() +++++++++++++++++++++++++++*/
+static void
+get_dir_alias(unsigned int job_id, char *dir_alias)
+{
+   int          fd;
+   unsigned int dir_id = 0;
+   char         fullname[MAX_PATH_LENGTH];
+
+   dir_alias[0] = '\0';
+   (void)snprintf(fullname, MAX_PATH_LENGTH, "%s%s%s",
+                  p_work_dir, FIFO_DIR, JOB_ID_DATA_FILE);
+   if ((fd = open(fullname, O_RDONLY)) == -1)
+   {
+      system_log(WARN_SIGN, __FILE__, __LINE__,
+                 "Failed to open() `%s' : %s", fullname, strerror(errno));
+   }
+   else
+   {
+#ifdef HAVE_STATX
+      struct statx stat_buf;
+#else
+      struct stat  stat_buf;
+#endif
+
+#ifdef HAVE_STATX
+      if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                STATX_SIZE, &stat_buf) == -1)
+#else
+      if (fstat(fd, &stat_buf) == -1)
+#endif
+      {
+         system_log(WARN_SIGN, __FILE__, __LINE__,
+#ifdef HAVE_STATX
+                    "Failed to statx() `%s' : %s",
+#else
+                    "Failed to fstat() `%s' : %s",
+#endif
+                    fullname, strerror(errno));
+      }
+      else
+      {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_size > 0)
+#else
+         if (stat_buf.st_size > 0)
+#endif
+         {
+            char *ptr;
+
+            if ((ptr = mmap(NULL,
+#ifdef HAVE_STATX
+                            stat_buf.stx_size, PROT_READ,
+#else
+                            stat_buf.st_size, PROT_READ,
+#endif
+                            MAP_SHARED, fd, 0)) == (caddr_t) -1)
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Failed to mmap() to `%s' : %s",
+                          fullname, strerror(errno));
+            }
+            else
+            {
+               if (*(ptr + SIZEOF_INT + 1 + 1 + 1) != CURRENT_JID_VERSION)
+               {
+                  system_log(WARN_SIGN, __FILE__, __LINE__,
+                             "Incorrect JID version (data=%d current=%d)!",
+                             *(ptr + SIZEOF_INT + 1 + 1 + 1),
+                             CURRENT_JID_VERSION);
+               }
+               else
+               {
+                  int                i,
+                                     *no_of_job_ids;
+                  struct job_id_data *jd;
+
+                  no_of_job_ids = (int *)ptr;
+                  ptr += AFD_WORD_OFFSET;
+                  jd = (struct job_id_data *)ptr;
+
+                  for (i = 0; i < *no_of_job_ids; i++)
+                  {
+                     if (job_id == jd[i].job_id)
+                     {
+                        dir_id = jd[i].dir_id;
+                        break;
+                     }
+                  }
+                  ptr -= AFD_WORD_OFFSET;
+               }
+
+               /* Don't forget to unmap from job_id_data structure. */
+#ifdef HAVE_STATX
+               if (munmap(ptr, stat_buf.stx_size) == -1)
+#else
+               if (munmap(ptr, stat_buf.st_size) == -1)
+#endif
+               {
+                  system_log(WARN_SIGN, __FILE__, __LINE__,
+                             "munmap() error : %s", strerror(errno));
+               }
+            }
+         }
+         else
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       "File `%s' is empty! Terminating, don't know what to do :-(",
+                       fullname);
+         }
+      }
+      if (close(fd) == -1)
+      {
+         system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                    "Failed to close() `%s' : %s", fullname, strerror(errno));
+      }
+   }
+
+   if (dir_id != 0)
+   {
+      int attached = NO,
+          i;
+
+      if (fra_fd == -1)
+      {
+         if (fra_attach_passive() != SUCCESS)
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       "Failed to attach to FRA.");
+            return;
+         }
+         attached = YES;
+      }
+      else
+      {
+         (void)check_fra(YES);
+      }
+
+      for (i = 0; i < no_of_dirs; i++)
+      {
+         if (dir_id == fra[i].dir_id)
+         {
+            (void)strcpy(dir_alias, fra[i].dir_alias);
+            break;
+         }
+      }
+
+      if (attached == YES)
+      {
+         fra_detach();
+      }
+   }
 
    return;
 }
