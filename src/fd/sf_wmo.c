@@ -806,15 +806,15 @@ main(int argc, char *argv[])
                   if (stat_buf.st_size > *p_file_size_buffer)
 #endif
                   {
-                     char sign[LOG_SIGN_LENGTH];
+                     char *sign;
 
                      if (db.special_flag & SILENT_NOT_LOCKED_FILE)
                      {
-                        (void)memcpy(sign, DEBUG_SIGN, LOG_SIGN_LENGTH);
+                        sign = DEBUG_SIGN;
                      }
                      else
                      {
-                        (void)memcpy(sign, WARN_SIGN, LOG_SIGN_LENGTH);
+                        sign = WARN_SIGN;
                      }
 
 #ifdef HAVE_STATX
