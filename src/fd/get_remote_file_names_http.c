@@ -778,6 +778,7 @@ try_attach_again:
                             "Failed to open remote directory %s (%d).",
                             db.target_dir, status);
                   http_quit();
+                  exitflag = 0;
                   exit(TRANSFER_SUCCESS);
                }
                else
