@@ -1584,6 +1584,22 @@ retry_get:
                  }
               }
       }
+      else if ((reply == INCORRECT) && (errno == EPIPE))
+           {
+              /*
+               * This is an indication that the remote server has
+               * closed the connection, so lets try and reopen it.
+               */
+              if (hmr.debug > 0)
+              {
+                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_get", NULL,
+                           "command() returned INCORRECT and errno is EPIPE, retrying connection.");
+              }
+              if (check_connection() > INCORRECT)
+              {
+                 goto retry_get;
+              }
+           }
 
       if (((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) ||
            (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST)) &&

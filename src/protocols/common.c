@@ -121,11 +121,25 @@ command(int fd, char *fmt, ...)
 #endif
       if (write(fd, buf, length) != length)
       {
+         char *sign;
+
          if ((errno == ECONNRESET) || (errno == EBADF) || (errno == EPIPE))
          {
             timeout_flag = CON_RESET;
+            if (errno == EPIPE)
+            {
+               sign = INFO_SIGN;
+            }
+            else
+            {
+               sign = ERROR_SIGN;
+            }
          }
-         trans_log(ERROR_SIGN, __FILE__, __LINE__, "command", NULL,
+         else
+         {
+            sign = ERROR_SIGN;
+         }
+         trans_log(sign, __FILE__, __LINE__, "command", NULL,
                    _("write() error : %s"), strerror(errno));
          ptr = buf;
          do
@@ -636,14 +650,30 @@ ssl_write(SSL *ssl, const char *buf, size_t count)
                break;
 
             case SSL_ERROR_SYSCALL :
-               if ((errno == ECONNRESET) || (errno == EBADF) ||
-                   (errno == EPIPE))
                {
-                  timeout_flag = CON_RESET;
+                  char *sign;
+
+                  if ((errno == ECONNRESET) || (errno == EBADF) ||
+                      (errno == EPIPE))
+                  {
+                     timeout_flag = CON_RESET;
+                     if (errno == EPIPE)
+                     {
+                        sign = INFO_SIGN;
+                     }
+                     else
+                     {
+                        sign = ERROR_SIGN;
+                     }
+                  }
+                  else
+                  {
+                     sign = ERROR_SIGN;
+                  }
+                  trans_log(sign, __FILE__, __LINE__, "ssl_write", NULL,
+                            _("SSL_write() error (%d) : %s"),
+                            ret, strerror(errno));
                }
-               trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssl_write", NULL,
-                         _("SSL_write() error (%d) : %s"),
-                         ret, strerror(errno));
                return(INCORRECT);
 
             default : /* Error */
