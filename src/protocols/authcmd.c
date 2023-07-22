@@ -857,9 +857,10 @@ aws_cmd(char                      *cmd,
 }
 
 
-/*                                    cmd     target_dir                       filename                        parameter                                                             host:                              x-amz-content-sha256:                                  host;x-amz-content-sha256;x-amz-date */
-#define CANONICAL_REQUEST_CMD_LENGTH (8 + 1 + (3 * MAX_RECIPIENT_LENGTH) + 1 + (3 * MAX_FILENAME_LENGTH) + 1 + MAX_AWS4_PARAMETER_LENGTH + MAX_INT_LENGTH + MAX_FILENAME_LENGTH + 1 + 5 + MAX_REAL_HOSTNAME_LENGTH + 1 + 21 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1 + 11 + 16 + 2 + 52 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1 + 1)
-#define STRING_2_SIGN_CMD_LENGTH     (16 + 1 + 16 + 1 + 8 + 1 + MAX_REAL_HOSTNAME_LENGTH + 1 + 15 + 1 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1)
+/*                                    cmd     /   target_dir_encoded               file_name_encoded               parameter                       host:  p_hmr->hostname                x-amz-content-sha256:  SHA256_EMPTY_PAYLOAD                              x-amz-date:  date_long   host;x-amz-content-sha256;x-amz-date                 SHA256_EMPTY_PAYLOAD */
+#define CANONICAL_REQUEST_CMD_LENGTH (8 + 1 + 1 + (3 * MAX_RECIPIENT_LENGTH) + 1 + (3 * MAX_FILENAME_LENGTH) + 1 + MAX_AWS4_PARAMETER_LENGTH + 1 + 5 +    MAX_REAL_HOSTNAME_LENGTH + 1 + 21                   + SHA256_EMPTY_PAYLOAD_LENGTH + 1                 + 11         + 16 + 2 +    36 + 1 +                                             SHA256_EMPTY_PAYLOAD_LENGTH + 1)
+/*                                    AWS4-HMAC-SHA256  date_long  date_short /   p_hmr->region              /   p_hmr->service /   aws4_request canonical_request_hash_hex */
+#define STRING_2_SIGN_CMD_LENGTH     (16 + 1 +          16 + 1 +   8 +        1 + MAX_REAL_HOSTNAME_LENGTH + 1 + 2 +            1 + 12 + 1 +     SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1)
 /*++++++++++++++++++++++ aws4_cmd_authentication() ++++++++++++++++++++++*/
 static int
 aws4_cmd_authentication(char                      *cmd,
@@ -1177,6 +1178,8 @@ aws_cmd_no_sign_request(struct http_message_reply *p_hmr)
 }
 
 
+/*                                            /   target_dir_encoded               file_name_encoded               content-length:                 host:  p_hmr->hostname                x-amz-content-sha256:  file_content_hash_hex                             x-amz-date:  date_long   content-length;host;x-amz-content-sha256;x-amz-date  file_content_hash_hex */
+#define CANONICAL_REQUEST_PUT_LENGTH (4 + 1 + 1 + (3 * MAX_RECIPIENT_LENGTH) + 1 + (3 * MAX_FILENAME_LENGTH) + 2 + 15 + MAX_OFF_T_LENGTH + 1     + 5    + MAX_REAL_HOSTNAME_LENGTH + 1 + 21                   + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1 + 11         + 16 + 2 +    51 + 1 +                                             SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1)
 /*##################### aws4_put_authentication() #######################*/
 int
 aws4_put_authentication(char                      *file_name,
@@ -1237,20 +1240,12 @@ aws4_put_authentication(char                      *file_name,
    {
       int           key_len,
                     string_2_sign_length;
-      char          canonical_request[4 + 1 +                     /* PUT */
-                                      (3 * MAX_RECIPIENT_LENGTH) + 1 +  /* target_dir */
-                                      (3 * MAX_FILENAME_LENGTH) + 2 +   /* file_name */
-                                      15 + MAX_OFF_T_LENGTH + 1 + /* content-length: */
-                                      5 + MAX_REAL_HOSTNAME_LENGTH + 1 +  /* host: */
-                                      21 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1 + /* x-amz-content-sha256: */
-                                      11 + 16 + 2 + 52 +          /* content-length;host;x-amz-content-sha256;x-amz-date */
-                                      SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + /* SHA256 sum */
-                                      1],                         /* \0 */
+      char          canonical_request[CANONICAL_REQUEST_PUT_LENGTH],
                     canonical_request_hash_hex[SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1],
                     date_short[9],
                     file_name_encoded[(3 * MAX_FILENAME_LENGTH)],
                     key[4 + MAX_USER_NAME_LENGTH + 1],
-                    string_2_sign[16 + 1 + 16 + 1 + 8 + 1 + MAX_REAL_HOSTNAME_LENGTH + 1 + 15 + 1 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1],
+                    string_2_sign[STRING_2_SIGN_CMD_LENGTH],
                     target_dir_encoded[(3 * MAX_RECIPIENT_LENGTH)];
       unsigned char result[SHA256_DIGEST_LENGTH];
       const EVP_MD  *sha256evp = EVP_sha256();
@@ -1259,8 +1254,7 @@ aws4_put_authentication(char                      *file_name,
       date_short[8] = '\0';
       url_path_encode(target_dir, target_dir_encoded);
       url_path_encode(file_name, file_name_encoded);
-      ret = snprintf(canonical_request,
-                     4 + 1 + (3 * MAX_RECIPIENT_LENGTH) + 1 + (3 * MAX_FILENAME_LENGTH) + 2 + 15 + MAX_OFF_T_LENGTH + 1 + 5 + MAX_REAL_HOSTNAME_LENGTH + 1 + 21 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1 + 11 + 16 + 2 + 52 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1,
+      ret = snprintf(canonical_request, CANONICAL_REQUEST_PUT_LENGTH,
 # if SIZEOF_OFF_T == 4
                      "PUT\n%s%s%s\n\ncontent-length:%ld\nhost:%s\nx-amz-content-sha256:%s\nx-amz-date:%s\n\ncontent-length;host;x-amz-content-sha256;x-amz-date\n%s",
 # else
@@ -1271,6 +1265,19 @@ aws4_put_authentication(char                      *file_name,
                      (pri_off_t)file_size, p_hmr->hostname,
                      file_content_hash_hex, date_long, file_content_hash_hex);
 
+      if (ret >= CANONICAL_REQUEST_PUT_LENGTH)
+      {
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, "aws4_put_authentication", NULL,
+                   "snprintf() canonical_request output truncated (>=%d).",
+                   CANONICAL_REQUEST_PUT_LENGTH);
+         if (free_file_content_hash_hex == YES)
+         {
+            free(file_content_hash_hex);
+            file_content_hash_hex = NULL;
+         }
+         return(INCORRECT);
+      }
+
 #ifdef WITH_TRACE
        trace_log(NULL, 0, C_TRACE, "------------ canonical_request ------------", 43, NULL);
        trace_log(NULL, 0, CRLF_C_TRACE, canonical_request, strlen(canonical_request), NULL);
@@ -1278,12 +1285,23 @@ aws4_put_authentication(char                      *file_name,
 #endif
       (void)str2hash(AFD_SHA256, canonical_request, ret,
                      canonical_request_hash_hex);
-      string_2_sign_length = snprintf(string_2_sign,
-                                      16 + 1 + 16 + 1 + 8 + 1 + MAX_REAL_HOSTNAME_LENGTH + 1 + 15 + 1 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1,
+      string_2_sign_length = snprintf(string_2_sign, STRING_2_SIGN_CMD_LENGTH,
                                       "AWS4-HMAC-SHA256\n%s\n%s/%s/%s/aws4_request\n%s",
                                       date_long, date_short, p_hmr->region,
                                       p_hmr->service,
                                       canonical_request_hash_hex);
+      if (string_2_sign_length >= STRING_2_SIGN_CMD_LENGTH)
+      {
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, "aws4_put_authentication", NULL,
+                   "snprintf() string_2_sign output truncated (>=%d).",
+                   STRING_2_SIGN_CMD_LENGTH);
+         if (free_file_content_hash_hex == YES)
+         {
+            free(file_content_hash_hex);
+            file_content_hash_hex = NULL;
+         }
+         return(INCORRECT);
+      }
 #ifdef WITH_TRACE
        trace_log(NULL, 0, C_TRACE, "-------------- string_2_sign --------------", 43, NULL);
        trace_log(NULL, 0, CRLF_C_TRACE, string_2_sign, string_2_sign_length, NULL);

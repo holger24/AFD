@@ -55,6 +55,7 @@
 #define HTTP_PROXY_NAME             "(none)"
 #define DEFAULT_REGION_STR          "eu-central-1"
 #define SHA256_EMPTY_PAYLOAD        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+#define SHA256_EMPTY_PAYLOAD_LENGTH (sizeof(SHA256_EMPTY_PAYLOAD) - 1)
 
 /* Different options that the remote HTTP server overs. */
 #define HTTP_OPTION_GET             1
