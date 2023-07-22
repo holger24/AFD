@@ -767,23 +767,39 @@ try_attach_again:
                                     &content_length, 0)) != SUCCESS) &&
                 (status != CHUNKED))
             {
-#ifdef RESET_LS_DATA_ON_ERROR
-               if (!((timeout_flag == ON) || (timeout_flag == CON_RESET) ||
-                     (timeout_flag == CON_REFUSED)))
+               /*
+                * If target_dir is one with date, do not show this
+                * as an error if the directory does not exist. User
+                * might want to scan as early as possible.
+                */
+               if ((db.special_flag & PATH_MAY_CHANGE) && (status == 404))
                {
-                  if (reset_ls_data() != SUCCESS)
-                  {
-                     http_quit();
-                     exit(INCORRECT);
-                  }
+                  trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                            "Failed to open remote directory %s (%d).",
+                            db.target_dir, status);
+                  http_quit();
+                  exit(TRANSFER_SUCCESS);
                }
+               else
+               {
+#ifdef RESET_LS_DATA_ON_ERROR
+                  if (!((timeout_flag == ON) || (timeout_flag == CON_RESET) ||
+                        (timeout_flag == CON_REFUSED)))
+                  {
+                     if (reset_ls_data() != SUCCESS)
+                     {
+                        http_quit();
+                        exit(INCORRECT);
+                     }
+                  }
 #endif
-               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
-                         (status == INCORRECT) ? NULL : msg_str,
-                         "Failed to open remote directory %s (%d).",
-                         db.target_dir, status);
-               http_quit();
-               exit(eval_timeout(OPEN_REMOTE_ERROR));
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
+                            (status == INCORRECT) ? NULL : msg_str,
+                            "Failed to open remote directory %s (%d).",
+                            db.target_dir, status);
+                  http_quit();
+                  exit(eval_timeout(OPEN_REMOTE_ERROR));
+               }
             }
             if (fsa->debug > NORMAL_MODE)
             {
