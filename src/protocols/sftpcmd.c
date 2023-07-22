@@ -1189,7 +1189,7 @@ sftp_pwd(void)
                }
                else
                {
-                  (void)strcpy(msg_str, scd.cwd);
+                  (void)my_strncpy(msg_str, scd.cwd, MAX_RET_MSG_LENGTH);
                }
             }
             else
@@ -7009,7 +7009,7 @@ error_2_str(char *msg)
       case SSH_FX_NO_MATCHING_BYTE_RANGE_LOCK : /* 31 */
          return(_("SSH_FX_NO_MATCHING_BYTE_RANGE_LOCK: Requested operation could not be completed, because byte range lock has not been granted. (31)"));
       default                                 : /* ?? */
-         (void)snprintf(msg_str, MAX_PATH_LENGTH,
+         (void)snprintf(msg_str, MAX_RET_MSG_LENGTH,
                         _("Unknown error code. (%u)"), error_code);
          return(msg_str);
    }
