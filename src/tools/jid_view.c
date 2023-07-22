@@ -1,6 +1,6 @@
 /*
  *  jid_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -134,7 +134,9 @@ main(int argc, char *argv[])
    struct job_id_data     *jd;
    struct dir_name_buf    *dnb = NULL;
    struct dir_config_list *dcl = NULL;
+#ifdef WITH_AFD_MON
    struct afd_dir_list    *adl = NULL;
+#endif
    struct dir_options     d_o;
 
    if ((get_arg(&argc, argv, "-?", NULL, 0) == SUCCESS) ||
