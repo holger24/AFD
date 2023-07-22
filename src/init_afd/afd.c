@@ -181,7 +181,9 @@ main(int argc, char *argv[])
                 ret,
                 startup_perm,
                 start_up,
+#ifdef WITH_SYSTEMD
                 stop_all = NO,
+#endif
                 shutdown_perm,
                 user_offset;
    long         default_heartbeat_timeout = DEFAULT_HEARTBEAT_TIMEOUT;
@@ -489,11 +491,13 @@ main(int argc, char *argv[])
                                   user);
                     exit(INCORRECT);
                  }
+#ifdef WITH_SYSTEMD
                  if ((argc == 3) &&
                      (my_strcmp(argv[2], "--all") == 0))
                  {
                     stop_all = YES;
                  }
+#endif
                  start_up = SHUTDOWN_ONLY;
               }
          else if (my_strcmp(argv[1], "-S") == 0) /* Silent AFD shutdown. */
@@ -505,11 +509,13 @@ main(int argc, char *argv[])
                                   user);
                     exit(INCORRECT);
                  }
+#ifdef WITH_SYSTEMD
                  if ((argc == 3) &&
                      (my_strcmp(argv[2], "--all") == 0))
                  {
                     stop_all = YES;
                  }
+#endif
                  start_up = SILENT_SHUTDOWN_ONLY;
               }
          else if (my_strcmp(argv[1], "-r") == 0) /* Removes blocking file. */
