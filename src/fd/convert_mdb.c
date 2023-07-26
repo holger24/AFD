@@ -65,12 +65,11 @@ DESCR__E_M1
 #include "fddefs.h"
 
 /* Version 0 */
-#define MAX_HOSTNAME_LENGTH_0      8
 #define AFD_WORD_OFFSET_0          (SIZEOF_INT + 4 + SIZEOF_INT + 4)
 
 struct msg_cache_buf_0
        {
-          char         host_name[MAX_HOSTNAME_LENGTH_0 + 1];
+          char         host_name[MAX_HOSTNAME_LENGTH + 1];
           time_t       msg_time;
           time_t       last_transfer_time;
           int          fsa_pos;
@@ -82,12 +81,11 @@ struct msg_cache_buf_0
        };
 
 /* Version 1 */
-#define MAX_HOSTNAME_LENGTH_1      8
 #define AFD_WORD_OFFSET_1          (SIZEOF_INT + 4 + SIZEOF_INT + 4)
 
 struct msg_cache_buf_1
        {
-          char         host_name[MAX_HOSTNAME_LENGTH_1 + 1];
+          char         host_name[MAX_HOSTNAME_LENGTH + 1];
           time_t       msg_time;
           time_t       last_transfer_time;
           int          fsa_pos;
