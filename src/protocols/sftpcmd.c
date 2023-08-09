@@ -5208,6 +5208,7 @@ read_msg(char *block, int blocksize, int line)
                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
                            _("Pipe has been closed! [%d]"), line);
                  (void)strcpy(msg_str, "Connection closed");
+                 timeout_flag = NEITHER;
                  return(INCORRECT);
               }
               else
