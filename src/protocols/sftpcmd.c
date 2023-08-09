@@ -4561,7 +4561,7 @@ sftp_quit(void)
 
       errno = 0;
       loop_counter = 0;
-      if (timeout_flag == OFF)
+      if ((timeout_flag == OFF) && (scd.pipe_broken == NO))
       {
          max_waitpid_loops = (transfer_timeout / 2) * 10;
       }
