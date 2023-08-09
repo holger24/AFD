@@ -4887,7 +4887,8 @@ get_write_reply(unsigned int id, int line)
                                (scd.oss_limits.max_open_handles > 0) &&
                                (scd.oss_limits.max_open_handles < MAX_SFTP_REPLY_BUFFER))
                            {
-                              trans_log(ERROR_SIGN, __FILE__, __LINE__, "get_reply", NULL,
+                              trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                        "get_write_reply", NULL,
                                         _("Only able to queue %d replies, remote server sets limit to %u. [%d]"),
                                         scd.stored_replies,
                                         (unsigned int)scd.oss_limits.max_open_handles,
@@ -4895,7 +4896,8 @@ get_write_reply(unsigned int id, int line)
                            }
                            else
                            {
-                              trans_log(ERROR_SIGN, __FILE__, __LINE__, "get_reply", NULL,
+                              trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                        "get_write_reply", NULL,
                                         _("Only able to queue %d replies, try increase MAX_SFTP_REPLY_BUFFER and recompile. [%d]"),
                                         MAX_SFTP_REPLY_BUFFER, line);
                            }
