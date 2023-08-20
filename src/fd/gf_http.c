@@ -1126,7 +1126,7 @@ main(int argc, char *argv[])
                                     if ((status = http_read(buffer, blocksize)) <= 0)
                                     {
                                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
-                                                 (status > 0) ? NULL : msg_str,
+                                                 (status > 0) ? msg_str : NULL,
                                                  "Failed to read from remote file %s in %s (%d)",
                                                  tmp_rl.file_name,
                                                  fra->dir_alias, status);
@@ -1272,7 +1272,7 @@ main(int argc, char *argv[])
                                     if ((status = http_read(buffer, hunk_size)) <= 0)
                                     {
                                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
-                                                 (status > 0) ? NULL : msg_str,
+                                                 (status > 0) ? msg_str : NULL,
                                                  "Failed to read from remote file %s in %s (%d)",
                                                  tmp_rl.file_name,
                                                  fra->dir_alias, status);
