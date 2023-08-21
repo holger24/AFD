@@ -234,8 +234,7 @@ static void                     eval_version_extensions(char *, unsigned int),
                                 set_xfer_str(char *, char *, int),
                                 set_xfer_uint(char *, unsigned int),
                                 set_xfer_uint64(char *, u_long_64),
-                                sig_handler(int),
-                                update_pending_writes(int);
+                                sig_handler(int);
 #ifdef WITH_TRACE
 static void                     show_sftp_cmd(unsigned int, int, int),
                                 show_trace_handle(char *, unsigned int,
@@ -3688,7 +3687,7 @@ sftp_flush(void)
                   get_msg_str(&msg[9]);
                   trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_flush", NULL,
                             "%s", error_2_str(&msg[5]));
-                  update_pending_writes(i);
+                  scd.pending_write_counter = 0;
 
                   return(INCORRECT);
                }
@@ -3700,7 +3699,7 @@ sftp_flush(void)
                          SSH_FXP_STATUS, (int)msg[0],
                          response_2_str((unsigned char)msg[0]));
                msg_str[0] = '\0';
-               update_pending_writes(i);
+               scd.pending_write_counter = 0;
 
                return(INCORRECT);
             }
@@ -3721,7 +3720,7 @@ sftp_flush(void)
                               status, i);
                  }
 #endif
-                 update_pending_writes(i);
+                 scd.pending_write_counter = 0;
 
                  return(INCORRECT);
               }
@@ -3730,27 +3729,6 @@ sftp_flush(void)
    }
 
    return(SUCCESS);
-}
-
-
-/*+++++++++++++++++++++++ update_pending_writes() +++++++++++++++++++++++*/
-static void
-update_pending_writes(int pos)
-{
-   if (pos > 0)
-   {
-      if (pos != (scd.pending_write_counter - 1))
-      {
-         size_t move_size = (scd.pending_write_counter - 1 - pos) *
-                            sizeof(unsigned int);
-
-         (void)memmove(&scd.pending_write_id[pos],
-                       &scd.pending_write_id[pos + 1], move_size);
-      }
-      scd.pending_write_counter -= pos;
-   }
-
-   return;
 }
 
 
