@@ -1020,7 +1020,7 @@ init_dir_check(int    argc,
 
                if ((iwl[j].wd = inotify_add_watch(inotify_fd, de[i].dir, mask)) == -1)
                {
-                  system_log(FATAL_SIGN, __FILE__, __LINE__,
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
                              "inotify_add_watch() error for `%s' : %s",
                              de[i].dir, strerror(errno));
                }
