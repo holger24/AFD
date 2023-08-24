@@ -1297,8 +1297,9 @@ main(int argc, char *argv[])
 
                            do
                            {
-                              if ((status = sftp_read(buffer,
-                                                      blocksize - buffer_offset)) == INCORRECT)
+                              if (((status = sftp_read(buffer,
+                                                       blocksize - buffer_offset)) == INCORRECT) ||
+                                  (status == EPIPE))
                               {
                                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                            "Failed to read from remote file `%s' in %s",

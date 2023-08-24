@@ -441,7 +441,9 @@ main(int argc, char *argv[])
                bytes_done = 0;
                do
                {
-                  if ((status = sftp_read(buffer, db.blocksize)) == INCORRECT)
+                  if (((status = sftp_read(buffer,
+                                           db.blocksize)) == INCORRECT) ||
+                      (status == EPIPE))
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                _("Failed to read from remote file %s (%d)"),
@@ -449,6 +451,10 @@ main(int argc, char *argv[])
                      sftp_quit();
                      exit(eval_timeout(READ_REMOTE_ERROR));
                   }
+                  else if (status == SFTP_EOF)
+                       {
+                          status = 0;
+                       }
                   else if (status > 0)
                        {
                           if (write(fd, buffer, status) != status)
