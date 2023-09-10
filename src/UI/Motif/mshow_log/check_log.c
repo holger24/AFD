@@ -97,7 +97,7 @@ static int            first_time = YES;
 static void           display_data(Widget, int *, int *, int *,
                                    unsigned int *, char *);
 
-#define MAX_LINES_IN_ONE_GO 100
+#define MAX_LINES_IN_ONE_GO 2000
 
 
 /*############################# check_log() #############################*/

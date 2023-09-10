@@ -1,6 +1,6 @@
 /*
  *  log_callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -331,9 +331,7 @@ update_button(Widget w, XtPointer client_data, XtPointer call_data)
 
 #ifndef _WITH_SEARCH_FUNCTION
    /* Get slider position so we can determine the current log number. */
-   XtVaGetValues(selectscroll,
-                 XmNvalue, &current_log_number,
-                 NULL);
+   XtVaGetValues(selectscroll, XmNvalue, &current_log_number, NULL);
 #endif
 
    if (current_log_number != -1)
@@ -416,6 +414,7 @@ update_button(Widget w, XtPointer client_data, XtPointer call_data)
    line_counter = 0;
    wpr_position = 0;
    total_length = 0;
+   XmTextSetInsertionPosition(log_output, 0);
    XmTextSetString(log_output, NULL);  /* Clears all old entries. */
    init_text();
 
@@ -470,9 +469,7 @@ slider_moved(Widget    w,
 
    (void)sprintf(str_line, "%d", cbs->value);
    text = XmStringCreateLocalized(str_line);
-   XtVaSetValues(selectlog,
-                 XmNlabelString, text,
-                 NULL);
+   XtVaSetValues(selectlog, XmNlabelString, text, NULL);
    XmStringFree(text);
 
    return;
