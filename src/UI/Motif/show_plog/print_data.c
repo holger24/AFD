@@ -1,6 +1,6 @@
 /*
  *  print_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2016 - 2020  Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2016 - 2023  Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ DESCR__S_M3
  **
  ** HISTORY
  **   14.09.2016 H.Kiehl Created
+ **   07.10.2023 H.Kiehl search_production_cmd is an array.
  **
  */
 DESCR__E_M3
@@ -70,7 +71,7 @@ extern char         file_name[],
                     **search_recipient,
                     search_new_file_size_str[],
                     search_orig_file_size_str[],
-                    search_production_cmd[],
+                    **search_production_cmd,
                     search_prod_time_str[],
                     search_return_code_str[],
                     summary_str[],
@@ -82,6 +83,7 @@ extern int          items_selected,
                     no_of_search_jobids,
                     no_of_search_new_file_names,
                     no_of_search_orig_file_names,
+                    no_of_search_production_cmd,
                     ratio_mode,
                     sum_line_length;
 extern unsigned int *search_dirid,
@@ -506,8 +508,47 @@ write_header(int fd, char *sum_sep_line)
       goto write_data;
    }
 
-   length += snprintf(&buffer[length], 1024 - length,
-                      "\tCommand       : %s\n", search_production_cmd);
+   if (no_of_search_production_cmd > 0)
+   {
+      int i;
+
+      length += snprintf(&buffer[length], 1024 - length, "\tCommand       : %s",
+                        search_production_cmd[0]);
+      if (length >= 1024)
+      {
+         length = 1024;
+         goto write_data;
+      }
+      for (i = 1; i < no_of_search_production_cmd; i++)
+      {
+         length += snprintf(&buffer[length], 1024 - length,
+                            ", %s", search_production_cmd[i]);
+         if (length >= 1024)
+         {
+            length = 1024;
+            goto write_data;
+         }
+      }
+      if (length == 1024)
+      {
+         buffer[1023] = '\n';
+      }
+      else
+      {
+         buffer[length] = '\n';
+         length++;
+      }
+   }
+   else
+   {
+      length += snprintf(&buffer[length], 1024 - length, "\tCommand       :\n");
+   }
+   if (length >= 1024)
+   {
+      length = 1024;
+      goto write_data;
+   }
+
    if (no_of_search_jobids > 0)
    {
       int i;
