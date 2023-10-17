@@ -103,7 +103,7 @@ DESCR__E_M3
 # |   |   |   |  |  |  |  |  |  |   |  |  |  |  |   +-----> Transfer rate limit\n\
 # |   |   |   |  |  |  |  |  |  |   |  |  |  |  +---------> Protocol options\n\
 # |   |   |   |  |  |  |  |  |  |   |  |  |  +------------> Host status\n\
-# |   |   |   |  |  |  |  |  |  |   |  |  +---------------> Number of no bursts\n\
+# |   |   |   |  |  |  |  |  |  |   |  |  +---------------> Number of no bursts (not used)\n\
 # |   |   |   |  |  |  |  |  |  |   |  +------------------> Transfer timeout\n\
 # |   |   |   |  |  |  |  |  |  |   +---------------------> File size offset\n\
 # |   |   |   |  |  |  |  |  |  +-------------------------> Successful retries\n\
@@ -146,7 +146,7 @@ DESCR__E_M3
 # |   |   |   |  |  |  |  |  |  |   |  |  |  |  |   +-----> Transfer rate limit\n\
 # |   |   |   |  |  |  |  |  |  |   |  |  |  |  +---------> Protocol options\n\
 # |   |   |   |  |  |  |  |  |  |   |  |  |  +------------> Host status\n\
-# |   |   |   |  |  |  |  |  |  |   |  |  +---------------> Number of no bursts\n\
+# |   |   |   |  |  |  |  |  |  |   |  |  +---------------> Number of no bursts (not used)\n\
 # |   |   |   |  |  |  |  |  |  |   |  +------------------> Transfer timeout\n\
 # |   |   |   |  |  |  |  |  |  |   +---------------------> File size offset\n\
 # |   |   |   |  |  |  |  |  |  +-------------------------> Successful retries\n\
@@ -230,12 +230,7 @@ DESCR__E_M3
 # Transfer timeout       - The time how long the AFD should wait for a reply\n\
 #                          from the remote site.\n\
 #                          DEFAULT: 120\n\
-# Number of no bursts    - This option applies only to FTP transfers. A burst\n\
-#                          is when a new job is appended to a transferring\n\
-#                          job. It can happen that jobs get constantly appended\n\
-#                          while other jobs with a higher priority have to wait.\n\
-#                          Therefor it is possible to state the number of\n\
-#                          connections that may NOT burst.\n\
+# Number of no bursts    - This option is not used.\n\
 #                          DEFAULT: 0\n\
 # Host status            - This indicates the status of the host, currently\n\
 #                          only bits number 1, 2, 3, 6 and 7 can be set. The\n\

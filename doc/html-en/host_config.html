@@ -28,7 +28,7 @@ host. See below for a description of each entry.
   |   |   |   |  |  |  |  |  |  |   |  |  |  |  |   +-----&gt; Transfer rate limit
   |   |   |   |  |  |  |  |  |  |   |  |  |  |  +---------&gt; Protocol options
   |   |   |   |  |  |  |  |  |  |   |  |  |  +------------&gt; Host status
-  |   |   |   |  |  |  |  |  |  |   |  |  +---------------&gt; Number of no bursts
+  |   |   |   |  |  |  |  |  |  |   |  |  +---------------&gt; Number of no bursts (not used)
   |   |   |   |  |  |  |  |  |  |   |  +------------------&gt; Transfer timeout
   |   |   |   |  |  |  |  |  |  |   +---------------------&gt; File size offset
   |   |   |   |  |  |  |  |  |  +-------------------------&gt; Successful retries
@@ -146,11 +146,7 @@ host. See below for a description of each entry.
 </tr>
 <tr>
    <th valign=top><a name="number_of_no_burst">Number of no bursts</a></th>
-   <td>This option applies only to FTP transfers. A burst is when a new job
-       is appended to a transferring job. It can happen that jobs get
-       constantly appended while other jobs with a higher priority have
-       to wait. Therefore it is possible to state the number of connections
-       that may NOT burst.</td>
+   <td>This option is no longer used. </td>
 </tr>
 <tr>
    <th valign=top><a name="host_status">Host status</a></th>
@@ -503,7 +499,7 @@ host. See below for a description of each entry.
    <td width="90%"><small><address>
    Copyright &copy; 1997 - 2023 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 19.02.2023
+   Last updated: 17.10.2023
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
