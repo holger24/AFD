@@ -1920,11 +1920,19 @@ http_put(char *path,
    hmr.date = -1;
    if (first_file == NO)
    {
-      if (check_connection() == CONNECTION_REOPENED)
+      int reply;
+
+      if ((reply = check_connection()) == CONNECTION_REOPENED)
       {
          trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_put", NULL,
                    _("Reconnected."));
       }
+      else if (reply == INCORRECT)
+           {
+              trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_put", NULL,
+                        _("Failed to reconnect."));
+              return(INCORRECT);
+           }
    }
 #ifdef WITH_SSL
    if (hmr.auth_type == AUTH_AWS4_HMAC_SHA256)
@@ -3125,12 +3133,18 @@ http_noop(char *path)
       char resource[8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + 1],
            tmp_path[MAX_RECIPIENT_LENGTH + 1];
 
-      if (check_connection() == CONNECTION_REOPENED)
+      if ((reply = check_connection()) == CONNECTION_REOPENED)
       {
          trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_noop", NULL,
                    _("Reconnected."));
          hmr.retries = 1;
       }
+      else if (reply == INCORRECT)
+           {
+              trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_noop", NULL,
+                        _("Failed to reconnect."));
+              return(INCORRECT);
+           }
 
       if (hmr.http_options_not_working & HTTP_OPTION_HEAD)
       {
