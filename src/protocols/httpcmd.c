@@ -1,6 +1,6 @@
 /*
  *  httpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -300,6 +300,22 @@ http_connect(char          *hostname,
          hmr.http_options_not_working = 0;
          hmr.bytes_buffered = 0;
          hmr.bytes_read = 0;
+         if (sndbuf_size > 0)
+         {
+            hmr.sndbuf_size = sndbuf_size;
+         }
+         else
+         {
+            hmr.sndbuf_size = 0;
+         }
+         if (rcvbuf_size > 0)
+         {
+            hmr.rcvbuf_size = rcvbuf_size;
+         }
+         else
+         {
+            hmr.rcvbuf_size = 0;
+         }
          hmr.filename = NULL;
 #ifdef _WITH_EXTRA_CHECK
          hmr.http_etag[0] = '\0';
