@@ -8,7 +8,35 @@
 <hr size=3 noshade>
 <p>
 To control and monitor the AFD source directories there is an X11 interface,
-with the following appearance:
+which can be called via dir_ctrl. It can take the following parameters:
+<pre>     
+    -w &lt;work_dir&gt;
+    -p &lt;user profile&gt;
+    -u[ &lt;fake user&gt;]
+    -no_input
+    -f &lt;numeric font name&gt;
+    -t &lt;title&gt;
+    -bs
+</pre>
+It needs to know in which directory AFD is running. Usually it gets
+this information via AFD_WORK_DIR environment. If not set you can set
+this via -w &lt;work dir&gt;. When there more then one user monitoring
+this AFD it can be helpful if each user can have its own profile. This
+can be done with -p &lt;user profile&gt;. The profile name can be any
+string, but it is a good if it tells which user it is because any changes
+will be logged under this name. Good example could be donald@work or
+donald@home. This way Donald can keep different font settings for his
+home and work computer and one can see from where he committed any changes.
+For the option -u[ &lt;fake user&gt;] please see documentation in
+<a href="afd_config.html#fake_user">AFD_CONFIG</a>. If you want a dialog
+without any controls you can start it with the -no_input parameter.
+The font size can be changed via -f &lt;numeric font name&gt;. The
+title can be set with -t &lt;title&gt;. Some X servers have a broken
+backing store implementation. By default dir_ctrl uses backing store.
+This can be turned off with the -bs option.
+</p>  
+<p>       
+The dir_ctrl dialog has the following appearance:
 </p>
 <center><img src="../images/dir_ctrl_labeled.gif" alt="[labeled picture of dir_ctrl dialog]"></center>
 <p>
@@ -191,7 +219,7 @@ see <a href="afd_users.html">afd.users</a> for more details.
       <td><b>Other options</b></td>
       <td><b>Other options</b> just has one option 'Force shift select'.
           Normally one can select a line by just pressing that line with
-          the left mouse button. This can however lead to accidantly
+          the left mouse button. This can however lead to accidentally
           pressing a line and one can force the user to use the shift
           button together with the left mouse button to select a line.</td>
       <td><img src="../images/force_shift_select.png" alt="[Force shift select]"></td>
@@ -216,7 +244,7 @@ connection area mean:
 <table border>
 <tr>
    <th>DIR</th>
-   <td>The source alias where the the files are to be fetched from.</td>
+   <td>The source alias where the files are to be fetched from.</td>
 </tr>
 <tr>
    <th>F</th>
@@ -435,9 +463,9 @@ change to black or grey respectively.
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 2006 - 2022 by H.Kiehl<br>
+   Copyright &copy; 2006 - 2023 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 18.06.2022
+   Last updated: 26.10.2023
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
