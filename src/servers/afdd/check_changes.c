@@ -1,6 +1,6 @@
 /*
  *  check_changes.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -138,6 +138,14 @@ retry_check:
    }
    else
    {
+      if (fsa == NULL)
+      {
+         if (fsa_attach_passive(NO, AFDD) != SUCCESS)
+         {
+            system_log(FATAL_SIGN, __FILE__, __LINE__, _("Failed to attach to FSA."));
+            exit(INCORRECT);
+         }
+      }
       if (host_config_counter != (int)*(unsigned char *)((char *)fsa - AFD_WORD_OFFSET + SIZEOF_INT))
       {
          FREE_RT_ARRAY(old_error_history);
