@@ -293,6 +293,7 @@ rpm:	dist
 	$(RPM) -ta $(PACKAGE)-$(VERSION).tar.bz2 </dev/null;
 
 dist-hook:
+	rm -f $(PACKAGE)-$(VERSION).tar.bz2 $(PACKAGE)-$(VERSION).tar.gz
 	cp afd.spec $(distdir)
 
 .PHONY: rpm
