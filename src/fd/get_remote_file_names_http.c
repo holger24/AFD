@@ -902,14 +902,14 @@ try_attach_again:
                do
                {
                   if ((status = http_chunk_read(&chunkbuffer,
-                                                &chunksize)) == INCORRECT)
+                                                &chunksize)) < 0)
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
                                (status == INCORRECT) ? NULL : msg_str,
                                "Failed to read from remote directory listing for %s",
                                db.target_dir);
-                     free(chunkbuffer);
                      http_quit();
+                     free(chunkbuffer);
                      exit(eval_timeout(READ_REMOTE_ERROR));
                   }
                   else if (status > 0)
@@ -921,8 +921,8 @@ try_attach_again:
                                 system_log(ERROR_SIGN, __FILE__, __LINE__,
                                            "Failed to malloc() %d bytes : %s",
                                            status, strerror(errno));
-                                free(chunkbuffer);
                                 http_quit();
+                                free(chunkbuffer);
                                 exit(ALLOC_ERROR);
                              }
                           }
@@ -959,11 +959,13 @@ try_attach_again:
                                 exit(ALLOC_ERROR);
                              }
                           }
-                          (void)memcpy(&listbuffer[bytes_buffered], chunkbuffer,
-                                       status);
+                          (void)memcpy(&listbuffer[bytes_buffered],
+                                       chunkbuffer, status);
                           bytes_buffered += status;
                        }
                } while (status != HTTP_LAST_CHUNK);
+
+               free(chunkbuffer);
 
                if ((listbuffer = realloc(listbuffer, bytes_buffered + 1)) == NULL)
                {
@@ -974,12 +976,9 @@ try_attach_again:
                              "Failed to realloc() %lld bytes : %s",
 #endif
                              (pri_off_t)(bytes_buffered + 1), strerror(errno));
-                  free(chunkbuffer);
                   http_quit();
                   exit(ALLOC_ERROR);
                }
-
-               free(chunkbuffer);
             }
 
             if (bytes_buffered > 0)

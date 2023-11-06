@@ -1401,7 +1401,7 @@ main(int argc, char *argv[])
                               do
                               {
                                  if ((status = http_chunk_read(&chunkbuffer,
-                                                               &chunksize)) == INCORRECT)
+                                                               &chunksize)) < 0)
                                  {
                                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
                                               (status == INCORRECT) ? NULL : msg_str,
