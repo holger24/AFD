@@ -2717,6 +2717,14 @@ http_read(char *block, int blocksize)
    {
       if (hmr.bytes_buffered >= blocksize)
       {
+#ifdef FUB_DEBUG
+         if (blocksize > MAX_RET_MSG_LENGTH)
+         {
+            trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_read", NULL,
+                      "Nooooo! Reading beyond buffer blocksize (%d) > MAX_RET_MSG_LENGTH (%d)",
+                      blocksize, MAX_RET_MSG_LENGTH);
+         }
+#endif
          memcpy(block, msg_str, blocksize);
          if (hmr.bytes_buffered > blocksize)
          {
@@ -2947,6 +2955,15 @@ http_chunk_read(char **chunk, int *chunksize)
             *chunksize = tmp_chunksize;
          }
          bytes_buffered -= (read_length + 1);
+#ifdef FUB_DEBUG
+         if ((read_length + 1 + bytes_buffered) > MAX_RET_MSG_LENGTH)
+         {
+            trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_chunk_read", NULL,
+                      "Nooooo! Reading beyond buffer (read_length + 1) (%d) + bytes_buffered (%d) > MAX_RET_MSG_LENGTH (%d)",
+                      (read_length + 1), bytes_buffered,
+                      MAX_RET_MSG_LENGTH);
+         }
+#endif
          if (tmp_chunksize > bytes_buffered)
          {
             (void)memcpy(*chunk, msg_str + read_length + 1, bytes_buffered);
