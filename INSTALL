@@ -1,4 +1,6 @@
 
+0.) If you do not have a configure file you can create it by running the
+    script ac-tools/bootstrap. This script needs autoconfig and automake.
 
 1.) Run   ./configure   to generate config.h and the various Makefiles.
     ./configure --help   gives a list of possible options with slightly
