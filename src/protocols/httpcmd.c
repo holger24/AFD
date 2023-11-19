@@ -3458,7 +3458,8 @@ init_authentication(char *method, char *path, char *filename)
 static int
 check_connection(void)
 {
-   int connection_closed;
+   int connection_closed,
+       status = SUCCESS;
 
    if (hmr.close == YES)
    {
@@ -3500,10 +3501,7 @@ check_connection(void)
    }
    if (connection_closed == YES)
    {
-      int status;
-#ifdef WITH_SSL
-       char *tmp_authorization = hmr.authorization;;
-#endif
+      char *tmp_authorization = hmr.authorization;
 
       if ((status = http_connect(hmr.hostname, hmr.http_proxy, hmr.port,
                                  hmr.user, hmr.passwd, hmr.auth_type,
@@ -3517,27 +3515,28 @@ check_connection(void)
       {
          if (hmr.http_proxy[0] == '\0')
          {
-            trans_log(ERROR_SIGN, __FILE__, __LINE__, "check_connection", msg_str,
+            trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                      "check_connection", msg_str,
                       _("HTTP reconnect to %s at port %d failed (%d)."),
                       hmr.hostname, hmr.port, status);
          }
          else
          {
-            trans_log(ERROR_SIGN, __FILE__, __LINE__, "check_connection", msg_str,
+            trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                      "check_connection", msg_str,
                       _("HTTP reconnect to HTTP proxy %s at port %d failed (%d)."),
                       hmr.http_proxy, hmr.port, status);
          }
-         return(INCORRECT);
+         status = INCORRECT;
       }
       else
       {
-         hmr.authorization = tmp_authorization;
-
-         return(CONNECTION_REOPENED);
+         status = CONNECTION_REOPENED;
       }
+      hmr.authorization = tmp_authorization;
    }
 
-   return(SUCCESS);
+   return(status);
 }
 
 
