@@ -853,36 +853,43 @@ try_attach_again:
                   {
                      read_length = content_length - bytes_buffered;
                   }
-                  if ((status = http_read(&listbuffer[bytes_buffered],
-                                          read_length)) == INCORRECT)
+                  if (read_length > 0)
                   {
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
-                               (status > 0) ? msg_str : NULL,
-                               "Failed to read from remote directory listing for %s (%d)",
-                               db.target_dir, status);
-                     free(listbuffer);
-                     http_quit();
-                     exit(eval_timeout(READ_REMOTE_ERROR));
-                  }
-                  else if (status > 0)
-                       {
-                          bytes_buffered += status;
-                          if (bytes_buffered == content_length)
+                     if ((status = http_read(&listbuffer[bytes_buffered],
+                                             read_length)) == INCORRECT)
+                     {
+                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
+                                  (status > 0) ? msg_str : NULL,
+                                  "Failed to read from remote directory listing for %s (%d)",
+                                  db.target_dir, status);
+                        free(listbuffer);
+                        http_quit();
+                        exit(eval_timeout(READ_REMOTE_ERROR));
+                     }
+                     else if (status > 0)
                           {
-                             status = 0;
-                          }
-                          else if (bytes_buffered > content_length)
-                               {
-                                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                             bytes_buffered += status;
+                             if (bytes_buffered == content_length)
+                             {
+                                status = 0;
+                             }
+                             else if (bytes_buffered > content_length)
+                                  {
+                                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
 #if SIZEOF_OFF_T == 4
-                                             "Maximum directory buffer length (%ld bytes) reached.",
+                                                "Maximum directory buffer length (%ld bytes) reached.",
 #else
-                                             "Maximum directory buffer length (%lld bytes) reached.",
+                                                "Maximum directory buffer length (%lld bytes) reached.",
 #endif
-                                             (pri_off_t)content_length);
-                                  status = 0;
-                               }
-                       }
+                                                (pri_off_t)content_length);
+                                     status = 0;
+                                  }
+                          }
+                  }
+                  else
+                  {
+                     status = 0;
+                  }
                } while (status != 0);
             }
             else /* status == CHUNKED */
