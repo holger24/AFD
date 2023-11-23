@@ -300,6 +300,10 @@ static void                add_to_proc_stat(unsigned int),
                            check_orphaned_procs(time_t),
                            check_pool_dir(time_t),
                            sig_alarm(int),
+#ifdef WITH_SYSTEMD
+                           sig_exit(int),
+                           terminate_subprocess(void),
+#endif
                            sig_handler(int);
 static pid_t               get_one_zombie(pid_t, time_t);
 static int                 get_process_pos(pid_t),
@@ -411,6 +415,9 @@ main(int argc, char *argv[])
 #endif
 
    if ((signal(SIGSEGV, sig_handler) == SIG_ERR) ||
+#ifdef WITH_SYSTEMD
+       (signal(SIGINT, sig_exit) == SIG_ERR) ||
+#endif
        (signal(SIGBUS, sig_handler) == SIG_ERR) ||
        (signal(SIGHUP, SIG_IGN) == SIG_ERR))
    {
@@ -3694,6 +3701,12 @@ check_fifo(int read_fd, int write_fd)
 #endif /* WITH_DIR_CHECK_RESTART */
 
             case STOP  :
+#ifdef WITH_SYSTEMD
+               terminate_subprocess();
+#endif
+               (void)fprintf(stderr,
+                             "%s terminated by fifo message STOP.\n",
+                             DIR_CHECK);
 #ifdef SHOW_EXEC_TIMES
                for (i = 0; i < no_fork_jobs; i++)
                {
@@ -3979,6 +3992,59 @@ check_fifo(int read_fd, int write_fd)
 }
 
 
+#ifdef WITH_SYSTEMD
+/*+++++++++++++++++++++++ terminate_subprocess() ++++++++++++++++++++++++*/
+static void
+terminate_subprocess(void)
+{
+   if (*no_of_process > 0)
+   {
+      int i;
+
+      system_log(INFO_SIGN, NULL, 0,
+                 "%s got termination message STOP, waiting for %d process to terminate.",
+                 DIR_CHECK, *no_of_process);
+
+      for (i = 0; i < (MAX_SHUTDOWN_TIME - DIR_CHECK_CUT_OFF_OFFSET); i++)
+      {
+         while (get_one_zombie(-1, time(NULL)) > 0)
+         {
+            /* Do nothing. */;
+         }
+         if (*no_of_process > 0)
+         {
+            my_usleep(100000L);
+         }
+      }
+      if (*no_of_process > 0)
+      {
+         system_log(WARN_SIGN, NULL, 0,
+                    "There are still %d process left executing. Data can be lost.",
+                    *no_of_process);
+
+         for (i = 0; i < *no_of_process; i++)
+         {
+            system_log(DEBUG_SIGN, NULL, 0,
+# if SIZEOF_PID_T == 4
+                       "Lost process %d: pid=%d jid= #%x",
+# else
+                       "Lost process %d: pid=%lld jid= #%x",
+# endif
+                       i, (pri_pid_t)dcpl[i].pid, dcpl[i].job_id);
+         }
+
+         /*
+          * The left over process will be killed by systemd
+          * (KillMode=control-group).
+          */
+      }
+   }
+
+   return;
+}
+#endif /* WITH_SYSTEMD */
+
+
 /*++++++++++++++++++++++++++++ sig_handler() ++++++++++++++++++++++++++++*/
 static void
 sig_handler(int signo)
@@ -4031,3 +4097,23 @@ sig_alarm(int signo)
 {
    siglongjmp(env_alrm, 1);
 }
+
+
+#ifdef WITH_SYSTEMD
+/*++++++++++++++++++++++++++++++ sig_exit() +++++++++++++++++++++++++++++*/
+static void
+sig_exit(int signo)
+{
+   terminate_subprocess();
+
+   (void)fprintf(stderr,
+#if SIZEOF_PID_T == 4
+                 "%s terminated by signal %d (%d)\n",
+#else
+                 "%s terminated by signal %d (%lld)\n",
+#endif
+                 DIR_CHECK, signo, (pri_pid_t)getpid());
+
+   exit(SUCCESS);
+}
+#endif

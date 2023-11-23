@@ -1502,6 +1502,9 @@ typedef unsigned long       u_long_64;
                                             /* waits for its children to    */
                                             /* return before they get       */
                                             /* eliminated.                  */
+#define DIR_CHECK_CUT_OFF_OFFSET     50     /* Ths time is subtracted from  */
+                                            /* MAX_SHUTDOWN_TIME. So this   */
+                                            /* value may not be higher.     */
 #define MAX_RENAME_RULE_FILES        20     /* Maximum number of rename rule*/
                                             /* files that may be configured */
                                             /* in AFD_CONFIG.               */
