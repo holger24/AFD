@@ -1,6 +1,6 @@
 /*
  *  check_file_dir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -715,14 +715,16 @@ check_jobs(void)
 
    if (max_nlinks_reached > 0)
    {
+      (void)sprintf(ptr, "%x", max_nlinks_job_id);
       system_log(DEBUG_SIGN, __FILE__, __LINE__,
 #if SIZEOF_NLINK_T > 4
-                 _("Did not check %u job directories because of more then %d links (max=%lld #%x)"),
+                 _("Did not check %u job directories because of more then %d links in %s (max=%lld #%x )"),
 #else
-                 _("Did not check %u job directories because of more then %d links (max=%lld #%x)"),
+                 _("Did not check %u job directories because of more then %d links in %s (max=%d #%x )"),
 #endif
-                 max_nlinks_reached, MAX_CHECK_FILE_DIRS,
+                 max_nlinks_reached, MAX_CHECK_FILE_DIRS, file_dir,
                  (pri_nlink_t)max_nlinks, max_nlinks_job_id);
+      *ptr = '\0';
    }
 
    return;
