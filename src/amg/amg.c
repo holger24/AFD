@@ -195,7 +195,8 @@ static void                amg_exit(void),
 #endif
                                                 time_t *, time_t *, int *,
                                                 int *, int *, int *, int *,
-                                                long *, unsigned int *, int *),
+                                                long *, unsigned int *, int *,
+                                                int *),
                            notify_dir_check(void),
                            sig_segv(int),
                            sig_bus(int),
@@ -228,6 +229,7 @@ main(int argc, char *argv[])
                     fd,
                     rescan_time = DEFAULT_RESCAN_TIME,
                     max_no_proc = MAX_NO_OF_DIR_CHECKS,
+                    max_shutdown_time = MAX_SHUTDOWN_TIME,
                     using_groups = NO;
    time_t           hc_old_time;
    size_t           fifo_size;
@@ -556,7 +558,8 @@ main(int argc, char *argv[])
                            &default_retry_interval, &default_transfer_blocksize,
                            &default_successful_retries,
                            &default_transfer_timeout,
-                           &default_error_offline_flag, &create_source_dir);
+                           &default_error_offline_flag, &create_source_dir,
+                           &max_shutdown_time);
 
       /* Determine the size of the fifo buffer and allocate buffer. */
       if ((i = (int)fpathconf(db_update_fd, _PC_PIPE_BUF)) < 0)
@@ -892,6 +895,9 @@ main(int argc, char *argv[])
    /* Note time when AMG is started. */
    system_log(INFO_SIGN, NULL, 0, _("Starting %s (%s)"), AMG, PACKAGE_VERSION);
    system_log(DEBUG_SIGN, NULL, 0,
+              _("AMG Configuration: Maximum shutdown time     %d (0.1 sec)"),
+              max_shutdown_time);
+   system_log(DEBUG_SIGN, NULL, 0,
               _("AMG Configuration: Directory scan interval   %d (sec)"),
               rescan_time);
    system_log(DEBUG_SIGN, NULL, 0,
@@ -1029,7 +1035,7 @@ main(int argc, char *argv[])
                }
 
                /* Wait for the child to terminate. */
-               for (j = 0; j < MAX_SHUTDOWN_TIME;  j++)
+               for (j = 0; j < max_shutdown_time;  j++)
                {
                   if (waitpid(dc_pid, NULL, WNOHANG) == dc_pid)
                   {
@@ -1844,7 +1850,8 @@ get_afd_config_value(int          *rescan_time,
                      int          *default_successful_retries,
                      long         *default_transfer_timeout,
                      unsigned int *default_error_offline_flag,
-                     int          *create_source_dir)
+                     int          *create_source_dir,
+                     int          *max_shutdown_time)
 {
    char *buffer,
         config_file[MAX_PATH_LENGTH];
@@ -2482,6 +2489,23 @@ get_afd_config_value(int          *rescan_time,
          dcfl[0].length = length;
          (void)strcpy(dcfl[0].dc_filter, config_file);
          dcfl[0].is_filter = NO;
+      }
+      if (get_definition(buffer, MAX_SHUTDOWN_TIME_DEF,
+                         value, MAX_INT_LENGTH) != NULL)
+      {
+         *max_shutdown_time = atoi(value);
+         if (*max_shutdown_time < 2)
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       "%s is to low (%d < 2), setting default %d.",
+                       MAX_SHUTDOWN_TIME_DEF, *max_shutdown_time,
+                       MAX_SHUTDOWN_TIME);
+            *max_shutdown_time = MAX_SHUTDOWN_TIME;
+         }
+      }
+      else
+      {
+         *max_shutdown_time = MAX_SHUTDOWN_TIME;
       }
       free(buffer);
    }

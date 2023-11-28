@@ -3999,13 +3999,65 @@ terminate_subprocess(void)
 {
    if (*no_of_process > 0)
    {
-      int i;
+      int           i,
+                    max_shutdown_time;
+      char          config_file[MAX_PATH_LENGTH];
+#ifdef HAVE_STATX
+      struct statx  stat_buf;
+#else
+      struct stat   stat_buf;
+#endif
+
+      (void)snprintf(config_file, MAX_PATH_LENGTH, "%s%s%s",
+                     p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
+#ifdef HAVE_STATX 
+      if (statx(0, config_file, AT_STATX_SYNC_AS_STAT,
+                STATX_MTIME, &stat_buf) == -1)
+#else          
+      if (stat(config_file, &stat_buf) == -1)
+#endif
+      {
+         max_shutdown_time = MAX_SHUTDOWN_TIME;
+      }
+      else
+      {
+         char *buffer;
+
+         if ((eaccess(config_file, F_OK) == 0) &&
+             (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
+         {
+            char value[MAX_INT_LENGTH + 1];
+
+            if (get_definition(buffer, MAX_SHUTDOWN_TIME_DEF,
+                               value, MAX_INT_LENGTH) != NULL)
+            {
+               max_shutdown_time = atoi(value);
+               if (max_shutdown_time < MIN_SHUTDOWN_TIME)
+               {
+                  system_log(WARN_SIGN, __FILE__, __LINE__,
+                             "%s is to low (%d < %d), setting default %d.",
+                             MAX_SHUTDOWN_TIME_DEF, max_shutdown_time,
+                             MIN_SHUTDOWN_TIME, MAX_SHUTDOWN_TIME);
+                  max_shutdown_time = MAX_SHUTDOWN_TIME;
+               }
+            }
+            else
+            {
+               max_shutdown_time = MAX_SHUTDOWN_TIME;
+            }
+            free(buffer);
+         }
+         else
+         {
+            max_shutdown_time = MAX_SHUTDOWN_TIME;
+         }
+      }
 
       system_log(INFO_SIGN, NULL, 0,
                  "%s got termination message STOP, waiting for %d process to terminate.",
                  DIR_CHECK, *no_of_process);
 
-      for (i = 0; i < (MAX_SHUTDOWN_TIME - DIR_CHECK_CUT_OFF_OFFSET); i++)
+      for (i = 0; i < (max_shutdown_time - MIN_SHUTDOWN_TIME); i++)
       {
          while (get_one_zombie(-1, time(NULL)) > 0)
          {

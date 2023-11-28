@@ -1339,6 +1339,7 @@ typedef unsigned long       u_long_64;
 #define MAX_CONNECTIONS_DEF              "MAX_CONNECTIONS"
 #define MAX_COPIED_FILES_DEF             "MAX_COPIED_FILES"
 #define MAX_COPIED_FILE_SIZE_DEF         "MAX_COPIED_FILE_SIZE"
+#define MAX_SHUTDOWN_TIME_DEF            "MAX_SHUTDOWN_TIME"
 #define ONE_DIR_COPY_TIMEOUT_DEF         "ONE_DIR_COPY_TIMEOUT"
 #define FULL_SCAN_TIMEOUT_DEF            "FULL_SCAN_TIMEOUT"
 #define REMOTE_FILE_CHECK_INTERVAL_DEF   "REMOTE_FILE_CHECK_INTERVAL"
@@ -1502,7 +1503,7 @@ typedef unsigned long       u_long_64;
                                             /* waits for its children to    */
                                             /* return before they get       */
                                             /* eliminated.                  */
-#define DIR_CHECK_CUT_OFF_OFFSET     50     /* Ths time is subtracted from  */
+#define MIN_SHUTDOWN_TIME            50     /* Ths time is subtracted from  */
                                             /* MAX_SHUTDOWN_TIME. So this   */
                                             /* value may not be higher.     */
 #define MAX_RENAME_RULE_FILES        20     /* Maximum number of rename rule*/

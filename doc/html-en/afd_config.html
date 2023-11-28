@@ -171,6 +171,15 @@ the new value:
    <td valign=top>amg, fd</td>
 </tr>
 <tr>
+   <td valign=top><a name="max_shutdown_time">MAX_SHUTDOWN_TIME</a></td>
+   <td>Time in 0.1 seconds given for AFD to shutdown it's process before it
+       terminates. Note, it will not terminate exec jobs started via the
+       <a href="dir_config.html#exec">exec option</a>. When compiled with
+       systemd this will take care of those process.</td>
+   <td valign=top>600</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
    <td valign=top><a name="alda_daemon">ALDA_DAEMON</a></td>
    <td>Start a process that monitors the given log data and log them
        in the given format. For the parameters that need to set, see
@@ -466,6 +475,16 @@ the new value:
        DIR_CONFIG.</td>
    <td valign=top>0</td>
    <td valign=top>fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="default_ageing">DEFAULT_AGEING</a></td>
+   <td>Process FD has a job queue where jobs can age when the transmission
+       is not successful. How quickly a job ages is determined by the
+       following value. 9 is very quick ageing and will put the job almost
+       to the end on first error encountered. A value of 0 will disable
+       ageing.</td>
+   <td valign=top>5</td>
+   <td valign=top>amg, fd</td>
 </tr>
 <tr>
    <td valign=top><a name="exec_timeout">EXEC_TIMEOUT</a></td>
@@ -869,9 +888,9 @@ restarted.
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1999 - 2022 by H.Kiehl<br>
+   Copyright &copy; 1999 - 2023 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 15.08.2022
+   Last updated: 26.11.2023
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

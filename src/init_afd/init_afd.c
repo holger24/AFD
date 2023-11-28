@@ -197,15 +197,15 @@ static pid_t               make_process(char *, char *, sigset_t *);
 static void                afd_exit(void),
                            check_dirs(char *),
                            delete_old_afd_status_files(unsigned int *),
-                           get_afd_config_value(int *, int *,
-                                                unsigned int *, int *),
+                           get_afd_config_value(int *, int *, unsigned int *,
+                                                int *, int *),
                            get_path_to_self(void),
                            sig_exit(int),
                            sig_bus(int),
                            sig_segv(int),
                            start_afd(int, time_t, unsigned int, int, int),
                            stop_afd(void),
-                           stop_afd_worker(unsigned int *),
+                           stop_afd_worker(unsigned int *, int),
                            stuck_transfer_check(time_t),
                            usage(char *),
                            zombie_check(void);
@@ -218,15 +218,16 @@ main(int argc, char *argv[])
    int            afdd_port,
                   afdds_port,
                   afd_status_fd,
+                  auto_amg_stop = NO,
                   binary_changed,
                   current_month,
-                  pause_dir_scan,
-                  startup_with_check,
-                  status,
                   i,
                   in_global_filesystem,
-                  auto_amg_stop = NO,
-                  old_afd_stat;
+                  max_shutdown_time,
+                  old_afd_stat,
+                  pause_dir_scan,
+                  startup_with_check,
+                  status;
    unsigned int   default_age_limit,
                   *heartbeat,
                   old_db_calc_size = 0; /* silence compiler */
@@ -811,7 +812,7 @@ main(int argc, char *argv[])
       }
    }
    get_afd_config_value(&afdd_port, &afdds_port, &default_age_limit,
-                        &in_global_filesystem);
+                        &in_global_filesystem, &max_shutdown_time);
 
    /* Do some cleanups when we exit */
    if (atexit(afd_exit) != 0)
@@ -1375,7 +1376,7 @@ main(int argc, char *argv[])
                           }
 #endif
 
-                          stop_afd_worker(heartbeat);
+                          stop_afd_worker(heartbeat, max_shutdown_time);
 
                           if (proc_table[AMG_NO].pid > 0)
                           {
@@ -1403,7 +1404,7 @@ main(int argc, char *argv[])
                                 system_log(WARN_SIGN, __FILE__, __LINE__,
                                           _("Was not able to stop %s."), FD);
                              }
-                             for (j = 0; j < MAX_SHUTDOWN_TIME;  j++)
+                             for (j = 0; j < max_shutdown_time;  j++)
                              {
                                 UPDATE_HEARTBEAT();
                                 if ((pid = waitpid(0, NULL, WNOHANG)) > 0)
@@ -1479,7 +1480,7 @@ main(int argc, char *argv[])
                                                 _("Was not able to stop %s."),
                                                 FD);
                                   }
-                                  for (j = 0; j < MAX_SHUTDOWN_TIME; j++)
+                                  for (j = 0; j < max_shutdown_time; j++)
                                   {
                                      UPDATE_HEARTBEAT();
                                      if ((pid = waitpid(proc_table[FD_NO].pid, NULL, WNOHANG)) > 0)
@@ -1568,7 +1569,8 @@ main(int argc, char *argv[])
                           }
                           get_afd_config_value(&afdd_port, &afdds_port,
                                                &default_age_limit,
-                                               &in_global_filesystem);
+                                               &in_global_filesystem,
+                                               &max_shutdown_time);
 
                           /* Initialise communication flag FD <-> AMG. */
                           if (buffer[count] == START_AFD_NO_DIR_SCAN)
@@ -1906,7 +1908,8 @@ static void
 get_afd_config_value(int          *afdd_port,
                      int          *afdds_port,
                      unsigned int *default_age_limit,
-                     int          *in_global_filesystem)
+                     int          *in_global_filesystem,
+                     int          *max_shutdown_time)
 {
    char          *buffer,
                  config_file[MAX_PATH_LENGTH];
@@ -2222,6 +2225,23 @@ get_afd_config_value(int          *afdd_port,
       {
          *in_global_filesystem = NO;
       }
+      if (get_definition(buffer, MAX_SHUTDOWN_TIME_DEF,
+                         value, MAX_INT_LENGTH) != NULL)
+      {
+         *max_shutdown_time = atoi(value);
+         if (*max_shutdown_time < MIN_SHUTDOWN_TIME)
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       "%s is to low (%d < %d), setting default %d.",
+                       MAX_SHUTDOWN_TIME_DEF, *max_shutdown_time,
+                       MIN_SHUTDOWN_TIME, MAX_SHUTDOWN_TIME);
+            *max_shutdown_time = MAX_SHUTDOWN_TIME;
+         }
+      }
+      else
+      {
+         *max_shutdown_time = MAX_SHUTDOWN_TIME;
+      }
       free(buffer);
    }
    else
@@ -2230,6 +2250,7 @@ get_afd_config_value(int          *afdd_port,
       *afdds_port = -1;
       *default_age_limit = DEFAULT_AGE_LIMIT;
       *in_global_filesystem = NO;
+      *max_shutdown_time = MAX_SHUTDOWN_TIME;
    }
 
    return;
@@ -2652,7 +2673,7 @@ check_dirs(char *work_dir)
 
 /*++++++++++++++++++++++++++ stop_afd_worker() ++++++++++++++++++++++++++*/
 static void
-stop_afd_worker(unsigned int *heartbeat)
+stop_afd_worker(unsigned int *heartbeat, int max_shutdown_time)
 {
    if (proc_table[AFD_WORKER_NO].pid > 0)
    {
@@ -2686,7 +2707,7 @@ stop_afd_worker(unsigned int *heartbeat)
                        _("Failed to send SHUTDOWN to %s : %s"),
                        AFD_WORKER, strerror(errno));
          }
-         for (j = 0; j < MAX_SHUTDOWN_TIME; j++)
+         for (j = 0; j < max_shutdown_time; j++)
          {
             if ((pid = waitpid(proc_table[AFD_WORKER_NO].pid, NULL, WNOHANG)) > 0)
             {

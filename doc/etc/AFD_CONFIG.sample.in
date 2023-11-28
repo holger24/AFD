@@ -62,7 +62,7 @@
 # here if AFD runs under root, which is not recommended. Since these     #
 # priorities are inherited by child process one can just set             #
 # INIT_AFD_PRIORITY to change the priority of all AFD process.           #
-# SHOW_LOG_PRIORITY will change the process of the dialogs  mshow_log,   #
+# SHOW_LOG_PRIORITY will change the process of the dialog  mshow_log,    #
 # show_olog, show_ilog, show_dlog and show_elog. EXEC_BASE_PRIORITY is   #
 # the base priority for all process started by the exec and pexec        #
 # option in DIR_CONFIG regardless of the set AMG_PRIORITY,  FD_PRIORITY  #
@@ -103,6 +103,15 @@
 ##########################################################################
 MAX_NICE_VALUE                   0
 MIN_NICE_VALUE                   19
+
+##########################################################################
+# Time in 0.1 seconds given for AFD to shutdown it's process before it   #
+# terminates. Note, it will not terminate exec jobs started via the      #
+# exec [options]. When compiled with systemd this will take care of      #
+# those process.                                                         #
+# Default: 600                                                           #
+##########################################################################
+#MAX_SHUTDOWN_TIME               600
 
 ##########################################################################
 # Set this to YES if AFD is running in a global filesystem. This will    #
