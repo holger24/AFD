@@ -392,7 +392,7 @@ try_attach_again:
 
                   if ((fra->ignore_size == -1) ||
                       ((fra->gt_lt_sign & ISIZE_EQUAL) &&
-                       (fra->ignore_size == rl[i].size)) ||
+                       (fra->ignore_size != rl[i].size)) ||
                       ((fra->gt_lt_sign & ISIZE_LESS_THEN) &&
                        (fra->ignore_size < rl[i].size)) ||
                       ((fra->gt_lt_sign & ISIZE_GREATER_THEN) &&
@@ -430,7 +430,7 @@ try_attach_again:
 
                         diff_time = current_time - rl[i].file_mtime;
                         if (((fra->gt_lt_sign & IFTIME_EQUAL) &&
-                             (fra->ignore_file_time == diff_time)) ||
+                             (fra->ignore_file_time != diff_time)) ||
                             ((fra->gt_lt_sign & IFTIME_LESS_THEN) &&
                              (fra->ignore_file_time < diff_time)) ||
                             ((fra->gt_lt_sign & IFTIME_GREATER_THEN) &&
@@ -1167,7 +1167,7 @@ check_list(char         *file,
 
                if ((fra->ignore_size == -1) ||
                    ((fra->gt_lt_sign & ISIZE_EQUAL) &&
-                    (fra->ignore_size == rl[i].size)) ||
+                    (fra->ignore_size != rl[i].size)) ||
                    ((fra->gt_lt_sign & ISIZE_LESS_THEN) &&
                     (fra->ignore_size < rl[i].size)) ||
                    ((fra->gt_lt_sign & ISIZE_GREATER_THEN) &&
@@ -1221,7 +1221,7 @@ check_list(char         *file,
                      *file_mtime = rl[i].file_mtime;
                      diff_time = current_time - rl[i].file_mtime;
                      if (((fra->gt_lt_sign & IFTIME_EQUAL) &&
-                          (fra->ignore_file_time == diff_time)) ||
+                          (fra->ignore_file_time != diff_time)) ||
                          ((fra->gt_lt_sign & IFTIME_LESS_THEN) &&
                           (fra->ignore_file_time < diff_time)) ||
                          ((fra->gt_lt_sign & IFTIME_GREATER_THEN) &&
@@ -1457,7 +1457,7 @@ check_list(char         *file,
                {
                   if ((fra->ignore_size == -1) ||
                       ((fra->gt_lt_sign & ISIZE_EQUAL) &&
-                       (fra->ignore_size == rl[i].size)) ||
+                       (fra->ignore_size != rl[i].size)) ||
                       ((fra->gt_lt_sign & ISIZE_LESS_THEN) &&
                        (fra->ignore_size < rl[i].size)) ||
                       ((fra->gt_lt_sign & ISIZE_GREATER_THEN) &&
@@ -1523,7 +1523,7 @@ check_list(char         *file,
                         *file_mtime = rl[i].file_mtime;
                         diff_time = current_time - rl[i].file_mtime;
                         if (((fra->gt_lt_sign & IFTIME_EQUAL) &&
-                             (fra->ignore_file_time == diff_time)) ||
+                             (fra->ignore_file_time != diff_time)) ||
                             ((fra->gt_lt_sign & IFTIME_LESS_THEN) &&
                              (fra->ignore_file_time < diff_time)) ||
                             ((fra->gt_lt_sign & IFTIME_GREATER_THEN) &&
@@ -1829,7 +1829,7 @@ check_list(char         *file,
    }
    if ((fra->ignore_size == -1) ||
        ((fra->gt_lt_sign & ISIZE_EQUAL) &&
-        (fra->ignore_size == rl[no_of_listed_files].size)) ||
+        (fra->ignore_size != rl[no_of_listed_files].size)) ||
        ((fra->gt_lt_sign & ISIZE_LESS_THEN) &&
         (fra->ignore_size < rl[no_of_listed_files].size)) ||
        ((fra->gt_lt_sign & ISIZE_GREATER_THEN) &&
@@ -1846,7 +1846,7 @@ check_list(char         *file,
 
          diff_time = current_time - rl[no_of_listed_files].file_mtime;
          if (((fra->gt_lt_sign & IFTIME_EQUAL) &&
-              (fra->ignore_file_time == diff_time)) ||
+              (fra->ignore_file_time != diff_time)) ||
              ((fra->gt_lt_sign & IFTIME_LESS_THEN) &&
               (fra->ignore_file_time < diff_time)) ||
              ((fra->gt_lt_sign & IFTIME_GREATER_THEN) &&
