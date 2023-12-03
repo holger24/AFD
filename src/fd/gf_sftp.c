@@ -1134,11 +1134,13 @@ main(int argc, char *argv[])
                         {
                            do
                            {
-                              if (sftp_multi_read_dispatch() == INCORRECT)
+                              if ((status = sftp_multi_read_dispatch()) != SUCCESS)
                               {
-                                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                            "Failed to dispatch reads from remote file `%s' in %s",
-                                            tmp_rl.file_name, fra->dir_alias);
+                                  trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                            NULL, NULL,
+                                            "Failed to dispatch reads from remote file `%s' in %s (%d)",
+                                            tmp_rl.file_name, fra->dir_alias,
+                                            status);
                                   reset_values(files_retrieved,
                                                file_size_retrieved,
                                                files_to_retrieve,
@@ -1158,7 +1160,8 @@ main(int argc, char *argv[])
 
                               if ((status = sftp_multi_read_catch(buffer)) == INCORRECT)
                               {
-                                 trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                 trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                           NULL, NULL,
                                            "Failed to read from remote file `%s' in %s",
                                            tmp_rl.file_name, fra->dir_alias);
                                  reset_values(files_retrieved,
@@ -1189,14 +1192,16 @@ main(int argc, char *argv[])
 
                               if (fsa->trl_per_process > 0)
                               {
-                                 limit_transfer_rate(status, fsa->trl_per_process,
+                                 limit_transfer_rate(status,
+                                                     fsa->trl_per_process,
                                                      clktck);
                               }
                               if (status > 0)
                               {
                                  if (write(fd, buffer, status) != status)
                                  {
-                                    trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                    trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                              NULL, NULL,
                                               "Failed to write() to file `%s' : %s",
                                               local_tmp_file, strerror(errno));
                                     reset_values(files_retrieved,
@@ -1299,11 +1304,12 @@ main(int argc, char *argv[])
                            {
                               if (((status = sftp_read(buffer,
                                                        blocksize - buffer_offset)) == INCORRECT) ||
-                                  (status == EPIPE))
+                                  (status == -EPIPE))
                               {
                                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                           "Failed to read from remote file `%s' in %s",
-                                           tmp_rl.file_name, fra->dir_alias);
+                                           "Failed to read from remote file `%s' in %s (%d)",
+                                           tmp_rl.file_name, fra->dir_alias,
+                                           status);
                                  reset_values(files_retrieved,
                                               file_size_retrieved,
                                               files_to_retrieve,

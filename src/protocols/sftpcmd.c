@@ -3018,6 +3018,7 @@ sftp_read(char *block, int size)
         {
            msg_str[0] = '\0';
            scd.pipe_broken = YES;
+           status = -EPIPE;
         }
 
    return(status);
@@ -3199,11 +3200,6 @@ sftp_multi_read_dispatch(void)
                break;
             }
          }
-      }
-
-      if (status == SUCCESS)
-      {
-         status = scd.reads_queued;
       }
 
 #ifdef WITH_TRACE

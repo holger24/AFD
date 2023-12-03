@@ -443,7 +443,7 @@ main(int argc, char *argv[])
                {
                   if (((status = sftp_read(buffer,
                                            db.blocksize)) == INCORRECT) ||
-                      (status == EPIPE))
+                      (status == -EPIPE))
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                _("Failed to read from remote file %s (%d)"),
