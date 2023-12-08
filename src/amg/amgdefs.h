@@ -860,7 +860,7 @@ extern int    amg_zombie_check(pid_t *, int),
               check_list(struct directory_entry *, char *, struct stat *),
 #endif
               check_option(char *, FILE *),
-              com(char),
+              com(char, char *, int),
               convert(char *, char *, int, int, unsigned int, unsigned int,
                       off_t *),
 #ifdef _WITH_PTHREAD

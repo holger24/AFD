@@ -1,6 +1,6 @@
 /*
  *  com.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -26,7 +26,7 @@ DESCR__S_M3
  **   com - sends a command to the dir_check or fr command fifo
  **
  ** SYNOPSIS
- **   int com(char action, int type)
+ **   int com(char action, char *file, int line)
  **
  ** DESCRIPTION
  **
@@ -43,6 +43,8 @@ DESCR__S_M3
  **   27.09.2017 H.Kiehl Allow other process to send a BUSY_WORKING,
  **                      meaning we will not timeout and instead
  **                      keep waiting.
+ **   08.12.2023 H.Kiehl Show file and line of calling process if
+ **                      there is an error.
  **
  */
 DESCR__E_M3
@@ -66,7 +68,7 @@ extern char *p_work_dir;
 
 /*################################ com() ################################*/
 int
-com(char action)
+com(char action, char *file, int line)
 {
    int            write_fd,
                   read_fd,
@@ -87,7 +89,8 @@ com(char action)
    if ((write_fd = open(com_fifo, O_RDWR)) == -1)
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__,
-                 "Could not open fifo %s : %s", com_fifo, strerror(errno));
+                 "Could not open fifo %s : %s [%s %d]",
+                 com_fifo, strerror(errno), file, line);
       exit(INCORRECT);
    }
 
@@ -96,7 +99,8 @@ com(char action)
    if ((read_fd = open(com_fifo, (O_RDONLY | O_NONBLOCK))) == -1)
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__,
-                 "Could not open fifo %s : %s", com_fifo, strerror(errno));
+                 "Could not open fifo %s : %s [%s %d]",
+                 com_fifo, strerror(errno), file, line);
       exit(INCORRECT);
    }
 
@@ -104,8 +108,8 @@ com(char action)
    if (write(write_fd, &action, 1) != 1)
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__,
-                 "Could not write to fifo %s : %s",
-                 DC_CMD_FIFO, strerror(errno));
+                 "Could not write to fifo %s : %s [%s %d]",
+                 DC_CMD_FIFO, strerror(errno), file, line);
       exit(INCORRECT);
    }
 
@@ -131,15 +135,16 @@ com(char action)
             if (buffer[ret - 1] != ACKN)
             {
                system_log(WARN_SIGN, __FILE__, __LINE__,
-                          "Received garbage (%d) while reading from fifo.",
-                          buffer[ret - 1]);
+                          "Received garbage (%d) while reading from fifo. [%s %d]",
+                          buffer[ret - 1], file, line);
             }
             ret = SUCCESS;
          }
          else
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
-                       "Read problems (%d) : %s", ret, strerror(errno));
+                       "Read problems (%d) : %s [%s %d]",
+                       ret, strerror(errno), file, line);
             ret = INCORRECT;
          }
          break;
@@ -147,21 +152,24 @@ com(char action)
       else if (ret < 0)
            {
               system_log(FATAL_SIGN, __FILE__, __LINE__,
-                         "select() error : %s", strerror(errno));
+                         "select() error : %s [%s %d]",
+                         strerror(errno), file, line);
               exit(INCORRECT);
            }
       else if (ret == 0)
            {
               /* The other side does not answer. */
               system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "Did not receive any reply from %s for the command %s (%d).",
-                         DC_PROC_NAME, get_com_action_str(action), action);
+                         "Did not receive any reply from %s for the command %s (%d). [%s %d]",
+                         DC_PROC_NAME, get_com_action_str(action), action,
+                         file, line);
               ret = INCORRECT;
               break;
            }
            else /* Impossible! Unknown error. */
            {
-              system_log(FATAL_SIGN, __FILE__, __LINE__, "Ouch! What now? @!$(%.");
+              system_log(FATAL_SIGN, __FILE__, __LINE__,
+                         "Ouch! What now? [%s %d] @!$(%.", file, line);
               exit(INCORRECT);
            }
    }
@@ -169,7 +177,8 @@ com(char action)
    if ((close(write_fd) == -1) || (close(read_fd) == -1))
    {
       system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                 "close() error : %s", strerror(errno));
+                 "close() error : %s [%s %d]",
+                 strerror(errno), file, line);
    }
 
    return(ret);

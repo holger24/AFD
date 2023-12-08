@@ -1027,11 +1027,11 @@ main(int argc, char *argv[])
             {
                int j;
 
-               if (com(STOP) == INCORRECT)
+               if (com(STOP, __FILE__, __LINE__) == INCORRECT)
                {
                   system_log(INFO_SIGN, NULL, 0,
                              _("Giving it another try ..."));
-                  (void)com(STOP);
+                  (void)com(STOP, __FILE__, __LINE__);
                }
 
                /* Wait for the child to terminate. */

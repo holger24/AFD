@@ -372,7 +372,7 @@ reread_host_config(time_t           *hc_old_time,
                {
                   int options;
 
-                  if (com(STOP) == INCORRECT)
+                  if (com(STOP, __FILE__, __LINE__) == INCORRECT)
                   {
                      options = WNOHANG;
                   }
@@ -654,7 +654,7 @@ reread_host_config(time_t           *hc_old_time,
          {
             int options;
 
-            if (com(STOP) == INCORRECT)
+            if (com(STOP, __FILE__, __LINE__) == INCORRECT)
             {
                options = WNOHANG;
             }

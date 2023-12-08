@@ -1,6 +1,6 @@
 /*
  *  reread_dir_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -200,7 +200,7 @@ reread_dir_config(int              dc_changed,
          /* Stop running jobs. */
          if ((data_length > 0) && (dc_pid > 0))
          {
-            if (com(STOP) == INCORRECT)
+            if (com(STOP, __FILE__, __LINE__) == INCORRECT)
             {
                int status;
 
@@ -340,7 +340,7 @@ reread_dir_config(int              dc_changed,
                 * case there are warnings or errors they can be shown
                 * to the user that has used udc.
                 */
-               if (com(DATA_READY) != SUCCESS)
+               if (com(DATA_READY, __FILE__, __LINE__) != SUCCESS)
                {
                   system_log(DEBUG_SIGN, __FILE__, __LINE__,
                              "Process %s did not reply on DATA_READY!",
@@ -373,7 +373,7 @@ reread_dir_config(int              dc_changed,
          {
             if (dc_pid > 0)
             {
-               (void)com(STOP);
+               (void)com(STOP, __FILE__, __LINE__);
                dc_pid = NOT_RUNNING;
             }
             ret = DIR_CONFIG_NO_VALID_DATA;
