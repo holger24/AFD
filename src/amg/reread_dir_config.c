@@ -304,6 +304,16 @@ reread_dir_config(int              dc_changed,
                         /* Don't exit here, since the process might */
                         /* have died in the meantime.               */
                      }
+                     else
+                     {
+                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
+#if SIZEOF_PID_T == 4
+                                   "Have killed %s (%d) because it was in unknown state.",
+#else
+                                   "Have killed %s (%lld) because it was in unknown state.",
+#endif
+                                   DC_PROC_NAME, (pri_pid_t)tmp_dc_pid);
+                     }
 
                      /* Eliminate zombie of killed job. */
                      (void)amg_zombie_check(&tmp_dc_pid, 0);
