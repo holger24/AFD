@@ -1,7 +1,7 @@
 /*
  *  get_com_action_str.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2017 Deutscher Wetterdienst (DWD),
- *                     Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2017 - 2023 Deutscher Wetterdienst (DWD),
+ *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,6 +53,7 @@ get_com_action_str(int com_action_code)
    switch (com_action_code)
    {
       case STOP       : return("STOP");                /*  1 */
+      case SHUTDOWN   : return("SHUTDOWN");            /* 19 */
       case DATA_READY : return("DATA_READY");          /* 33 */
    }
    return(_("<Unknown com action>"));

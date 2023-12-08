@@ -3700,13 +3700,18 @@ check_fifo(int read_fd, int write_fd)
                return(HALT);
 #endif /* WITH_DIR_CHECK_RESTART */
 
-            case STOP  :
+            case STOP     :
+            case SHUTDOWN :
 #ifdef WITH_SYSTEMD
-               terminate_subprocess();
+               if (buffer[count] == SHUTDOWN)
+               {
+                  terminate_subprocess();
+               }
 #endif
                (void)fprintf(stderr,
-                             "%s terminated by fifo message STOP.\n",
-                             DIR_CHECK);
+                             "%s terminated by fifo message %s.\n",
+                             DIR_CHECK,
+                             get_com_action_str((int)buffer[count]));
 #ifdef SHOW_EXEC_TIMES
                for (i = 0; i < no_fork_jobs; i++)
                {

@@ -105,6 +105,7 @@ bin_dir_check_SOURCES        = src/amg/check_file_dir.c\
                                $(DIS_LOG)\
                                src/amg/enter_time_job.c\
                                src/amg/eval_bul_rep_config.c\
+                               src/amg/get_com_action_str.c\
                                src/amg/get_last_char.c\
                                $(CHECK_INOTIFY_FILES)\
                                src/amg/handle_options.c\
