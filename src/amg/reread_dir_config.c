@@ -192,7 +192,7 @@ reread_dir_config(int              dc_changed,
       if (dc_changed == YES)
       {
          int   i;
-         pid_t tmp_dc_pid;
+         pid_t tmp_dc_pid = dc_pid;
 
          /* Tell user we have to reread the new DIR_CONFIG file(s). */
          system_log(INFO_SIGN, NULL, 0, "Rereading DIR_CONFIG(s)...");
@@ -202,18 +202,16 @@ reread_dir_config(int              dc_changed,
          {
             if (com(STOP, __FILE__, __LINE__) == INCORRECT)
             {
-               int status;
-
                /* If the process does not answer, lets assume */
                /* something is really wrong here and lets see */
                /* if the process has died.                    */
-               if ((status = amg_zombie_check(&dc_pid, WNOHANG)) < 0)
+               if (amg_zombie_check(&dc_pid, WNOHANG) != YES)
                {
-                  dc_pid = status;
-               }
-               else /* Mark process in unknown state. */
-               {
-                  tmp_dc_pid = dc_pid;
+                  /*
+                   * It is still alive but does not respond
+                   * so mark it as in unknown state. The pid
+                   * is already stored in tmp_dc_pid.
+                   */
                   dc_pid = UNKNOWN_STATE;
                }
             }
