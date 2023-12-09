@@ -1,6 +1,6 @@
 /*
  *  create_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1278,13 +1278,12 @@ create_db(FILE *udc_reply_fp, int write_fd)
          fjd[no_fork_jobs].system_time = 0;
          no_fork_jobs++;
       }
-      if ((i % 100) == 0)
+      if ((i % 20) == 0)
       {
          time_t now = time(NULL);
 
          if ((now - start_time) > (JOB_TIMEOUT / 2))
          {
-            start_time = now;
             send_busy_working(write_fd);
          }
       }
