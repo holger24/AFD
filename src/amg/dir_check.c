@@ -4002,7 +4002,7 @@ check_fifo(int read_fd, int write_fd)
 static void
 terminate_subprocess(void)
 {
-   if (*no_of_process > 0)
+   if ((dcpl != NULL) && (*no_of_process > 0))
    {
       int           i,
                     max_shutdown_time;
