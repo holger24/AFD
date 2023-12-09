@@ -130,6 +130,10 @@ com(char action, char *file, int line)
          {
             if (buffer[ret - 1] == BUSY_WORKING)
             {
+#ifdef _MAINTAINER_LOG
+               maintainer_log(DEBUG_SIGN, NULL, 0,
+                              "com() received BUSY_WORKING.");
+#endif
                continue;
             }
             if (buffer[ret - 1] != ACKN)
