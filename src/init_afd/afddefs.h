@@ -549,11 +549,7 @@ typedef unsigned long       u_long_64;
 #define WORK_DIR_ID                "-w"
 #define WORK_DIR_ID_LENGTH         (sizeof(WORK_DIR_ID) - 1)
 
-#ifdef FTX
-# define WAIT_LOOPS 600 /* 60 seconds */
-#else
-# define WAIT_LOOPS 300 /* 30 seconds */
-#endif
+#define WAIT_LOOPS (MAX_SHUTDOWN_TIME + (MAX_SHUTDOWN_TIME / 2))
 
 /* Definitions when AFD file directory is running full. */
 #define STOP_AMG_THRESHOLD         20
