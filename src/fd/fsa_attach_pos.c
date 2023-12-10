@@ -1,6 +1,6 @@
 /*
  *  fsa_attach_pos.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -284,8 +284,6 @@ fsa_attach_pos(int pos)
 void
 fsa_detach_pos(int pos)
 {
-   char *ptr;
-
    if (fsa_fd > 0)
    {
       if (close(fsa_fd) == -1)
@@ -296,39 +294,46 @@ fsa_detach_pos(int pos)
       fsa_fd = -1;
    }
 
-   ptr = (char *)p_no_of_hosts;
+   if (fsa != NULL)
+   {
+      char *ptr;
+
+      ptr = (char *)p_no_of_hosts;
 #ifdef HAVE_MMAP
-   if (munmap(ptr, AFD_WORD_OFFSET) == -1)
-   {
-      system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Failed to munmap() no_of_hosts from FSA : %s",
-                 strerror(errno));
-   }
-   ptr = (char *)fsa - map_offset;
-   if (munmap(ptr, fsa_size) == -1)
-   {
-      system_log(ERROR_SIGN, __FILE__, __LINE__,
+      if (munmap(ptr, AFD_WORD_OFFSET) == -1)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Failed to munmap() no_of_hosts from FSA : %s",
+                    strerror(errno));
+      }
+      ptr = (char *)fsa - map_offset;
+      if (munmap(ptr, fsa_size) == -1)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
 # if SIZEOF_OFF_T == 4
-                 "Failed to munmap() from FSA position %d [fsa_size = %ld] : %s",
+                    "Failed to munmap() from FSA position %d [fsa_size = %ld] : %s",
 # else
-                 "Failed to munmap() from FSA position %d [fsa_size = %lld] : %s",
+                    "Failed to munmap() from FSA position %d [fsa_size = %lld] : %s",
 # endif
-                 pos, (pri_off_t)fsa_size, strerror(errno));
-   }
+                    pos, (pri_off_t)fsa_size, strerror(errno));
+      }
 #else
-   if (munmap_emu(ptr) == -1)
-   {
-      system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Failed to munmap_emu() no_of_hosts from FSA : %s",
-                 strerror(errno));
-   }
-   ptr = (char *)fsa;
-   if (munmap_emu(ptr) == -1)
-   {
-      system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Failed to munmap_emu() from FSA position %d : %s",
-                 pos, strerror(errno));
-   }
+      if (munmap_emu(ptr) == -1)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Failed to munmap_emu() no_of_hosts from FSA : %s",
+                    strerror(errno));
+      }
+      ptr = (char *)fsa;
+      if (munmap_emu(ptr) == -1)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Failed to munmap_emu() from FSA position %d : %s",
+                    pos, strerror(errno));
+      }
 #endif
+      fsa = NULL;
+   }
+
    return;
 }
