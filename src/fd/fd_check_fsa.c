@@ -1,6 +1,6 @@
 /*
  *  fd_check_fsa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -133,9 +133,10 @@ fd_check_fsa(void)
           * Not sure what the cause is, but sometimes it does not
           * detect that REREADING_DIR_CONFIG flag is not unset, due
           * to maybe someone holding the FSA or some other error.
-          * So lets just exit and ask init_afd to restart FD.
+          * To exit here with PROCESS_NEEDS_RESTART does also not
+          * work well, AMG+FD are then out of sync and creating when
+          * FD creates a new process it takes a very long time.
           */
-         exit(PROCESS_NEEDS_RESTART);
       }
 #ifdef DEBUG_WAIT_LOOP
       else
