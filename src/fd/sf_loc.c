@@ -1,6 +1,6 @@
 /*
  *  sf_loc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2023 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -2268,6 +2268,7 @@ sf_loc_exit(void)
                    buffer, db.id.job);
       }
       reset_fsa((struct job *)&db, exitflag, 0, 0);
+      fsa_detach_pos(db.fsa_pos);
    }
 
    free(file_name_buffer);

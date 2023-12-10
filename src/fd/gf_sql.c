@@ -1,6 +1,6 @@
 /*
  *  gf_sql.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -991,6 +991,7 @@ gf_sql_exit(void)
                 fsa->job_status[(int)db.job_no].no_of_files_done);
       reset_fsa((struct job *)&db, exitflag, files_to_retrieve_shown,
                 file_size_to_retrieve_shown);
+      fsa_detach_pos(db.fsa_pos);
    }
 
    send_proc_fin(NO);

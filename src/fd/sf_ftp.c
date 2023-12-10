@@ -3767,6 +3767,7 @@ sf_ftp_exit(void)
                     fsa->job_status[(int)db.job_no].file_name_in_use);
       }
       reset_fsa((struct job *)&db, exitflag, 0, 0);
+      fsa_detach_pos(db.fsa_pos);
    }
 
    free(file_name_buffer);

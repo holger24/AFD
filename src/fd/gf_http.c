@@ -2330,6 +2330,7 @@ gf_http_exit(void)
       }
       reset_fsa((struct job *)&db, exitflag, files_to_retrieve_shown,
                 file_size_to_retrieve_shown);
+      fsa_detach_pos(db.fsa_pos);
    }
 
    send_proc_fin(NO);

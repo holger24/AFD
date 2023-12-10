@@ -1149,6 +1149,10 @@ sf_dfax_exit(void)
 {
    reset_fsa((struct job *)&db, exitflag, 0, 0);
 
+   if ((fsa != NULL) && (db.fsa_pos != INCORRECT) && (fsa_pos_save == YES))
+   {
+      fsa_detach_pos(db.fsa_pos);
+   }
    if (file_name_buffer != NULL)
    {
       free(file_name_buffer);

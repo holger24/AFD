@@ -1045,6 +1045,7 @@ sf_exec_exit(void)
          trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s #%x", buffer, db.id.job);
       }
       reset_fsa((struct job *)&db, exitflag, 0, 0);
+      fsa_detach_pos(db.fsa_pos);
    }
 
    free(file_name_buffer);
