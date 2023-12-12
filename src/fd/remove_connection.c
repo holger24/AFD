@@ -53,10 +53,11 @@ DESCR__E_M3
 #include <errno.h>
 #include "fddefs.h"
 
-/* #define WITH_MULTI_FSA_CHECKS */
-
 /* External global variables. */
 extern int                        fsa_fd,
+#ifndef WITH_MULTI_FSA_CHECKS
+                                  fsa_out_of_sync,
+#endif
                                   fra_fd,
                                   last_pos_lookup,
                                   no_of_dirs,
@@ -80,16 +81,21 @@ remove_connection(struct connection *p_con, int faulty, time_t now)
     * active transfers without ever resetting the pid! This can lead to
     * some very fatal behaviour of the AFD.
     */
-#ifdef WITH_MULTI_FSA_CHECKS
-   if ((p_con->fsa_pos != -1) && (p_con->fsa_pos < no_of_hosts))
+#ifndef WITH_MULTI_FSA_CHECKS
+   if (fsa_out_of_sync == YES)
    {
-      if (fd_check_fsa() == YES)
+#endif
+      if ((p_con->fsa_pos != -1) && (p_con->fsa_pos < no_of_hosts))
       {
-         (void)check_fra_fd();
-         get_new_positions();
-         init_msg_buffer();
-         last_pos_lookup = INCORRECT;
+         if (fd_check_fsa() == YES)
+         {
+            (void)check_fra_fd();
+            get_new_positions();
+            init_msg_buffer();
+            last_pos_lookup = INCORRECT;
+         }
       }
+#ifndef WITH_MULTI_FSA_CHECKS
    }
 #endif
 

@@ -119,7 +119,6 @@ DESCR__E_M1
 
 #define _ACKQUEUE_
 /* #define _ADDQUEUE_ */
-/* #define WITH_MULTI_FSA_CHECKS */
 /* #define _MACRO_DEBUG */
 /* #define _FDQUEUE_ */
 /* #define DEBUG_BURST 0xb5cf91b2 */
@@ -132,6 +131,9 @@ int                        crash = NO,
                            delete_jobs_fd,
                            event_log_fd = STDERR_FILENO,
                            fd_cmd_fd,
+#ifndef WITH_MULTI_FSA_CHECKS
+                           fsa_out_of_sync = NO, /* set/unset in fd_check_fsa() */
+#endif
 #ifdef HAVE_SETPRIORITY
                            add_afd_priority = DEFAULT_ADD_AFD_PRIORITY_DEF,
                            current_priority = 0,
@@ -1772,13 +1774,18 @@ system_log(DEBUG_SIGN, NULL, 0,
             bytes_done = 0;
             do
             {
-#ifdef WITH_MULTI_FSA_CHECKS
-               if (fd_check_fsa() == YES)
+#ifndef WITH_MULTI_FSA_CHECKS
+               if (fsa_out_of_sync == YES)
                {
-                  (void)check_fra_fd();
-                  get_new_positions();
-                  init_msg_buffer();
-                  last_pos_lookup = INCORRECT;
+#endif
+                  if (fd_check_fsa() == YES)
+                  {
+                     (void)check_fra_fd();
+                     get_new_positions();
+                     init_msg_buffer();
+                     last_pos_lookup = INCORRECT;
+                  }
+#ifndef WITH_MULTI_FSA_CHECKS
                }
 #endif
                pid = *(pid_t *)&fifo_buffer[bytes_done];
@@ -2311,13 +2318,18 @@ system_log(DEBUG_SIGN, NULL, 0,
             bytes_done = 0;
             do
             {
-#ifdef WITH_MULTI_FSA_CHECKS
-               if (fd_check_fsa() == YES)
+#ifndef WITH_MULTI_FSA_CHECKS
+               if (fsa_out_of_sync == YES)
                {
-                  (void)check_fra_fd();
-                  get_new_positions();
-                  init_msg_buffer();
-                  last_pos_lookup = INCORRECT;
+#endif
+                  if (fd_check_fsa() == YES)
+                  {
+                     (void)check_fra_fd();
+                     get_new_positions();
+                     init_msg_buffer();
+                     last_pos_lookup = INCORRECT;
+                  }
+#ifndef WITH_MULTI_FSA_CHECKS
                }
 #endif
                (void)memcpy(msg_buffer, &fifo_buffer[bytes_done],
@@ -3359,25 +3371,30 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
                                MAX_HOSTNAME_LENGTH + 1);
                   connection[pos].host_id = fsa[fsa_pos].host_id;
                   connection[pos].fsa_pos = fsa_pos;
-#ifdef WITH_MULTI_FSA_CHECKS
-                  if (fd_check_fsa() == YES)
+#ifndef WITH_MULTI_FSA_CHECKS
+                  if (fsa_out_of_sync == YES)
                   {
-                     (void)check_fra_fd();
+#endif
+                     if (fd_check_fsa() == YES)
+                     {
+                        (void)check_fra_fd();
 
-                     /*
-                      * We need to set the connection[pos].pid to a
-                      * value higher then 0 so the function get_new_positions()
-                      * also locates the new connection[pos].fsa_pos. Otherwise
-                      * from here on we point to some completely different
-                      * host and this can cause havoc when someone uses
-                      * edit_hc and changes the alias order.
-                      */
-                     connection[pos].pid = 1;
-                     get_new_positions();
-                     connection[pos].pid = 0;
-                     init_msg_buffer();
-                     fsa_pos = connection[pos].fsa_pos;
-                     last_pos_lookup = INCORRECT;
+                        /*
+                         * We need to set the connection[pos].pid to a
+                         * value higher then 0 so the function get_new_positions()
+                         * also locates the new connection[pos].fsa_pos. Otherwise
+                         * from here on we point to some completely different
+                         * host and this can cause havoc when someone uses
+                         * edit_hc and changes the alias order.
+                         */
+                        connection[pos].pid = 1;
+                        get_new_positions();
+                        connection[pos].pid = 0;
+                        init_msg_buffer();
+                        fsa_pos = connection[pos].fsa_pos;
+                        last_pos_lookup = INCORRECT;
+                     }
+#ifndef WITH_MULTI_FSA_CHECKS
                   }
 #endif
                   (void)memcpy(fsa[fsa_pos].job_status[connection[pos].job_no].unique_name,
@@ -4494,13 +4511,18 @@ zombie_check(struct connection *p_con,
                   {
                      char tr_hostname[MAX_HOSTNAME_LENGTH + 2];
 
-#ifdef WITH_MULTI_FSA_CHECKS
-                     if (fd_check_fsa() == YES)
+#ifndef WITH_MULTI_FSA_CHECKS
+                     if (fsa_out_of_sync == YES)
                      {
-                        (void)check_fra_fd();
-                        get_new_positions();
-                        init_msg_buffer();
-                        last_pos_lookup = INCORRECT;
+#endif
+                        if (fd_check_fsa() == YES)
+                        {
+                           (void)check_fra_fd();
+                           get_new_positions();
+                           init_msg_buffer();
+                           last_pos_lookup = INCORRECT;
+                        }
+#ifndef WITH_MULTI_FSA_CHECKS
                      }
 #endif
                      fsa[p_con->fsa_pos].job_status[p_con->job_no].connect_status = NOT_WORKING;
@@ -5062,13 +5084,18 @@ zombie_check(struct connection *p_con,
                  char tr_hostname[MAX_HOSTNAME_LENGTH + 2];
 
                  /* Abnormal termination. */
-#ifdef WITH_MULTI_FSA_CHECKS
-                 if (fd_check_fsa() == YES)
+#ifndef WITH_MULTI_FSA_CHECKS
+                 if (fsa_out_of_sync == YES)
                  {
-                    (void)check_fra_fd();
-                    get_new_positions();
-                    init_msg_buffer();
-                    last_pos_lookup = INCORRECT;
+#endif
+                    if (fd_check_fsa() == YES)
+                    {
+                       (void)check_fra_fd();
+                       get_new_positions();
+                       init_msg_buffer();
+                       last_pos_lookup = INCORRECT;
+                    }
+#ifndef WITH_MULTI_FSA_CHECKS
                  }
 #endif
                  fsa[p_con->fsa_pos].job_status[p_con->job_no].connect_status = NOT_WORKING;

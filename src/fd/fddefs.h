@@ -20,6 +20,7 @@
 #ifndef __fddefs_h
 #define __fddefs_h
 
+/* #define WITH_MULTI_FSA_CHECKS */
 /* #define DO_NOT_PARALLELIZE_ALL_FETCH 1 */
 /* #define DEBUG_ASSIGNMENT 1 */
 /* #define _RMQUEUE_ 1 */

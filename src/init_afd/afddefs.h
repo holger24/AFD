@@ -549,7 +549,7 @@ typedef unsigned long       u_long_64;
 #define WORK_DIR_ID                "-w"
 #define WORK_DIR_ID_LENGTH         (sizeof(WORK_DIR_ID) - 1)
 
-#define WAIT_LOOPS (MAX_SHUTDOWN_TIME + (MAX_SHUTDOWN_TIME / 2))
+#define WAIT_LOOPS                 (MAX_SHUTDOWN_TIME + (MAX_SHUTDOWN_TIME / 2))
 
 /* Definitions when AFD file directory is running full. */
 #define STOP_AMG_THRESHOLD         20
@@ -4312,6 +4312,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                     fsa_attach_features(char *),
                     fsa_attach_features_passive(int, char *),
                     fsa_attach_passive(int, char *),
+                    fsa_check_id_changed(int),
                     fsa_detach(int),
                     get_afd_name(char *),
                     get_afd_path(int *, char **, char *),

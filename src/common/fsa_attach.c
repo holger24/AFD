@@ -29,6 +29,7 @@ DESCR__S_M3
  **   int fsa_attach_passive(int silent, char *who)
  **   int fsa_attach_features(char *who)
  **   int fsa_attach_features_passive(int silent, char *who)
+ **   int fsa_check_id_changed(int fsa_id)
  **
  ** DESCRIPTION
  **   Attaches to the memory mapped area of the FSA (File Transfer
@@ -1009,4 +1010,94 @@ fsa_attach_features_passive(int silent, char *who)
    } while (no_of_hosts <= 0);
 
    return(SUCCESS);
+}
+
+
+/*####################### fsa_check_id_changed() ########################*/
+int
+fsa_check_id_changed(int attached_fsa_id)
+{
+   int          current_fsa_id,
+                fd,
+                loop_counter;
+   char         fsa_id_file[MAX_PATH_LENGTH];
+   struct flock wlock = {F_WRLCK, SEEK_SET, 0, 1},
+                ulock = {F_UNLCK, SEEK_SET, 0, 1};
+
+   /* Get absolute path of FSA_ID_FILE. */
+   (void)strcpy(fsa_id_file, p_work_dir);
+   (void)strcat(fsa_id_file, FIFO_DIR);
+   (void)strcat(fsa_id_file, FSA_ID_FILE);
+
+   /*
+    * Retrieve the FSA (Filetransfer Status Area) ID from FSA_ID_FILE.
+    * Make sure that it is not locked.
+    */
+   loop_counter = 0;
+   while ((fd = coe_open(fsa_id_file, O_RDWR)) == -1)
+   {
+      if (errno == ENOENT)
+      {
+         my_usleep(400000L);
+         if (loop_counter++ > 24)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       _("Failed to open() `%s' : %s"),
+                       fsa_id_file, strerror(errno));
+            return(INCORRECT);
+         }
+      }
+      else
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    _("Failed to open() `%s' : %s"),
+                    fsa_id_file, strerror(errno));
+         return(INCORRECT);
+      }
+   }
+
+   /* Check if its locked. */
+   if (fcntl(fd, F_SETLKW, &wlock) == -1)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 _("Could not set write lock for `%s' : %s"),
+                 fsa_id_file, strerror(errno));
+      (void)close(fd);
+      return(INCORRECT);
+   }
+
+   /* Read the fsa_id. */
+   if (read(fd, &current_fsa_id, sizeof(int)) < 0)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 _("Could not read the value of the fsa_id : %s"),
+                 strerror(errno));
+      (void)close(fd);
+      return(INCORRECT);
+   }
+
+   /* Unlock file and close it. */
+   if (fcntl(fd, F_SETLKW, &ulock) == -1)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 _("Could not unlock `%s' : %s"),
+                 fsa_id_file, strerror(errno));
+      (void)close(fd);
+      return(INCORRECT);
+   }
+   if (close(fd) == -1)
+   {
+      system_log(WARN_SIGN, __FILE__, __LINE__,
+                 _("Could not close() `%s' : %s"),
+                 fsa_id_file, strerror(errno));
+   }
+
+   if (current_fsa_id != attached_fsa_id)
+   {
+      return(YES);
+   }
+   else
+   {
+      return(NO);
+   }
 }
