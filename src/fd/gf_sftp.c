@@ -2348,6 +2348,10 @@ gf_sftp_exit(void)
                 file_size_to_retrieve_shown);
       fsa_detach_pos(db.fsa_pos);
    }
+   if ((fra != NULL) && (db.fra_pos >= 0) && (p_no_of_dirs != NULL))
+   {
+      fra_detach_pos(db.fra_pos);
+   }
 
    send_proc_fin(NO);
    if (sys_log_fd != STDERR_FILENO)
