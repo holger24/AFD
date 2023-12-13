@@ -1,6 +1,6 @@
 /*
  *  fra_attach_pos.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -279,8 +279,6 @@ fra_attach_pos(int pos)
 void
 fra_detach_pos(int pos)
 {
-   char *ptr;
-
    if (fra_fd > 0)
    {
       if (close(fra_fd) == -1)
@@ -291,39 +289,46 @@ fra_detach_pos(int pos)
       fra_fd = -1;
    }
 
-   ptr = (char *)p_no_of_dirs;
+   if (fra != NULL)
+   {
+      char *ptr;
+
+      ptr = (char *)p_no_of_dirs;
 #ifdef HAVE_MMAP
-   if (munmap(ptr, AFD_WORD_OFFSET) == -1)
-   {
-      system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Failed to munmap() no_of_dirs from FRA : %s",
-                 strerror(errno));
-   }
-   ptr = (char *)fra - map_offset;
-   if (munmap(ptr, fra_size) == -1)
-   {
-      system_log(ERROR_SIGN, __FILE__, __LINE__,
+      if (munmap(ptr, AFD_WORD_OFFSET) == -1)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Failed to munmap() no_of_dirs from FRA : %s",
+                    strerror(errno));
+      }
+      ptr = (char *)fra - map_offset;
+      if (munmap(ptr, fra_size) == -1)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
 # if SIZEOF_OFF_T == 4
-                 "Failed to munmap() from FRA position %d [fra_size = %ld] : %s",
+                    "Failed to munmap() from FRA position %d [fra_size = %ld] : %s",
 # else
-                 "Failed to munmap() from FRA position %d [fra_size = %lld] : %s",
+                    "Failed to munmap() from FRA position %d [fra_size = %lld] : %s",
 # endif
-                 pos, (pri_off_t)fra_size, strerror(errno));
-   }
+                    pos, (pri_off_t)fra_size, strerror(errno));
+      }
 #else
-   if (munmap_emu(ptr) == -1)
-   {
-      system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Failed to munmap_emu() no_of_dirs from FRA : %s",
-                 strerror(errno));
-   }
-   ptr = (char *)fra;
-   if (munmap_emu(ptr) == -1)
-   {
-      system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Failed to munmap_emu() from FRA position %d : %s",
-                 pos, strerror(errno));
-   }
+      if (munmap_emu(ptr) == -1)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Failed to munmap_emu() no_of_dirs from FRA : %s",
+                    strerror(errno));
+      }
+      ptr = (char *)fra;
+      if (munmap_emu(ptr) == -1)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Failed to munmap_emu() from FRA position %d : %s",
+                    pos, strerror(errno));
+      }
 #endif
+      fra = NULL;
+   }
+
    return;
 }
