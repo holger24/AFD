@@ -229,6 +229,7 @@ try_attach_again:
                            if ((status = ftp_date(rl[i].file_name,
                                                   &file_mtime)) == SUCCESS)
                            {
+                              rl[i].special_flag |= RL_GOT_EXACT_DATE;
                               rl[i].file_mtime = file_mtime;
                               rl[i].got_date = YES;
                               if (fsa->debug > NORMAL_MODE)
@@ -287,6 +288,7 @@ try_attach_again:
                         if ((status = ftp_date(rl[i].file_name,
                                                &file_mtime)) == SUCCESS)
                         {
+                           rl[i].special_flag |= RL_GOT_EXACT_DATE;
                            rl[i].file_mtime = file_mtime;
                            rl[i].got_date = YES;
                            if (fsa->debug > NORMAL_MODE)
@@ -345,6 +347,7 @@ try_attach_again:
 
                      if ((status = ftp_size(rl[i].file_name, &size)) == SUCCESS)
                      {
+                        rl[i].special_flag |= RL_GOT_EXACT_SIZE;
                         rl[i].size = size;
                         if (fsa->debug > NORMAL_MODE)
                         {
@@ -1086,6 +1089,7 @@ check_list(char         *file,
 
                   if ((status = ftp_date(file, &file_mtime)) == SUCCESS)
                   {
+                     rl[i].special_flag |= RL_GOT_EXACT_DATE;
                      rl[i].got_date = YES;
                      rl[i].file_mtime = file_mtime;
                      if (fsa->debug > NORMAL_MODE)
@@ -1132,6 +1136,7 @@ check_list(char         *file,
 
                   if ((status = ftp_size(file, &size)) == SUCCESS)
                   {
+                     rl[i].special_flag |= RL_GOT_EXACT_SIZE;
                      rl[i].size = size;
                      if (fsa->debug > NORMAL_MODE)
                      {
@@ -1319,7 +1324,7 @@ check_list(char         *file,
             rl[i].in_list = YES;
             if ((rl[i].assigned != 0) ||
                 ((fra->stupid_mode == GET_ONCE_ONLY) &&
-                 ((rl[i].special_flag & RL_GOT_EXACT_SIZE_DATE) ||
+                 ((rl[i].special_flag & RL_GOT_SIZE_DATE) ||
                   (rl[i].retrieved == YES))))
             {
                if ((rl[i].retrieved == NO) && (rl[i].assigned == 0))
@@ -1359,6 +1364,7 @@ check_list(char         *file,
                      rl[i].got_date = YES;
                      if (rl[i].file_mtime != file_mtime)
                      {
+                        rl[i].special_flag |= RL_GOT_EXACT_DATE;
                         rl[i].file_mtime = file_mtime;
                         rl[i].retrieved = NO;
                         rl[i].assigned = 0;
@@ -1412,6 +1418,7 @@ check_list(char         *file,
                   {
                      if (rl[i].size != size)
                      {
+                        rl[i].special_flag |= RL_GOT_EXACT_SIZE;
                         prev_size = rl[i].size;
                         rl[i].size = size;
                         rl[i].retrieved = NO;
@@ -1681,6 +1688,7 @@ check_list(char         *file,
 
             if ((status = ftp_date(file, &file_mtime)) == SUCCESS)
             {
+               rl[no_of_listed_files].special_flag |= RL_GOT_EXACT_DATE;
                rl[no_of_listed_files].file_mtime = file_mtime;
                rl[no_of_listed_files].got_date = YES;
                if (fsa->debug > NORMAL_MODE)
@@ -1727,6 +1735,7 @@ check_list(char         *file,
 
          if ((status = ftp_date(file, &file_mtime)) == SUCCESS)
          {
+            rl[no_of_listed_files].special_flag |= RL_GOT_EXACT_DATE;
             rl[no_of_listed_files].file_mtime = file_mtime;
             rl[no_of_listed_files].got_date = YES;
             if (fsa->debug > NORMAL_MODE)
@@ -1775,6 +1784,7 @@ check_list(char         *file,
       if ((status = ftp_size(file, &size)) == SUCCESS)
       {
          rl[no_of_listed_files].size = size;
+         rl[no_of_listed_files].special_flag |= RL_GOT_EXACT_SIZE;
          *file_size_to_retrieve += size;
          *files_to_retrieve += 1;
          if (fsa->debug > NORMAL_MODE)
@@ -1825,7 +1835,7 @@ check_list(char         *file,
    }
    if ((*file_mtime != -1) && (rl[no_of_listed_files].size != -1))
    {
-      rl[no_of_listed_files].special_flag |= RL_GOT_EXACT_SIZE_DATE;
+      rl[no_of_listed_files].special_flag |= RL_GOT_SIZE_DATE;
    }
    if ((fra->ignore_size == -1) ||
        ((fra->gt_lt_sign & ISIZE_EQUAL) &&

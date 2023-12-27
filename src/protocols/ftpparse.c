@@ -64,7 +64,9 @@ static void                       initbase(void),
 int
 ftpparse(struct ftpparse *fp,
          off_t           *file_size,
+         int             *exact_size,
          time_t          *file_mtime,
+         int             *exact_date,
          char            *buf,
          int             len)
 {
@@ -92,6 +94,8 @@ ftpparse(struct ftpparse *fp,
    fp->idtype = FTPPARSE_ID_UNKNOWN;
    fp->id = 0;
    fp->idlen = 0;
+   *exact_size = NO;
+   *exact_date = NO;
 
    if (len < 2) /* an empty name in EPLF, with no info, could be 2 chars */
    {
@@ -129,11 +133,13 @@ ftpparse(struct ftpparse *fp,
                      *(buf + i + 1 + (j - i - 1)) = '\0';
                      *file_size = (off_t)str2offt((buf + i + 1), NULL, 10);
                      *(buf + i + 1 + (j - i - 1)) = tmp_char;
+                     *exact_size = YES;
                      break;
                   case 'm':
                      fp->mtimetype = FTPPARSE_MTIME_LOCAL;
                      initbase();
                      *file_mtime = base + getlong(buf + i + 1, j - i - 1);
+                     *exact_date = YES;
                      break;
                   case 'i':
                      fp->idtype = FTPPARSE_ID_FULL;
@@ -278,6 +284,7 @@ ftpparse(struct ftpparse *fp,
 
         *file_size = size;
         fp->sizetype = FTPPARSE_SIZE_BINARY;
+        *exact_size = YES;
 
         if (*buf == 'l')
         {
@@ -621,6 +628,7 @@ ftpparse(struct ftpparse *fp,
          *(buf + i + (j - i)) = tmp_char;
          fp->sizetype = FTPPARSE_SIZE_BINARY;
          fp->flagtryretr = 1;
+         *exact_size = YES;
       }
       while (buf[j] == ' ')
       {

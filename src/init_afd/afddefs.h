@@ -3656,7 +3656,9 @@ struct dir_options
 # define MAX_EXTRA_LS_DATA_LENGTH 90
 #endif
 
-#define RL_GOT_EXACT_SIZE_DATE    1
+#define RL_GOT_SIZE_DATE          1
+#define RL_GOT_EXACT_SIZE         2   /* Exact -> resolution in byte.    */
+#define RL_GOT_EXACT_DATE         4   /* Exact -> resolution in seconds. */
 struct retrieve_list
        {
           char          file_name[MAX_FILENAME_LENGTH];
@@ -3671,8 +3673,10 @@ struct retrieve_list
           unsigned char special_flag;    /*+-----+------------------------+*/
                                          /*| Bit |        Meaning         |*/
                                          /*+-----+------------------------+*/
-                                         /*| 2-32| Not used.              |*/
-                                         /*|    1| RL_GOT_EXACT_SIZE_DATE |*/
+                                         /*| 4-32| Not used.              |*/
+                                         /*|    3| RL_GOT_EXACT_DATE      |*/
+                                         /*|    2| RL_GOT_EXACT_SIZE      |*/
+                                         /*|    1| RL_GOT_SIZE_DATE       |*/
                                          /*+-----+------------------------+*/
           char          got_date;
           char          retrieved;       /* Has the file already been      */

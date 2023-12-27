@@ -41,4 +41,5 @@ struct ftpparse
 
 
 /* Function prototype */
-extern int ftpparse(struct ftpparse *, off_t *, time_t *, char *, int);
+extern int ftpparse(struct ftpparse *, off_t *, int *, time_t *, int *,
+                    char *, int);

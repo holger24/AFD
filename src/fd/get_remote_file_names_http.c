@@ -2998,7 +2998,7 @@ check_list(char   *file,
             rl[i].in_list = YES;
             if ((rl[i].assigned != 0) ||
                 ((fra->stupid_mode == GET_ONCE_ONLY) &&
-                 ((rl[i].special_flag & RL_GOT_EXACT_SIZE_DATE) ||
+                 ((rl[i].special_flag & RL_GOT_SIZE_DATE) ||
                   (rl[i].retrieved == YES))))
             {
                if ((rl[i].retrieved == NO) && (rl[i].assigned == 0))
@@ -3388,7 +3388,15 @@ check_list(char   *file,
    }
    if ((file_mtime != -1) && (file_size != -1))
    {
-      rl[no_of_listed_files].special_flag |= RL_GOT_EXACT_SIZE_DATE;
+      if (exact_date == DS2UT_SECOND)
+      {
+         rl[no_of_listed_files].special_flag |= RL_GOT_EXACT_DATE;
+      }
+      if (exact_size != 1)
+      {
+         rl[no_of_listed_files].special_flag |= RL_GOT_EXACT_SIZE;
+      }
+      rl[no_of_listed_files].special_flag |= RL_GOT_SIZE_DATE;
    }
 
    if ((fra->ignore_size == -1) ||

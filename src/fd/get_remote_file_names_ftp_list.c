@@ -83,8 +83,8 @@ static time_t                     current_time;
 
 /* Local function prototypes. */
 static void                       do_scan(int *, off_t *, int *);
-static int                        check_list(char *, off_t, time_t, int *,
-                                             off_t *, int *);
+static int                        check_list(char *, off_t, int, time_t, int,
+                                             int *, off_t *, int *);
 
 
 /*################## get_remote_file_names_ftp_list() ###################*/
@@ -411,7 +411,9 @@ do_scan(int   *files_to_retrieve,
 
    if (list != NULL)
    {
-      int i;
+      int exact_date,
+          exact_size,
+          i;
 
       /* Get all file masks for this directory. */
       if ((j = read_file_mask(fra->dir_alias, &nfg, &fml)) == INCORRECT)
@@ -540,8 +542,8 @@ do_scan(int   *files_to_retrieve,
             p_end++;
          }
 
-         if (((ret = ftpparse(&fp, &file_size, &file_mtime, p_start,
-                              p_end - p_start) == 1)) &&
+         if (((ret = ftpparse(&fp, &file_size, &exact_size, &file_mtime,
+                              &exact_date, p_start, p_end - p_start) == 1)) &&
              ((fp.flagtryretr == 1) &&
               ((fp.name[0] != '.') || (fra->dir_options & ACCEPT_DOT_FILES))))
          {
@@ -576,7 +578,8 @@ do_scan(int   *files_to_retrieve,
                      {
                         if ((status = pmatch(p_mask, file_name, NULL)) == 0)
                         {
-                           if (check_list(file_name, file_size, file_mtime,
+                           if (check_list(file_name, file_size, exact_size,
+                                          file_mtime, exact_date,
                                           files_to_retrieve,
                                           file_size_to_retrieve,
                                           more_files_in_list) == 0)
@@ -845,7 +848,9 @@ do_scan(int   *files_to_retrieve,
 static int
 check_list(char   *file,
            off_t  file_size,
+           int    exact_size,
            time_t file_mtime,
+           int    exact_date,
            int    *files_to_retrieve,
            off_t  *file_size_to_retrieve,
            int    *more_files_in_list)
@@ -883,9 +888,18 @@ check_list(char   *file,
                int ret;
 
                rl[i].file_mtime = file_mtime;
+               if (exact_date == YES)
+               {
+                  rl[i].special_flag |= RL_GOT_EXACT_DATE;
+               }
                rl[i].got_date = YES;
                rl[i].size = file_size;
+               if (exact_size == YES)
+               {
+                  rl[i].special_flag |= RL_GOT_EXACT_SIZE;
+               }
                rl[i].prev_size = 0;
+               rl[i].special_flag |= RL_GOT_SIZE_DATE;
 
                if ((fra->ignore_size == -1) ||
                    ((fra->gt_lt_sign & ISIZE_EQUAL) &&
@@ -1034,7 +1048,7 @@ check_list(char   *file,
             rl[i].in_list = YES;
             if ((rl[i].assigned != 0) ||
                 ((fra->stupid_mode == GET_ONCE_ONLY) &&
-                 ((rl[i].special_flag & RL_GOT_EXACT_SIZE_DATE) ||
+                 ((rl[i].special_flag & RL_GOT_SIZE_DATE) ||
                   (rl[i].retrieved == YES))))
             {
                if ((rl[i].retrieved == NO) && (rl[i].assigned == 0))
@@ -1282,14 +1296,23 @@ check_list(char   *file,
    rl[no_of_listed_files].retrieved = NO;
    rl[no_of_listed_files].in_list = YES;
    rl[no_of_listed_files].size = file_size;
+   if (exact_size == YES)
+   {
+      rl[no_of_listed_files].special_flag |= RL_GOT_EXACT_SIZE;
+   }
    rl[no_of_listed_files].prev_size = 0;
    rl[no_of_listed_files].file_mtime = file_mtime;
+   if (exact_date == YES)
+   {
+      rl[no_of_listed_files].special_flag |= RL_GOT_EXACT_DATE;
+   }
    rl[no_of_listed_files].got_date = YES;
+   rl[no_of_listed_files].special_flag |= RL_GOT_SIZE_DATE;
 
    /* Note, the following is not true, since with a LIST type listing   */
    /* we never know if we get the exact size and date. Some FTP servers */
    /* begin to round this up in one or the other way.                   */
-   rl[no_of_listed_files].special_flag = RL_GOT_EXACT_SIZE_DATE;
+   rl[no_of_listed_files].special_flag = RL_GOT_SIZE_DATE;
 
    if ((fra->ignore_size == -1) ||
        ((fra->gt_lt_sign & ISIZE_EQUAL) &&

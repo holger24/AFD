@@ -1244,7 +1244,7 @@ check_list(char   *file,
             rl[i].in_list = YES;
             if ((rl[i].assigned != 0) ||
                 ((fra->stupid_mode == GET_ONCE_ONLY) &&
-                 ((rl[i].special_flag & RL_GOT_EXACT_SIZE_DATE) ||
+                 ((rl[i].special_flag & RL_GOT_SIZE_DATE) ||
                   (rl[i].retrieved == YES))))
             {
                if ((rl[i].retrieved == NO) && (rl[i].assigned == 0))
@@ -1494,7 +1494,9 @@ check_list(char   *file,
    rl[no_of_listed_files].prev_size = 0;
    rl[no_of_listed_files].file_mtime = file_mtime;
    rl[no_of_listed_files].got_date = YES;
-   rl[no_of_listed_files].special_flag |= RL_GOT_EXACT_SIZE_DATE;
+   rl[no_of_listed_files].special_flag |= RL_GOT_SIZE_DATE;
+   rl[no_of_listed_files].special_flag |= RL_GOT_EXACT_SIZE;
+   rl[no_of_listed_files].special_flag |= RL_GOT_EXACT_DATE;
 
    if ((fra->ignore_size == -1) ||
        ((fra->gt_lt_sign & ISIZE_EQUAL) &&
