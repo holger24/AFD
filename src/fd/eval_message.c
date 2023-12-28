@@ -1497,8 +1497,10 @@ eval_message(char *message_name, struct job *p_db)
                                }
                                tmp_char = *ptr;
                                *ptr = '\0';
-                               if ((length = read_file(file_name,
-                                                       &p_db->subject)) != INCORRECT)
+                               if ((length = read_file_no_cr(file_name,
+                                                             &p_db->subject,
+                                                             NO, __FILE__,
+                                                             __LINE__)) != INCORRECT)
                                {
                                   p_db->special_flag |= MAIL_SUBJECT;
                                   if (p_db->subject[length - 1] == '\n')
