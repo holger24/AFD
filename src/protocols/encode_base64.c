@@ -1,6 +1,6 @@
 /*
  *  encode_base64.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2006 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,8 @@ DESCR__S_M3
  ** SYNOPSIS
  **   int encode_base64(unsigned char *src,
  **                     int           src_length,
- **                     unsigned char *dst)
+ **                     unsigned char *dst,
+ **                     int           limit_line_length)
  **
  ** DESCRIPTION
  **
@@ -38,6 +39,7 @@ DESCR__S_M3
  **
  ** HISTORY
  **   25.10.1998 H.Kiehl Created
+ **   28.12.2023 H.Kiehl Added parameter limit_line_length.
  **
  */
 DESCR__E_M3
@@ -50,7 +52,10 @@ static const char base_64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvw
 
 /*########################### encode_base64() ###########################*/
 int
-encode_base64(unsigned char *src, int src_length, unsigned char *dst)
+encode_base64(unsigned char *src,
+              int           src_length,
+              unsigned char *dst,
+              int           limit_line_length)
 {
    unsigned char *dst_ptr = dst,
                  *src_ptr = src;
@@ -64,7 +69,7 @@ encode_base64(unsigned char *src, int src_length, unsigned char *dst)
       src_ptr += 3;
       src_length -= 3;
       line_length += 4;
-      if (line_length > 71)
+      if ((limit_line_length == YES) && (line_length > 71))
       {
          line_length = 0;
          *(dst_ptr + 4) = '\r';

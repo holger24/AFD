@@ -1,6 +1,6 @@
 /*
  *  asmtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -949,8 +949,10 @@ main(int argc, char *argv[])
                }
                if (db.special_flag & ATTACH_FILE)
                {
-                  write_size = encode_base64((unsigned char *)buffer, blocksize,
-                                             (unsigned char *)encode_buffer);
+                  write_size = encode_base64((unsigned char *)buffer,
+                                             blocksize,
+                                             (unsigned char *)encode_buffer,
+                                             YES);
                   if (smtp_write(encode_buffer, NULL, write_size) < 0)
                   {
                      WHAT_DONE("mailed", file_size_done, no_of_files_done);
@@ -991,7 +993,8 @@ main(int argc, char *argv[])
                if (db.special_flag & ATTACH_FILE)
                {
                   write_size = encode_base64((unsigned char *)buffer, rest,
-                                             (unsigned char *)encode_buffer);
+                                             (unsigned char *)encode_buffer,
+                                             YES);
                   if (smtp_write(encode_buffer, NULL, write_size) < 0)
                   {
                      WHAT_DONE("mailed", file_size_done, no_of_files_done);

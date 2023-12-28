@@ -1,6 +1,6 @@
 /*
  *  smtpdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ struct smtp_server_capabilities
        };
 
 /* Function prototypes. */
-extern int encode_base64(unsigned char *, int, unsigned char *),
+extern int encode_base64(unsigned char *, int, unsigned char *, int),
            smtp_auth(unsigned char, char *, char *),
            smtp_connect(char *, int, int),
            smtp_helo(char *),

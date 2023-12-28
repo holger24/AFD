@@ -1,6 +1,6 @@
 /*
  *  smtpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -916,7 +916,8 @@ smtp_write_subject(char *subject, size_t *length, char *charset)
       buffer[11 + charset_length + 2] = '?';
 
       ret = encode_base64((unsigned char *)subject, *length,
-                          (unsigned char *)&buffer[11 + charset_length + 3]);
+                          (unsigned char *)&buffer[11 + charset_length + 3],
+                          NO);
       buffer[11 + charset_length + 3 + ret] = '?';
       buffer[11 + charset_length + 3 + ret + 1] = '=';
       buffer[11 + charset_length + 3 + ret + 2] = '\r';

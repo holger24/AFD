@@ -2608,8 +2608,10 @@ main(int argc, char *argv[])
                }
                if (db.special_flag & ATTACH_FILE)
                {
-                  write_size = encode_base64((unsigned char *)buffer, blocksize,
-                                             (unsigned char *)encode_buffer);
+                  write_size = encode_base64((unsigned char *)buffer,
+                                             blocksize,
+                                             (unsigned char *)encode_buffer,
+                                             YES);
                   if (smtp_write(encode_buffer, NULL, write_size) < 0)
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -2705,7 +2707,8 @@ main(int argc, char *argv[])
                if (db.special_flag & ATTACH_FILE)
                {
                   write_size = encode_base64((unsigned char *)buffer, rest,
-                                             (unsigned char *)encode_buffer);
+                                             (unsigned char *)encode_buffer,
+                                             YES);
                   if (smtp_write(encode_buffer, NULL, write_size) < 0)
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
