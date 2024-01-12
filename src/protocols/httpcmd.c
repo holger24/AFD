@@ -1,6 +1,6 @@
 /*
  *  httpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -79,6 +79,7 @@ DESCR__S_M3
  **   19.03.2022 H.Kiehl Add strict TLS support.
  **   17.07.2022 H.Kiehl Add option to enable TLS legacy renegotiation.
  **   18.10.2022 H.Kiehl Add support for HTTP digest authentication.
+ **   12.01.2024 H.Kiehl For http_head() see 204+206 as success.
  */
 DESCR__E_M3
 
@@ -2548,7 +2549,9 @@ retry_head:
                            resource, hmr.hostname, PACKAGE_VERSION,
                            (hmr.authorization == NULL) ? "" : hmr.authorization)) == SUCCESS)
       {
-         if ((reply = get_http_reply(NULL, 999, __LINE__)) == 200)
+         if (((reply = get_http_reply(NULL, 999, __LINE__)) == 200) ||
+             (reply == 204) || /* No content. */
+             (reply == 206))   /* Partial Content. */
          {
             reply = SUCCESS;
             *content_length = hmr.content_length;
