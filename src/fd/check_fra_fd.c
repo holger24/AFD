@@ -1,6 +1,6 @@
 /*
  *  check_fra_fd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -243,8 +243,8 @@ check_fra_fd(void)
                          */
                         for (k = 0; k < no_of_dirs; k++)
                         {
-                           if ((CHECK_STRCMP(fra[i].dir_alias, ord[i].ls_data_alias) == 0) ||
-                               (CHECK_STRCMP(fra[i].ls_data_alias, ord[i].ls_data_alias) == 0))
+                           if ((CHECK_STRCMP(fra[k].dir_alias, ord[i].ls_data_alias) == 0) ||
+                               (CHECK_STRCMP(fra[k].ls_data_alias, ord[i].ls_data_alias) == 0))
                            {
                               delete_it = NO;
                               break;
