@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_ftp.c - Part of AFD, an automatic file distribution
  *                                program.
- *  Copyright (c) 2000 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -109,7 +109,9 @@ get_remote_file_names_ftp(off_t        *file_size_to_retrieve,
        i = 0;
 
    *file_size_to_retrieve = 0;
-   if ((fra->stupid_mode == GET_ONCE_ONLY) && (fra->ignore_file_time == 0))
+   if (((fra->stupid_mode == GET_ONCE_ONLY) ||
+        (fra->stupid_mode == GET_ONCE_NOT_EXACT)) &&
+       (fra->ignore_file_time == 0))
    {
       get_date = NO;
    }
@@ -1323,7 +1325,8 @@ check_list(char         *file,
          {
             rl[i].in_list = YES;
             if ((rl[i].assigned != 0) ||
-                ((fra->stupid_mode == GET_ONCE_ONLY) &&
+                (((fra->stupid_mode == GET_ONCE_ONLY) ||
+                  (fra->stupid_mode == GET_ONCE_NOT_EXACT)) &&
                  ((rl[i].special_flag & RL_GOT_SIZE_DATE) ||
                   (rl[i].retrieved == YES))))
             {
@@ -1410,7 +1413,9 @@ check_list(char         *file,
 
                /* Try to get remote size. */
                if ((check_size == YES) &&
-                   ((fra->stupid_mode != GET_ONCE_ONLY) || (rl[i].size == -1)))
+                   (((fra->stupid_mode != GET_ONCE_ONLY) &&
+                     (fra->stupid_mode != GET_ONCE_NOT_EXACT)) ||
+                    (rl[i].size == -1)))
                {
                   off_t size;
 

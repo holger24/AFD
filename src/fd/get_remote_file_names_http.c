@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_http.c - Part of AFD, an automatic file distribution
  *                                 program.
- *  Copyright (c) 2006 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,6 +52,7 @@ DESCR__S_M3
  **                      it increases the HEAD calls, remove it.
  **   29.10.2022 H.Kiehl Added support for downloadLinkArea listing.
  **   30.06.2023 H.Kiehl Added support for contentDiv listing.
+ **   13.01.2024 H.Kiehl Added 'not exact' part for once.
  **
  */
 DESCR__E_M3
@@ -2997,7 +2998,8 @@ check_list(char   *file,
             cached_i = i;
             rl[i].in_list = YES;
             if ((rl[i].assigned != 0) ||
-                ((fra->stupid_mode == GET_ONCE_ONLY) &&
+                (((fra->stupid_mode == GET_ONCE_ONLY) ||
+                  (fra->stupid_mode == GET_ONCE_NOT_EXACT)) &&
                  ((rl[i].special_flag & RL_GOT_SIZE_DATE) ||
                   (rl[i].retrieved == YES))))
             {
@@ -3031,6 +3033,7 @@ check_list(char   *file,
 
                /* Try to get remote date and size. */
                if (((fra->dir_options & DONT_GET_DIR_LIST) == 0) &&
+                   (fra->stupid_mode != GET_ONCE_NOT_EXACT) &&
                    ((file_mtime == -1) || (exact_date != DS2UT_SECOND) ||
                     (file_size == -1) || (exact_size != 1)))
                {
@@ -3328,6 +3331,7 @@ check_list(char   *file,
    rl[no_of_listed_files].special_flag = 0;
 
    if (((fra->dir_options & DONT_GET_DIR_LIST) == 0) &&
+       (fra->stupid_mode != GET_ONCE_NOT_EXACT) &&
        ((file_mtime == -1) || (exact_date != DS2UT_SECOND) ||
         (file_size == -1) || (exact_size != 1)))
    {

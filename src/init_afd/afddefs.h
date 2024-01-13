@@ -1,6 +1,6 @@
 /*
  *  afddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2024 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -707,6 +707,7 @@ typedef unsigned long       u_long_64;
 #define FILE_IS_DIR                -2     /* Used by remove_dir().        */
 #define GET_ONCE_ONLY              2
 #define APPEND_ONLY                3
+#define GET_ONCE_NOT_EXACT         4
 #define DATA_MOVED                 1
 #define DATA_COPIED                3
 #define NORMAL_IDENTIFIER          0

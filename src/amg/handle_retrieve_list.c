@@ -1,7 +1,7 @@
 /*
  *  handle_retrieve_list.c - Part of AFD, an automatic file distribution
  *                           program.
- *  Copyright (c) 2006 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -405,7 +405,8 @@ check_list(struct directory_entry *p_de,
       if (CHECK_STRCMP(p_de->rl[i].file_name, file) == 0)
       {
          p_de->rl[i].in_list = YES;
-         if ((fra[p_de->fra_pos].stupid_mode == GET_ONCE_ONLY) &&
+         if (((fra[p_de->fra_pos].stupid_mode == GET_ONCE_ONLY) ||
+              (fra[p_de->fra_pos].stupid_mode == GET_ONCE_NOT_EXACT)) &&
              (p_de->rl[i].retrieved == YES))
          {
             return(-1);

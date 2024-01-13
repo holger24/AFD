@@ -1,6 +1,6 @@
 /*
  *  get_dir_options.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ DESCR__S_M3
  **   16.02.2007 H.Kiehl Added 'warn time' option.
  **   24.02.2007 H.Kiehl Added 'inotify' option.
  **   24.11.2012 H.Kiehl Added support for another CRC type.
+ **   13.01.2024 H.Kiehl Extended 'store retrieve list' with 'once not exact'.
  **
  */
 DESCR__E_M3
@@ -458,6 +459,17 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                  (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
                               STORE_RETRIEVE_LIST_ID);
                  (void)strcat(d_o->aoptions[d_o->no_of_dir_options], " once");
+                 d_o->no_of_dir_options++;
+                 if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
+                 {
+                    goto done;
+                 }
+              }
+         else if (fra[i].stupid_mode == GET_ONCE_NOT_EXACT)
+              {
+                 (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
+                              STORE_RETRIEVE_LIST_ID);
+                 (void)strcat(d_o->aoptions[d_o->no_of_dir_options], " once not exact");
                  d_o->no_of_dir_options++;
                  if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
                  {

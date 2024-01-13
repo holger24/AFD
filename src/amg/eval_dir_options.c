@@ -1,7 +1,7 @@
 /*
  *  eval_dir_options.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 2000 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -110,6 +110,7 @@ DESCR__S_M3
  **   11.05.2017 H.Kiehl Added parameter cmd_fp, so we can show errors
  **                      and warnings directly when udc is called.
  **   29.10.2022 H.Kiehl Added "url with index file name" option.
+ **   13.01.2024 H.Kiehl Extended 'store retrieve list' with 'once not exact'.
  **
  */
 DESCR__E_M3
@@ -708,6 +709,7 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
               {
                  ptr++;
               }
+              /* once */
               if ((*ptr == 'o') && (*(ptr + 1) == 'n') &&
                   (*(ptr + 2) == 'c') && (*(ptr + 3) == 'e') &&
                   ((*(ptr + 4) == '\n') || (*(ptr + 4) == '\0')))
@@ -715,6 +717,22 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
                  dd[dir_pos].stupid_mode = GET_ONCE_ONLY;
                  ptr += 4;
               }
+                   /* once not exact */
+              else if ((*ptr == 'o') && (*(ptr + 1) == 'n') &&
+                       (*(ptr + 2) == 'c') && (*(ptr + 3) == 'e') &&
+                       ((*(ptr + 4) == ' ') || (*(ptr + 4) == '\t')) &&
+                       (*(ptr + 5) == 'n') && (*(ptr + 6) == 'o') &&
+                       (*(ptr + 7) == 't') &&
+                       ((*(ptr + 8) == ' ') || (*(ptr + 8) == '\t')) &&
+                       (*(ptr + 9) == 'e') && (*(ptr + 10) == 'x') &&
+                       (*(ptr + 11) == 'a') && (*(ptr + 12) == 'c') &&
+                       (*(ptr + 13) == 't') &&
+                       ((*(ptr + 14) == '\n') || (*(ptr + 14) == '\0')))
+                   {
+                      dd[dir_pos].stupid_mode = GET_ONCE_NOT_EXACT;
+                      ptr += 4;
+                   }
+                   /* append */
               else if ((*ptr == 'a') && (*(ptr + 1) == 'p') &&
                        (*(ptr + 2) == 'p') && (*(ptr + 3) == 'e') &&
                        (*(ptr + 4) == 'n') && (*(ptr + 5) == 'd') &&

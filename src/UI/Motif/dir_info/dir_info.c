@@ -1,6 +1,6 @@
 /*
  *  dir_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -415,6 +415,14 @@ main(int argc, char *argv[])
    else if (prev.stupid_mode == GET_ONCE_ONLY)
         {
            (void)sprintf(str_line, "%*s", DIR_INFO_LENGTH_L, "Once only");
+        }
+   else if (prev.stupid_mode == GET_ONCE_NOT_EXACT)
+        {
+           (void)sprintf(str_line, "%*s", DIR_INFO_LENGTH_L, "Once not exact");
+        }
+   else if (prev.stupid_mode == APPEND_ONLY)
+        {
+           (void)sprintf(str_line, "%*s", DIR_INFO_LENGTH_L, "Append");
         }
         else
         {

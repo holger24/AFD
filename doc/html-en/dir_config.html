@@ -557,7 +557,7 @@ defaults is shown in the table below:
    <td align=center>&nbsp;</td>
 </tr>
 <tr>
-   <td width="30%"><a name="store_retrieve_list">store retrieve list [once|append]</a></td>
+   <td width="30%"><a name="store_retrieve_list">store retrieve list [once|once not exact|append]</a></td>
    <td><p>When the above option &lt;do not remove&gt; is set, it can
        happen that always the same files are being collected by the
        AMG. To avoid this situation this option can be set. Then AMG
@@ -568,7 +568,10 @@ defaults is shown in the table below:
        only once, regardless if the size or modification time changes.
        This is can be useful for directories with lots of files and
        protocols where we need to poll each individual file for size
-       and date. For SFTP the once parameter is not needed since all
+       and date. With 'once not exact' it will not send any additional
+       command for each file to get the exact size and date, it just
+       excepts the 'inaccurate' data from the directory listing. For SFTP
+       the once and 'once not exact' parameter is not needed since all
        needed values are retrieved during the directory scan and no
        additional polling is required. However when set for SFTP it
        will only fetch the file once.</p>
@@ -3221,9 +3224,9 @@ section. Valid options can be taken from the following table:
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 1997 - 2023 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2024 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 21.07.2023
+   Last updated: 13.01.2024
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

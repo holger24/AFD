@@ -1,6 +1,6 @@
 /*
  *  fra_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -746,6 +746,10 @@ main(int argc, char *argv[])
          else if (fra[i].stupid_mode == GET_ONCE_ONLY)
               {
                  (void)fprintf(stdout, "Stupid mode          : GET_ONCE_ONLY\n");
+              }
+         else if (fra[i].stupid_mode == GET_ONCE_NOT_EXACT)
+              {
+                 (void)fprintf(stdout, "Stupid mode          : GET_ONCE_NOT_EXACT\n");
               }
          else if (fra[i].stupid_mode == APPEND_ONLY)
               {
