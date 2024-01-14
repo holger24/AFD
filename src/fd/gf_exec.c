@@ -433,7 +433,7 @@ main(int argc, char *argv[])
       while ((p_dir = readdir(dp)) != NULL)
       {
 #ifdef LINUX
-         if ((p_dir->d_type == DT_REG) || (p_dir->d_name[0] == '.'))
+         if ((p_dir->d_type != DT_REG) || (p_dir->d_name[0] == '.'))
 #else
          if (p_dir->d_name[0] == '.')
 #endif
