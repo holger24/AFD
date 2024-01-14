@@ -1,6 +1,6 @@
 /*
  *  sf_exec.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,6 +49,7 @@ DESCR__S_M1
  ** HISTORY
  **   27.11.2011 H.Kiehl Created
  **   15.09.2014 H.Kiehl Added simulation mode.
+ **   14.01.2024 H.Kiehl Add more debug log information.
  **
  */
 DESCR__E_M1
@@ -509,6 +510,36 @@ main(int argc, char *argv[])
                                      *p_file_size_buffer);
                      exit(EXEC_ERROR);
                   }
+                  else
+                  {
+                     if (fsa->debug > NORMAL_MODE)
+                     {
+                        trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                     "Executed command `%s' [Return code = %d]",
+                                     command_str, ret);
+                        if ((return_str != NULL) && (return_str[0] != '\0'))
+                        {
+                           char *end_ptr = return_str,
+                                *start_ptr;
+
+                           do
+                           {
+                              start_ptr = end_ptr;
+                              while ((*end_ptr != '\n') && (*end_ptr != '\0'))
+                              {
+                                 end_ptr++;
+                              }
+                              if (*end_ptr == '\n')
+                              {
+                                 *end_ptr = '\0';
+                                 end_ptr++;
+                              }
+                              trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                           "%s", start_ptr);
+                           } while (*end_ptr != '\0');
+                        }
+                     }
+                  }
                }
 #ifdef _OUTPUT_LOG
                if (db.output_log == YES)
@@ -611,7 +642,7 @@ main(int argc, char *argv[])
                         {
                            *end_ptr = '\0';
                               end_ptr++;
-                     }
+                        }
                         trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                   "%s", start_ptr);
                      } while (*end_ptr != '\0');
@@ -619,6 +650,36 @@ main(int argc, char *argv[])
                   rm_dupcheck_crc(source_file, p_file_name_buffer,
                                   *p_file_size_buffer);
                   exit(EXEC_ERROR);
+               }
+               else
+               {
+                  if (fsa->debug > NORMAL_MODE)
+                  {
+                     trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                  "Executed command `%s' [Return code = %d]",
+                                  command_str, ret);
+                     if ((return_str != NULL) && (return_str[0] != '\0'))
+                     {
+                        char *end_ptr = return_str,
+                             *start_ptr;
+
+                        do
+                        {
+                           start_ptr = end_ptr;
+                           while ((*end_ptr != '\n') && (*end_ptr != '\0'))
+                           {
+                              end_ptr++;
+                           }
+                           if (*end_ptr == '\n')
+                           {
+                              *end_ptr = '\0';
+                              end_ptr++;
+                           }
+                           trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                        "%s", start_ptr);
+                        } while (*end_ptr != '\0');
+                     }
+                  }
                }
                free(return_str);
                return_str = NULL;

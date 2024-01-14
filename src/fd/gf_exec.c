@@ -1,6 +1,6 @@
 /*
  *  gf_exec.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2013 - 2024 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -45,6 +45,7 @@ DESCR__S_M1
  **
  ** HISTORY
  **   23.01.2013 H.Kiehl Created
+ **   14.01.2024 H.Kiehl Add more debug log information.
  **
  */
 DESCR__E_M1
@@ -379,6 +380,36 @@ main(int argc, char *argv[])
          }
          exit(EXEC_ERROR);
       }
+      else
+      {
+         if (fsa->debug > NORMAL_MODE)
+         {
+            trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                         "Execute command %s [Return code = %d]",
+                         command_str, ret);
+            if ((return_str != NULL) && (return_str[0] != '\0'))
+            {
+               char *end_ptr = return_str,
+                    *start_ptr;
+
+               do
+               {
+                  start_ptr = end_ptr;
+                  while ((*end_ptr != '\n') && (*end_ptr != '\0'))
+                  {
+                     end_ptr++;
+                  }
+                  if (*end_ptr == '\n')
+                  {
+                     *end_ptr = '\0';
+                     end_ptr++;
+                  }
+                  trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                               "%s", start_ptr);
+               } while (*end_ptr != '\0');
+            }
+         }
+      }
       free(return_str);
       return_str = NULL;
 
@@ -390,6 +421,14 @@ main(int argc, char *argv[])
                    _("Failed to opendir() `%s' : %s"),
                    local_tmp_file, strerror(errno));
          exit(OPEN_FILE_DIR_ERROR);
+      }
+      else
+      {
+         if (fsa->debug > NORMAL_MODE)
+         {
+            trans_db_log(DEBUG_SIGN, __FILE__, __LINE__, NULL,
+                         "opendir() `%s'", local_tmp_file);
+         }
       }
       while ((p_dir = readdir(dp)) != NULL)
       {
