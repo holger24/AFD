@@ -1,6 +1,6 @@
 /*
  *  authcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2021, 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2021 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -310,39 +310,49 @@ digest_authentication(char                      *method,
                int  uri_length;
                char *str2hash_a2;
 
-               if (path_length == 0)
+               /* Check if filename already has path. */
+               if (filename[0] == '/')
                {
-                  uri_str[0] = '/';
-                  uri_length = 1;
+                  (void)memcpy(uri_str, filename, filename_length);
+                  uri_length = filename_length;
                }
                else
                {
-                  if (path[0] != '/')
+                  if (path_length == 0)
                   {
                      uri_str[0] = '/';
                      uri_length = 1;
                   }
                   else
                   {
-                     uri_length = 0;
+                     if (path[0] != '/')
+                     {
+                        uri_str[0] = '/';
+                        uri_length = 1;
+                     }
+                     else
+                     {
+                        uri_length = 0;
+                     }
+                     (void)memcpy(&uri_str[uri_length], path, path_length);
+                     uri_length += path_length;
+                     if ((uri_length > 0) && (uri_str[uri_length] == '/'))
+                     {
+                        uri_str[uri_length] = '\0';
+                        uri_length--;
+                     }
                   }
-                  (void)memcpy(&uri_str[uri_length], path, path_length);
-                  uri_length += path_length;
-                  if ((uri_length > 0) && (uri_str[uri_length] == '/'))
+                  if (filename_length > 0)
                   {
-                     uri_str[uri_length] = '\0';
-                     uri_length--;
+                     if (uri_str[uri_length - 1] != '/')
+                     {
+                        uri_str[uri_length] = '/';
+                        uri_length++;
+                     }
+                     (void)memcpy(&uri_str[uri_length], filename,
+                                  filename_length);
+                     uri_length += filename_length;
                   }
-               }
-               if (filename_length > 0)
-               {
-                  if (uri_str[uri_length - 1] != '/')
-                  {
-                     uri_str[uri_length] = '/';
-                     uri_length++;
-                  }
-                  (void)memcpy(&uri_str[uri_length], filename, filename_length);
-                  uri_length += filename_length;
                }
                uri_str[uri_length] = '\0';
 

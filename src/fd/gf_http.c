@@ -724,19 +724,42 @@ main(int argc, char *argv[])
                      }
                      else
                      {
-                        fd = 0;
-                        while ((fd < MAX_FILENAME_LENGTH) &&
-                               (tmp_rl.file_name[fd] != '\0'))
+                        if (tmp_rl.file_name[0] == '/')
                         {
-                           if (tmp_rl.file_name[fd] == '/')
+                           char *ptr = tmp_rl.file_name + strlen(tmp_rl.file_name) - 1;
+
+                           while ((ptr > tmp_rl.file_name) && (*ptr != '/'))
                            {
-                              *(p_local_tmp_file + fd) = '\\';
+                              ptr--;
                            }
-                           else
+                           if (*ptr == '/')
                            {
-                              *(p_local_tmp_file + fd) = tmp_rl.file_name[fd];
+                              ptr++;
                            }
-                           fd++;
+                           fd = 0;
+                           while ((fd < MAX_FILENAME_LENGTH) &&
+                                  (*ptr != '\0'))
+                           {
+                              *(p_local_tmp_file + fd) = *ptr;
+                              ptr++; fd++;
+                           }
+                        }
+                        else
+                        {
+                           fd = 0;
+                           while ((fd < MAX_FILENAME_LENGTH) &&
+                                  (tmp_rl.file_name[fd] != '\0'))
+                           {
+                              if (tmp_rl.file_name[fd] == '/')
+                              {
+                                 *(p_local_tmp_file + fd) = '\\';
+                              }
+                              else
+                              {
+                                 *(p_local_tmp_file + fd) = tmp_rl.file_name[fd];
+                              }
+                              fd++;
+                           }
                         }
                         *(p_local_tmp_file + fd) = '\0';
                         if (fsa->file_size_offset != -1)
@@ -1067,7 +1090,7 @@ main(int argc, char *argv[])
                               fsa->job_status[(int)db.job_no].file_size_in_use = content_length;
                            }
                            (void)strcpy(fsa->job_status[(int)db.job_no].file_name_in_use,
-                                        tmp_rl.file_name);
+                                        p_local_tmp_file);
                         }
                         else if (db.fsa_pos == INCORRECT)
                              {
