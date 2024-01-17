@@ -1316,6 +1316,18 @@ eval_html_dir_list(char         *html_buffer,
                      {
                         ptr--;
                         file_name_length = 0;
+
+                        /*
+                         * If '<a href="' starts with a / lets take the
+                         * complete path as file name. Reason is that
+                         * some websites specify a different path. In
+                         * httpcmd.c and gf_http.c we must make sure
+                         * that we take out the path again.
+                         * For now lets just do it for this type of
+                         * listing and see how it works out, before
+                         * using this method on the other listing
+                         * types below.
+                         */
                         if (*ptr == '/')
                         {
                            char end_char,
