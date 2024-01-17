@@ -261,79 +261,218 @@ eval_html_dir_list(char *html_buffer)
                   {
                      ptr--;
                      file_name_length = 0;
+                     /*
+                      * If '<a href="' starts with a / lets take the
+                      * complete path as file name. Reason is that
+                      * some websites specify a different path. In
+                      * httpcmd.c and gf_http.c we must make sure
+                      * that we take out the path again.
+                      * For now lets just do it for this type of
+                      * listing and see how it works out, before
+                      * using this method on the other listing
+                      * types below.
+                      */
                      if (*ptr == '/')
                      {
-                        ptr += 1;
-                     }
-                     while ((*ptr != '"') && (*ptr != '\n') &&
-                            (*ptr != '\r') && (*ptr != '\0'))
-                     {
-                        ptr++;
-                     }
-                     if (*ptr == '"')
-                     {
-                        ptr++;
-                        if (*ptr == '>')
+                        char end_char,
+                             *tmp_ptr = ptr;
+
+                        /* First determine end character. It can */
+                        /* either be < or ".                     */
+                        while ((*ptr != '<') && (*ptr != '"') &&
+                               (*ptr != '\n') && (*ptr != '\r') &&
+                               (*ptr != '\0'))
                         {
                            ptr++;
+                        }
+                        if ((*ptr == '<') || (*ptr == '"'))
+                        {
+                           end_char = *ptr;
+                           ptr = tmp_ptr;
                            STORE_HTML_STRING(file_name, file_name_length,
-                                             MAX_FILENAME_LENGTH, '<');
-                           if (*ptr == '<')
+                                             MAX_FILENAME_LENGTH, end_char);
+                            if (*ptr == '<')
+                            {
+                               if ((file_name_length > 1) &&
+                                   (*(ptr - 1) == ' '))
+                               {
+                                  file_name_length--;
+                                  file_name[file_name_length] = '\0';
+                               }
+                               while ((*ptr != '"') && (*ptr != '\n') &&
+                                      (*ptr != '\r') && (*ptr != '\0'))
+                               {
+                                  ptr++;
+                               }
+                            }
+                            if (*ptr == '"')
+                            {
+                               ptr++;
+                               if (*ptr == '>')
+                               {
+                                  ptr++;
+                                  while ((*ptr != '<') && (*ptr != '\n') &&
+                                         (*ptr != '\r') && (*ptr != '\0'))
+                                  {
+                                     ptr++;
+                                  }
+                                  if (*ptr == '<')
+                                  {
+                                     while (*ptr == '<')
+                                     {
+                                        ptr++;
+                                        while ((*ptr != '>') &&
+                                               (*ptr != '\n') &&
+                                               (*ptr != '\r') &&
+                                               (*ptr != '\0'))
+                                        {
+                                           ptr++;
+                                        }
+                                        if (*ptr == '>')
+                                        {
+                                           ptr++;
+                                           while (*ptr == ' ')
+                                           {
+                                              ptr++;
+                                           }
+                                        }
+                                     }
+                                  }
+                                  if ((*ptr != '\n') && (*ptr != '\r') &&
+                                      (*ptr != '\0'))
+                                  {
+                                     while (*ptr == ' ')
+                                     {
+                                        ptr++;
+                                     }
+
+                                     /* Store date string. */
+                                     if ((isdigit((int)(*ptr)) != 0) &&
+                                         (isdigit((int)(*(ptr + 15))) != 0) &&
+                                         (*(ptr + 16) == ' '))
+                                     {
+                                        int i = 0;
+
+                                        memcpy(date_str, ptr, 16);
+                                        date_str[16] = '\0';
+                                        file_mtime = datestr2unixtime(date_str,
+                                                                      &exact_date);
+                                        ptr += 16;
+                                        while (*ptr == ' ')
+                                        {
+                                           ptr++;
+                                        }
+                                        while ((i < MAX_FILENAME_LENGTH) &&
+                                               (isdigit((int)(*ptr)) != 0))
+                                        {
+                                           date_str[i] = *ptr;
+                                           ptr++; i++;
+                                        }
+                                        if (i > 0)
+                                        {
+                                           date_str[i] = '\0';
+                                           file_size = (off_t)str2offt(date_str,
+                                                                       NULL, 10);
+                                           exact_size = 1;
+                                        }
+                                     }
+                                  }
+                                  else
+                                  {
+                                     break;
+                                  }
+                               }
+                               else
+                               {
+                                  break;
+                               }
+                            }
+                            else
+                            {
+                               break;
+                            }
+                        }
+                        else
+                        {
+                           break;
+                        }
+                     }
+                     else
+                     {
+                        while ((*ptr != '"') && (*ptr != '\n') &&
+                               (*ptr != '\r') && (*ptr != '\0'))
+                        {
+                           ptr++;
+                        }
+                        if (*ptr == '"')
+                        {
+                           ptr++;
+                           if (*ptr == '>')
                            {
-                              while (*ptr == '<')
+                              ptr++;
+                              STORE_HTML_STRING(file_name, file_name_length,
+                                                MAX_FILENAME_LENGTH, '<');
+                              if (*ptr == '<')
                               {
-                                 ptr++;
-                                 while ((*ptr != '>') && (*ptr != '\n') &&
-                                        (*ptr != '\r') && (*ptr != '\0'))
+                                 while (*ptr == '<')
                                  {
                                     ptr++;
-                                 }
-                                 if (*ptr == '>')
-                                 {
-                                    ptr++;
-                                    while (*ptr == ' ')
+                                    while ((*ptr != '>') && (*ptr != '\n') &&
+                                           (*ptr != '\r') && (*ptr != '\0'))
                                     {
                                        ptr++;
                                     }
+                                    if (*ptr == '>')
+                                    {
+                                       ptr++;
+                                       while (*ptr == ' ')
+                                       {
+                                          ptr++;
+                                       }
+                                    }
                                  }
                               }
-                           }
-                           if ((*ptr != '\n') && (*ptr != '\r') &&
-                               (*ptr != '\0'))
-                           {
-                              while (*ptr == ' ')
+                              if ((*ptr != '\n') && (*ptr != '\r') &&
+                                  (*ptr != '\0'))
                               {
-                                 ptr++;
-                              }
-
-                              /* Store date string. */
-                              if ((isdigit((int)(*ptr)) != 0) &&
-                                  (isdigit((int)(*(ptr + 15))) != 0) &&
-                                  (*(ptr + 16) == ' '))
-                              {
-                                 int i = 0;
-
-                                 memcpy(date_str, ptr, 16);
-                                 date_str[16] = '\0';
-                                 file_mtime = datestr2unixtime(date_str,
-                                                               &exact_date);
-                                 ptr += 16;
                                  while (*ptr == ' ')
                                  {
                                     ptr++;
                                  }
-                                 while ((i < MAX_FILENAME_LENGTH) &&
-                                        (isdigit((int)(*ptr)) != 0))
+
+                                 /* Store date string. */
+                                 if ((isdigit((int)(*ptr)) != 0) &&
+                                     (isdigit((int)(*(ptr + 15))) != 0) &&
+                                     (*(ptr + 16) == ' '))
                                  {
-                                    date_str[i] = *ptr;
-                                    ptr++; i++;
+                                    int i = 0;
+
+                                    memcpy(date_str, ptr, 16);
+                                    date_str[16] = '\0';
+                                    file_mtime = datestr2unixtime(date_str,
+                                                                  &exact_date);
+                                    ptr += 16;
+                                    while (*ptr == ' ')
+                                    {
+                                       ptr++;
+                                    }
+                                    while ((i < MAX_FILENAME_LENGTH) &&
+                                           (isdigit((int)(*ptr)) != 0))
+                                    {
+                                       date_str[i] = *ptr;
+                                       ptr++; i++;
+                                    }
+                                    if (i > 0)
+                                    {
+                                       date_str[i] = '\0';
+                                       file_size = (off_t)str2offt(date_str, NULL, 10);
+                                       exact_size = 1;
+                                    }
                                  }
-                                 if (i > 0)
-                                 {
-                                    date_str[i] = '\0';
-                                    file_size = (off_t)str2offt(date_str, NULL, 10);
-                                    exact_size = 1;
-                                 }
+                              }
+                              else
+                              {
+                                 break;
                               }
                            }
                            else
@@ -345,10 +484,6 @@ eval_html_dir_list(char *html_buffer)
                         {
                            break;
                         }
-                     }
-                     else
-                     {
-                        break;
                      }
                      (void)printf("name=%s length=%d mtime=%ld exact_date=%d exact_size=%ld file_size=%ld\n",
                                   file_name, file_name_length, file_mtime,
