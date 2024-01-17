@@ -1,6 +1,6 @@
 /*
  *  fd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2024 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -943,9 +943,6 @@ main(int argc, char *argv[])
    system_log(DEBUG_SIGN, NULL, 0,
               "FD configuration: Max. connections              %d",
               max_connections);
-   system_log(DEBUG_SIGN, NULL, 0,
-              "FD configuration: Number of remote directories  %d",
-              no_of_retrieves);
    system_log(DEBUG_SIGN, NULL, 0,
               "FD configuration: Remote file check interval    %d (sec)",
               remote_file_check_interval);

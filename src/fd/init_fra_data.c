@@ -1,6 +1,6 @@
 /*
  *  init_fra_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,6 +39,9 @@ DESCR__S_M3
  **
  ** HISTORY
  **   10.08.2000 H.Kiehl Created
+ **   17.01.2024 H.Kiehl Print out the number of remote directories
+ **                      here, so we always can see how this value
+ **                      changes, without restarting FD.
  **
  */
 DESCR__E_M3
@@ -99,5 +102,9 @@ init_fra_data(void)
          no_of_retrieves++;
       }
    }
+   system_log(DEBUG_SIGN, NULL, 0,
+              "FD configuration: Number of remote directories  %d",
+              no_of_retrieves);
+
    return;
 }
