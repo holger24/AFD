@@ -136,7 +136,6 @@ else
 fi
 make DESTDIR=$RPM_BUILD_ROOT install
 %if %{with_systemd}
-   install -p -m644 scripts/afd.service $RPM_BUILD_ROOT/%{_unitdir}
    install -p -m644 scripts/afd@.service $RPM_BUILD_ROOT/%{_unitdir}
    install -p -m644 scripts/afd.target $RPM_BUILD_ROOT/%{_unitdir}
    install -p -m644 scripts/afd_environment.conf $RPM_BUILD_ROOT/%{sysconfdir}/afd
@@ -406,7 +405,6 @@ exit 0
 %files
 %defattr(-,root,root)
 %if %{with_systemd}
-%{_unitdir}/afd.service
 %{_unitdir}/afd@.service
 %{_unitdir}/afd.target
 %config(noreplace) %{sysconfdir}/afd/afd_environment.conf
