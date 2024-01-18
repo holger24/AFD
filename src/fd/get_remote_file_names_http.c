@@ -3535,7 +3535,7 @@ check_list(char   *file,
       {
          rl[no_of_listed_files].special_flag |= RL_GOT_EXACT_DATE;
       }
-      if (exact_size != 1)
+      if (exact_size == 1)
       {
          rl[no_of_listed_files].special_flag |= RL_GOT_EXACT_SIZE;
       }
