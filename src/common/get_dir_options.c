@@ -47,6 +47,7 @@ DESCR__S_M3
  **   24.02.2007 H.Kiehl Added 'inotify' option.
  **   24.11.2012 H.Kiehl Added support for another CRC type.
  **   13.01.2024 H.Kiehl Extended 'store retrieve list' with 'once not exact'.
+ **   17.01.2024 H.Kiehl Extended 'store retrieve list' with 'not exact'.
  **
  */
 DESCR__E_M3
@@ -454,6 +455,17 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                goto done;
             }
          }
+         else if (fra[i].stupid_mode == NOT_EXACT)
+              {
+                 (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
+                              STORE_RETRIEVE_LIST_ID);
+                 (void)strcat(d_o->aoptions[d_o->no_of_dir_options], " not exact");
+                 d_o->no_of_dir_options++;
+                 if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
+                 {
+                    goto done;
+                 }
+              }
          else if (fra[i].stupid_mode == GET_ONCE_ONLY)
               {
                  (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],

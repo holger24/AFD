@@ -708,6 +708,7 @@ typedef unsigned long       u_long_64;
 #define GET_ONCE_ONLY              2
 #define APPEND_ONLY                3
 #define GET_ONCE_NOT_EXACT         4
+#define NOT_EXACT                  5
 #define DATA_MOVED                 1
 #define DATA_COPIED                3
 #define NORMAL_IDENTIFIER          0

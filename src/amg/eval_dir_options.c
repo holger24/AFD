@@ -111,6 +111,7 @@ DESCR__S_M3
  **                      and warnings directly when udc is called.
  **   29.10.2022 H.Kiehl Added "url with index file name" option.
  **   13.01.2024 H.Kiehl Extended 'store retrieve list' with 'once not exact'.
+ **   17.01.2024 H.Kiehl Extended 'store retrieve list' with 'not exact'.
  **
  */
 DESCR__E_M3
@@ -709,14 +710,25 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
               {
                  ptr++;
               }
-              /* once */
-              if ((*ptr == 'o') && (*(ptr + 1) == 'n') &&
-                  (*(ptr + 2) == 'c') && (*(ptr + 3) == 'e') &&
-                  ((*(ptr + 4) == '\n') || (*(ptr + 4) == '\0')))
+              /* not exact */
+              if ((*ptr == 'n') && (*(ptr + 1) == 'o') &&
+                  (*(ptr + 2) == 't') && (*(ptr + 3) == ' ') &&
+                  (*(ptr + 4) == 'e') && (*(ptr + 5) == 'x') &&
+                  (*(ptr + 6) == 'a') && (*(ptr + 7) == 'c') &&
+                  (*(ptr + 8) == 't') &&
+                  ((*(ptr + 9) == '\n') || (*(ptr + 9) == '\0')))
               {
-                 dd[dir_pos].stupid_mode = GET_ONCE_ONLY;
+                 dd[dir_pos].stupid_mode = NOT_EXACT;
                  ptr += 4;
               }
+                   /* once */
+              else if ((*ptr == 'o') && (*(ptr + 1) == 'n') &&
+                       (*(ptr + 2) == 'c') && (*(ptr + 3) == 'e') &&
+                       ((*(ptr + 4) == '\n') || (*(ptr + 4) == '\0')))
+                   {
+                      dd[dir_pos].stupid_mode = GET_ONCE_ONLY;
+                      ptr += 4;
+                   }
                    /* once not exact */
               else if ((*ptr == 'o') && (*(ptr + 1) == 'n') &&
                        (*(ptr + 2) == 'c') && (*(ptr + 3) == 'e') &&

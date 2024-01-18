@@ -557,28 +557,56 @@ defaults is shown in the table below:
    <td align=center>&nbsp;</td>
 </tr>
 <tr>
-   <td width="30%"><a name="store_retrieve_list">store retrieve list [once|once not exact|append]</a></td>
-   <td><p>When the above option &lt;do not remove&gt; is set, it can
+   <td width="30%"><a name="store_retrieve_list">store retrieve list [not exact|once|once not exact|append]</a></td>
+   <td>When the above option &lt;do not remove&gt; is set, it can
        happen that always the same files are being collected by the
-       AMG. To avoid this situation this option can be set. Then AMG
+       AMG/FD. To avoid this situation this option can be set. Then AMG/FD
        will keep a list of files and their modification time and there
        size of all files found during the last scan. So only when a
-       file has changed will it be retrieved by the AMG. When the
-       optional parameter 'once' is appended, files will be fetched
-       only once, regardless if the size or modification time changes.
-       This is can be useful for directories with lots of files and
-       protocols where we need to poll each individual file for size
-       and date. With 'once not exact' it will not send any additional
-       command for each file to get the exact size and date, it just
-       excepts the 'inaccurate' data from the directory listing. For SFTP
-       the once and 'once not exact' parameter is not needed since all
-       needed values are retrieved during the directory scan and no
-       additional polling is required. However when set for SFTP it
-       will only fetch the file once.</p>
-       <p>When append is set, it only fetches the new appended data.
-       This can be useful if you want to retrieve for example log data
-       that is always appended. It will only retrieve the new appended
-       data and not the whole file.</p></td>
+       file has changed will it be retrieved by the AMG/FD. The following
+       additional parameters are possible:
+       <center><table border>
+       <tr>
+          <th>Extension</th>
+          <th>Description</th>
+       </tr>
+       <tr>
+          <td><a name="not_exact">not exact</a></td>
+          <td>Some protocols do not deliver the exact size and/or
+              date when giving a list of file names. By exact we
+              mean for size the unit byte and by time the unit
+              second. For example many web servers just deliver
+              time accuracy in minutes. In such a case AFD will
+              try to send an additional command (HEAD (HTTP), MDTM (FTP),
+              etc.) to get this value. However with lots of files
+              in a listing and high latency networks, it can consume
+              a lot of time before all the exact time (in second) and
+              size (in bytes) are collected. In some cases this
+              may not be necessary. When the file name itself
+              contains enough redundant information, directory
+              contend is cleaned, etc. In such a case with the
+              'not exact' extension to 'store retrieve list', AFD
+              will not send these additional commands.</td>
+       </tr>
+       <tr>
+          <td><a name="once">once</a></td>
+          <td>With this option files will be fetched only once even
+              if the size and/or date of the file changes.</td>
+       </tr>
+       <tr>
+          <td><a name="once_not_exact">once not exact</a></td>
+          <td>Same as above only with the 'not exact' so no
+              additional commands are send, to try and get
+              the exact size (in byte) and date (in seconds).</td>
+       </tr>
+       <tr>
+          <td><a name="append">append</a></td>
+          <td>With append, it only fetches the new appended data.
+              This can be useful if you want to retrieve for example
+              log data that is always appended. It will only retrieve
+              the new appended data and not the whole file.</td>
+       </tr>
+       </table></center></td>
    <td align=center>X (not append)</td>
    <td align=center>X</td>
    <td align=center>&nbsp;</td>
@@ -3226,7 +3254,7 @@ section. Valid options can be taken from the following table:
    <td width="90%"><address><small>
    Copyright &copy; 1997 - 2024 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 13.01.2024
+   Last updated: 18.01.2024
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

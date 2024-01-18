@@ -412,6 +412,10 @@ main(int argc, char *argv[])
    {
       (void)sprintf(str_line, "%*s", DIR_INFO_LENGTH_L, "Yes");
    }
+   else if (prev.stupid_mode == NOT_EXACT)
+        {
+           (void)sprintf(str_line, "%*s", DIR_INFO_LENGTH_L, "Not exact");
+        }
    else if (prev.stupid_mode == GET_ONCE_ONLY)
         {
            (void)sprintf(str_line, "%*s", DIR_INFO_LENGTH_L, "Once only");

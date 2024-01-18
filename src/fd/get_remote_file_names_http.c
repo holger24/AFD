@@ -3171,6 +3171,7 @@ check_list(char   *file,
                /* Try to get remote date and size. */
                if (((fra->dir_options & DONT_GET_DIR_LIST) == 0) &&
                    (fra->stupid_mode != GET_ONCE_NOT_EXACT) &&
+                   (fra->stupid_mode != NOT_EXACT) &&
                    ((file_mtime == -1) || (exact_date != DS2UT_SECOND) ||
                     (file_size == -1) || (exact_size != 1)))
                {
@@ -3469,6 +3470,7 @@ check_list(char   *file,
 
    if (((fra->dir_options & DONT_GET_DIR_LIST) == 0) &&
        (fra->stupid_mode != GET_ONCE_NOT_EXACT) &&
+       (fra->stupid_mode != NOT_EXACT) &&
        ((file_mtime == -1) || (exact_date != DS2UT_SECOND) ||
         (file_size == -1) || (exact_size != 1)))
    {

@@ -743,6 +743,10 @@ main(int argc, char *argv[])
          {
             (void)fprintf(stdout, "Stupid mode          : NO\n");
          }
+         else if (fra[i].stupid_mode == NOT_EXACT)
+              {
+                 (void)fprintf(stdout, "Stupid mode          : NOT_EXACT\n");
+              }
          else if (fra[i].stupid_mode == GET_ONCE_ONLY)
               {
                  (void)fprintf(stdout, "Stupid mode          : GET_ONCE_ONLY\n");
