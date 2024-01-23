@@ -1069,16 +1069,16 @@ if test "${compiler_debug}" = "true"
 then
    if test "x${GCC}" = "xyes"
    then
-     DEBUG_FLAG="-ggdb3"
+      DEBUG_FLAG="-ggdb3"
    else
-     case "${host}" in
-        alpha*-dec-osf4.*)       DEBUG_FLAG="-g3" ;;
-        hppa*-hp-hpux*)          DEBUG_FLAG="-g" ;;
-        mips-sgi-irix6.[[4-9]]*) DEBUG_FLAG="-g3" ;;
-        mips-sgi-irix*)          DEBUG_FLAG="-g" ;;
-        rs6000-ibm-aix*)         DEBUG_FLAG="-g" ;;
-        *)                       DEBUG_FLAG="-g" ;;
-     esac
+      case "${host}" in
+         alpha*-dec-osf4.*)       DEBUG_FLAG="-g3" ;;
+         hppa*-hp-hpux*)          DEBUG_FLAG="-g" ;;
+         mips-sgi-irix6.[[4-9]]*) DEBUG_FLAG="-g3" ;;
+         mips-sgi-irix*)          DEBUG_FLAG="-g" ;;
+         rs6000-ibm-aix*)         DEBUG_FLAG="-g" ;;
+         *)                       DEBUG_FLAG="-g" ;;
+      esac
    fi
 else
    DEBUG_FLAG=""
@@ -1234,6 +1234,10 @@ then
    then
       CFLAGS="$CFLAGS -Wno-format-y2k -Wno-restrict"
    fi
+fi
+if test "x${GCC}" = "xyes"
+then
+   AX_CHECK_COMPILE_FLAG("-Wstringop-overflow", [CFLAGS="${CFLAGS} -Wstringop-overflow"], [CFLAGS="${CFLAGS}"])
 fi
 
 dnl Some programs with suid
