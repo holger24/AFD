@@ -3687,7 +3687,8 @@ struct retrieve_list
                                          /* the list that are no longer at */
                                          /* the remote host.               */
           off_t         size;            /* Size of the file.              */
-          off_t         prev_size;       /* Previous size of the file.     */
+          off_t         prev_size;       /* Previous size of the file (for */
+                                         /* append only mode).             */
           time_t        file_mtime;      /* Modification time of file.     */
        };
 
@@ -4356,12 +4357,13 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                     get_rule(char *, int),
                     get_system_data(struct system_data *),
 #ifdef WITH_DUP_CHECK
-                    isdup(char *, char *, off_t, unsigned int, time_t, int, int,
+                    isdup(char *, char *, off_t, unsigned int, time_t,
+                          unsigned int, int,
 # ifdef HAVE_HW_CRC32
                           int,
 # endif
                           int, int),
-                    isdup_rm(char *, char *, off_t, unsigned int, int,
+                    isdup_rm(char *, char *, off_t, unsigned int, unsigned int,
 # ifdef HAVE_HW_CRC32
                              int,
 # endif

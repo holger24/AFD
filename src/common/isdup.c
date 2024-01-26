@@ -1,6 +1,6 @@
 /*
  *  isdup.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ DESCR__S_M3
  **              off_t        size,
  **              unsigned int id,
  **              time_t       timeout,
- **              int          flag,
+ **              unsigned int flag,
  **              int          rm_flag,
  **              int          have_hw_crc32,
  **              int          stay_attached,
@@ -40,7 +40,7 @@ DESCR__S_M3
  **                 char         *filename,
  **                 off_t        size,
  **                 unsigned int id,
- **                 int          flag,
+ **                 unsigned int flag,
  **                 int          have_hw_crc32,
  **                 int          stay_attached,
  **                 int          lock)
@@ -119,7 +119,7 @@ isdup(char         *fullname,
       off_t        size,
       unsigned int id,
       time_t       timeout,
-      int          flag,
+      unsigned int flag,
       int          rm_flag,
 #ifdef HAVE_HW_CRC32
       int          have_hw_crc32,
@@ -145,15 +145,15 @@ isdup(char         *fullname,
       system_log(ERROR_SIGN, __FILE__, __LINE__,
 #if SIZEOF_OFF_T == 4
 # if SIZEOF_TIME_T == 4
-                 "Failed to get a CRC value for %s [id=%x filename=%s size=%ld timeout=%ld stay_attached=%d lock=%d flag=%d]",
+                 "Failed to get a CRC value for %s [id=%x filename=%s size=%ld timeout=%ld stay_attached=%d lock=%d flag=%u]",
 # else
-                 "Failed to get a CRC value for %s [id=%x filename=%s size=%ld timeout=%lld stay_attached=%d lock=%d flag=%d]",
+                 "Failed to get a CRC value for %s [id=%x filename=%s size=%ld timeout=%lld stay_attached=%d lock=%d flag=%u]",
 # endif
 #else
 # if SIZEOF_TIME_T == 4
-                 "Failed to get a CRC value for %s [id=%x filename=%s size=%lld timeout=%ld stay_attached=%d lock=%d flag=%d]",
+                 "Failed to get a CRC value for %s [id=%x filename=%s size=%lld timeout=%ld stay_attached=%d lock=%d flag=%u]",
 # else
-                 "Failed to get a CRC value for %s [id=%x filename=%s size=%lld timeout=%lld stay_attached=%d lock=%d flag=%d]",
+                 "Failed to get a CRC value for %s [id=%x filename=%s size=%lld timeout=%lld stay_attached=%d lock=%d flag=%u]",
 # endif
 #endif
                  fullname, id, filename, (pri_off_t)size, (pri_time_t)timeout,
@@ -438,7 +438,7 @@ isdup_rm(char         *fullname,
          char         *filename,
          off_t        size,
          unsigned int id,
-         int          flag,
+         unsigned int flag,
 #ifdef HAVE_HW_CRC32
          int          have_hw_crc32,
 #endif
