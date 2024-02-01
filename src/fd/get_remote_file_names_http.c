@@ -3279,7 +3279,10 @@ check_list(char   *file,
                               size_to_retrieve = rl[i].size;
                            }
                         }
-                        rl[i].prev_size = prev_size;
+                        if (fra->stupid_mode == APPEND_ONLY)
+                        {
+                           rl[i].prev_size = prev_size;
+                        }
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
                         if ((fra->stupid_mode == YES) ||
                             (fra->remove == YES) ||
@@ -3338,7 +3341,10 @@ check_list(char   *file,
                                  size_to_retrieve = rl[i].size;
                               }
                            }
-                           rl[i].prev_size = prev_size;
+                           if (fra->stupid_mode == APPEND_ONLY)
+                           {
+                              rl[i].prev_size = prev_size;
+                           }
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
                            if ((fra->stupid_mode == YES) ||
                                (fra->remove == YES) ||
