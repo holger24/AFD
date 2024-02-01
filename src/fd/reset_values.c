@@ -1,6 +1,6 @@
 /*
  *  reset_values.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -77,9 +77,8 @@ reset_values(int        files_retrieved,
 #ifdef _VERIFY_FSA
             if (fsa->total_file_counter < 0)
             {
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "Total file counter for host <%s> less then zero. Correcting to 0.",
-                          fsa->host_dsp_name);
+               trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                         "Total file counter less then zero. Correcting to 0.");
                fsa->total_file_counter = 0;
             }
 #endif
@@ -92,16 +91,14 @@ reset_values(int        files_retrieved,
             if (fsa->total_file_size < 0)
             {
                fsa->total_file_size = 0;
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "Total file size for host <%s> overflowed. Correcting to 0.",
-                          fsa->host_dsp_name);
+               trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                         "Total file size overflowed. Correcting to 0.");
             }
             else if ((fsa->total_file_counter == 0) &&
                      (fsa->total_file_size > 0))
                  {
-                    system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                               "fc for host <%s> is zero but fs is not zero. Correcting.",
-                               fsa->host_dsp_name);
+                    trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                              "fc is zero but fs is not zero. Correcting.");
                     fsa->total_file_size = 0;
                  }
 #endif
