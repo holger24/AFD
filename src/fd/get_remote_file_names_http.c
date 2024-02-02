@@ -1311,7 +1311,7 @@ eval_html_dir_list(char         *html_buffer,
                         ptr++;
                      }
 
-                     while ((ptr = llposi(ptr, bytes_buffered,
+                     while ((ptr = llposi(ptr, (end_ptr - ptr),
                                           "<a href=\"", 9)) != NULL)
                      {
                         ptr--;
@@ -1610,7 +1610,7 @@ eval_html_dir_list(char         *html_buffer,
                      ptr++;
                   }
 
-                  while ((ptr = llposi(ptr, (size_t)bytes_buffered,
+                  while ((ptr = llposi(ptr, (end_ptr - ptr),
                                        "<a href=\"", 9)) != NULL)
                   {
                      ptr--;
@@ -1652,7 +1652,7 @@ eval_html_dir_list(char         *html_buffer,
             }
             else
             {
-               if ((ptr = llposi(ptr, (size_t)bytes_buffered,
+               if ((ptr = llposi(ptr, (bytes_buffered - (ptr - html_buffer)),
                                  "<IsTruncated>", 13)) == NULL)
                {
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -1686,7 +1686,7 @@ eval_html_dir_list(char         *html_buffer,
                   }
 
                   ptr = html_buffer;
-                  while ((ptr = llposi(ptr, (size_t)bytes_buffered,
+                  while ((ptr = llposi(ptr, (end_ptr - ptr),
                                        "<Contents><Key>", 15)) != NULL)
                   {
                      ptr--;
