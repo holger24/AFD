@@ -1542,9 +1542,9 @@ eval_html_dir_list(char         *html_buffer,
                               break;
                            }
                         }
-                        if (fsa->debug > DEBUG_MODE)
+                        if (fsa->debug > NORMAL_MODE)
                         {
-                           trans_db_log(DEBUG_SIGN, NULL, 0, NULL,
+                           trans_db_log(INFO_SIGN, NULL, 0, NULL,
 #if SIZEOF_OFF_T == 4
 # if SIZEOF_TIME_T == 4
                                         "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
@@ -1624,9 +1624,9 @@ eval_html_dir_list(char         *html_buffer,
                      STORE_HTML_STRING(file_name, file_name_length,
                                        MAX_FILENAME_LENGTH, '"');
 
-                     if (fsa->debug > DEBUG_MODE)
+                     if (fsa->debug > NORMAL_MODE)
                      {
-                        trans_db_log(DEBUG_SIGN, NULL, 0, NULL,
+                        trans_db_log(INFO_SIGN, NULL, 0, NULL,
                                      "eval_html_dir_list(): filename=%s length=%d mtime=-1 exact=%d size=-1 exact=-1",
                                      file_name, file_name_length, DS2UT_NONE);
                      }
@@ -1795,9 +1795,9 @@ eval_html_dir_list(char         *html_buffer,
                                           size_str[date_str_length] = '\0';
                                           exact_size = convert_size(size_str,
                                                                     &file_size);
-                                          if (fsa->debug > DEBUG_MODE)
+                                          if (fsa->debug > NORMAL_MODE)
                                           {
-                                             trans_db_log(DEBUG_SIGN, NULL, 0,
+                                             trans_db_log(INFO_SIGN, NULL, 0,
                                                           NULL,
 #if SIZEOF_OFF_T == 4
 # if SIZEOF_TIME_T == 4
@@ -2124,9 +2124,9 @@ eval_html_dir_list(char         *html_buffer,
                         exact_size = -1;
                         file_size = -1;
                      }
-                     if (fsa->debug > DEBUG_MODE)
+                     if (fsa->debug > NORMAL_MODE)
                      {
-                        trans_db_log(DEBUG_SIGN, NULL, 0, NULL,
+                        trans_db_log(INFO_SIGN, NULL, 0, NULL,
 #if SIZEOF_OFF_T == 4
 # if SIZEOF_TIME_T == 4
                                      "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
@@ -2435,9 +2435,9 @@ eval_html_dir_list(char         *html_buffer,
                               exact_size = -1;
                               file_size = -1;
                            }
-                           if (fsa->debug > DEBUG_MODE)
+                           if (fsa->debug > NORMAL_MODE)
                            {
-                              trans_db_log(DEBUG_SIGN, NULL, 0, NULL,
+                              trans_db_log(INFO_SIGN, NULL, 0, NULL,
 #if SIZEOF_OFF_T == 4
 # if SIZEOF_TIME_T == 4
                                            "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
@@ -2684,9 +2684,9 @@ eval_html_dir_list(char         *html_buffer,
                              exact_size = -1;
                              file_size = -1;
                           }
-                          if (fsa->debug > DEBUG_MODE)
+                          if (fsa->debug > NORMAL_MODE)
                           {
-                             trans_db_log(DEBUG_SIGN, NULL, 0, NULL,
+                             trans_db_log(INFO_SIGN, NULL, 0, NULL,
 #if SIZEOF_OFF_T == 4
 # if SIZEOF_TIME_T == 4
                                           "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
@@ -2795,9 +2795,9 @@ eval_html_dir_list(char         *html_buffer,
                              file_mtime = -1;
                              exact_size = -1;
                              file_size = -1;
-                             if (fsa->debug > DEBUG_MODE)
+                             if (fsa->debug > NORMAL_MODE)
                              {
-                                trans_db_log(DEBUG_SIGN, NULL, 0, NULL,
+                                trans_db_log(INFO_SIGN, NULL, 0, NULL,
 #if SIZEOF_OFF_T == 4
 # if SIZEOF_TIME_T == 4
                                              "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
