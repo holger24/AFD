@@ -1207,7 +1207,7 @@ http_get(char  *path,
       int  resource_length;
       char accept_encoding[24],
            *p_path = path,
-           range[13 + MAX_OFF_T_LENGTH + 1 + MAX_OFF_T_LENGTH + 3],
+           range[13 + MAX_OFF_T_LENGTH + 4],
 #ifdef _WITH_EXTRA_CHECK
            none_match[16 + MAX_EXTRA_LS_DATA_LENGTH + 5],
 #endif
@@ -1247,52 +1247,6 @@ http_get(char  *path,
       if (hmr.filename != NULL)
       {
          hmr.filename[0] = '\0';
-      }
-      if ((*content_length == 0) && (filename[0] != '\0') &&
-          ((hmr.http_options_not_working & HTTP_OPTION_HEAD) == 0))
-      {
-         off_t end;
-
-         if ((reply = http_head(p_path, filename, &end, NULL)) == SUCCESS)
-         {
-            *content_length = end;
-            hmr.retries = 0;
-         }
-         else
-         {
-            if ((reply == 400) || /* Bad Request */
-                (reply == 405) || /* Method Not Allowed */
-                (reply == 403) || /* Forbidden */
-                (reply == 501))   /* Not Implemented */
-            {
-               *content_length = end;
-               hmr.retries = 0;
-               hmr.http_options_not_working |= HTTP_OPTION_HEAD;
-            }
-            else
-            {
-               return(reply);
-            }
-         }
-
-         /* If we have send a HEAD command the remote server indicates a */
-         /* close connection we need to reopen the connection.           */
-         if ((reply = check_connection()) == CONNECTION_REOPENED)
-         {
-            trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_get", NULL,
-                      _("Reconnected."));
-         }
-         else if (reply == INCORRECT)
-              {
-                 trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_get", NULL,
-                           _("Failed to reconnect."));
-                 return(INCORRECT);
-              }
-      }
-
-      if ((offset) && (*content_length == offset))
-      {
-         return(NOTHING_TO_FETCH);
       }
       if (hmr.http_proxy[0] == '\0')
       {
@@ -1412,28 +1366,13 @@ retry_get_range:
       }
       else
       {
-         if ((*content_length == 0) || (*content_length == -1))
-         {
-            (void)snprintf(range,
-                           13 + MAX_OFF_T_LENGTH + 1 + MAX_OFF_T_LENGTH + 3,
+         (void)snprintf(range, 13 + MAX_OFF_T_LENGTH + 4,
 #if SIZEOF_OFF_T == 4
-                           "Range: bytes=%ld-\r\n",
+                        "Range: bytes=%ld-\r\n",
 #else
-                           "Range: bytes=%lld-\r\n",
+                        "Range: bytes=%lld-\r\n",
 #endif
-                           (pri_off_t)offset);
-         }
-         else
-         {
-            (void)snprintf(range,
-                           13 + MAX_OFF_T_LENGTH + 1 + MAX_OFF_T_LENGTH + 3,
-#if SIZEOF_OFF_T == 4
-                           "Range: bytes=%ld-%ld\r\n",
-#else
-                           "Range: bytes=%lld-%lld\r\n",
-#endif
-                           (pri_off_t)offset, (pri_off_t)*content_length);
-         }
+                        (pri_off_t)offset);
       }
 #ifdef _WITH_EXTRA_CHECK
       if (etag[0] == '\0')
@@ -1550,8 +1489,7 @@ retry_get:
                   reply = SUCCESS;
                }
             }
-            if ((*content_length != hmr.content_length) &&
-                (hmr.content_length > 0))
+            if (*content_length != hmr.content_length)
             {
                *content_length = hmr.content_length;
             }
