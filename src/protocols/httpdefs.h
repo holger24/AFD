@@ -1,6 +1,6 @@
 /*
  *  httpdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -135,7 +135,7 @@ extern int  basic_authentication(struct http_message_reply *),
 #ifdef WITH_SSL
                          unsigned char, unsigned char, char *, char,
 #endif
-                         int, int, char),
+                         int, int, char, int),
             http_del(char *, char *),
 #ifdef _WITH_EXTRA_CHECK
             http_get(char *, char *, char *, char *, off_t *, off_t),

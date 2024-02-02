@@ -1,6 +1,6 @@
 /*
  *  sf_http.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -367,7 +367,7 @@ main(int argc, char *argv[])
 #ifdef WITH_SSL
                          db.ssh_protocol, db.service, db.region, db.tls_auth,
 #endif
-                         db.sndbuf_size, db.rcvbuf_size, fsa->debug);
+                         db.sndbuf_size, db.rcvbuf_size, fsa->debug, YES);
 #ifdef WITH_IP_DB
    if (get_and_reset_store_ip() == DONE)
    {

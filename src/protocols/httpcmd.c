@@ -28,7 +28,8 @@ DESCR__S_M3
  **   int  http_connect(char *hostname, char *http_proxy, int port,
  **                     char *user, char *passwd, unsigned char auth_type,
  **                     int features, unsigned char service, char *region,
- **                     int ssl, int sndbuf_size, int rcvbuf_size, char debug)
+ **                     int ssl, int sndbuf_size, int rcvbuf_size, char debug,
+ **                     int init_hmr)
  **   int  http_init_authentication(char *user, char *passwd)
  **   int  http_options(char *path)
  **   int  http_del(char *path, char *filename)
@@ -201,7 +202,8 @@ http_connect(char          *hostname,
 #endif
              int           sndbuf_size,
              int           rcvbuf_size,
-             char          debug)
+             char          debug,
+             int           init_hmr)
 {
    if (simulation_mode == YES)
    {
@@ -255,10 +257,13 @@ http_connect(char          *hostname,
          }
 #endif
          hmr.digest_options = 0;
-         hmr.authorization = NULL;
-         hmr.realm = NULL;
-         hmr.nonce = NULL;
-         hmr.opaque = NULL;
+         if (init_hmr == YES)
+         {
+            hmr.authorization = NULL;
+            hmr.realm = NULL;
+            hmr.nonce = NULL;
+            hmr.opaque = NULL;
+         }
          hmr.auth_type = auth_type;
          hmr.port = port;
          hmr.free = YES;
@@ -317,7 +322,10 @@ http_connect(char          *hostname,
          {
             hmr.rcvbuf_size = 0;
          }
-         hmr.filename = NULL;
+         if (init_hmr == YES)
+         {
+            hmr.filename = NULL;
+         }
 #ifdef _WITH_EXTRA_CHECK
          hmr.http_etag[0] = '\0';
          hmr.http_weak_etag = YES;
@@ -807,10 +815,13 @@ http_connect(char          *hostname,
       }
 #endif
       hmr.digest_options = 0;
-      hmr.authorization = NULL;
-      hmr.realm = NULL;
-      hmr.nonce = NULL;
-      hmr.opaque = NULL;
+      if (init_hmr == YES)
+      {
+         hmr.authorization = NULL;
+         hmr.realm = NULL;
+         hmr.nonce = NULL;
+         hmr.opaque = NULL;
+      }
       hmr.auth_type = auth_type;
 #ifdef WITH_SSL
       hmr.service_type = service;
@@ -852,7 +863,10 @@ http_connect(char          *hostname,
       hmr.http_options_not_working = 0;
       hmr.bytes_buffered = 0;
       hmr.bytes_read = 0;
-      hmr.filename = NULL;
+      if (init_hmr == YES)
+      {
+         hmr.filename = NULL;
+      }
       hmr.debug = debug;
 #ifdef _WITH_EXTRA_CHECK
       hmr.http_etag[0] = '\0';
@@ -3385,7 +3399,11 @@ retry_noop:
 void
 http_quit(void)
 {
-   if (hmr.free != NO)
+   if (hmr.free == NO)
+   {
+      hmr.free = YES;
+   }
+   else
    {
       if (hmr.authorization != NULL)
       {
@@ -3505,7 +3523,6 @@ check_connection(void)
       connection_closed = YES;
       hmr.free = NO;
       http_quit();
-      hmr.free = YES;
    }
    else
    {
@@ -3534,14 +3551,11 @@ check_connection(void)
          timeout_flag = ON; /* So http_quit() does not call shutdown. */
          hmr.free = NO;     /* So http_quit() does not free hmr structure. */
          http_quit();
-         hmr.free = YES;
          timeout_flag = tmp_timeout_flag;
       }
    }
    if (connection_closed == YES)
    {
-      char *tmp_authorization = hmr.authorization;
-
       if ((status = http_connect(hmr.hostname, hmr.http_proxy, hmr.port,
                                  hmr.user, hmr.passwd, hmr.auth_type,
                                  hmr.fra_options, hmr.features,
@@ -3550,7 +3564,7 @@ check_connection(void)
                                  hmr.region, hmr.tls_auth,
 #endif
                                  hmr.sndbuf_size, hmr.rcvbuf_size,
-                                 hmr.debug)) != SUCCESS)
+                                 hmr.debug, NO)) != SUCCESS)
       {
          if (hmr.http_proxy[0] == '\0')
          {
@@ -3572,7 +3586,6 @@ check_connection(void)
       {
          status = CONNECTION_REOPENED;
       }
-      hmr.authorization = tmp_authorization;
    }
 
    return(status);
@@ -4056,6 +4069,110 @@ read_msg_again:
                                            }
                                       hmr.filename[0] = '\0';
                                    }
+                                }
+                             }
+                          }
+                       }
+                    }
+                    else
+                    {
+                       /* filename= */
+                       if (((i + 9) <= read_length) &&
+                           ((msg_str[i] == 'f') || (msg_str[i] == 'F')) &&
+                           ((msg_str[i + 1] == 'i') || (msg_str[i + 1] == 'I')) &&
+                           ((msg_str[i + 2] == 'l') || (msg_str[i + 2] == 'L')) &&
+                           ((msg_str[i + 3] == 'e') || (msg_str[i + 3] == 'E')) &&
+                           ((msg_str[i + 4] == 'n') || (msg_str[i + 4] == 'N')) &&
+                           ((msg_str[i + 5] == 'a') || (msg_str[i + 5] == 'A')) &&
+                           ((msg_str[i + 6] == 'm') || (msg_str[i + 6] == 'M')) &&
+                           ((msg_str[i + 7] == 'e') || (msg_str[i + 7] == 'E')) &&
+                           (msg_str[i + 8] == '='))
+                       {
+                          char end_char;
+
+                          /* Ignore any leading space. */
+                          while (((i + 9) < read_length) && (msg_str[i + 9] == ' '))
+                          {
+                             i++;
+                          }
+
+                          if (msg_str[i + 9] == '"')
+                          {
+                             i = i + 10;
+                             end_char = '"';
+                          }
+                          else
+                          {
+                             i = i + 9;
+                             end_char = '\0';
+                          }
+                          if ((msg_str[i] == '.') || (msg_str[i] == '/'))
+                          {
+                             trans_log(DEBUG_SIGN,  __FILE__, __LINE__,
+                                       "get_http_reply", NULL,
+                                       _("Filename may not start with `%c'."),
+                                       msg_str[i]);
+                          }
+                          else
+                          {
+                             if ((hmr.filename == NULL) &&
+                                 ((hmr.filename = malloc(MAX_FILENAME_LENGTH + 1)) == NULL))
+                             {
+                                trans_log(WARN_SIGN,  __FILE__, __LINE__,
+                                          "get_http_reply", NULL,
+                                          _("malloc() error : %s"),
+                                          strerror(errno));
+                             }
+                             else
+                             {
+                                int j = 0;
+
+                                while ((i < read_length) &&
+                                       (j < MAX_FILENAME_LENGTH) &&
+                                       (isascii((int)msg_str[i]) != 0) &&
+                                       (msg_str[i] != end_char) &&
+                                       (msg_str[i] != '/'))
+                                {
+                                   hmr.filename[j] = msg_str[i];
+                                   i++;
+                                   j++;
+                                }
+                                if (msg_str[i] == end_char)
+                                {
+                                   hmr.filename[j] = '\0';
+                                }
+                                else
+                                {
+                                   if (j == MAX_FILENAME_LENGTH)
+                                   {
+                                      trans_log(DEBUG_SIGN,  __FILE__, __LINE__,
+                                                "get_http_reply", NULL,
+                                                "Filename larger then %d bytes",
+                                                MAX_FILENAME_LENGTH);
+                                   }
+                                   else if (i == read_length)
+                                        {
+                                           trans_log(DEBUG_SIGN,  __FILE__,
+                                                     __LINE__, "get_http_reply",
+                                                     NULL,
+                                                     "Premature end of buffer reached.");
+                                        }
+                                   else if (msg_str[i] == '/')
+                                        {
+                                           trans_log(DEBUG_SIGN,  __FILE__,
+                                                     __LINE__, "get_http_reply",
+                                                     NULL,
+                                                     "Filename may not contain directory information.");
+                                        }
+                                        else
+                                        {
+                                           trans_log(DEBUG_SIGN,  __FILE__,
+                                                     __LINE__, "get_http_reply",
+                                                     NULL,
+                                                     "Filename contains non ASCII character (%d).",
+                                                     (int)msg_str[i]);
+                                        }
+                                   hmr.filename[0] = '\0';
                                 }
                              }
                           }
@@ -5254,6 +5371,10 @@ store_http_digest(int i, int read_length)
               {
                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "store_http_digest", NULL,
                            "Length of nextnonce is 0!");
+                 if (hmr.nonce != NULL)
+                 {
+                    hmr.nonce[length] = '\0';
+                 }
               }
               else
               {
@@ -5269,8 +5390,8 @@ store_http_digest(int i, int read_length)
                     return(INCORRECT);
                  }
                  (void)memcpy(hmr.nonce, &msg_str[i], length);
+                 hmr.nonce[length] = '\0';
               }
-              hmr.nonce[length] = '\0';
               if (msg_str[i + length] == '"')
               {
                  i += (length + 1);
