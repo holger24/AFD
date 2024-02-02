@@ -4435,7 +4435,7 @@ read_msg(int *read_length, int offset, int line)
             *read_length = read_ptr - msg_str;
             read_ptr++;
 #ifdef WITH_TRACE
-            trace_log(__FILE__, __LINE__, R_TRACE, msg_str, *read_length, NULL);
+            trace_log(NULL, 0, R_TRACE, msg_str, *read_length, NULL);
 #endif
             return(bytes_buffered);
          }
