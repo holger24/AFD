@@ -1,6 +1,6 @@
 /*
  *  gf_sftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1999,6 +1999,7 @@ main(int argc, char *argv[])
 #ifdef _WITH_BURST_2
 burst2_no_new_dir_mtime:
        in_burst_loop = YES;
+       append_count = 0;
        diff_time = time(NULL) - connected;
        if (((fsa->protocol_options & KEEP_CONNECTED_DISCONNECT) &&
             (db.keep_connected > 0) && (diff_time > db.keep_connected)) ||
@@ -2410,7 +2411,6 @@ gf_sftp_exit(void)
                                     10 + 6 + MAX_OFF_T_LENGTH + 8 + 9 + 1 + MAX_INT_LENGTH + 9 + 11 + MAX_INT_LENGTH + 1 + 10 + MAX_INT_LENGTH + 1 + 1,
                                     " [APPEND * %u]", append_count);
               }
-
          if (burst_2_counter == 1)
          {
             /* Write " [BURST]" */
