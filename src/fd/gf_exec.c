@@ -542,10 +542,11 @@ gf_exec_exit(void)
 {
    if ((fsa != NULL) && (db.fsa_pos >= 0) && (fsa_pos_save == YES))
    {
-      int  length = MAX_INT_LENGTH + 16 + MAX_OFF_T_LENGTH + 16 + MAX_INT_LENGTH + 8 + 1;
-      char buffer[MAX_INT_LENGTH + 16 + MAX_OFF_T_LENGTH + 16 + MAX_INT_LENGTH + 8 + 1];
+      int  length = 10 + 6 + MAX_OFF_T_LENGTH + 8 + 9 + 1 + MAX_INT_LENGTH + 9 + 1;
+                 /* "%.3f XXX (%lu bytes) %s in %d file(s)." */
+      char buffer[10 + 6 + MAX_OFF_T_LENGTH + 8 + 9 + 1 + MAX_INT_LENGTH + 9 + 1];
 
-      WHAT_DONE_BUFFER(length, buffer, "exec retrieved",
+      WHAT_DONE_BUFFER(length, buffer, "retrieved",
                        fsa->job_status[(int)db.job_no].file_size_done,
                        fsa->job_status[(int)db.job_no].no_of_files_done);
       trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s @%x",
