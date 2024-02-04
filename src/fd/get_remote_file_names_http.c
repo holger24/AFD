@@ -1542,26 +1542,27 @@ eval_html_dir_list(char         *html_buffer,
                               break;
                            }
                         }
-                        if (fsa->debug > NORMAL_MODE)
+                        if (fsa->debug > DEBUG_MODE)
                         {
                            trans_db_log(INFO_SIGN, NULL, 0, NULL,
 #if SIZEOF_OFF_T == 4
 # if SIZEOF_TIME_T == 4
-                                        "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+                                        "eval_html_dir_list(): %s length=%d mtime=%ld exact=%d size=%ld exact=%ld list_length=%u",
 # else
-                                        "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+                                        "eval_html_dir_list(): %s length=%d mtime=%lld exact=%d size=%ld exact=%ld list_length=%u",
 # endif
 #else
 # if SIZEOF_TIME_T == 4
-                                        "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+                                        "eval_html_dir_list(): %s length=%d mtime=%ld exact=%d size=%lld exact=%lld list_length=%u",
 # else
-                                        "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+                                        "eval_html_dir_list(): %s length=%d mtime=%lld exact=%d size=%lld exact=%lld list_length=%u",
 # endif
 #endif
                                         file_name, file_name_length,
                                         (pri_time_t)file_mtime, exact_date,
                                         (pri_off_t)file_size,
-                                        (pri_off_t)exact_size);
+                                        (pri_off_t)exact_size,
+                                        *list_length);
                         }
 
                         (*list_length)++;
@@ -1573,6 +1574,27 @@ eval_html_dir_list(char         *html_buffer,
                                        file_size, file_mtime, files_deleted,
                                        file_size_deleted) == YES)
                         {
+                           if (fsa->debug > NORMAL_MODE)
+                           {
+                              trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+# if SIZEOF_TIME_T == 4
+                                        "match: %s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+# else
+                                        "match: %s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+# endif
+#else
+# if SIZEOF_TIME_T == 4
+                                        "match: %s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+# else
+                                        "match: %s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+# endif
+#endif
+                                        file_name, file_name_length,
+                                        (pri_time_t)file_mtime, exact_date,
+                                        (pri_off_t)file_size,
+                                        (pri_off_t)exact_size);
+                           }
                            (void)check_list(file_name, file_name_length,
                                             file_mtime, exact_date,
                                             exact_size, file_size,
@@ -1624,11 +1646,12 @@ eval_html_dir_list(char         *html_buffer,
                      STORE_HTML_STRING(file_name, file_name_length,
                                        MAX_FILENAME_LENGTH, '"');
 
-                     if (fsa->debug > NORMAL_MODE)
+                     if (fsa->debug > DEBUG_MODE)
                      {
                         trans_db_log(INFO_SIGN, NULL, 0, NULL,
-                                     "eval_html_dir_list(): filename=%s length=%d mtime=-1 exact=%d size=-1 exact=-1",
-                                     file_name, file_name_length, DS2UT_NONE);
+                                     "eval_html_dir_list(): %s length=%d mtime=-1 exact=%d size=-1 exact=-1 list_length=%u",
+                                     file_name, file_name_length, DS2UT_NONE,
+                                     *list_length);
                      }
 
                      (*list_length)++;
@@ -1640,6 +1663,12 @@ eval_html_dir_list(char         *html_buffer,
                      }
                      else
                      {
+                        if (fsa->debug > NORMAL_MODE)
+                        {
+                           trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+                                     "match: %s length=%d mtime=-1 exact=%d size=-1 exact=-1",
+                                     file_name, file_name_length, DS2UT_NONE);
+                        }
                         (void)check_list(file_name, file_name_length,
                                          -1, DS2UT_NONE, -1,
                                          -1, files_to_retrieve,
@@ -1795,21 +1824,21 @@ eval_html_dir_list(char         *html_buffer,
                                           size_str[date_str_length] = '\0';
                                           exact_size = convert_size(size_str,
                                                                     &file_size);
-                                          if (fsa->debug > NORMAL_MODE)
+                                          if (fsa->debug > DEBUG_MODE)
                                           {
                                              trans_db_log(INFO_SIGN, NULL, 0,
                                                           NULL,
 #if SIZEOF_OFF_T == 4
 # if SIZEOF_TIME_T == 4
-                                                          "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+                                                          "eval_html_dir_list(): %s length=%d mtime=%ld exact=%d size=%ld exact=%ld list_length=%U",
 # else
-                                                          "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+                                                          "eval_html_dir_list(): %s length=%d mtime=%lld exact=%d size=%ld exact=%ld list_length=%U",
 # endif
 #else
 # if SIZEOF_TIME_T == 4
-                                                          "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+                                                          "eval_html_dir_list(): %s length=%d mtime=%ld exact=%d size=%lld exact=%lld list_length=%U",
 # else
-                                                          "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+                                                          "eval_html_dir_list(): %s length=%d mtime=%lld exact=%d size=%lld exact=%lld list_length=%U",
 # endif
 #endif
                                                           file_name,
@@ -1817,7 +1846,8 @@ eval_html_dir_list(char         *html_buffer,
                                                           (pri_time_t)file_mtime,
                                                           exact_date,
                                                           (pri_off_t)file_size,
-                                                          (pri_off_t)exact_size);
+                                                          (pri_off_t)exact_size,
+                                                          *list_length);
                                           }
                                           (*list_length)++;
                                           if (file_size > 0)
@@ -1830,6 +1860,29 @@ eval_html_dir_list(char         *html_buffer,
                                                          files_deleted,
                                                          file_size_deleted) == YES)
                                           {
+                                             if (fsa->debug > NORMAL_MODE)
+                                             {
+                                                trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+# if SIZEOF_TIME_T == 4
+                                                          "match: %s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+# else
+                                                          "match: %s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+# endif
+#else
+# if SIZEOF_TIME_T == 4
+                                                          "match: %s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+# else
+                                                          "match: %s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+# endif
+#endif
+                                                          file_name,
+                                                          file_name_length,
+                                                          (pri_time_t)file_mtime,
+                                                          exact_date,
+                                                          (pri_off_t)file_size,
+                                                          (pri_off_t)exact_size);
+                                             }
                                              (void)check_list(file_name,
                                                               file_name_length,
                                                               file_mtime,
@@ -2124,26 +2177,27 @@ eval_html_dir_list(char         *html_buffer,
                         exact_size = -1;
                         file_size = -1;
                      }
-                     if (fsa->debug > NORMAL_MODE)
+                     if (fsa->debug > DEBUG_MODE)
                      {
                         trans_db_log(INFO_SIGN, NULL, 0, NULL,
 #if SIZEOF_OFF_T == 4
 # if SIZEOF_TIME_T == 4
-                                     "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+                                     "eval_html_dir_list(): %s length=%d mtime=%ld exact=%d size=%ld exact=%ld list_length=%u",
 # else
-                                     "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+                                     "eval_html_dir_list(): %s length=%d mtime=%lld exact=%d size=%ld exact=%ld list_length=%u",
 # endif
 #else
 # if SIZEOF_TIME_T == 4
-                                     "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+                                     "eval_html_dir_list(): %s length=%d mtime=%ld exact=%d size=%lld exact=%lld list_length=%u",
 # else
-                                     "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+                                     "eval_html_dir_list(): %s length=%d mtime=%lld exact=%d size=%lld exact=%lld list_length=%u",
 # endif
 #endif
                                      file_name, file_name_length,
                                      (pri_time_t)file_mtime,
                                      exact_date, (pri_off_t)file_size,
-                                     (pri_off_t)exact_size);
+                                     (pri_off_t)exact_size,
+                                     *list_length);
                      }
 
                      (*list_length)++;
@@ -2156,6 +2210,30 @@ eval_html_dir_list(char         *html_buffer,
                                     file_size_deleted) != YES)
                      {
                         file_name[0] = '\0';
+                     }
+                     else
+                     {
+                        if (fsa->debug > NORMAL_MODE)
+                        {
+                           trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+# if SIZEOF_TIME_T == 4
+                                     "match: %s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+# else
+                                     "match: %s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+# endif
+#else
+# if SIZEOF_TIME_T == 4
+                                     "match: %s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+# else
+                                     "match: %s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+# endif
+#endif
+                                     file_name, file_name_length,
+                                     (pri_time_t)file_mtime, exact_date,
+                                     (pri_off_t)file_size,
+                                     (pri_off_t)exact_size);
+                        }
                      }
                   }
                   else
@@ -2435,26 +2513,27 @@ eval_html_dir_list(char         *html_buffer,
                               exact_size = -1;
                               file_size = -1;
                            }
-                           if (fsa->debug > NORMAL_MODE)
+                           if (fsa->debug > DEBUG_MODE)
                            {
                               trans_db_log(INFO_SIGN, NULL, 0, NULL,
 #if SIZEOF_OFF_T == 4
 # if SIZEOF_TIME_T == 4
-                                           "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+                                           "eval_html_dir_list(): %s length=%d mtime=%ld exact=%d size=%ld exact=%ld list_length=%u",
 # else
-                                           "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+                                           "eval_html_dir_list(): %s length=%d mtime=%lld exact=%d size=%ld exact=%ld list_length=%u",
 # endif
 #else
 # if SIZEOF_TIME_T == 4
-                                           "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+                                           "eval_html_dir_list(): %s length=%d mtime=%ld exact=%d size=%lld exact=%lld list_length=%u",
 # else
-                                           "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+                                           "eval_html_dir_list(): %s length=%d mtime=%lld exact=%d size=%lld exact=%lld list_length=%u",
 # endif
 #endif
                                            file_name, file_name_length,
                                            (pri_time_t)file_mtime, exact_date,
                                            (pri_off_t)file_size,
-                                           (pri_off_t)exact_size);
+                                           (pri_off_t)exact_size,
+                                           *list_length);
                            }
 
                            (*list_length)++;
@@ -2468,6 +2547,27 @@ eval_html_dir_list(char         *html_buffer,
                                           file_size_deleted) != YES)
                            {
                               file_name[0] = '\0';
+                           }
+                           if (fsa->debug > NORMAL_MODE)
+                           {
+                              trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+# if SIZEOF_TIME_T == 4
+                                        "match: %s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+# else
+                                        "match: %s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+# endif
+#else
+# if SIZEOF_TIME_T == 4
+                                        "match: %s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+# else
+                                        "match: %s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+# endif
+#endif
+                                        file_name, file_name_length,
+                                        (pri_time_t)file_mtime, exact_date,
+                                        (pri_off_t)file_size,
+                                        (pri_off_t)exact_size);
                            }
                         }
                         else
@@ -2684,26 +2784,27 @@ eval_html_dir_list(char         *html_buffer,
                              exact_size = -1;
                              file_size = -1;
                           }
-                          if (fsa->debug > NORMAL_MODE)
+                          if (fsa->debug > DEBUG_MODE)
                           {
                              trans_db_log(INFO_SIGN, NULL, 0, NULL,
 #if SIZEOF_OFF_T == 4
 # if SIZEOF_TIME_T == 4
-                                          "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+                                          "eval_html_dir_list(): %s length=%d mtime=%ld exact=%d size=%ld exact=%ld list_length=%u",
 # else
-                                          "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+                                          "eval_html_dir_list(): %s length=%d mtime=%lld exact=%d size=%ld exact=%ld list_length=%u",
 # endif
 #else
 # if SIZEOF_TIME_T == 4
-                                          "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+                                          "eval_html_dir_list(): %s length=%d mtime=%ld exact=%d size=%lld exact=%lld list_length=%u",
 # else
-                                          "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+                                          "eval_html_dir_list(): %s length=%d mtime=%lld exact=%d size=%lld exact=%lld list_length=%u",
 # endif
 #endif
                                           file_name, file_name_length,
                                           (pri_time_t)file_mtime, exact_date,
                                           (pri_off_t)file_size,
-                                          (pri_off_t)exact_size);
+                                          (pri_off_t)exact_size,
+                                          *list_length);
                           }
 
                           (*list_length)++;
@@ -2717,6 +2818,27 @@ eval_html_dir_list(char         *html_buffer,
                                          file_size_deleted) != YES)
                           {
                              file_name[0] = '\0';
+                          }
+                          if (fsa->debug > NORMAL_MODE)
+                          {
+                             trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+# if SIZEOF_TIME_T == 4
+                                       "match: %s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+# else
+                                       "match: %s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+# endif
+#else
+# if SIZEOF_TIME_T == 4
+                                       "match: %s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+# else
+                                       "match: %s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+# endif
+#endif
+                                       file_name, file_name_length,
+                                       (pri_time_t)file_mtime, exact_date,
+                                       (pri_off_t)file_size,
+                                       (pri_off_t)exact_size);
                           }
                        }
                        else
@@ -2788,6 +2910,13 @@ eval_html_dir_list(char         *html_buffer,
                           STORE_HTML_STRING(file_name, file_name_length,
                                             MAX_FILENAME_LENGTH, '<');
 
+                          if (fsa->debug > DEBUG_MODE)
+                          {
+                             trans_db_log(INFO_SIGN, NULL, 0, NULL,
+                                          "eval_html_dir_list(): %s length=%d mtime=-1 exact=%d size=-1 exact=-1 list_length=%u",
+                                          file_name, file_name_length,
+                                          exact_date, *list_length);
+                          }
                           if (check_name(file_name, file_name_length,
                                          -1, -1, files_deleted,
                                          file_size_deleted) == YES)
@@ -2797,24 +2926,10 @@ eval_html_dir_list(char         *html_buffer,
                              file_size = -1;
                              if (fsa->debug > NORMAL_MODE)
                              {
-                                trans_db_log(INFO_SIGN, NULL, 0, NULL,
-#if SIZEOF_OFF_T == 4
-# if SIZEOF_TIME_T == 4
-                                             "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
-# else
-                                             "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
-# endif
-#else
-# if SIZEOF_TIME_T == 4
-                                             "eval_html_dir_list(): filename=%s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
-# else
-                                             "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
-# endif
-#endif
-                                             file_name, file_name_length,
-                                             (pri_time_t)file_mtime, exact_date,
-                                             (pri_off_t)file_size,
-                                             (pri_off_t)exact_size);
+                                trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+                                          "match: %s length=%d mtime=-1 exact=%d size=-1 exact=-1",
+                                          file_name, file_name_length,
+                                          exact_date);
                              }
                           }
                           else

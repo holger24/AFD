@@ -471,7 +471,7 @@ do_scan(int   *files_to_retrieve,
                          filename, namelen, (MAX_FILENAME_LENGTH - 1));
                continue;
             }
-            if (fsa->debug > NORMAL_MODE)
+            if (fsa->debug > DEBUG_MODE)
             {
                time_t mtime;
                char   dstr[26],
@@ -481,7 +481,7 @@ do_scan(int   *files_to_retrieve,
                p_tm = gmtime(&mtime);
                (void)strftime(dstr, 26, "%a %h %d %H:%M:%S %Y", p_tm);
                mode_t2str(stat_buf.st_mode, mstr);
-               trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+               trans_db_log(INFO_SIGN, NULL, 0, NULL,
 #if SIZEOF_OFF_T == 4
                             "%s %s size=%ld uid=%u gid=%u mode=%o %s",
 #else
@@ -549,6 +549,27 @@ do_scan(int   *files_to_retrieve,
                   {
                      if ((status = pmatch(p_mask, filename, NULL)) == 0)
                      {
+                        if (fsa->debug > NORMAL_MODE)
+                        {
+                           time_t mtime;
+                           char   dstr[26],
+                                  mstr[11];
+
+                           mtime = stat_buf.st_mtime;
+                           p_tm = gmtime(&mtime);
+                           (void)strftime(dstr, 26, "%a %h %d %H:%M:%S %Y", p_tm);
+                           mode_t2str(stat_buf.st_mode, mstr);
+                           trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+                                     "match: %s %s size=%ld uid=%u gid=%u mode=%o %s",
+#else
+                                     "match: %s %s size=%lld uid=%u gid=%u mode=%o %s",
+#endif
+                                     mstr, dstr, (pri_off_t)stat_buf.st_size,
+                                     (stat_buf.st_mode & ~S_IFMT),
+                                     (unsigned int)stat_buf.st_uid,
+                                     (unsigned int)stat_buf.st_gid, filename);
+                        }
                         if (check_list(filename, &stat_buf,
                                        files_to_retrieve,
                                        file_size_to_retrieve,

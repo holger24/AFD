@@ -751,6 +751,25 @@ do_scan(int   *files_to_retrieve,
                      {
                         if ((status = pmatch(p_mask, file_name, NULL)) == 0)
                         {
+                           if (fsa->debug > NORMAL_MODE)
+                           {
+                              trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+# if SIZEOF_TIME_T == 4
+                                        "match: %s mtime=%ld size=%ld",
+# else
+                                        "match: %s mtime=%lld size=%ld",
+# endif
+#else
+# if SIZEOF_TIME_T == 4
+                                        "match: %s mtime=%ld size=%lld",
+# else
+                                        "match: %s mtime=%lld size=%lld",
+# endif
+#endif
+                                        file_name, (pri_time_t)file_mtime,
+                                        (pri_off_t)file_size);
+                           }
                            if (check_list(file_name, file_size, file_mtime,
                                           files_to_retrieve,
                                           file_size_to_retrieve,

@@ -777,6 +777,11 @@ do_scan(int          *files_to_retrieve,
                      {
                         if ((status = pmatch(p_mask, p_list, NULL)) == 0)
                         {
+                           if (fsa->debug > NORMAL_MODE)
+                           {
+                              trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+                                        "match: %s", p_list);
+                           }
                            if (check_list(p_list, files_to_retrieve,
                                           &file_mtime,
                                           file_size_to_retrieve,

@@ -578,6 +578,27 @@ do_scan(int   *files_to_retrieve,
                      {
                         if ((status = pmatch(p_mask, file_name, NULL)) == 0)
                         {
+                           if (fsa->debug > NORMAL_MODE)
+                           {
+                              trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+# if SIZEOF_TIME_T == 4
+                                        "match: %s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+# else
+                                        "match: %s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+# endif
+#else
+# if SIZEOF_TIME_T == 4
+                                        "match: %s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+# else
+                                        "match: %s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+# endif
+#endif
+                                        file_name, fp.namelen,
+                                        (pri_time_t)file_mtime, exact_date,
+                                        (pri_off_t)file_size,
+                                        (pri_off_t)exact_size);
+                           }
                            if (check_list(file_name, file_size, exact_size,
                                           file_mtime, exact_date,
                                           files_to_retrieve,
