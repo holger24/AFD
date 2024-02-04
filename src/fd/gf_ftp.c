@@ -1,6 +1,6 @@
 /*
  *  gf_ftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -130,7 +130,8 @@ off_t                      file_size_to_retrieve_shown = 0,
                            rl_size = 0;
 u_off_t                    prev_file_size_done = 0;
 #ifdef _WITH_BURST_2
-unsigned int               burst_2_counter = 0;
+unsigned int               burst_2_counter = 0,
+                           append_count = 0;
 #endif
 #ifdef HAVE_MMAP
 off_t                      fra_size,
@@ -1448,11 +1449,29 @@ main(int argc, char *argv[])
                         }
                         else
                         {
-                           if (fsa->debug > NORMAL_MODE)
+                           if (prev_download_exists == YES)
                            {
-                              trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                           "Opened local file %s.",
-                                           local_tmp_file);
+                              append_count++;
+                              if (fsa->debug > NORMAL_MODE)
+                              {
+                                 trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+#if SIZEOF_OFF_T == 4
+                                              "Appending local file %s [offset=%ld].",
+#else
+                                              "Appending local file %s [offset=%lld].",
+#endif
+                                              local_tmp_file,
+                                              (pri_off_t)offset);
+                              }
+                           }
+                           else
+                           {
+                              if (fsa->debug > NORMAL_MODE)
+                              {
+                                 trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                              "Opened local file %s.",
+                                              local_tmp_file);
+                              }
                            }
                         }
 
@@ -2011,14 +2030,63 @@ main(int argc, char *argv[])
                                        prev_no_of_files_done;
                if (diff_no_of_files_done > 0)
                {
-                  int     length = MAX_INT_LENGTH + 10 + MAX_OFF_T_LENGTH + 16 + MAX_INT_LENGTH + 8 + 1;
+                  int     length;
                   u_off_t diff_file_size_done;
-                  char    buffer[MAX_INT_LENGTH + 10 + MAX_OFF_T_LENGTH + 16 + MAX_INT_LENGTH + 8 + 1];
+#ifdef _WITH_BURST_2
+                                /* "%.3f XXX (%lu bytes) %s in %d file(s). [APPEND * %u] [BURST * %u]" */
+                  char    buffer[10 + 6 + MAX_OFF_T_LENGTH + 8 + 9 + 1 + MAX_INT_LENGTH + 9 + 11 + MAX_INT_LENGTH + 1 + 10 + MAX_INT_LENGTH + 1 + 1];
+
+                  length = 10 + 6 + MAX_OFF_T_LENGTH + 8 + 9 + 1 + MAX_INT_LENGTH + 9 + 11 + MAX_INT_LENGTH + 1 + 10 + MAX_INT_LENGTH + 1 + 1;
+#else
+                                /* "%.3f XXX (%lu bytes) %s in %d file(s)." */ 
+                  char    buffer[10 + 6 + MAX_OFF_T_LENGTH + 8 + 9 + 1 + MAX_INT_LENGTH + 9 + 1];
+
+                  length = 10 + 6 + MAX_OFF_T_LENGTH + 8 + 9 + 1 + MAX_INT_LENGTH + 9 + 1;
+#endif
 
                   diff_file_size_done = fsa->job_status[(int)db.job_no].file_size_done -
                                         prev_file_size_done;
                   WHAT_DONE_BUFFER(length, buffer, "retrieved",
                                    diff_file_size_done, diff_no_of_files_done);
+#ifdef _WITH_BURST_2
+                  if (append_count == 1)
+                  {
+                     /* Write " [APPEND]" */
+                     buffer[length] = ' '; buffer[length + 1] = '[';
+                     buffer[length + 2] = 'A'; buffer[length + 3] = 'P';
+                     buffer[length + 4] = 'P'; buffer[length + 5] = 'E';
+                     buffer[length + 6] = 'N'; buffer[length + 7] = 'D';
+                     buffer[length + 8] = ']'; buffer[length + 9] = '\0';
+                     length += 9;
+                  }
+                  else if (append_count > 1)
+                       {
+                          length += snprintf(&buffer[length],
+                                             10 + 6 + MAX_OFF_T_LENGTH + 8 + 9 + 1 + MAX_INT_LENGTH + 9 + 11 + MAX_INT_LENGTH + 1 + 10 + MAX_INT_LENGTH + 1 + 1,
+                                             " [APPEND * %u]",
+                                             append_count);
+                       }
+                  if (in_burst_loop == YES)
+                  {
+                     if (burst_2_counter == 0)
+                     {
+                        /* Write " [BURST]" */
+                        buffer[length] = ' '; buffer[length + 1] = '[';
+                        buffer[length + 2] = 'B'; buffer[length + 3] = 'U';
+                        buffer[length + 4] = 'R'; buffer[length + 5] = 'S';
+                        buffer[length + 6] = 'T'; buffer[length + 7] = ']';
+                        buffer[length + 8] = '\0';
+                        length += 8;
+                     }
+                     else if (burst_2_counter > 0)
+                          {
+                             length += snprintf(&buffer[length],
+                                                10 + 6 + MAX_OFF_T_LENGTH + 8 + 9 + 1 + MAX_INT_LENGTH + 9 + 11 + MAX_INT_LENGTH + 1 + 10 + MAX_INT_LENGTH + 1 + 1,
+                                                " [BURST * %u]",
+                                                burst_2_counter + 1);
+                          }
+                  }
+#endif
                   trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s @%x",
                             buffer, db.id.dir);
                   prev_no_of_files_done = fsa->job_status[(int)db.job_no].no_of_files_done;
@@ -2097,6 +2165,7 @@ main(int argc, char *argv[])
 #ifdef _WITH_BURST_2
 burst2_no_new_dir_mtime:
       in_burst_loop = YES;
+      append_count = 0;
       diff_time = time(NULL) - connected;
       if (((fsa->protocol_options & KEEP_CONNECTED_DISCONNECT) &&
            (db.keep_connected > 0) && (diff_time > db.keep_connected)) ||
@@ -2489,18 +2558,36 @@ gf_ftp_exit(void)
       {
          int  length;
 #ifdef _WITH_BURST_2
-         char buffer[MAX_INT_LENGTH + 10 + MAX_OFF_T_LENGTH + 16 + MAX_INT_LENGTH + 8 + 11 + MAX_INT_LENGTH + 1];
+                    /* "%.3f XXX (%lu bytes) %s in %d file(s). [APPEND * %u] [BURST * %u]" */
+         char buffer[10 + 6 + MAX_OFF_T_LENGTH + 8 + 9 + 1 + MAX_INT_LENGTH + 9 + 11 + MAX_INT_LENGTH + 1 + 10 + MAX_INT_LENGTH + 1 + 1];
 
-         length = MAX_INT_LENGTH + 10 + MAX_OFF_T_LENGTH + 16 + MAX_INT_LENGTH + 8 + 11 + MAX_INT_LENGTH + 1;
+         length = 10 + 6 + MAX_OFF_T_LENGTH + 8 + 9 + 1 + MAX_INT_LENGTH + 9 + 11 + MAX_INT_LENGTH + 1 + 10 + MAX_INT_LENGTH + 1 + 1;
 #else
-         char buffer[MAX_INT_LENGTH + 10 + MAX_OFF_T_LENGTH + 16 + MAX_INT_LENGTH + 8 + 1];
+                    /* "%.3f XXX (%lu bytes) %s in %d file(s)." */
+         char buffer[10 + 6 + MAX_OFF_T_LENGTH + 8 + 9 + 1 + MAX_INT_LENGTH + 9 + 1];
 
-         length = MAX_INT_LENGTH + 10 + MAX_OFF_T_LENGTH + 16 + MAX_INT_LENGTH + 8 + 1;
+         length = 10 + 6 + MAX_OFF_T_LENGTH + 8 + 9 + 1 + MAX_INT_LENGTH + 9 + 1;
 #endif
 
          WHAT_DONE_BUFFER(length, buffer, "retrieved", diff_file_size_done,
                           diff_no_of_files_done);
 #ifdef _WITH_BURST_2
+         if (append_count == 1)
+         {
+            /* Write " [APPEND]" */
+            buffer[length] = ' '; buffer[length + 1] = '[';
+            buffer[length + 2] = 'A'; buffer[length + 3] = 'P';
+            buffer[length + 4] = 'P'; buffer[length + 5] = 'E';
+            buffer[length + 6] = 'N'; buffer[length + 7] = 'D';
+            buffer[length + 8] = ']'; buffer[length + 9] = '\0';
+            length += 9;
+         }
+         else if (append_count > 1)
+              {
+                 length += snprintf(&buffer[length],
+                                    10 + 6 + MAX_OFF_T_LENGTH + 8 + 9 + 1 + MAX_INT_LENGTH + 9 + 11 + MAX_INT_LENGTH + 1 + 10 + MAX_INT_LENGTH + 1 + 1,
+                                    " [APPEND * %u]", append_count);
+              }
          if (burst_2_counter == 1)
          {
             /* Write " [BURST]" */
@@ -2514,7 +2601,7 @@ gf_ftp_exit(void)
          else if (burst_2_counter > 1)
               {
                  length += snprintf(&buffer[length],
-                                    MAX_INT_LENGTH + 10 + MAX_OFF_T_LENGTH + 16 + MAX_INT_LENGTH + 8 + 11 + MAX_INT_LENGTH + 1 - length,
+                                    10 + 6 + MAX_OFF_T_LENGTH + 8 + 9 + 1 + MAX_INT_LENGTH + 9 + 11 + MAX_INT_LENGTH + 1 + 10 + MAX_INT_LENGTH + 1 + 1,
                                     " [BURST * %u]", burst_2_counter);
               }
 #endif
