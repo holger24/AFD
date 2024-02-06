@@ -1,6 +1,6 @@
 /*
  *  mshow_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,9 @@ DESCR__S_M1
  **                      Remove the font button. Font now gets selected
  **                      via afd_ctrl.
  **   27.12.2003 H.Kiehl Added trace log.
+ **   06.02.2024 H.Kiehl Set a signal handler for SIGINT, SIGQUIT and
+ **                      SIGTERM, so we close all additional windows
+ **                      opened by this dialog.
  **
  */
 DESCR__E_M1
@@ -151,6 +154,7 @@ static void      create_cursors(void),
                  init_log_file(int *, char **, char *),
                  mshow_log_exit(void),
                  sig_bus(int),
+                 sig_exit(int),
                  sig_segv(int),
                  usage(char *);
 
@@ -890,7 +894,10 @@ main(int argc, char *argv[])
 
 
    /* Set some signal handlers. */
-   if ((signal(SIGBUS, sig_bus) == SIG_ERR) ||
+   if ((signal(SIGINT, sig_exit) == SIG_ERR) ||
+       (signal(SIGQUIT, sig_exit) == SIG_ERR) ||
+       (signal(SIGTERM, sig_exit) == SIG_ERR) ||
+       (signal(SIGBUS, sig_bus) == SIG_ERR) ||
        (signal(SIGSEGV, sig_segv) == SIG_ERR))
    {
       (void)xrec(WARN_DIALOG, "Failed to set signal handler's for %s : %s",
@@ -1286,4 +1293,12 @@ sig_bus(int signo)
    (void)fprintf(stderr, "Uuurrrggh! Received SIGBUS. (%s %d)\n",
                  __FILE__, __LINE__);
    abort();
+}
+
+
+/*++++++++++++++++++++++++++++++ sig_exit() +++++++++++++++++++++++++++++*/
+static void
+sig_exit(int signo)
+{
+   exit(INCORRECT);
 }
