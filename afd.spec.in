@@ -7,7 +7,7 @@ Group: Applications/Communications
 Prefix: @prefix@
 Source0: %{name}-%{version}.tar.bz2
 Requires: @REQUIRES@
-%if 0%{?rhl}%{?fedora}
+%if 0%{?rhl}%{?fedora}%{?rhel}
 BuildRequires: @BUILD_REQUIRES_REDHAT@
 %else
 BuildRequires: @BUILD_REQUIRES@
