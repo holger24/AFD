@@ -2548,26 +2548,29 @@ eval_html_dir_list(char         *html_buffer,
                            {
                               file_name[0] = '\0';
                            }
-                           if (fsa->debug > NORMAL_MODE)
+                           else
                            {
-                              trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+                              if (fsa->debug > NORMAL_MODE)
+                              {
+                                 trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
 #if SIZEOF_OFF_T == 4
 # if SIZEOF_TIME_T == 4
-                                        "match: %s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+                                           "match: %s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
 # else
-                                        "match: %s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+                                           "match: %s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
 # endif
 #else
 # if SIZEOF_TIME_T == 4
-                                        "match: %s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+                                           "match: %s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
 # else
-                                        "match: %s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+                                           "match: %s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
 # endif
 #endif
-                                        file_name, file_name_length,
-                                        (pri_time_t)file_mtime, exact_date,
-                                        (pri_off_t)file_size,
-                                        (pri_off_t)exact_size);
+                                           file_name, file_name_length,
+                                           (pri_time_t)file_mtime, exact_date,
+                                           (pri_off_t)file_size,
+                                           (pri_off_t)exact_size);
+                              }
                            }
                         }
                         else
@@ -2819,26 +2822,29 @@ eval_html_dir_list(char         *html_buffer,
                           {
                              file_name[0] = '\0';
                           }
-                          if (fsa->debug > NORMAL_MODE)
+                          else
                           {
-                             trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+                             if (fsa->debug > NORMAL_MODE)
+                             {
+                                trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
 #if SIZEOF_OFF_T == 4
 # if SIZEOF_TIME_T == 4
-                                       "match: %s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+                                          "match: %s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
 # else
-                                       "match: %s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+                                          "match: %s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
 # endif
 #else
 # if SIZEOF_TIME_T == 4
-                                       "match: %s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+                                          "match: %s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
 # else
-                                       "match: %s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+                                          "match: %s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
 # endif
 #endif
-                                       file_name, file_name_length,
-                                       (pri_time_t)file_mtime, exact_date,
-                                       (pri_off_t)file_size,
-                                       (pri_off_t)exact_size);
+                                          file_name, file_name_length,
+                                          (pri_time_t)file_mtime, exact_date,
+                                          (pri_off_t)file_size,
+                                          (pri_off_t)exact_size);
+                             }
                           }
                        }
                        else
@@ -3595,48 +3601,95 @@ check_list(char   *file,
        ((file_mtime == -1) || (exact_date != DS2UT_SECOND) ||
         (file_size == -1) || (exact_size != 1)))
    {
-      int status;
+      int do_head = YES;
 
-      if ((status = http_head(db.target_dir, file,
-                              &file_size, &file_mtime)) == SUCCESS)
+      if ((fra->ignore_size != -1) && (exact_size != 1) && (exact_size != -1) &&
+          (rl[no_of_listed_files].size != -1))
       {
-         if (fsa->debug > NORMAL_MODE)
+         if (((fra->gt_lt_sign & ISIZE_LESS_THEN) &&
+              ((rl[no_of_listed_files].size + (exact_size - 1)) < fra->ignore_size)) ||
+             ((fra->gt_lt_sign & ISIZE_GREATER_THEN) &&
+              ((rl[no_of_listed_files].size + (exact_size - 1)) > fra->ignore_size)))
          {
-            trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
+            do_head = NO;
+         }
+      }
+      if ((do_head == YES) && (fra->ignore_file_time != 0) &&
+          (rl[no_of_listed_files].file_mtime != -1) &&
+          ((fra->gt_lt_sign & IFTIME_EQUAL) == 0) &&
+          (exact_date != DS2UT_SECOND) && (exact_date != DS2UT_NONE))
+      {
+         time_t diff_time;
+
+         diff_time = current_time - rl[no_of_listed_files].file_mtime;
+         if (fra->gt_lt_sign & IFTIME_GREATER_THEN)
+         {
+            if ((((exact_date == DS2UT_MINUTE) &&
+                  (fra->ignore_file_time > 60)) ||
+                 ((exact_date == DS2UT_DAY) &&
+                  (fra->ignore_file_time > 86400))) &&
+                (diff_time > fra->ignore_file_time))
+            {
+               do_head = NO;
+            }
+         }
+         else if (fra->gt_lt_sign & IFTIME_LESS_THEN)
+              {
+                 if (((exact_date == DS2UT_MINUTE) &&
+                      ((rl[no_of_listed_files].file_mtime + 60) < fra->ignore_file_time)) ||
+                     ((exact_date == DS2UT_DAY) &&
+                      ((rl[no_of_listed_files].file_mtime + 86400) < fra->ignore_file_time)))
+                 {
+                    do_head = NO;
+                 }
+              }
+      }
+
+      if (do_head == YES)
+      {
+         int status;
+
+         if ((status = http_head(db.target_dir, file,
+                                 &file_size, &file_mtime)) == SUCCESS)
+         {
+            if (fsa->debug > NORMAL_MODE)
+            {
+               trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
 #if SIZEOF_OFF_T == 4
 # if SIZEOF_TIME_T == 4
-                         "Date for %s is %ld, size = %ld bytes.",
+                            "Date for %s is %ld, size = %ld bytes.",
 # else
-                         "Date for %s is %lld, size = %ld bytes.",
+                            "Date for %s is %lld, size = %ld bytes.",
 # endif
 #else
 # if SIZEOF_TIME_T == 4
-                         "Date for %s is %ld, size = %lld bytes.",
+                            "Date for %s is %ld, size = %lld bytes.",
 # else
-                         "Date for %s is %lld, size = %lld bytes.",
+                            "Date for %s is %lld, size = %lld bytes.",
 # endif
 #endif
-                         file, file_mtime, file_size);
+                            file, file_mtime, file_size);
+            }
          }
-      }
-      else
-      {
-         /*
-          * We could not treat this as an error and just check
-          * that there is no timeout and continue as http_get()
-          * will get us the size. Turns out that this can cause
-          * file corruption, since when get_http_reply() gets to
-          * read just one or two bytes it misses the real response
-          * and this will appear in content of the file when it
-          * is downloaded. This is now fixed in get_http_reply()
-          * but it is saver to just disconnect and retry again.
-          */
-         trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
-                   (status == INCORRECT) ? NULL : msg_str,
-                   "Failed to get date and size of file %s (%d).",
+         else
+         {
+            /*
+             * We could not treat this as an error and just check
+             * that there is no timeout and continue as http_get()
+             * will get us the size. Turns out that this can cause
+             * file corruption, since when get_http_reply() gets to
+             * read just one or two bytes it misses the real response
+             * and this will appear in content of the file when it
+             * is downloaded. This is now fixed in get_http_reply()
+             * but it is saver to just disconnect and retry again.
+             */
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
+                      (status == INCORRECT) ? NULL : msg_str,
+                      "Failed to get date and size of file %s (%d).",
                    file, status);
-         http_quit();
-         exit(DATE_ERROR);
+            http_quit();
+            exit(DATE_ERROR);
+         }
       }
    }
    rl[no_of_listed_files].file_mtime = file_mtime;
