@@ -1,6 +1,6 @@
 /*
  *  rm_dupcheck_crc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2022 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -54,18 +54,16 @@ void
 rm_dupcheck_crc(char *fullname, char *file_name, off_t file_size)
 {
 #ifdef WITH_DUP_CHECK
-# ifndef FAST_SF_DUPCHECK
    if (db.dup_check_timeout > 0)
    {
       /* Remove the dupcheck CRC value. */
       (void)isdup(fullname, file_name, file_size, db.crc_id,
                   db.dup_check_timeout, db.dup_check_flag, YES,
-#  ifdef HAVE_HW_CRC32
+# ifdef HAVE_HW_CRC32
                   have_hw_crc32,
-#  endif
+# endif
                   YES, NO);
    }
-# endif
 #endif
 
    return;
