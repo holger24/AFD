@@ -1621,7 +1621,8 @@ sftp_stat(char *filename, struct stat *p_stat_buf)
                  /* Some error has occured. */
                  get_msg_str(&msg[9]);
                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_stat", NULL,
-                           "%s", error_2_str(&msg[5]));
+                           "%s [cwd=%s filename=%s]", error_2_str(&msg[5]),
+                           (scd.cwd == NULL) ? "" : scd.cwd, filename);
                  status = get_xfer_uint(&msg[5]);
               }
               else
