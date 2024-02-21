@@ -1,6 +1,6 @@
 /*
  *  sftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -4694,6 +4694,28 @@ retry:
    if ((reply = read_msg(msg, 4, line)) == SUCCESS)
    {
       *p_msg_length = get_xfer_uint(msg);
+
+      /*
+       * For sftp_readdir() it can be that the reply is
+       * larger then our current buffer. Check if we can just
+       * increase the buffer. But do not go beyond MAX_SFTP_BLOCKSIZE.
+       * It can be that we are out of sync and are reading garbage.
+       */
+      if ((*p_msg_length > scd.max_sftp_msg_length) &&
+          (*p_msg_length <= MAX_SFTP_BLOCKSIZE))
+      {
+         if (*p_msg_length <= MAX_SFTP_BLOCKSIZE)
+         {
+            if ((msg = realloc(msg, *p_msg_length)) == NULL)
+            {
+                trans_log(ERROR_SIGN, __FILE__, __LINE__, "get_reply", NULL,
+                          _("realloc() error : %s"), strerror(errno));
+                return(INCORRECT);
+            }
+            scd.max_sftp_msg_length = *p_msg_length;
+         }
+      }
+
       if (*p_msg_length <= scd.max_sftp_msg_length)
       {
          if ((reply = read_msg(msg, (int)*p_msg_length, line)) == SUCCESS)
