@@ -1,6 +1,6 @@
 /*
  *  view_dc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1999 - 2024 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -52,6 +52,7 @@ DESCR__S_M1
  **   05.01.2011 H.Kiehl Added search button.
  **   07.11.2014 H.Kiehl Added parameter -j to show data from a given
  **                      job ID.
+ **   21.02.2024 H.Kiehl Added signal handler to close any windows created.
  **
  */
 DESCR__E_M1
@@ -62,7 +63,7 @@ DESCR__E_M1
 #include <sys/types.h>
 #include <stdlib.h>              /* getenv(), atexit()                   */
 #include <unistd.h>
-#include <signal.h>              /* kill(), SIGINT                       */
+#include <signal.h>              /* kill(), signal(), SIGINT             */
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
@@ -113,6 +114,7 @@ static char      *view_buffer = NULL;
 
 /* Local function prototypes. */
 static void      init_view_dc(int *, char **),
+                 sig_exit(int),
                  usage(char *),
                  view_dc_exit(void);
 
@@ -850,6 +852,15 @@ init_view_dc(int *argc, char *argv[])
       }
    }
 
+   /* Set some signal handlers. */
+   if ((signal(SIGINT, sig_exit) == SIG_ERR) ||
+       (signal(SIGQUIT, sig_exit) == SIG_ERR) ||
+       (signal(SIGTERM, sig_exit) == SIG_ERR))
+   {
+      (void)xrec(WARN_DIALOG, "Failed to set signal handler's for %s : %s",
+                 VIEW_DC, strerror(errno));
+   }
+
    if (atexit(view_dc_exit) != 0)
    {
       (void)xrec(WARN_DIALOG, "Failed to set exit handler for %s : %s",
@@ -907,4 +918,12 @@ view_dc_exit(void)
    remove_window_id(getpid(), VIEW_DC);
 
    return;
+}
+
+
+/*++++++++++++++++++++++++++++++ sig_exit() +++++++++++++++++++++++++++++*/
+static void
+sig_exit(int signo)
+{
+   exit(INCORRECT);
 }
