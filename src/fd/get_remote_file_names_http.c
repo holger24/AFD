@@ -1830,15 +1830,15 @@ eval_html_dir_list(char         *html_buffer,
                                                           NULL,
 #if SIZEOF_OFF_T == 4
 # if SIZEOF_TIME_T == 4
-                                                          "eval_html_dir_list(): %s length=%d mtime=%ld exact=%d size=%ld exact=%ld list_length=%U",
+                                                          "eval_html_dir_list(): %s length=%d mtime=%ld exact=%d size=%ld exact=%ld list_length=%u",
 # else
-                                                          "eval_html_dir_list(): %s length=%d mtime=%lld exact=%d size=%ld exact=%ld list_length=%U",
+                                                          "eval_html_dir_list(): %s length=%d mtime=%lld exact=%d size=%ld exact=%ld list_length=%u",
 # endif
 #else
 # if SIZEOF_TIME_T == 4
-                                                          "eval_html_dir_list(): %s length=%d mtime=%ld exact=%d size=%lld exact=%lld list_length=%U",
+                                                          "eval_html_dir_list(): %s length=%d mtime=%ld exact=%d size=%lld exact=%lld list_length=%u",
 # else
-                                                          "eval_html_dir_list(): %s length=%d mtime=%lld exact=%d size=%lld exact=%lld list_length=%U",
+                                                          "eval_html_dir_list(): %s length=%d mtime=%lld exact=%d size=%lld exact=%lld list_length=%u",
 # endif
 #endif
                                                           file_name,
