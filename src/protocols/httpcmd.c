@@ -1468,6 +1468,31 @@ retry_get_range:
 #ifdef WITH_SSL
       }
 #endif
+#ifdef EXTERNAL_TEST
+      if (hmr.debug > 0)
+      {
+         trans_log(DEBUG_SIGN, NULL, 0, "http_get", NULL,
+                   "GET %s HTTP/1.1", resource);
+         trans_log(DEBUG_SIGN, NULL, 0, "http_get", NULL,
+                   "Host: %s", hmr.hostname);
+         if (range[0] != '\0')
+         {
+            trans_log(DEBUG_SIGN, NULL, 0, "http_get", NULL, "%s", range);
+         }
+         trans_log(DEBUG_SIGN, NULL, 0, "http_get", NULL,
+                   "User-Agent: AFD/%s", PACKAGE_VERSION);
+         if (hmr.authorization != NULL)
+         {
+            trans_log(DEBUG_SIGN, NULL, 0, "http_get", NULL, "%s", hmr.authorization);
+         }
+         trans_log(DEBUG_SIGN ,NULL, 0, "http_get", NULL, "Content-length: 0");
+         trans_log(DEBUG_SIGN ,NULL, 0, "http_get", NULL, "Accept: */*");
+         if (accept_encoding[0] != '\0')
+         {
+            trans_log(DEBUG_SIGN, NULL, 0, "http_get", NULL, "%s", accept_encoding);
+         }
+      }
+#endif
 retry_get:
 #ifdef _WITH_EXTRA_CHECK
       if ((reply = command(http_fd,

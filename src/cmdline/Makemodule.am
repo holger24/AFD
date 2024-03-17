@@ -1,5 +1,5 @@
 ## Makemodule.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2021 Holger Kiehl
+## Copyright (C) 2001 - 2024 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -44,8 +44,10 @@ else
    SMTP_PROG_CMD       =
    EXTRA_SMTP_PROG_CMD = bin/asmtp
 endif
+HTML_LIST_PROG_CMD     = bin/ahtml_list
 
 noinst_HEADERS        += src/cmdline/aftpdefs.h\
+                         src/cmdline/ahtml_listdefs.h\
                          src/cmdline/asftpdefs.h\
                          src/cmdline/asmtpdefs.h\
                          src/cmdline/awmodefs.h\
@@ -53,7 +55,8 @@ noinst_HEADERS        += src/cmdline/aftpdefs.h\
 bin_PROGRAMS          += $(WMO_PROG_CMD)\
                          $(FTP_PROG_CMD)\
                          $(SFTP_PROG_CMD)\
-                         $(SMTP_PROG_CMD)
+                         $(SMTP_PROG_CMD)\
+                         $(HTML_LIST_PROG_CMD)
 EXTRA_PROGRAMS        += $(EXTRA_WMO_PROG_CMD)\
                          $(EXTRA_FTP_PROG_CMD)\
                          $(EXTRA_SFTP_PROG_CMD)\
@@ -68,6 +71,14 @@ bin_aftp_SOURCES       = src/cmdline/aftp.c\
                          src/cmdline/init_aftp.c\
                          src/cmdline/trans_log.c
 bin_aftp_LDADD         = @EXTRA_SOCKET_LIBS@\
+                         lib/libprotocols.a\
+                         lib/libafd.a\
+                         @AFD_SSL_LIBS@
+bin_ahtml_list_SOURCES = src/cmdline/ahtml_list.c\
+                         src/cmdline/eval_html_dir_list.c\
+                         src/cmdline/get_html_content.c\
+                         src/cmdline/trans_log.c
+bin_ahtml_list_LDADD   = @EXTRA_SOCKET_LIBS@\
                          lib/libprotocols.a\
                          lib/libafd.a\
                          @AFD_SSL_LIBS@

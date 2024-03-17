@@ -1,6 +1,6 @@
 /*
  *  cmdline.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -147,6 +147,8 @@ extern int  rec(int, char *, char *, ...);
 #define TEST_MODE            3
 #define FILE_NAME_FILE_ERROR 40
 
+#define HREF_SEARCH_ONLY     1
+
 /* Structure holding all filenames that are to be retrieved. */
 struct filename_list
        {            
@@ -163,13 +165,15 @@ struct data
           int          blocksize;        /* FTP transfer block size.       */
           int          no_of_files;      /* The number of files to be send.*/
           int          dummy_size;       /* File size of files to be       */
-                                         /* transfered in test mode.       */
+                                         /* transferred in test mode.      */
           int          sndbuf_size;      /* Socket send buffer size.       */
           int          rcvbuf_size;      /* Socket receive buffer size.    */
 #ifdef WITH_SSL
           int          strict;
           int          legacy_renegotiation;
 #endif
+          int          no_expect;        /* Some HTTP servers cannot       */
+                                         /* handle expect command.         */
           long         transfer_timeout; /* When to timeout the            */
                                          /* transmitting job.              */
           char         *charset;         /* Character set to be used for   */
@@ -177,6 +181,7 @@ struct data
           char         *subject;         /* Subject of the mail.           */
           char         *reply_to;        /* The address where the recipient*/
                                          /* sends the reply.               */
+          char         *index_file;      /* None standard index file name. */
           char         *from;            /* The address who send this mail.*/
           char         **filename;       /* Pointer to array that holds    */
                                          /* all file names to be send.     */
@@ -217,8 +222,8 @@ struct data
           char         acknowledge;      /* Acknowledge each message.[awmo]*/
 #ifdef WITH_SSL
           char         implicit_ftps;
-          char         tls_auth;         /* TLS/SSL authentification.      */
-                                         /*  NO   - NO authentification.   */
+          char         tls_auth;         /* TLS/SSL authentication.        */
+                                         /*  NO   - NO authentication.     */
                                          /*  YES  - Only control           */
                                          /*         connection.            */
                                          /*  BOTH - Control and data       */
@@ -235,7 +240,7 @@ struct data
                                          /* run. Currently three modes     */
                                          /* have been implemented:         */
                                          /*  transfer - files are being    */
-                                         /*             transfered to      */
+                                         /*             transferred to     */
                                          /*             another host (push)*/
                                          /*  retrieve - files are being    */
                                          /*             fetched from       */
