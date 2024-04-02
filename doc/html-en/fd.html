@@ -145,12 +145,17 @@ This program is only useful if files should be send with the WMO-socket
 procedure. Since WMO-sockets are insecure (data can be lost) it can be
 optionally configured to acknowledge each message.
 </p>
-<h3 align=center><u><a name="get_file_http">Get File HTTP</a></u></h3>
+<h3 align=center><u><a name="get_file_http">Get and Send File HTTP</a></u></h3>
 <p>
-'gf_http' is the process responsible to receive (pull) files via
+'sf_http' is the process responsible to transmit (push) files via
 <a href="glossary.html#HTTP">HTTP</a>. It does so by using its own HTTP-client
 that has build in a subset of the HTTP protocol (<a href="../txt/rfc2616.txt">
-RFC 2616</a> and <a href="../txt/rfc2617.txt">RFC 2617</a>).
+RFC 2616</a> and <a href="../txt/rfc2617.txt">RFC 2617</a>). This also
+supports AWS4 S3 storage via HTTPS. Note, only sending via PUT is implemented.
+</p>
+<p>
+'gf_http' is the process responsible to receive (pull) files via
+<a href="glossary.html#HTTP">HTTP</a>.
 </p>
 <p>
 The HTTP-client of the AFD currently has the following features:
@@ -159,8 +164,9 @@ The HTTP-client of the AFD currently has the following features:
    <li>Do secure communication using secure sockets (TLS/SSL).</li>
    <li>Is able to do chunk reading.</li>
    <li>Change the remote directory.</li>
-   <li>Handle Apache directory listing.</li>
+   <li>Handle Apache and Nginx directory listing.</li>
    <li>Delete files on the remote site.</li>
+   <li>Supports AWS4 S3 storage (GET + PUT).</li>
    <li>Show all commands it sends and receives from the remote server
        in a log file (see <a href="log.html#transfer_debug_log">Transfer
        Debug Log</a>). This helps to locate errors very quickly when
@@ -170,9 +176,9 @@ The HTTP-client of the AFD currently has the following features:
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1997 - 2007 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2024 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 24.03.2007
+   Last updated: 02.04.2024
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
