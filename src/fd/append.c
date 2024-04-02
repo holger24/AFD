@@ -1,6 +1,6 @@
 /*
  *  append.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ DESCR__S_M3
  **   23.08.2001 H.Kiehl The date of the file is now also used to decide
  **                      if we append a file. For this reason the new
  **                      function append_compare() was added.
+ **   27.03.2024 H.Kiehl Use str2timet() instead of atol().
  **
  */
 DESCR__E_M3
@@ -52,7 +53,7 @@ DESCR__E_M3
 #include <stdio.h>                /* snprintf()                          */
 #include <string.h>               /* strcmp(), strerror()                */
 #include <unistd.h>               /* close(), ftruncate()                */
-#include <stdlib.h>               /* malloc(), free()                    */
+#include <stdlib.h>               /* malloc(), free(), strtoll()         */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -458,7 +459,16 @@ remove_append(unsigned int job_id, char *file_name)
       ptr++;
    }
    ptr++;
-   file_date = atol(ptr);
+   errno = 0;
+   file_date = (time_t)str2timet(ptr, NULL, 10);
+   if (errno != 0)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 "str2timet() error for `%s' : %s", ptr, strerror(errno));
+      free(buffer);
+      (void)close(fd);
+      return;
+   }
 
    if ((ptr = lposi(buffer, RESTART_FILE_ID, RESTART_FILE_ID_LENGTH)) == NULL)
    {
@@ -735,7 +745,8 @@ append_compare(char *append_data, char *fullname)
    }
    else
    {
-      char *ptr;
+      time_t file_date;
+      char   *ptr;
 
       ptr = append_data;
       while (*ptr != '\0')
@@ -743,13 +754,23 @@ append_compare(char *append_data, char *fullname)
          ptr++;
       }
       ptr++;
-#ifdef HAVE_STATX
-      if (stat_buf.stx_mtime.tv_sec == atol(ptr))
-#else
-      if (stat_buf.st_mtime == atol(ptr))
-#endif
+      errno = 0;
+      file_date = (time_t)str2timet(ptr, NULL, 10);
+      if (errno != 0)
       {
-         return(YES);
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "str2timet() error for `%s' : %s", ptr, strerror(errno));
+      }
+      else
+      {
+#ifdef HAVE_STATX
+         if (stat_buf.stx_mtime.tv_sec == file_date)
+#else
+         if (stat_buf.st_mtime == file_date)
+#endif
+         {
+            return(YES);
+         }
       }
    }
    return(NO);
