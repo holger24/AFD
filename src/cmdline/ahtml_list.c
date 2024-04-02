@@ -497,10 +497,9 @@ usage(void)
    (void)fprintf(stderr, _("  -S <buffer size>           - Socket send buffer size\n"));
    (void)fprintf(stderr, _("                               (in bytes).\n"));
    (void)fprintf(stderr, _("  -t <timout>                - HTTP timeout in seconds. Default %lds.\n"), DEFAULT_TRANSFER_TIMEOUT);
-   (void)fprintf(stderr, _("  -u <URL>                   - When just evaluating a file. This allows\n"));
-   (void)fprintf(stderr, _("                               adding a URL for testing.\n"));
-   (void)fprintf(stderr, _("  -v                         - Verbose. Shows all SMTP commands and\n"));
-   (void)fprintf(stderr, _("                               the reply from the SMTP server.\n"));
+   (void)fprintf(stderr, _("  -u <URL>                   - When just evaluating a local file. This\n"));
+   (void)fprintf(stderr, _("                               allows adding a URL for testing.\n"));
+   (void)fprintf(stderr, _("  -v                         - Verbose. Shows more information.\n"));
 #ifdef WITH_SSL
    (void)fprintf(stderr, _("  -x                         - Use TLS legacy renegotiation.\n"));
    (void)fprintf(stderr, _("  -Y                         - Use strict SSL/TLS verification.\n"));
@@ -509,22 +508,12 @@ usage(void)
    (void)fprintf(stderr, _("  The following values are returned on exit:\n"));
    (void)fprintf(stderr, _("      %2d - File transmitted successfully.\n"), TRANSFER_SUCCESS);
    (void)fprintf(stderr, _("      %2d - Failed to connect.\n"), CONNECT_ERROR);
-   (void)fprintf(stderr, _("      %2d - User name wrong.\n"), USER_ERROR);
    (void)fprintf(stderr, _("      %2d - Failed to open remote file.\n"), OPEN_REMOTE_ERROR);
-   (void)fprintf(stderr, _("      %2d - Error when writing into remote file.\n"), WRITE_REMOTE_ERROR);
-   (void)fprintf(stderr, _("      %2d - Failed to close remote file.\n"), CLOSE_REMOTE_ERROR);
-   (void)fprintf(stderr, _("      %2d - Failed to rename remote file.\n"), MOVE_REMOTE_ERROR);
-   (void)fprintf(stderr, _("      %2d - Remote directory could not be set.\n"), CHDIR_ERROR);
    (void)fprintf(stderr, _("      %2d - System error stat().\n"), STAT_ERROR);
    (void)fprintf(stderr, "      %2d - %s.\n", TIMEOUT_ERROR, TIMEOUT_ERROR_STR);
    (void)fprintf(stderr, "      %2d - %s.\n", CONNECTION_RESET_ERROR, CONNECTION_RESET_ERROR_STR);
    (void)fprintf(stderr, "      %2d - %s.\n", CONNECTION_REFUSED_ERROR, CONNECTION_REFUSED_ERROR_STR);
-   (void)fprintf(stderr, _("      %2d - Could not open source file.\n"), OPEN_LOCAL_ERROR);
-   (void)fprintf(stderr, _("      %2d - Failed to read source file.\n"), READ_LOCAL_ERROR);
    (void)fprintf(stderr, _("      %2d - System error malloc().\n"), ALLOC_ERROR);
-   (void)fprintf(stderr, _("      %2d - Failed to read file name file.\n"), FILE_NAME_FILE_ERROR);
-   (void)fprintf(stderr, _("      %2d - Failed to send remote mail address.\n"), REMOTE_USER_ERROR);
-   (void)fprintf(stderr, _("      %2d - Failed to send SMTP DATA command.\n"), DATA_ERROR);
    (void)fprintf(stderr, _("      %2d - Syntax wrong.\n"), SYNTAX_ERROR);
 
    return;
