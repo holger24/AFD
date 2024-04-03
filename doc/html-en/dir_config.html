@@ -499,6 +499,50 @@ defaults is shown in the table below:
    <td align=center>&nbsp;</td>
 </tr>
 <tr>
+   <td width="30%"><a name="get_dir_list">get dir list[ yes|no|href]</a></td>
+   <td>This option is only for retrieving files via HTTP and can have
+       one of the following parameters:
+       <center><table border>
+       <tr>
+          <th>Parameter</th>
+          <th>Description</th>
+       </tr>
+       <tr>
+          <td><a>yes</a></td>
+          <td>AFD will try to get a directory listing and then
+              automatically try detect the listing type. Note, it
+              only knows some well know listing types from nginx
+              and apache. If it is unable to detect it, it will
+              switch to href automatically.</td>
+       </tr>
+       <tr>
+          <td><a>no</a></td>
+          <td>This will disable the directory scanning for this
+              directory. This can be used when directory listing are
+              not possible or disabled because of security reasons.
+              This also means that under [files] the full filenames
+              without wildcards must be listed.</td>
+       </tr>
+       <tr>
+          <td><a>href</a></td>
+          <td>There are many different types of HTML directory listings
+              and AFD only knows a few. With href it will get nearly all
+              href entries from the page, so one needs to set a
+              correct filter in [files] to download the correct files.
+              Note that it will not be able to differentiate between
+              files or directories (or other special files). Only
+              those href entries which reference the same server and
+              protocol will be shown. To facilitate the creation of
+              the correct [files] filter, there is a program
+              <a href="tools.html#ahtml_list".</td>
+       </tr>
+       </table></center></td>
+       If none of the above is specified, it assumes 'yes'.</td>
+   <td align=center>&nbsp;</td>
+   <td align=center>X</td>
+   <td align=center>&nbsp;</td>
+</tr>
+<tr>
    <td width="30%"><a name="do_not_get_dir_list">do not get dir list</a></td>
    <td>Setting this option will disable the directory scanning for
        this directory. This can be used when directory listing are
@@ -2699,7 +2743,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
-   <td><a name="attach_file">attach file[ &ltrename rule name&gt;]</a></td>
+   <td><a name="attach_file">attach file[ &lt;rename rule name&gt;]</a></td>
    <td>With this option it is possible to attach a file to a mail.
        Each file will be attached to a separate mail (one file
        per mail).  The encoding will be done in BASE64 according to
@@ -3254,7 +3298,7 @@ section. Valid options can be taken from the following table:
    <td width="90%"><address><small>
    Copyright &copy; 1997 - 2024 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 18.01.2024
+   Last updated: 02.04.2024
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

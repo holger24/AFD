@@ -1116,6 +1116,8 @@ typedef unsigned long       u_long_64;
 #endif
 #define ACCEPT_DOT_FILES_ID              "accept dot files"
 #define ACCEPT_DOT_FILES_ID_LENGTH       (sizeof(ACCEPT_DOT_FILES_ID) - 1)
+#define GET_DIR_LIST_ID                  "get dir list"
+#define GET_DIR_LIST_ID_LENGTH           (sizeof(GET_DIR_LIST_ID) - 1)
 #define DO_NOT_GET_DIR_LIST_ID           "do not get dir list"
 #define DO_NOT_GET_DIR_LIST_ID_LENGTH    (sizeof(DO_NOT_GET_DIR_LIST_ID) - 1)
 #define URL_CREATES_FILE_NAME_ID         "url creates file name"
@@ -2148,11 +2150,12 @@ typedef unsigned long       u_long_64;
 # define INOTIFY_DELETE            8388608
 #endif
 #define DIR_DISABLED_STATIC        16777216
-#define ONE_PROCESS_JUST_SCANNING  33554432
-#define URL_CREATES_FILE_NAME      67108864
-#define URL_WITH_INDEX_FILE_NAME   134217728
-#define NO_DELIMITER               268435456
-#define KEEP_PATH                  536870912
+#define ONE_PROCESS_JUST_SCANNING  33554432       /* 26 */
+#define URL_CREATES_FILE_NAME      67108864       /* 27 */
+#define URL_WITH_INDEX_FILE_NAME   134217728      /* 28 */
+#define NO_DELIMITER               268435456      /* 29 */
+#define KEEP_PATH                  536870912      /* 30 */
+#define GET_DIR_LIST_HREF          1073741824     /* 31 */
 
 #ifdef WITH_INOTIFY
 /*
@@ -2220,6 +2223,7 @@ typedef unsigned long       u_long_64;
 #define UNREADABLE_FILES_IDC       32768
 #define LOCAL_REMOTE_DIR_IDC       65536
 #define CREATE_SRC_DIR_IDC         131072
+#define GET_DIR_LIST_IDC           262144
 
 /* In process AFD we have various stop flags. */
 #define STARTUP_ID                 -1
@@ -3064,7 +3068,8 @@ struct fileretrieve_status
                                             /*+-----+-------------------+*/
                                             /*| Bit |      Meaning      |*/
                                             /*+-----+-------------------+*/
-                                            /*|31-32| Not used.         |*/
+                                            /*|   32| Not used.         |*/
+                                            /*|   31| GET_DIR_LIST_HREF |*/
                                             /*|   30| KEEP_PATH         |*/
                                             /*|   29| NO_DELIMITER      |*/
                                             /*|   28| URL_WITH_INDEX_FILE_NAME|*/

@@ -52,6 +52,7 @@ DESCR__S_M1
  **   26.01.2019 H.Kiehl Added dir_time.
  **   22.07.2019 H.Kiehl Added posibility to specify as search value
  **                      the dir-id.
+ **   02.04.2024 H.Kiehl Added GET_DIR_LIST_HREF.
  **
  */
 DESCR__E_M1
@@ -510,6 +511,10 @@ main(int argc, char *argv[])
             {
                (void)fprintf(stdout, "ACCEPT_DOT_FILES ");
             }
+            if (fra[i].dir_options & GET_DIR_LIST_HREF)
+            {
+               (void)fprintf(stdout, "GET_DIR_LIST_HREF ");
+            }
             if (fra[i].dir_options & DONT_GET_DIR_LIST)
             {
                (void)fprintf(stdout, "DONT_GET_DIR_LIST ");
@@ -642,6 +647,10 @@ main(int argc, char *argv[])
             if (fra[i].in_dc_flag & CREATE_SRC_DIR_IDC)
             {
                (void)fprintf(stdout, "CREATE_SRC_DIR ");
+            }
+            if (fra[i].in_dc_flag & GET_DIR_LIST_IDC)
+            {
+               (void)fprintf(stdout, "GET_DIR_LIST ");
             }
             (void)fprintf(stdout, "\n");
          }

@@ -1,6 +1,6 @@
 /*
  *  amgdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -189,6 +189,9 @@
 
 #define LOCALE_DIR  0
 #define REMOTE_DIR  1
+
+#define FORCE_HREF  2                    /* For get_dir_list in struct   */
+                                         /* dir_data.                    */
 
 /* Definitions for assembling, converting and extracting WMO bulletins/files. */
 #define TWO_BYTE                   1
@@ -460,14 +463,17 @@ struct dir_data
                                             /* files starting with a     */
                                             /* leading dot. Default is   */
                                             /* NO.                       */
-          unsigned char do_not_get_dir_list;/* The directory should not  */
-                                            /* be scanned, instead look  */
-                                            /* for the exact files from  */
+          unsigned char get_dir_list;       /* If this is NO the         */
+                                            /* directory should not be   */
+                                            /* scanned, instead look for */
+                                            /* the exact files from      */
                                             /* [files] entry. This is    */
                                             /* currently only useful for */
                                             /* HTTP, where directory     */
                                             /* listing is not supported  */
-                                            /* or wanted.                */
+                                            /* or wanted. If set to      */
+                                            /* FORCE_HREF, scan for all  */
+                                            /* HTTP href statements.     */
           unsigned char url_creates_file_name;/* The given URL creates   */
                                             /* the file name when the    */
                                             /* request is issued. This   */

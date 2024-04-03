@@ -914,13 +914,55 @@ user interaction, so it can be used from any shell scripts or programs such as
          40 - Failed to read file name file.
          60 - Syntax wrong.
 </pre>
+<h3 align=center><a name="ahtml_list"><u>AFD HTML list (ahtml_list)</u></a></h3>
+<p>
+This tool shows what AFD sees when evaluating a HTML directory listing
+to facilitate the creation of the correct [files] filter.
+</p>
+<pre>
+SYNTAX: ahtml_list [options] [URL|file]
+
+  OPTIONS                      DESCRIPTION
+  --version                  - Show current version
+  -b &lt;block size&gt;            - Transfer block size in bytes. Default 4096
+                               bytes.
+  -c                         - Remove content file.
+  -C                         - Do not remove content file.
+  -E                         - Do not send expect.
+  -f                         - Force href search only.
+  -i &lt;file name&gt;             - Non standard index file name.
+  -P &lt;Proxy server&gt;          - Proxy server.
+  -p &lt;port number&gt;           - Remote port number of HTTP-server.
+                               Default 80 or 443.
+  -R &lt;buffer size&gt;           - Socket receive buffer size
+                               (in bytes).
+  -S &lt;buffer size&gt;           - Socket send buffer size
+                               (in bytes).
+  -t &lt;timout&gt;                - HTTP timeout in seconds. Default 120s.
+  -u &lt;URL&gt;                   - When just evaluating a local file. This
+                               allows adding a URL for testing.
+  -v                         - Verbose. Shows more information.
+  -x                         - Use TLS legacy renegotiation.
+  -Y                         - Use strict SSL/TLS verification.
+  -?                         - Display this help and exit.
+  The following values are returned on exit:
+       0 - File transmitted successfully.
+       1 - Failed to connect.
+      10 - Failed to open remote file.
+      17 - System error stat().
+      20 - Operation received timeout.
+      28 - Connection reset by peer.
+      29 - Connection refused.
+      34 - System error malloc().
+      60 - Syntax wrong.
+</pre>
 <hr size=3 noshade>
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 2001 - 2023 by H.Kiehl<br>
+   Copyright &copy; 2001 - 2024 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 27.02.2023
+   Last updated: 02.04.2024
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

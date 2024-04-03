@@ -53,6 +53,8 @@ DESCR__S_M3
  **   29.10.2022 H.Kiehl Added support for downloadLinkArea listing.
  **   30.06.2023 H.Kiehl Added support for contentDiv listing.
  **   13.01.2024 H.Kiehl Added 'not exact' part for once.
+ **   17.03.2024 H.Kiehl If we are unable to determine the list type
+ **                      just try extract all href file names.
  **
  */
 DESCR__E_M3
@@ -107,11 +109,14 @@ static int                        check_list(char *, int, time_t, int, off_t,
                                                      off_t *, int *,
                                                      unsigned int *, off_t *,
                                                      unsigned int *, off_t *,
-                                                     int *);
+                                                     int *, int *);
 static off_t                      convert_size(char *, off_t *);
 #ifdef WITH_ATOM_FEED_SUPPORT
 static time_t                     extract_feed_date(char *);
 #endif
+static void                       href_list(char *, off_t, struct job *,
+                                            int *, off_t *, int *,
+                                            unsigned int *, off_t *);
 
 
 /*#################### get_remote_file_names_http() #####################*/
@@ -571,7 +576,8 @@ try_attach_again:
        */
       if ((fra->dir_options & DONT_GET_DIR_LIST) == 0)
       {
-         int          listing_complete = YES;
+         int          href_debug_output_done = NO,
+                      listing_complete = YES;
          unsigned int files_deleted = 0,
                       list_length = 0;
          off_t        bytes_buffered,
@@ -853,15 +859,27 @@ try_attach_again:
                }
 #endif
                listbuffer[bytes_buffered] = '\0';
-               if (eval_html_dir_list(listbuffer, bytes_buffered,
-                                      &files_to_retrieve, file_size_to_retrieve,
-                                      more_files_in_list, &list_length,
-                                      &list_size, &files_deleted,
-                                      &file_size_deleted,
-                                      &listing_complete) == INCORRECT)
+               if (fra->dir_options & GET_DIR_LIST_HREF)
                {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            "Failed to evaluate HTML directory listing.");
+                  href_list(listbuffer, bytes_buffered, &db,
+                            &files_to_retrieve, file_size_to_retrieve,
+                            more_files_in_list, &files_deleted,
+                            &file_size_deleted);
+               }
+               else
+               {
+                  if (eval_html_dir_list(listbuffer, bytes_buffered,
+                                         &files_to_retrieve,
+                                         file_size_to_retrieve,
+                                         more_files_in_list, &list_length,
+                                         &list_size, &files_deleted,
+                                         &file_size_deleted,
+                                         &listing_complete,
+                                         &href_debug_output_done) == INCORRECT)
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "Failed to evaluate HTML directory listing (auto).");
+                  }
                }
             }
             free(listbuffer);
@@ -1071,7 +1089,8 @@ eval_html_dir_list(char         *html_buffer,
                    off_t        *list_size,
                    unsigned int *files_deleted,
                    off_t        *file_size_deleted,
-                   int          *listing_complete)
+                   int          *listing_complete,
+                   int          *href_debug_output_done)
 {
    char *ptr;
 
@@ -1122,9 +1141,17 @@ eval_html_dir_list(char         *html_buffer,
                                     "<div id=\"contentDiv\">",
                                     21)) == NULL)
                   {
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                               "Unknown HTML directory listing. Please send author a link so that this can be implemented.");
-                     return(INCORRECT);
+                     if ((fsa->debug > NORMAL_MODE) &&
+                         (*href_debug_output_done == NO))
+                     {
+                        trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+                                  "No HTML list detected, switching to href.");
+                        *href_debug_output_done = YES;
+                     }
+                     href_list(html_buffer, bytes_buffered, &db,
+                               files_to_retrieve, file_size_to_retrieve,
+                               more_files_in_list, files_deleted,
+                               file_size_deleted);
                   }
                   else
                   {
@@ -1515,9 +1542,16 @@ eval_html_dir_list(char         *html_buffer,
                if ((ptr = llposi(ptr, (bytes_buffered - (ptr - html_buffer)),
                                  "<IsTruncated>", 13)) == NULL)
                {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            "Unknown HTML directory listing. Please send author a link so that this can be implemented.");
-                  return(INCORRECT);
+                  if ((fsa->debug > NORMAL_MODE) &&
+                      (*href_debug_output_done == NO))
+                  {
+                     trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+                               "No HTML list detected, switching to href.");
+                     *href_debug_output_done = YES;
+                  }
+                  href_list(html_buffer, bytes_buffered, &db, files_to_retrieve,
+                            file_size_to_retrieve, more_files_in_list,
+                            files_deleted, file_size_deleted);
                }
                else
                {
@@ -2099,9 +2133,16 @@ eval_html_dir_list(char         *html_buffer,
             }
             else
             {
-               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                         "Unknown HTML directory listing. Please send author a link so that this can be implemented.");
-               return(INCORRECT);
+               if ((fsa->debug > NORMAL_MODE) &&
+                   (*href_debug_output_done == NO))
+               {
+                  trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+                            "No HTML list detected, switching to href.");
+                  *href_debug_output_done = YES;
+               }
+               href_list(html_buffer, bytes_buffered, &db, files_to_retrieve,
+                         file_size_to_retrieve, more_files_in_list,
+                         files_deleted, file_size_deleted);
             }
          }
       }
@@ -2466,9 +2507,17 @@ eval_html_dir_list(char         *html_buffer,
                         return(SUCCESS);
                      }
                   }
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            "Unknown HTML directory listing. Please send author a link so that this can be implemented.");
-                  return(INCORRECT);
+                  if ((fsa->debug > NORMAL_MODE) &&
+                      (*href_debug_output_done == NO))
+                  {
+                     trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+                               "No HTML list detected, switching to href.");
+                     *href_debug_output_done = YES;
+                  }
+                  href_list(html_buffer, bytes_buffered, &db,
+                            files_to_retrieve, file_size_to_retrieve,
+                            more_files_in_list, files_deleted,
+                            file_size_deleted);
                }
             }
                  /* Pre type listing. */
@@ -2812,16 +2861,30 @@ eval_html_dir_list(char         *html_buffer,
                  }
                  else
                  {
-                    trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                              "Unknown HTML directory listing. Please send author a link so that this can be implemented.");
-                    return(INCORRECT);
+                    if ((fsa->debug > NORMAL_MODE) &&
+                        (*href_debug_output_done == NO))
+                    {
+                       trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+                                 "No HTML list detected, switching to href.");
+                       *href_debug_output_done = YES;
+                    }
+                    href_list(html_buffer, bytes_buffered, &db,
+                              files_to_retrieve, file_size_to_retrieve,
+                              more_files_in_list, files_deleted,
+                              file_size_deleted);
                  }
          }
          else
          {
-            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                      "Unknown HTML directory listing. Please send author a link so that this can be implemented.");
-            return(INCORRECT);
+            if ((fsa->debug > NORMAL_MODE) && (*href_debug_output_done == NO))
+            {
+               trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+                         "No HTML list detected, switching to href.");
+               *href_debug_output_done = YES;
+            }
+            href_list(html_buffer, bytes_buffered, &db, files_to_retrieve,
+                      file_size_to_retrieve, more_files_in_list, files_deleted,
+                      file_size_deleted);
          }
       }
 #ifdef WITH_ATOM_FEED_SUPPORT
@@ -2829,6 +2892,383 @@ eval_html_dir_list(char         *html_buffer,
 #endif
 
    return(SUCCESS);
+}
+
+
+/*+++++++++++++++++++++++++++++ href_list() +++++++++++++++++++++++++++++*/
+static void
+href_list(char        *html_buffer,
+          off_t        bytes_buffered,
+          struct job   *p_db,
+          int          *files_to_retrieve,
+          off_t        *file_size_to_retrieve,
+          int          *more_files_in_list,
+          unsigned int *files_deleted,
+          off_t        *file_size_deleted)
+{
+   int    exact_date,
+          file_name_length = -1;
+   off_t  exact_size,
+          file_size;
+   time_t file_mtime;
+   char   date_str[MAX_FILENAME_LENGTH],
+          *end_ptr = html_buffer + bytes_buffered,
+          file_name[MAX_FILENAME_LENGTH],
+          *ptr = html_buffer;
+
+   while ((ptr = llposi(ptr, (end_ptr - ptr), "<a href=\"", 9)) != NULL)
+   {
+      ptr--;
+      file_name_length = 0;
+      exact_size = -1;
+      file_size = -1;
+      exact_date = -1;
+      file_mtime = -1;
+
+      STORE_HTML_STRING(file_name, file_name_length, MAX_FILENAME_LENGTH, '"');
+      if (file_name_length > 0)
+      {
+         /* Remove html tag (eg <view-source>). */
+         if (*(ptr - 1) == '>')
+         {
+            char *tmp_ptr = &file_name[file_name_length - 1];
+
+            while ((tmp_ptr > file_name) && (*tmp_ptr != '<'))
+            {
+               tmp_ptr--;
+            }
+            if (*tmp_ptr == '<')
+            {
+               tmp_ptr--;
+               if (*tmp_ptr == ' ')
+               {
+                  while (*tmp_ptr == ' ')
+                  {
+                     tmp_ptr--;
+                  }
+                  tmp_ptr++;
+               }
+               *tmp_ptr = '\0';
+               file_name_length = tmp_ptr - file_name;
+            }
+         }
+
+         /* If filename has a / at end, assume it is a directory. */
+         if (file_name[file_name_length - 1] == '/')
+         {
+            continue;
+         }
+         ptr++; /* Away with " */
+         if (*ptr == '>')
+         {
+            ptr++;
+
+            while (*ptr == ' ')
+            {
+               ptr++;
+            }
+
+            /* Remove partial name. */
+            while ((*ptr != '<') && (*ptr != '\n') &&
+                   (*ptr != '\r') && (*ptr != '\0'))
+            {
+               ptr++;
+            }
+         }
+         while (*ptr == '<')
+         {
+            ptr++;
+            while ((*ptr != '>') && (*ptr != '\n') &&
+                   (*ptr != '\r') && (*ptr != '\0'))
+            {
+               ptr++;
+            }
+            if (*ptr == '>')
+            {
+               ptr++;
+               while (*ptr == ' ')
+               {
+                  ptr++;
+               }
+            }
+         }
+         if ((*ptr != '\n') && (*ptr != '\r') &&
+             (*ptr != '\0'))
+         {
+            /* Store date string. */
+            STORE_HTML_DATE();
+            file_mtime = datestr2unixtime(date_str, &exact_date);
+            while (*ptr == '<')
+            {
+               ptr++;
+               while ((*ptr != '>') && (*ptr != '\n') &&
+                      (*ptr != '\r') && (*ptr != '\0'))
+               {
+                  ptr++;
+               }
+               if (*ptr == '>')
+               {
+                  ptr++;
+                  while (*ptr == ' ')
+                  {
+                     ptr++;
+                  }
+               }
+            }
+
+            if ((*ptr != '\n') && (*ptr != '\r') &&
+                (*ptr != '\0'))
+            {
+               int str_len;
+
+               /* Store size string. */
+               STORE_HTML_STRING(date_str, str_len,
+                                 MAX_FILENAME_LENGTH, '<');
+               exact_size = convert_size(date_str, &file_size);
+            }
+         }
+      }
+      else
+      {
+         continue;
+      }
+
+      if (p_db->hostname[0] != '\0')
+      {
+         /* Check if file name is a URL. */
+         if ((file_name[4] == ':') && (file_name[5] == '/') &&
+             (file_name[6] == '/'))
+         {
+            /* http */
+            if ((file_name[0] == 'h') && (file_name[1] == 't') &&
+                (file_name[2] == 't') && (file_name[3] == 'p'))
+            {
+               int          port = DEFAULT_HTTP_PORT;
+               unsigned int error_mask;
+               time_t       now = time(NULL);
+               char         hostname[MAX_REAL_HOSTNAME_LENGTH + 1],
+                            password[MAX_USER_NAME_LENGTH + 1],
+                            target_dir[MAX_RECIPIENT_LENGTH + 1],
+                            user[MAX_USER_NAME_LENGTH + 1];
+
+               if ((error_mask = url_evaluate(file_name, NULL, user, NULL, NULL,
+#ifdef WITH_SSH_FINGERPRINT
+                                              NULL, NULL,
+#endif
+                                              password, NO, hostname, &port,
+                                              target_dir, NULL, &now,
+                                              NULL, NULL, NULL, NULL,
+                                              NULL, NULL)) > 3)
+               {
+                  continue;
+               }
+               else
+               {
+                  if ((port != p_db->port) ||
+                      (strcmp(hostname, p_db->hostname) != 0) ||
+                      (strcmp(user, p_db->user) != 0) ||
+                      (strcmp(password, p_db->password) != 0))
+                  {
+                     continue;
+                  }
+                  if (strncmp(p_db->target_dir, target_dir,
+                              strlen(p_db->target_dir)) != 0)
+                  {
+                     char *tmp_ptr = &file_name[7];
+
+                     while ((*tmp_ptr != '/') && (*tmp_ptr != '\0'))
+                     {
+                        tmp_ptr++;
+                     }
+                     if (*tmp_ptr == '/')
+                     {
+                        (void)memmove(file_name, tmp_ptr, strlen(tmp_ptr) + 1);
+                     }
+                     else
+                     {
+                        continue;
+                     }
+                  }
+                  else
+                  {
+                     size_t length = 0;
+                     char   *tmp_ptr = file_name + strlen(file_name);
+
+                     /* Just show file name. */
+                     while ((tmp_ptr > file_name) && (*tmp_ptr != '/'))
+                     {
+                        tmp_ptr--;
+                        length++;
+                     }
+                     if (*tmp_ptr == '/')
+                     {
+                        tmp_ptr++;
+                        (void)memmove(file_name, tmp_ptr, length);
+                     }
+                     else
+                     {
+                        continue;
+                     }
+                  }
+               }
+            }
+                 /* sftp */
+            else if ((file_name[0] == 's') && (file_name[1] == 'f') &&
+                     (file_name[2] == 't') && (file_name[3] == 'p'))
+                 {
+                    continue;
+                 }
+#ifdef WITH_SSL
+                 /* ftps */
+            else if ((file_name[0] == 'f') && (file_name[1] == 't') &&
+                     (file_name[2] == 'p') && (file_name[3] == 's'))
+                 {
+                    continue;
+                 }
+#endif
+         }
+#ifdef WITH_SSL
+         else if ((file_name[5] == ':') && (file_name[6] == '/') &&
+                  (file_name[7] == '/'))
+              {
+                 /* https */
+                 if ((file_name[0] == 'h') && (file_name[1] == 't') &&
+                     (file_name[2] == 't') && (file_name[3] == 'p') &&
+                     (file_name[4] == 's'))
+                 {
+                    int          port = DEFAULT_HTTPS_PORT;
+                    unsigned int error_mask;
+                    time_t       now = time(NULL);
+                    char         hostname[MAX_REAL_HOSTNAME_LENGTH + 1],
+                                 password[MAX_USER_NAME_LENGTH + 1],
+                                 target_dir[MAX_RECIPIENT_LENGTH + 1],
+                                 user[MAX_USER_NAME_LENGTH + 1];
+
+                    if ((error_mask = url_evaluate(file_name, NULL, user, NULL, NULL,
+#ifdef WITH_SSH_FINGERPRINT
+                                                   NULL, NULL,
+#endif
+                                                   password, NO, hostname, &port,
+                                                   target_dir, NULL, &now,
+                                                   NULL, NULL, NULL, NULL,
+                                                   NULL, NULL)) > 3)
+                    {
+                       continue;
+                    }
+                    else
+                    {
+                       if ((port != p_db->port) ||
+                           (strcmp(hostname, p_db->hostname) != 0) ||
+                           (strcmp(user, p_db->user) != 0) ||
+                           (strcmp(password, p_db->password) != 0))
+                       {
+                          continue;
+                       }
+                       if (strncmp(p_db->target_dir, target_dir, strlen(p_db->target_dir)) != 0)
+                       {
+                          char *tmp_ptr = &file_name[8];
+
+                          while ((*tmp_ptr != '/') && (*tmp_ptr != '\0'))
+                          {
+                             tmp_ptr++;
+                          }
+                          if (*tmp_ptr == '/')
+                          {
+                             (void)memmove(file_name, tmp_ptr, strlen(tmp_ptr) + 1);
+                          }
+                          else
+                          {
+                             continue;
+                          }
+                       }
+                       else
+                       {
+                          size_t length = 0;
+                          char   *tmp_ptr = file_name + strlen(file_name);
+
+                          /* Just show file name. */
+                          while ((tmp_ptr > file_name) && (*tmp_ptr != '/'))
+                          {
+                             tmp_ptr--;
+                             length++;
+                          }
+                          if (*tmp_ptr == '/')
+                          {
+                             tmp_ptr++;
+                             (void)memmove(file_name, tmp_ptr, length);
+                          }
+                          else
+                          {
+                             continue;
+                          }
+                       }
+                    }
+                 }
+              }
+#endif
+         else if ((file_name[2] == ':') && (file_name[3] == '/') &&
+                  (file_name[4] == '/'))
+              {
+                 /* ftp */
+                 if ((file_name[0] == 'f') && (file_name[1] == 't') &&
+                     (file_name[2] == 'p'))
+                 {
+                    continue;
+                 }
+              }
+              /* mailto:// */
+         else if ((file_name[0] == 'm') && (file_name[1] == 'a') &&
+                  (file_name[2] == 'i') && (file_name[3] == 'l') &&
+                  (file_name[4] == 't') && (file_name[5] == 'o') &&
+                  (file_name[6] == ':') && (file_name[7] == '/') &&
+                  (file_name[8] == '/'))
+              {
+                 continue;
+              }
+      }
+
+      if ((file_name[0] == '?') && (file_name[1] == 'C') &&
+          (file_name[2] == '=') && (file_name[4] == ';'))
+      {
+         continue;
+      }
+
+      if (check_name(file_name, file_name_length,
+                     file_size, file_mtime, files_deleted,
+                     file_size_deleted) == YES)
+      {
+         if (fsa->debug > NORMAL_MODE)
+         {
+            trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+# if SIZEOF_TIME_T == 4
+                      "match: %s length=%d mtime=%ld exact=%d size=%ld exact=%ld",
+# else
+                      "match: %s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+# endif
+#else
+# if SIZEOF_TIME_T == 4
+                      "match: %s length=%d mtime=%ld exact=%d size=%lld exact=%lld",
+# else
+                      "match: %s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+# endif
+#endif
+                      file_name, file_name_length,
+                      (pri_time_t)file_mtime, exact_date,
+                      (pri_off_t)file_size,
+                      (pri_off_t)exact_size);
+         }
+         (void)check_list(file_name, file_name_length,
+                          file_mtime, exact_date,
+                          exact_size, file_size,
+                          files_to_retrieve,
+                          file_size_to_retrieve,
+                          more_files_in_list);
+      }
+      bytes_buffered = end_ptr - ptr;
+   } /* while "<a href=" */
+
+   return;
 }
 
 
