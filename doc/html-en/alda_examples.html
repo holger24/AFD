@@ -251,6 +251,30 @@ Here follow some examples on how one can use Alda.
 </tr>
 </table>
 </center>
+<h3><u><a name="strings_examples">Strings</a></u></h3>
+<center>
+<table border>
+<tr>
+   <th>Description</th>
+   <th>Command</th>
+   <th>Example Output</th>
+</tr>
+<tr>
+   <td>Cut of the first part of a remote output file name/directory.
+       If the complete path is /home/donald/xfs/TOPF/A_IS...,
+       /home/donald/xfs/HLYD/A_IEVX... or
+       /home/donald/cache/data/sf-pklo/WIGO... and you would like to cut
+       away /home/donald. With the following command syntax you can just
+       show part of string.</td>
+   <td><pre>alda -f -h ducktown -L O -o "%OTd %OTH:%OTM:%OTS %OSB %[13-$]OF"</pre></td>
+   <td><pre>
+       04 17:07:35 201 /xfs/TOPF/A_ISSE01LFPW041700RRA_C_EDZW_20240404170705_80705845
+       04 17:07:35 42605 /xfs/HLYD/A_IEVX61EUMP041616_C_EDZW_20240404170701_80705767
+       04 17:07:35 126938 /xfs/HLYD/A_IELX11EUMS041519_C_EDZW_20240404170653_80705423
+       04 17:07:42 250 /files/data/sf-pklo/WIGOS_0-20000-0-02609_2024-04-04T170000.bufr</pre></td>
+</tr>
+</table>
+</center>
 <h3><u><a name="html_example">HTML output</a></u></h3>
 <p>
 With the help of the header option (-H) and the footer option it is also
@@ -314,9 +338,9 @@ possible to let alda generate HTML logs.
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 2010 by H.Kiehl<br>
+   Copyright &copy; 2010 - 2024 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 15.09.2017
+   Last updated: 09.04.2024
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
