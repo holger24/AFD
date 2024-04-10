@@ -223,7 +223,7 @@ AMG_DIR_RESCAN_TIME              5
 #                                                                        #
 #    DEFAULT_NO_PARALLEL_JOBS   The default number of parallel jobs for  #
 #                               transmitting data.                       #
-#                               Default: 2                               #
+#                               Default: 3                               #
 #    DEFAULT_MAX_ERRORS         The default number of errors before the  #
 #                               host becomes red in afd_ctrl dialog.     #
 #                               Default: 10                              #
@@ -272,13 +272,14 @@ AMG_DIR_RESCAN_TIME              5
 ##########################################################################
 # What to do with files that a certain age but cannot be transmitted     #
 # because either there is no rule (Unknown), they are being queued by    #
-# AFD (Queued), they are old locked files (Locked) or they old locked    #
-# files in a remote directory. By specifying  one of the above those     #
-# files will be automatically removed by AFD when DEFAULT_OLD_FILE_TIME  #
-# value has been reached.                                                #
+# AFD (Queued), they are old locked files (Locked), they old locked      #
+# files in a remote directory (Rlocked) or old locked files in the       #
+# $AFD_WORK_DIR/files/incoming directory (Ilocked). By specifying one of #
+# the above those files will be automatically removed by AFD when        #
+# DEFAULT_OLD_FILE_TIME value has been reached.                          #
 # Default: None                                                          #
 ##########################################################################
-#DEFAULT_DELETE_FILES_FLAG        "Unknown Queued Locked Rlocked"
+#DEFAULT_DELETE_FILES_FLAG        "Unknown Queued Locked Rlocked Ilocked"
 
 ##########################################################################
 # When to delete Unknown, Queued or Locked files from one of AFD's input #
@@ -395,6 +396,15 @@ MAX_CONNECTIONS                  80
 #DEFAULT_SMTP_SERVER              localhost
 
 ##########################################################################
+# The default SMTP server where mails are to be send to from the print   #
+# dialog (show_xlog, show_queue). This can be an IP number or a hostname.#
+# Optionally one can specify the default port using the following syntax:#
+# <server name>:<port>.                                                  #
+# Default: localhost:25                                                  #
+##########################################################################
+#DEFAULT_PRINT_SMTP_SERVER         localhost:25
+
+##########################################################################
 # The default what will be put into the from line, if the from option is #
 # not set under [options]. If not set it will take the user- and hostname#
 # from the current system where AFD is running.                          #
@@ -413,7 +423,8 @@ MAX_CONNECTIONS                  80
 ##########################################################################
 # The default charset is in most cases not set. With this option you can #
 # set it to the charset you want. Note AFD will not check if you enter a #
-# valid charset.                                                         #
+# valid charset. Examples for valid charset could be: utf-8, iso-8859-2, #
+# iso-8859-6, iso-8859-15.                                               #
 # Default: not set                                                       #
 ##########################################################################
 #DEFAULT_CHARSET                  utf-8
@@ -457,6 +468,14 @@ ONE_DIR_COPY_TIMEOUT             5
 # Default: 0                                                             #
 ##########################################################################
 #FULL_SCAN_TIMEOUT                0
+
+##########################################################################
+# When the administrator has marked one or more directories as important,#
+# this is the minimum time in second that these directories have to wait #
+# during one scan of all directories.                                    #
+#  Default: 30                                                           #
+##########################################################################
+#DIR_CHECK_TIMEOUT                30
 
 ##########################################################################
 # Allows the administrator to set a default list of locked files that    #

@@ -1,6 +1,6 @@
 /*
  *  search_old_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2024 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -59,6 +59,8 @@ DESCR__S_M3
  **   12.02.2006 H.Kiehl Change meaning of "delete old locked files" to
  **                      all locked files, not only those to be distributed.
  **   06.08.2009 H.Kiehl Implemented cleaning of stopped directories.
+ **   03.04.2024 H.Kiehl Added Ilocked for removing old locked files in
+ **                      $AFD_WORK_DIR/files/incoming.
  **
  */
 DESCR__E_M3
@@ -205,6 +207,9 @@ search_old_files(time_t current_time)
                         ((fra[de[i].fra_pos].delete_files_flag & OLD_LOCKED_FILES) &&
                          (diff_time > fra[de[i].fra_pos].locked_file_time)) ||
                         ((fra[de[i].fra_pos].fsa_pos != -1) &&
+                         (fra[de[i].fra_pos].delete_files_flag & OLD_ILOCKED_FILES) &&
+                         (diff_time > fra[de[i].fra_pos].locked_file_time)) ||
+                        ((fra[de[i].fra_pos].fsa_pos != -1) &&
                          (diff_time > (DEFAULT_OLD_FILE_TIME * 3600)) &&
                          ((changing_date_dir = is_dir_with_changing_date(fra[de[i].fra_pos].url)) == YES)))) ||
                       ((diff_time > 5L) &&
@@ -216,7 +221,7 @@ search_old_files(time_t current_time)
                         if (p_dir->d_name[0] == '.')
                         {
                            if ((fra[de[i].fra_pos].delete_files_flag & OLD_LOCKED_FILES) &&
-                                (diff_time > fra[de[i].fra_pos].locked_file_time))
+                               (diff_time > fra[de[i].fra_pos].locked_file_time))
                            {
                               delete_file = YES;
 #ifdef _DELETE_LOG
@@ -230,6 +235,16 @@ search_old_files(time_t current_time)
                               }
 #endif
                            }
+                           else if ((fra[de[i].fra_pos].delete_files_flag & OLD_ILOCKED_FILES) &&
+                                    (fra[de[i].fra_pos].fsa_pos != -1) &&
+                                    (diff_time > fra[de[i].fra_pos].locked_file_time))
+                                {
+                                   delete_file = YES;
+#ifdef _DELETE_LOG
+                                   reason = DEL_OLD_ILOCKED_FILE_GLOB;
+#endif
+                                }
+
                            else if ((fra[de[i].fra_pos].fsa_pos != -1) &&
                                     (changing_date_dir == YES))
                                 {

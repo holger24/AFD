@@ -1,6 +1,6 @@
 /*
  *  amg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2024 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -918,24 +918,28 @@ main(int argc, char *argv[])
    }
    if (default_delete_files_flag != 0)
    {
-      char tmp_str[22];
+      char tmp_str[38];
 
       ptr = tmp_str;
       if (default_delete_files_flag & UNKNOWN_FILES)
       {
-         ptr += snprintf(ptr, 22, "UNKNOWN ");
+         ptr += snprintf(ptr, 38, "UNKNOWN ");
       }
       if (default_delete_files_flag & QUEUED_FILES)
       {
-         ptr += snprintf(ptr, 22 - (ptr - tmp_str), "QUEUED ");
+         ptr += snprintf(ptr, 38 - (ptr - tmp_str), "QUEUED ");
       }
       if (default_delete_files_flag & OLD_LOCKED_FILES)
       {
-         (void)snprintf(ptr, 22 - (ptr - tmp_str), "LOCKED");
+         ptr += snprintf(ptr, 38 - (ptr - tmp_str), "LOCKED ");
       }
       if (default_delete_files_flag & OLD_RLOCKED_FILES)
       {
-         (void)snprintf(ptr, 22 - (ptr - tmp_str), "RLOCKED");
+         ptr += snprintf(ptr, 38 - (ptr - tmp_str), "RLOCKED ");
+      }
+      if (default_delete_files_flag & OLD_ILOCKED_FILES)
+      {
+         ptr += snprintf(ptr, 38 - (ptr - tmp_str), "ILOCKED");
       }
       system_log(DEBUG_SIGN, NULL, 0,
                  _("AMG Configuration: Default delete file flag  %s"), tmp_str);
@@ -2249,6 +2253,24 @@ get_afd_config_value(int          *rescan_time,
                     if ((*default_delete_files_flag & OLD_RLOCKED_FILES) == 0)
                     {
                        *default_delete_files_flag |= OLD_RLOCKED_FILES;
+                    }
+                 }
+                 /* ILocked */
+            else if (((ptr + 6) < (config_file + MAX_PATH_LENGTH - 1)) &&
+                     ((*ptr == 'I') || (*ptr == 'i')) &&
+                     ((*(ptr + 1) == 'L') || (*(ptr + 1) == 'l')) &&
+                     ((*(ptr + 2) == 'O') || (*(ptr + 2) == 'o')) &&
+                     ((*(ptr + 3) == 'C') || (*(ptr + 3) == 'c')) &&
+                     ((*(ptr + 4) == 'K') || (*(ptr + 4) == 'k')) &&
+                     ((*(ptr + 5) == 'E') || (*(ptr + 5) == 'e')) &&
+                     ((*(ptr + 6) == 'D') || (*(ptr + 6) == 'd')) &&
+                     ((*(ptr + 7) == ' ') || (*(ptr + 7) == '\t') ||
+                      (*(ptr + 7) == ',') || (*(ptr + 7) == '\0')))
+                 {
+                    ptr += 7;
+                    if ((*default_delete_files_flag & OLD_ILOCKED_FILES) == 0)
+                    {
+                       *default_delete_files_flag |= OLD_ILOCKED_FILES;
                     }
                  }
                  else

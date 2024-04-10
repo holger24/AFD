@@ -155,6 +155,19 @@ the new value:
    <td valign=top>show_log, show_elog, show_ilog, show_olog, show_dlog</td>
 </tr>
 <tr>
+   <td valign=top><a name="add_afd_priority">ADD_AFD_PRIORITY</a></td>
+   <td>If set to YES the AFD priority from DIR_CONFIG is added to the
+       scheduling priority. Process effected by this are all those started
+       via the exec and pexec option and all sf_xxx and gf_xxx process. This
+       value is added to any of the above value. For example if FD_PRIORITY
+       set to 5 and an AFD priority of 9 is set for a job the resulting
+       sf_xxx and/or gf_xxx process will have a priority of 14. If there is
+       a pexec option set and EXEC_BASE_PRIORITY is 2 then the resulting
+       priority of the executing process would be 11.</td>
+   <td valign=top>NO</td>
+   <td valign=top>amg, fd</td>
+</tr>
+<tr>
    <td valign=top><a name="max_nice_value">MAX_NICE_VALUE</a></td>
    <td>Usually it is not needed to set this value, but it can be used to
        increase or decrease the maximum nice value to what your system
@@ -269,7 +282,7 @@ the new value:
    <td>The default number of parallel process that may be forked for
        sending the data. This is the default value set by AMG when this
        destination is new.</td>
-   <td valign=top>2</td>
+   <td valign=top>3</td>
    <td valign=top>amg</td>
 </tr>
 <tr>
@@ -373,12 +386,14 @@ the new value:
    <td valign=top><a name="default_delete_files_flag">DEFAULT_DELETE_FILES_FLAG</a></td>
    <td>What to do with files that have reached a certain age but cannot
        be transmitted because either there is no rule (Unknown), they are
-       being queued by AFD (Queued), they are old locked files (Locked) or
-       they are old locked files on a remote host (Rlocked). By specifying
-       one of the above those files will be automatically removed by AFD
-       when DEFAULT_OLD_FILE_TIME value has been reached. To specify more
-       then one type, just add the next with a space or comma as a separator
-       sign and the whole string must be placed in ".</td>
+       being queued by AFD (Queued), they are old locked files (Locked),
+       they are old locked files on a remote host (Rlocked) or old locked
+       files in the $AFD_WORK_DIR/files/incoming directory (Ilocked). By
+       specifying one of the above those files will be automatically
+       removed by AFD when DEFAULT_OLD_FILE_TIME value has been reached.
+       To specify more then one type, just add the next with a space or
+       comma as a separator sign and the whole string must be placed
+       in ".</td>
    <td valign=top>Not set</td>
    <td valign=top>amg</td>
 </tr>
@@ -888,9 +903,9 @@ restarted.
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1999 - 2023 by H.Kiehl<br>
+   Copyright &copy; 1999 - 2024 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 26.11.2023
+   Last updated: 09.04.2024
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

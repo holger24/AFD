@@ -469,11 +469,12 @@ typedef unsigned long       u_long_64;
 # define DEL_OLD_LOCKED_FILE_GLOB   26
 # define DEL_OLD_RLOCKED_FILE_GLOB  27
 # define DEL_QUEUED_FILE_GLOB       28
-# define MAX_DELETE_REASONS         28
+# define DEL_OLD_ILOCKED_FILE_GLOB  29
+# define MAX_DELETE_REASONS         29
 # define UKN_DEL_REASON_STR         "Unknown delete reason"
 # define UKN_DEL_REASON_STR_LENGTH  (sizeof(UKN_DEL_REASON_STR) - 1)
 /* NOTE: Only 4096 (0 - fff) may be defined here. */
-#define MAX_DELETE_REASON_LENGTH    (sizeof("Delete old locked file remote (AFD_CONFIG)") - 1)
+#define MAX_DELETE_REASON_LENGTH    (sizeof("Delete old locked file incoming (AFD_CONFIG)") - 1)
 /* Check dr_str.h! */
 #endif
 
@@ -1155,6 +1156,7 @@ typedef unsigned long       u_long_64;
 #define OLD_LOCKED_FILES                 4
 #define UNREADABLE_FILES                 8
 #define OLD_RLOCKED_FILES                16
+#define OLD_ILOCKED_FILES                32
 
 /* Definitions for [options]. */
 #define TIFF2GTS_ID                      "tiff2gts"
@@ -3031,7 +3033,8 @@ struct fileretrieve_status
                                             /*+-----+-------------------+*/
                                             /*| Bit |      Meaning      |*/
                                             /*+-----+-------------------+*/
-                                            /*| 6-8 | Not used.         |*/
+                                            /*| 7-8 | Not used.         |*/
+                                            /*|   6 | OLD_ILOCKED_FILES |*/
                                             /*|   5 | OLD_RLOCKED_FILES |*/
                                             /*|   4 | UNREADABLE_FILES  |*/
                                             /*|   3 | OLD_LOCKED_FILES  |*/
