@@ -1,6 +1,6 @@
 /*
  *  rec_rmdir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2024 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -73,7 +73,8 @@ rec_rmdir(char *dirname)
 #endif
    struct dirent *dirp;
    DIR           *dp;
-   int           ret = 0;
+   int           addchar = NO,
+                 ret = 0;
 
 #ifdef HAVE_STATX
    if (statx(0, dirname, AT_STATX_SYNC_AS_STAT | AT_SYMLINK_NOFOLLOW,
@@ -117,14 +118,19 @@ rec_rmdir(char *dirname)
 
    /* It's a directory. */
    ptr = dirname + strlen(dirname);
-   *ptr++ = '/';
-   *ptr = '\0';
 
    if ((dp = opendir(dirname)) == NULL)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  _("Failed to opendir() `%s' : %s"), dirname, strerror(errno));
       return(INCORRECT);
+   }
+
+   if (*(ptr - 1) != '/')
+   {
+      *ptr++ = '/';
+      *ptr = '\0';
+      addchar = YES;
    }
 
    while ((dirp = readdir(dp)) != NULL)
@@ -140,7 +146,14 @@ rec_rmdir(char *dirname)
          break;
       }
    }
-   ptr[-1] = 0;
+   if (addchar == YES)
+   {
+      ptr[-1] = 0;
+   }
+   else
+   {
+      *ptr = '\0';
+   }
    if (ret == 0)
    {
       if (rmdir(dirname) == -1)
