@@ -1,6 +1,6 @@
 /*
  *  eval_input_alda.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -247,6 +247,8 @@ DESCR__S_M3
  **
  ** HISTORY
  **   15.04.2007 H.Kiehl Created
+ **   04.05.2024 H.Kiehl Setup umask so we do not create log files wih
+ **                      mode 666.
  **
  */
 DESCR__E_M3
@@ -256,6 +258,7 @@ DESCR__E_M3
 #include <stdlib.h>         /* exit()                                    */
 #include <time.h>           /* time()                                    */
 #include <ctype.h>          /* isdigit()                                 */
+#include <sys/stat.h>       /* umask()                                   */
 #include <unistd.h>         /* access()                                  */
 #include <errno.h>
 #include "aldadefs.h"
@@ -1261,6 +1264,17 @@ eval_input_alda(int *argc, char *argv[])
    }
    else
    {
+      /*
+       * Set umask so that all log files have the permission 644.
+       * If we do not set this here fopen() will create files with
+       * permission 666 according to POSIX.1.
+       */
+#ifdef GROUP_CAN_WRITE
+      (void)umask(S_IWOTH);
+#else
+      (void)umask(S_IWGRP | S_IWOTH);
+#endif
+
       if ((output_fp = fopen(output_filename, "a")) == NULL)
       {
          (void)fprintf(stderr, "Failed to fopen() `%s' : %s (%s %d)\n",
