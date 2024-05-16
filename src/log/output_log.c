@@ -107,7 +107,7 @@ DESCR__E_M1
 #include <stdlib.h>          /* malloc(), atexit()                       */
 #include <time.h>            /* time()                                   */
 #include <sys/types.h>       /* fdset                                    */
-#include <sys/stat.h>
+#include <sys/stat.h>        /* umask()                                  */
 #include <sys/time.h>        /* struct timeval                           */
 #include <unistd.h>          /* fpathconf(), sysconf()                   */
 #include <fcntl.h>           /* O_RDWR, open()                           */
