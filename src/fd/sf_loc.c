@@ -1,6 +1,6 @@
 /*
  *  sf_loc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2024 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1441,12 +1441,24 @@ cross_link_error:
                      if ((db.trans_rename_rule[0] != '\0') ||
                          (db.cn_filter != NULL))
                      {
-                        *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
-                                                                        MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
-                                                                        "%s%c/%s",
-                                                                        p_file_name_buffer,
-                                                                        SEPARATOR_CHAR,
-                                                                        ff_name) + db.unl;
+                        if (ff_name[0] == '/')
+                        {
+                           *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
+                                                                           MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
+                                                                           "%s%c%s",
+                                                                           p_file_name_buffer,
+                                                                           SEPARATOR_CHAR,
+                                                                           ff_name) + db.unl;
+                        }
+                        else
+                        {
+                           *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
+                                                                           MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
+                                                                           "%s%c/%s",
+                                                                           p_file_name_buffer,
+                                                                           SEPARATOR_CHAR,
+                                                                           ff_name) + db.unl;
+                        }
                         if (*ol_file_name_length >= (MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl))
                         {
                            *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
@@ -1497,12 +1509,24 @@ cross_link_error:
                      if ((db.trans_rename_rule[0] != '\0') ||
                          (db.cn_filter != NULL))
                      {
-                        *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
-                                                                        MAX_FILENAME_LENGTH,
-                                                                        "%s%c/%s",
-                                                                        p_file_name_buffer,
-                                                                        SEPARATOR_CHAR,
-                                                                        ff_name) + db.unl;
+                        if (ff_name[0] == '/')
+                        {
+                           *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
+                                                                           MAX_FILENAME_LENGTH,
+                                                                           "%s%c%s",
+                                                                           p_file_name_buffer,
+                                                                           SEPARATOR_CHAR,
+                                                                           ff_name) + db.unl;
+                        }
+                        else
+                        {
+                           *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
+                                                                           MAX_FILENAME_LENGTH,
+                                                                           "%s%c/%s",
+                                                                           p_file_name_buffer,
+                                                                           SEPARATOR_CHAR,
+                                                                           ff_name) + db.unl;
+                        }
                      }
                      else
                      {
@@ -1561,12 +1585,24 @@ try_again_unlink:
                   if ((db.trans_rename_rule[0] != '\0') ||
                       (db.cn_filter != NULL))
                   {
-                     *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
-                                                                     MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
-                                                                     "%s%c/%s",
-                                                                     p_file_name_buffer,
-                                                                     SEPARATOR_CHAR,
-                                                                     ff_name) + db.unl;
+                     if (ff_name[0] == '/')
+                     {
+                        *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
+                                                                        MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
+                                                                        "%s%c%s",
+                                                                        p_file_name_buffer,
+                                                                        SEPARATOR_CHAR,
+                                                                        ff_name) + db.unl;
+                     }
+                     else
+                     {
+                        *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
+                                                                        MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
+                                                                        "%s%c/%s",
+                                                                        p_file_name_buffer,
+                                                                        SEPARATOR_CHAR,
+                                                                        ff_name) + db.unl;
+                     }
                      if (*ol_file_name_length >= (MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl))
                      {
                         *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
