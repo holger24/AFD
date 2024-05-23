@@ -1,6 +1,6 @@
 /*
  *  reread_dir_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -63,6 +63,8 @@ DESCR__S_M3
  **   03.05.2007 H.Kiehl Changed function that it returns what was done.
  **   10.04.2017 H.Kiehl Added debug_fp parameter to print warnings and
  **                      errors.
+ **   23.05.2024 H.Kiehl Show how many DIR_CONFIG's are read and how
+ **                      many seconds it took.
  **
  */
 DESCR__E_M3
@@ -70,6 +72,7 @@ DESCR__E_M3
 #include <stdio.h>             /* fclose(), fseek()                      */
 #include <string.h>            /* memcmp(), memset(), strerror()         */
 #include <stdlib.h>            /* malloc(), free()                       */
+#include <time.h>              /* time()                                 */
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <signal.h>            /* kill()                                 */
@@ -114,6 +117,8 @@ reread_dir_config(int              dc_changed,
 
    if (db_size > 0)
    {
+      time_t start_time;
+
       if ((dc_changed == NO) && (old_hl != NULL))
       {
          /* First check if there was any change at all. */
@@ -191,8 +196,11 @@ reread_dir_config(int              dc_changed,
       /* Check if DIR_CONFIG has changed. */
       if (dc_changed == YES)
       {
-         int   i;
-         pid_t tmp_dc_pid = dc_pid;
+         int    i;
+         pid_t  tmp_dc_pid = dc_pid;
+         time_t diff_time;
+
+         start_time = time(NULL);
 
          /* Tell user we have to reread the new DIR_CONFIG file(s). */
          system_log(INFO_SIGN, NULL, 0, "Rereading DIR_CONFIG(s)...");
@@ -388,9 +396,43 @@ reread_dir_config(int              dc_changed,
          }
 
          /* Tell user we have reread new DIR_CONFIG file. */
-         system_log(INFO_SIGN, NULL, 0,
-                    "Done with rereading DIR_CONFIG %s.",
-                    (no_of_dir_configs > 1) ? "files" : "file");
+         diff_time = time(NULL) - start_time;
+         if (diff_time > 0)
+         {
+            if (no_of_dir_configs > 1)
+            {
+               system_log(INFO_SIGN, NULL, 0,
+#if SIZEOF_TIME_T == 4
+                          "Done with rereading %d DIR_CONFIG files (time: %lds).",
+#else
+                          "Done with rereading %d DIR_CONFIG files (time: %llds).",
+#endif
+                          no_of_dir_configs);
+            }
+            else
+            {
+               system_log(INFO_SIGN, NULL, 0,
+#if SIZEOF_TIME_T == 4
+                          "Done with rereading DIR_CONFIG file (time: %lds).");
+#else
+                          "Done with rereading DIR_CONFIG file (time: %llds).");
+#endif
+            }
+         }
+         else
+         {
+            if (no_of_dir_configs > 1)
+            {
+               system_log(INFO_SIGN, NULL, 0,
+                          "Done with rereading %d DIR_CONFIG files.",
+                          no_of_dir_configs);
+            }
+            else
+            {
+               system_log(INFO_SIGN, NULL, 0,
+                          "Done with rereading DIR_CONFIG file.");
+            }
+         }
       }
       else if ((old_hl != NULL) && (new_fsa == NO))
            {
