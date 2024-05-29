@@ -1,6 +1,6 @@
 /*
  *  init_msg_buffer.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1864,8 +1864,8 @@ remove_jobs(int jd_fd, off_t *jid_struct_size, char *job_id_data_file)
 
             url_get_error(error_mask, error_msg, MAX_URL_ERROR_MSG);
             system_log(WARN_SIGN, __FILE__, __LINE__,
-                       "Incorrect url `%s'. Error is: %s.",
-                       jd[i].recipient, error_msg);
+                       "Incorrect url `%s' (JID position %d). Error is: %s.",
+                       jd[i].recipient, i, error_msg);
          }
          for (k = 0; k < dc_id_to_remove; k++)
          {
