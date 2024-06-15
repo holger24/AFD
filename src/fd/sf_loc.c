@@ -65,6 +65,7 @@ DESCR__S_M1
  **                      mount with bind option in linux.
  **   15.09.2014 H.Kiehl Added simulation mode.
  **   06.07.2019 H.Kiehl Added trans_srename support.
+ **   15.06.2024 H.Kiehl Always print the full final name with path.
  **
  */
 DESCR__E_M1
@@ -1438,39 +1439,27 @@ cross_link_error:
                   if (db.output_log == YES)
                   {
                      (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-                     if ((db.trans_rename_rule[0] != '\0') ||
-                         (db.cn_filter != NULL))
+                     if (ff_name[0] == '/')
                      {
-                        if (ff_name[0] == '/')
-                        {
-                           *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
-                                                                           MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
-                                                                           "%s%c%s",
-                                                                           p_file_name_buffer,
-                                                                           SEPARATOR_CHAR,
-                                                                           ff_name) + db.unl;
-                        }
-                        else
-                        {
-                           *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
-                                                                           MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
-                                                                           "%s%c/%s",
-                                                                           p_file_name_buffer,
-                                                                           SEPARATOR_CHAR,
-                                                                           ff_name) + db.unl;
-                        }
-                        if (*ol_file_name_length >= (MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl))
-                        {
-                           *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
-                        }
+                        *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
+                                                                        MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
+                                                                        "%s%c%s",
+                                                                        p_file_name_buffer,
+                                                                        SEPARATOR_CHAR,
+                                                                        ff_name) + db.unl;
                      }
                      else
                      {
-                        (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
-                        *ol_file_name_length = (unsigned short)strlen(ol_file_name);
-                        ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
-                        ol_file_name[*ol_file_name_length + 1] = '\0';
-                        (*ol_file_name_length)++;
+                        *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
+                                                                        MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
+                                                                        "%s%c/%s",
+                                                                        p_file_name_buffer,
+                                                                        SEPARATOR_CHAR,
+                                                                        ff_name) + db.unl;
+                     }
+                     if (*ol_file_name_length >= (MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl))
+                     {
+                        *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
                      }
                      *ol_file_size = *p_file_size_buffer + additional_length;
                      *ol_job_number = fsa->job_status[(int)db.job_no].job_id;
@@ -1506,35 +1495,23 @@ cross_link_error:
                   if (db.output_log == YES)
                   {
                      (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-                     if ((db.trans_rename_rule[0] != '\0') ||
-                         (db.cn_filter != NULL))
+                     if (ff_name[0] == '/')
                      {
-                        if (ff_name[0] == '/')
-                        {
-                           *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
-                                                                           MAX_FILENAME_LENGTH,
-                                                                           "%s%c%s",
-                                                                           p_file_name_buffer,
-                                                                           SEPARATOR_CHAR,
-                                                                           ff_name) + db.unl;
-                        }
-                        else
-                        {
-                           *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
-                                                                           MAX_FILENAME_LENGTH,
-                                                                           "%s%c/%s",
-                                                                           p_file_name_buffer,
-                                                                           SEPARATOR_CHAR,
-                                                                           ff_name) + db.unl;
-                        }
+                        *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
+                                                                        MAX_FILENAME_LENGTH,
+                                                                        "%s%c%s",
+                                                                        p_file_name_buffer,
+                                                                        SEPARATOR_CHAR,
+                                                                        ff_name) + db.unl;
                      }
                      else
                      {
-                        (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
-                        *ol_file_name_length = (unsigned short)strlen(ol_file_name);
-                        ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
-                        ol_file_name[*ol_file_name_length + 1] = '\0';
-                        (*ol_file_name_length)++;
+                        *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
+                                                                        MAX_FILENAME_LENGTH,
+                                                                        "%s%c/%s",
+                                                                        p_file_name_buffer,
+                                                                        SEPARATOR_CHAR,
+                                                                        ff_name) + db.unl;
                      }
                      (void)strcpy(&ol_file_name[*ol_file_name_length + 1], &db.archive_dir[db.archive_offset]);
                      *ol_file_size = *p_file_size_buffer + additional_length;
@@ -1582,39 +1559,27 @@ try_again_unlink:
                if (db.output_log == YES)
                {
                   (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-                  if ((db.trans_rename_rule[0] != '\0') ||
-                      (db.cn_filter != NULL))
+                  if (ff_name[0] == '/')
                   {
-                     if (ff_name[0] == '/')
-                     {
-                        *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
-                                                                        MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
-                                                                        "%s%c%s",
-                                                                        p_file_name_buffer,
-                                                                        SEPARATOR_CHAR,
-                                                                        ff_name) + db.unl;
-                     }
-                     else
-                     {
-                        *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
-                                                                        MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
-                                                                        "%s%c/%s",
-                                                                        p_file_name_buffer,
-                                                                        SEPARATOR_CHAR,
-                                                                        ff_name) + db.unl;
-                     }
-                     if (*ol_file_name_length >= (MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl))
-                     {
-                        *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
-                     }
+                     *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
+                                                                     MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
+                                                                     "%s%c%s",
+                                                                     p_file_name_buffer,
+                                                                     SEPARATOR_CHAR,
+                                                                     ff_name) + db.unl;
                   }
                   else
                   {
-                     (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
-                     *ol_file_name_length = (unsigned short)strlen(ol_file_name);
-                     ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
-                     ol_file_name[*ol_file_name_length + 1] = '\0';
-                     (*ol_file_name_length)++;
+                     *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
+                                                                     MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
+                                                                     "%s%c/%s",
+                                                                     p_file_name_buffer,
+                                                                     SEPARATOR_CHAR,
+                                                                     ff_name) + db.unl;
+                  }
+                  if (*ol_file_name_length >= (MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl))
+                  {
+                     *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
                   }
                   *ol_file_size = *p_file_size_buffer + additional_length;
                   *ol_job_number = fsa->job_status[(int)db.job_no].job_id;
