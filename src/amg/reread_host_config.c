@@ -1,7 +1,7 @@
 /*
  *  reread_host_config.c - Part of AFD, an automatic file distribution
  *                         program.
- *  Copyright (c) 1998 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -62,6 +62,9 @@ DESCR__S_M3
  **   07.02.2023 H.Kiehl Add check if host has been removed but is
  **                      still in DIR_CONFIG. If that is the case
  **                      put it back into the HOST_CONFIG.
+ **   08.07.2024 H.Kiehl With the above check group names in HOST_CONFIG
+ **                      could no longer be removed. So do not check
+ **                      group names.
  **
  */
 DESCR__E_M3
@@ -254,7 +257,7 @@ reread_host_config(time_t           *hc_old_time,
       }
       for (i = 0; i < *old_no_of_hosts; i++)
       {
-         if (mark_list[i] == NO)
+         if ((mark_list[i] == NO) && ((*old_hl)[i].real_hostname[0][0] != 1))
          {
             for (j = 0; j < no_of_hosts; j++)
             {
@@ -575,7 +578,7 @@ reread_host_config(time_t           *hc_old_time,
          else
          {
             update_db_log(WARN_SIGN, NULL, 0, debug_fp, warn_counter,
-                          "Host (%s) had to be put back to HOST_CONFIG because it is still in DIR_CONFIG",
+                          "Host %s had to be put back to HOST_CONFIG because it is still in DIR_CONFIG",
                           host_list_put_back);
          }
          free(host_list_put_back);
