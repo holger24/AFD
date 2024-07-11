@@ -1,6 +1,6 @@
 /*
  *  create_url_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -36,6 +36,8 @@ DESCR__S_M3
  **
  ** HISTORY
  **   29.01.2005 H.Kiehl Created
+ **   11.07.2024 H.Kiehl Check if user and/or password have special
+ **                      URL characters. If that is the case mask them.
  **
  */
 DESCR__E_M3
@@ -89,7 +91,9 @@ create_url_file(void)
    }
    else
    {
-      char   buffer[MAX_PATH_LENGTH + 1];
+      char   buffer[MAX_PATH_LENGTH + 1],
+             *rptr,
+             *wptr;
       size_t length;
 
       if (euid != ruid)
@@ -140,12 +144,50 @@ create_url_file(void)
               exit(INCORRECT);
            }
 
-      length += sprintf(&buffer[length], "%s", db->user);
+      rptr = db->user;
+      wptr = &buffer[length];
+      while (*rptr != '\0')
+      {
+         if ((*rptr == '@') || (*rptr == ':') || (*rptr == '/') ||
+             (*rptr == ';'))
+         {
+            *wptr = '\\';
+            *(wptr + 1) = *rptr;
+            wptr += 2; length += 2;
+         }
+         else
+         {
+            *wptr = *rptr;
+            wptr++; length++;
+         }
+         rptr++;
+      }
+      *wptr = '\0';
       if (db->protocol != SMTP)
       {
          if ((db->password != NULL) && (db->password[0] != '\0'))
          {
-            length += sprintf(&buffer[length], ":%s", db->password);
+            rptr = db->password;
+
+            *wptr = ':';
+            wptr++; length++;
+            while (*rptr != '\0')
+            {
+               if ((*rptr == '@') || (*rptr == ':') || (*rptr == '/') ||
+                   (*rptr == ';'))
+               {
+                  *wptr = '\\';
+                  *(wptr + 1) = *rptr;
+                  wptr += 2; length += 2;
+               }
+               else
+               {
+                  *wptr = *rptr;
+                  wptr++; length++;
+               }
+               rptr++;
+            }
+            *wptr = '\0';
          }
          length += sprintf(&buffer[length], "@%s", db->hostname);
          if (db->target_dir[0] != '\0')
