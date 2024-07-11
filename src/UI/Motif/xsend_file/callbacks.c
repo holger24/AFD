@@ -1057,7 +1057,7 @@ enter_passwd(Widget w, XtPointer client_data, XtPointer call_data)
    }
 #endif
 
-   new = XtMalloc(cbs->endPos + 2);
+   new = XtMalloc(cbs->text->length + 1);
    if (db->password)
    {
       (void)strcpy(new, db->password);
