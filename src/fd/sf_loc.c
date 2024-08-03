@@ -102,6 +102,8 @@ DESCR__E_M1
 # endif
 #endif
 
+/* #define DEBUG_ST_DEV */
+
 /* Global variables. */
 int                        counter_fd = -1,
                            *current_no_of_listed_files,
@@ -371,6 +373,12 @@ main(int argc, char *argv[])
 
 #ifdef HAVE_STATX
             ldv = makedev(stat_buf.stx_dev_major, stat_buf.stx_dev_minor);
+# ifdef DEBUG_ST_DEV
+            trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                      "file_path=%s %x:%x %ld", file_path,
+                      stat_buf.stx_dev_major, stat_buf.stx_dev_minor,
+                      (pri_dev_t)ldv);
+# endif
 #else
             ldv = stat_buf.st_dev;
 #endif
@@ -389,6 +397,12 @@ main(int argc, char *argv[])
 #endif
             {
 #ifdef HAVE_STATX
+# ifdef DEBUG_ST_DEV
+               trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                         "target_dir=%s %x:%x %ld", db.target_dir,
+                         stat_buf.stx_dev_major, stat_buf.stx_dev_minor,
+                         makedev(stat_buf.stx_dev_major, stat_buf.stx_dev_minor));
+# endif
                if (makedev(stat_buf.stx_dev_major, stat_buf.stx_dev_minor) == ldv)
 #else
                if (stat_buf.st_dev == ldv)
