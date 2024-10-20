@@ -1,6 +1,6 @@
 /*
  *  ssh_common.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -677,6 +677,14 @@ retry_read:
                      msg_str[status] = '\0';
                      if (debug > 0)
                      {
+                        int i = status - 1;
+
+                        while ((i > 0) &&
+                               ((msg_str[i] == '\r') || (msg_str[i] == '\n')))
+                        {
+                           msg_str[i] = '\0';
+                           i--;
+                        }
                         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
                                   "SSH client response = `%s'", msg_str);
                      }
