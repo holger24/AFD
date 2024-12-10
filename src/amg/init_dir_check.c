@@ -1,6 +1,6 @@
 /*
  *  init_dir_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2024 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -94,6 +94,9 @@ extern int                        afd_file_dir_length,
                                   exec_base_priority,
                                   max_sched_priority,
                                   min_sched_priority,
+#endif
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+                                  force_set_hardlinks_protected,
 #endif
                                   max_process,
 #ifdef MULTI_FS_SUPPORT
@@ -1384,6 +1387,28 @@ get_afd_config_value(void)
                            "%s%s/%s", p_work_dir, ETC_DIR, value);
          }
       }
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+      if (get_definition(buffer, FORCE_SET_HARDLINKS_PROTECTED_DEF,
+                         value, MAX_INT_LENGTH) != NULL)
+      {
+         if ((value[0] == '\0') ||
+             (((value[0] == 'Y') || (value[0] == 'y')) &&
+              ((value[1] == 'E') || (value[1] == 'e')) &&
+              ((value[2] == 'S') || (value[2] == 's')) &&
+              (value[3] == '\0')))
+         {
+            force_set_hardlinks_protected = YES;
+         }
+         else
+         {
+            force_set_hardlinks_protected = NO;
+         }
+      }
+      else
+      {
+         force_set_hardlinks_protected = NO;
+      }
+#endif
 #ifdef MULTI_FS_SUPPORT
       get_extra_work_dirs(buffer, &no_of_extra_work_dirs, &ewl, YES);
 #endif
@@ -1402,6 +1427,9 @@ get_afd_config_value(void)
 #ifdef MULTI_FS_SUPPORT
       no_of_extra_work_dirs = 0;
       ewl = NULL;
+#endif
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+      force_set_hardlinks_protected = NO;
 #endif
    }
 

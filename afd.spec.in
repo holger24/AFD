@@ -14,13 +14,14 @@ BuildRequires: @BUILD_REQUIRES@
 %endif
 URL: https://www.dwd.de/AFD/
 
-%define distro_style_rpms      @DISTRO_STYLE_RPMS@
-%define INITDIR                @INITDIR@
-%define BINARY_OWNER           @BINARY_OWNER@
-%define BINARY_GROUP           @BINARY_GROUP@
-%define with_systemd           @WITH_SYSTMD@
-%define with_afdmon            @WITH_AFD_MON_SPEC@
-%define cleaned_configure_args @cleaned_configure_args@
+%define distro_style_rpms        @DISTRO_STYLE_RPMS@
+%define INITDIR                  @INITDIR@
+%define BINARY_OWNER             @BINARY_OWNER@
+%define BINARY_GROUP             @BINARY_GROUP@
+%define with_systemd             @WITH_SYSTMD@
+%define with_afdmon              @WITH_AFD_MON_SPEC@
+%define cleaned_configure_args   @cleaned_configure_args@
+%define with_dir_check_cap_chown @WITH_DIR_CHECK_CAP_CHOWN@
 
 %if %{distro_style_rpms}
    %define prefix     %{_prefix}
@@ -426,6 +427,9 @@ exit 0
 %doc %{mandir}/man5/*
 %{prefix}/bin/*
 %{prefix}/sbin/*
+%if %{with_dir_check_cap_chown}
+%attr(-,root,root) %caps(cap_chown=p) %{_bindir}/dir_check
+%endif
 
 
 %changelog

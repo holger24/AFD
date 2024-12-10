@@ -189,6 +189,29 @@
                                        filesystems without internal copying
                                        of data.
                                        [Default: disabled]
+--enable-dir_check_cap_chown         - Linux by default does not allow a
+                                       process to hardlink a file with a
+                                       different UID then the UID under
+                                       which the process is running. AFD
+                                       by default detects this situation
+                                       and then copies the file instead
+                                       of doing a simple hardlink.
+                                       Unfortunately this increases disk IO
+                                       considerably if the system
+                                       administrator does not disable this
+                                       in the kernel by setting
+                                       /proc/sys/fs/protected_hardlinks to 0.
+                                       Doing this can put your system at
+                                       a security risk. Compiling it will
+                                       give process dir_check the
+                                       capability to change the owner of a
+                                       file. This too will put your system
+                                       at risk. Note that just compiling
+                                       it with this option is not enough.
+                                       If you do not install the binary
+                                       via RPM you need, as root, set the
+                                       capability of the binary with:
+                                           setcap "CAP_CHOWN+p" dir_check
 --enable-ftp_reuse_data_port         - Reuse the FTP data port when sending
                                        multiple files. This reduces the
                                        number of sockets in TIME_WAIT

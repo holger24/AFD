@@ -1,6 +1,6 @@
 /*
  *  check_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -119,6 +119,9 @@ DESCR__E_M3
 #include <sys/stat.h>              /* stat(), S_ISREG()                  */
 #include <dirent.h>                /* opendir(), closedir(), readdir(),  */
                                    /* DIR, struct dirent                 */
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+# include <sys/capability.h>
+#endif
 #ifdef HAVE_MMAP
 # include <sys/mman.h>
 #endif
@@ -174,6 +177,11 @@ extern struct delete_log          dl;
 extern struct extra_work_dirs     *ewl;
 #endif
 extern char                       *afd_file_dir;
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+extern cap_t                      caps;
+extern int                        can_do_chown,
+                                  hardlinks_protected_set;
+#endif
 
 /* Local function prototypes. */
 #ifdef _POSIX_SAVED_IDS
@@ -1183,6 +1191,47 @@ check_files(struct directory_entry *p_de,
                                  else
                                  {
                                     what_done = DATA_MOVED;
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+                                    if ((hardlinks_protected_set == YES) &&
+# ifdef HAVE_STATX
+                                        (stat_buf.stx_uid != afd_uid)
+# else
+                                        (stat_buf.st_uid != afd_uid)
+# endif
+                                       )
+                                    {
+                                       if (can_do_chown == NEITHER)
+                                       {
+                                          cap_value_t cap_value[1];
+
+                                          cap_value[0] = CAP_CHOWN;
+                                          cap_set_flag(caps, CAP_EFFECTIVE, 1,
+                                                       cap_value, CAP_SET);
+                                          if (cap_set_proc(caps) == -1)
+                                          {
+                                             receive_log(WARN_SIGN, __FILE__,
+                                                         __LINE__, current_time,
+                                                         "cap_set_proc() error : %s",
+                                                         strerror(errno));
+                                             can_do_chown = PERMANENT_INCORRECT;
+                                          }
+                                          else
+                                          {
+                                             can_do_chown = YES;
+                                          }
+                                       }
+                                       if (can_do_chown == YES)
+                                       {
+                                          if (chown(tmp_file_dir, afd_uid, -1) == -1)
+                                          {
+                                             receive_log(WARN_SIGN, __FILE__,
+                                                         __LINE__, current_time,
+                                                         "chown() error : %s",
+                                                         strerror(errno));
+                                          }
+                                       }
+                                    }
+#endif
                                  }
                               }
                               else
@@ -1718,6 +1767,23 @@ done:
       system_log(WARN_SIGN, __FILE__, __LINE__,
                  _("Failed to readdir() `%s' : %s"), fullname, strerror(errno));
    }
+
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+    /* Give up chown capability. */
+    if (can_do_chown == YES)
+    {
+       cap_value_t cap_value[1];
+
+       cap_value[0] = CAP_CHOWN;
+       cap_set_flag(caps, CAP_EFFECTIVE, 1, cap_value, CAP_CLEAR);
+       if (cap_set_proc(caps) == -1)
+       {
+          receive_log(WARN_SIGN, __FILE__, __LINE__, current_time,
+                      "cap_set_proc() error : %s", strerror(errno));
+          can_do_chown = NEITHER;
+       }
+    }
+#endif
 
    /* So that we return only the directory name where */
    /* the files have been stored.                    */

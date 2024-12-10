@@ -1,6 +1,6 @@
 /*
  *  dir_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -109,6 +109,9 @@ DESCR__E_M1
 #ifdef WITH_MEMCHECK
 # include <mcheck.h>
 #endif
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+# include <sys/capability.h>
+#endif
 #include <unistd.h>                /* fork(), rmdir(), getuid(),         */
                                    /* getgid(), sysconf()                */
 #include <dirent.h>                /* opendir(), closedir(), readdir(),  */
@@ -138,6 +141,9 @@ int                        afd_file_dir_length,
                            min_sched_priority = DEFAULT_MIN_NICE_VALUE,
 #endif
                            force_check = NO,
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+                           force_set_hardlinks_protected,
+#endif
                            fra_id,         /* ID of FRA.                 */
                            fra_fd = -1,    /* Needed by fra_attach().    */
                            fsa_id,         /* ID of FSA.                 */
@@ -246,6 +252,11 @@ char                       *afd_file_dir,
                            *rep_file = NULL;
 #ifndef _WITH_PTHREAD
 unsigned char              *file_length_pool;
+#endif
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+cap_t                       caps;
+int                         can_do_chown,
+                            hardlinks_protected_set;
 #endif
 struct dc_proc_list        *dcpl;      /* Dir Check Process List.*/
 struct directory_entry     *de;
@@ -558,6 +569,36 @@ main(int argc, char *argv[])
    have_hw_crc32 = detect_cpu_crc32();
 #endif
 
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+   /* Check if hardlinks are protected. */
+   hardlinks_protected_set = check_hardlinks_protected();
+   if (hardlinks_protected_set > 0)
+   {
+      system_log(DEBUG_SIGN, NULL, 0, "NOTE: Hardlinks are protected.");
+
+      /* Check if we can do chown. */
+      if ((caps = cap_get_proc()) == NULL)
+      {
+         can_do_chown = NO;
+         system_log(WARN_SIGN, __FILE__, __LINE__,
+                    "Failed to call cap_get_proc() : %s", strerror(errno));
+      }
+      else
+      {
+         system_log(DEBUG_SIGN, NULL, 0, "      Can do chown.");
+         can_do_chown = NEITHER; /* Indicate that we must still set it. */
+      }
+   }
+   else if (hardlinks_protected_set == PERMANENT_INCORRECT)
+        {
+           can_do_chown = PERMANENT_INCORRECT;
+        }
+        else
+        {
+           can_do_chown = 4; /* Not needed. */
+        }
+#endif
+
    /* Tell user we are starting dir_check. */
    system_log(INFO_SIGN, NULL, 0, "Starting %s (%s)",
               DIR_CHECK, PACKAGE_VERSION);
@@ -648,6 +689,28 @@ main(int argc, char *argv[])
          {
             eval_bul_rep_config(bul_file, rep_file, YES);
          }
+
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+         if ((hardlinks_protected_set == 0) && (can_do_chown != NO))
+         {
+            /* Check if hardlinks are protected. */
+            hardlinks_protected_set = check_hardlinks_protected();
+            if (hardlinks_protected_set > 0)
+            {
+               /* Check if we can do chown. */
+               if ((caps = cap_get_proc()) == NULL)
+               {
+                  can_do_chown = NO;
+                  system_log(WARN_SIGN, __FILE__, __LINE__,
+                             "Failed to call cap_get_proc() : %s", strerror(errno));
+               }
+               else
+               {
+                  can_do_chown = NEITHER; /* Indicate that we must still set it. */
+               }
+            }
+         }
+#endif
          next_rename_rule_check_time = (now / READ_RULES_INTERVAL) *
                                        READ_RULES_INTERVAL + READ_RULES_INTERVAL;
       }
@@ -1903,6 +1966,17 @@ main(int argc, char *argv[])
 #endif
       }
    } /* for (;;) */
+
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+   if (caps)
+   {
+      if (cap_free(caps) == -1)
+      {
+         system_log(WARN_SIGN, __FILE__, __LINE__,
+                    "Failed to do cap_free() : %s", strerror(errno));
+      }
+   }
+#endif
 
    /* Unmap from pid array. */
    if (dcpl_fd > 0)

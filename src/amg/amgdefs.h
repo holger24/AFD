@@ -33,10 +33,13 @@
 /* #define SHOW_FILE_MOVING */
 
 /* Definitions to be read from the AFD_CONFIG file. */
-#define AMG_DIR_RESCAN_TIME_DEF    "AMG_DIR_RESCAN_TIME"
-#define MAX_NO_OF_DIR_CHECKS_DEF   "MAX_NO_OF_DIR_CHECKS"
-#define MAX_PROCESS_PER_DIR_DEF    "MAX_PROCESS_PER_DIR"
-#define IGNORE_FIRST_ERRORS_DEF    "IGNORE_FIRST_ERRORS"
+#define AMG_DIR_RESCAN_TIME_DEF            "AMG_DIR_RESCAN_TIME"
+#define MAX_NO_OF_DIR_CHECKS_DEF           "MAX_NO_OF_DIR_CHECKS"
+#define MAX_PROCESS_PER_DIR_DEF            "MAX_PROCESS_PER_DIR"
+#define IGNORE_FIRST_ERRORS_DEF            "IGNORE_FIRST_ERRORS"
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+# define FORCE_SET_HARDLINKS_PROTECTED_DEF "FORCE_SET_HARDLINKS_PROTECTED"
+#endif
 
 /* Definitions of default values. */
 #define DEFAULT_PRIORITY           '9'  /* When priority is not          */
@@ -869,6 +872,9 @@ extern int    amg_zombie_check(pid_t *, int),
               com(char, char *, int),
               convert(char *, char *, int, int, unsigned int, unsigned int,
                       off_t *),
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+              check_hardlinks_protected(void),
+#endif
 #ifdef _WITH_PTHREAD
               check_files(struct directory_entry *, char *, int, char *,
                           int, int *, time_t, int *, off_t *, time_t *,

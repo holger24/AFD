@@ -622,6 +622,21 @@ the new value:
    <td valign=top>amg</td>
 </tr>
 <tr>
+   <td valign=top><a name="force_set_hardlinks_protected">FORCE_SET_HARDLINKS_PROTECTED</a></td>
+   <td>When files come in with a different UID then the UID under which AFD
+       is active, the files need to be copied to an internal AFD directory
+       if /proc/sys/fs/protected_hardlinks is set to 1. The permissions of
+       this file is readable for root only with older Kernels. If it is
+       unreadable and this is set to YES, AFD will assume that protected
+       hardlinks are always set. This will only have any effect if AFD was
+       compiled with configure option --enable-dir_check_cap_chown and
+       installed via RPM. That will allow AFD to change the UID of the
+       file to it's UID and will then be able to hardlink the file instead
+       of copying it. This will reduce disk IO considerably.</td>
+       <td valign=top>NO</td>
+       <td valign=top>amg</td>
+</tr>
+<tr>
    <td valign=top><a name="one_dir_copy_timeout">ONE_DIR_COPY_TIMEOUT</a></td>
    <td>When AMG has collected MAX_COPIED_FILES, it will try to continue to
        copy from this directory until it reaches the timeout set by this
@@ -859,7 +874,7 @@ VIEW_DATA_PROG [--with-show_cmd] &lt;progname&gt; &lt;pattern&gt;
        Note the first value is always the alias name of the program name that
        is shown in show_olog. This may only be 8 characters long. With the
        option --with-show_cmd one can show the output of programs that just
-       write to STDOUT and/or STDERR. here some example entries:
+       write to STDOUT and/or STDERR. Here some example entries:
        <pre>
      VIEW_DATA_NO_FILTER_PROG    XV   /usr/bin/xv
      VIEW_DATA_NO_FILTER_PROG    Xpdf xpdf
@@ -905,7 +920,7 @@ restarted.
    <td width="90%"><small><address>
    Copyright &copy; 1999 - 2024 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 09.04.2024
+   Last updated: 10.12.2024
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

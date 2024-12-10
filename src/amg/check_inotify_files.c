@@ -1,6 +1,6 @@
 /*
  *  check_inotify_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2013 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -56,6 +56,9 @@ DESCR__E_M1
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>              /* struct timeval                     */
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+# include <sys/capability.h>
+#endif
 #ifdef HAVE_MMAP
 # include <sys/mman.h>             /* munmap()                           */
 #endif
@@ -106,6 +109,11 @@ extern char                       **file_name_pool;
 extern unsigned char              *file_length_pool;
 #endif
 extern char                       *afd_file_dir;
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+extern cap_t                      caps;
+extern int                        can_do_chown,
+                                  hardlinks_protected_set;
+#endif
 #ifdef MULTI_FS_SUPPORT
 extern struct extra_work_dirs     *ewl;
 #endif
@@ -532,6 +540,47 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                                  else
                                  {
                                     what_done = DATA_MOVED;
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+                                    if ((hardlinks_protected_set == YES) &&
+# ifdef HAVE_STATX
+                                        (stat_buf.stx_uid != afd_uid)
+# else
+                                        (stat_buf.st_uid != afd_uid)
+# endif
+                                       )
+                                    {
+                                       if (can_do_chown == NEITHER)
+                                       {
+                                          cap_value_t cap_value[1];
+
+                                          cap_value[0] = CAP_CHOWN;
+                                          cap_set_flag(caps, CAP_EFFECTIVE, 1,
+                                                       cap_value, CAP_SET);
+                                          if (cap_set_proc(caps) == -1)
+                                          {
+                                             receive_log(WARN_SIGN, __FILE__,
+                                                         __LINE__, current_time,
+                                                         "cap_set_proc() error : %s",
+                                                         strerror(errno));
+                                             can_do_chown = PERMANENT_INCORRECT;
+                                          }
+                                          else
+                                          {
+                                             can_do_chown = YES;
+                                          }
+                                       }
+                                       if (can_do_chown == YES)
+                                       {
+                                          if (chown(tmp_file_dir, afd_uid, -1) == -1)
+                                          {
+                                             receive_log(WARN_SIGN, __FILE__,
+                                                         __LINE__, current_time,
+                                                         "chown() error : %s",
+                                                         strerror(errno));
+                                          }
+                                       }
+                                    }
+#endif
                                  }
                               }
                               else

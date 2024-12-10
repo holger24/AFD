@@ -587,6 +587,42 @@ else
 fi
 AC_SUBST(WITH_AFD_MON_SPEC)
 
+dnl **** check if we want chown capability for dir_check
+dir_check_cap_chown=false
+AC_ARG_ENABLE(dir_check_cap_chown,
+   [  --enable-dir_check_cap_chown    enable chown capability for dir_check],
+   [case "${enableval}" in
+      yes) dir_check_cap_chown=true
+           AC_DEFINE([DIR_CHECK_CAP_CHOWN], [], [With chown capability for dir_check]) ;;
+      no)  dir_check_cap_chown=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-dir_check_cap_chown) ;;
+   esac
+   ac_cv_dir_check_cap_chown="$enableval"],[dir_check_cap_chown=false;ac_cv_dir_check_cap_chown="no"])
+if test "$dir_check_cap_chown" = "false"
+then
+   WITH_DIR_CHECK_CAP_CHOWN=0
+   AFD_CAP_LIB=""
+   AM_CONDITIONAL(WITH_HARDLINKS_PROTECTED_CHECK, false)
+else
+   have_libcap="no"
+   AC_CHECK_LIB([cap], [cap_get_proc, cap_set_proc], [have_libcap="yes"])
+   if test "$have_libcap" = "no"
+   then
+      AC_MSG_ERROR([capability lib missing, please install libcap and/or libcap-devel])
+   fi
+   have_headercap="no"
+   AC_CHECK_HEADER([sys/capability.h], [have_headercap="yes"])
+   if test "$have_headercap" = "no"
+   then
+      AC_MSG_ERROR([cpability header missing, please install libcap-devel])
+   fi
+   AFD_CAP_LIB="-lcap"
+   WITH_DIR_CHECK_CAP_CHOWN=1
+   AM_CONDITIONAL(WITH_HARDLINKS_PROTECTED_CHECK, true)
+fi
+AC_SUBST(AFD_CAP_LIB)
+AC_SUBST(WITH_DIR_CHECK_CAP_CHOWN)
+
 dnl **** check if user wants to compile with debugging support
 AC_ARG_ENABLE(compiler_debug,
    [  --enable-compiler-debug         turn on debugging],
@@ -1836,6 +1872,7 @@ echo "    Max directory alias name length  : ${with_max_dir_alias_length}"
 echo "    Max recipient length             : ${with_max_recipient_length}"
 echo "    Some binaries with setuid flag   : ${ac_cv_setuid_progs}"
 echo "    Group can write                  : ${ac_cv_group_can_write}"
+echo "    dir_check has chown capability   : ${ac_cv_dir_check_cap_chown}"
 echo "    Automatically create configs     : ${ac_cv_auto_create_config}"
 echo "    Enable Distro-style RPMs         : ${enable_distro_rpm}"
 if test "$DISTRO" != ""
