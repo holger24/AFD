@@ -585,7 +585,7 @@ main(int argc, char *argv[])
       }
       else
       {
-         system_log(DEBUG_SIGN, NULL, 0, "      Can do chown.");
+         system_log(DEBUG_SIGN, NULL, 0, "      Can do chown. Not verified.");
          can_do_chown = NEITHER; /* Indicate that we must still set it. */
       }
    }
