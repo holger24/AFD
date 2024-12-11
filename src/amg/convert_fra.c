@@ -1,6 +1,6 @@
 /*
  *  convert_fra.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -7974,66 +7974,80 @@ convert_fra(int           old_fra_fd,
 
 
 /*++++++++++++++++++++++ migrate_to_dir_options() +++++++++++++++++++++++*/
+#define ACCEPT_DOT_FILES_OLD          32
+#define DONT_GET_DIR_LIST_OLD         64
+#define INOTIFY_RENAME_OLD            16384
+#define INOTIFY_CLOSE_OLD             32768
+#define INOTIFY_ATTRIB_OLD            131072
+#define INOTIFY_CREATE_OLD            524288
+#define DO_NOT_PARALLELIZE_OLD        2097152
+#define DO_NOT_MOVE_OLD               4194304
+#define INOTIFY_DELETE_OLD            8388608
+#define ONE_PROCESS_JUST_SCANNING_OLD 33554432
+#define URL_CREATES_FILE_NAME_OLD     67108864
+#define URL_WITH_INDEX_FILE_NAME_OLD  134217728
+#define NO_DELIMITER_OLD              268435456
+#define KEEP_PATH_OLD                 536870912
 static unsigned int
 migrate_to_dir_options(unsigned int old_dir_flag)
 {
    unsigned int dir_options = 0;
 
-   if (old_dir_flag & ACCEPT_DOT_FILES)
+   if (old_dir_flag & ACCEPT_DOT_FILES_OLD)
    {
       dir_options |= ACCEPT_DOT_FILES;
    }
-   if (old_dir_flag & DONT_GET_DIR_LIST)
+   if (old_dir_flag & DONT_GET_DIR_LIST_OLD)
    {
       dir_options |= DONT_GET_DIR_LIST;
    }
 #ifdef WITH_INOTIFY
-   if (old_dir_flag & INOTIFY_RENAME)
+   if (old_dir_flag & INOTIFY_RENAME_OLD)
    {
       dir_options |= INOTIFY_RENAME;
    }
-   if (old_dir_flag & INOTIFY_CLOSE)
+   if (old_dir_flag & INOTIFY_CLOSE_OLD)
    {
       dir_options |= INOTIFY_CLOSE;
    }
-   if (old_dir_flag & INOTIFY_CREATE)
+   if (old_dir_flag & INOTIFY_CREATE_OLD)
    {
       dir_options |= INOTIFY_CREATE;
    }
-   if (old_dir_flag & INOTIFY_DELETE)
+   if (old_dir_flag & INOTIFY_DELETE_OLD)
    {
       dir_options |= INOTIFY_DELETE;
    }
-   if (old_dir_flag & INOTIFY_ATTRIB)
+   if (old_dir_flag & INOTIFY_ATTRIB_OLD)
    {
       dir_options |= INOTIFY_ATTRIB;
    }
 #endif
-   if (old_dir_flag & DO_NOT_PARALLELIZE)
+   if (old_dir_flag & DO_NOT_PARALLELIZE_OLD)
    {
       dir_options |= DO_NOT_PARALLELIZE;
    }
-   if (old_dir_flag & DO_NOT_MOVE)
+   if (old_dir_flag & DO_NOT_MOVE_OLD)
    {
       dir_options |= DO_NOT_MOVE;
    }
-   if (old_dir_flag & ONE_PROCESS_JUST_SCANNING)
+   if (old_dir_flag & ONE_PROCESS_JUST_SCANNING_OLD)
    {
       dir_options |= ONE_PROCESS_JUST_SCANNING;
    }
-   if (old_dir_flag & URL_CREATES_FILE_NAME)
+   if (old_dir_flag & URL_CREATES_FILE_NAME_OLD)
    {
       dir_options |= URL_CREATES_FILE_NAME;
    }
-   if (old_dir_flag & URL_WITH_INDEX_FILE_NAME)
+   if (old_dir_flag & URL_WITH_INDEX_FILE_NAME_OLD)
    {
       dir_options |= URL_WITH_INDEX_FILE_NAME;
    }
-   if (old_dir_flag & NO_DELIMITER)
+   if (old_dir_flag & NO_DELIMITER_OLD)
    {
       dir_options |= NO_DELIMITER;
    }
-   if (old_dir_flag & KEEP_PATH)
+   if (old_dir_flag & KEEP_PATH_OLD)
    {
       dir_options |= KEEP_PATH;
    }
