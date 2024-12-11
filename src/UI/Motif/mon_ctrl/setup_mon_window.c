@@ -1,7 +1,7 @@
 /*
  *  setup_mon_window.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 1998 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2024 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -235,10 +235,12 @@ setup_mon_window(char *font_name)
          if (mcp.afd_ctrl != NO_PERMISSION)
          {
             XtVaSetValues(vw[MON_AFD_CTRL_W], XmNfontList, fontlist, NULL);
+            XtVaSetValues(pw[6], XmNfontList, fontlist, NULL);
          }
          if (mcp.show_slog != NO_PERMISSION)
          {
             XtVaSetValues(vw[MON_SYSTEM_W], XmNfontList, fontlist, NULL);
+            XtVaSetValues(pw[8], XmNfontList, fontlist, NULL);
          }
          if (mcp.show_elog != NO_PERMISSION)
          {
@@ -247,10 +249,12 @@ setup_mon_window(char *font_name)
          if (mcp.show_rlog != NO_PERMISSION)
          {
             XtVaSetValues(vw[MON_RECEIVE_W], XmNfontList, fontlist, NULL);
+            XtVaSetValues(pw[7], XmNfontList, fontlist, NULL);
          }
          if (mcp.show_tlog != NO_PERMISSION)
          {
             XtVaSetValues(vw[MON_TRANS_W], XmNfontList, fontlist, NULL);
+            XtVaSetValues(pw[9], XmNfontList, fontlist, NULL);
          }
          if (mcp.show_ilog != NO_PERMISSION)
          {
