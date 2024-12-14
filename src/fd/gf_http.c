@@ -1176,7 +1176,8 @@ main(int argc, char *argv[])
                              }
 
                         bytes_done = 0;
-                        if (status != NOTHING_TO_FETCH)
+                        if ((status != NOTHING_TO_FETCH) &&
+                            ((fra->dir_options & DIR_ZERO_SIZE) == 0))
                         {
                            if (fsa->trl_per_process > 0)
                            {
@@ -2106,8 +2107,16 @@ main(int argc, char *argv[])
                           }
                   }
 #endif
-                  trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s @%x",
-                            buffer, db.id.dir);
+                  if ((fra->dir_options & DIR_ZERO_SIZE) == 0)
+                  {
+                     trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s @%x",
+                               buffer, db.id.dir);
+                  }
+                  else
+                  {
+                     trans_log(INFO_SIGN, NULL, 0, NULL, NULL,
+                               "[Zero size] %s @%x", buffer, db.id.dir);
+                  }
                   prev_no_of_files_done = fsa->job_status[(int)db.job_no].no_of_files_done;
                   prev_file_size_done = fsa->job_status[(int)db.job_no].file_size_done;
                }

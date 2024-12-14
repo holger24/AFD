@@ -70,6 +70,7 @@ DESCR__S_M3
  **        accept dot files
  **        inotify <value>                       [DEFAULT 0]
  **        one process just scaning
+ **        retrieve zero size
  **
  ** RETURN VALUES
  **   0 when no problems are found when evaluating the directory options.
@@ -114,6 +115,7 @@ DESCR__S_M3
  **   13.01.2024 H.Kiehl Extended 'store retrieve list' with 'once not exact'.
  **   17.01.2024 H.Kiehl Extended 'store retrieve list' with 'not exact'.
  **   30.03.2024 H.Kiehl Added "get dir list[ href]" option.
+ **   12.12.2024 H.Kiehl Added "retrieve zero size" option.
  **
  */
 DESCR__E_M3
@@ -191,6 +193,7 @@ extern struct dir_data *dd;
 #define KEEP_PATH_FLAG                   256
 #define URL_WITH_INDEX_FILE_NAME_FLAG    512
 #define GET_DIR_LIST_FLAG                1024
+#define DIR_ZERO_SIZE_FLAG               2048
 
 
 /*########################## eval_dir_options() #########################*/
@@ -270,6 +273,7 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
    dd[dir_pos].do_not_move = NO;
    dd[dir_pos].retrieve_work_dir[0] = '\0';
    dd[dir_pos].one_process_just_scaning = NO;
+   dd[dir_pos].dir_zero_size = NO;
 
    /*
     * Now for the new directory options.
@@ -2088,6 +2092,17 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
                  ptr++;
               }
               dd[dir_pos].one_process_just_scaning = YES;
+           }
+      else if (((used2 & DIR_ZERO_SIZE_FLAG) == 0) &&
+               (strncmp(ptr, DIR_ZERO_SIZE_ID, DIR_ZERO_SIZE_ID_LENGTH) == 0))
+           {
+              used2 |= DIR_ZERO_SIZE_FLAG;
+              ptr += DIR_ZERO_SIZE_ID_LENGTH;
+              while ((*ptr != '\n') && (*ptr != '\0'))
+              {
+                 ptr++;
+              }
+              dd[dir_pos].dir_zero_size = YES;
            }
            else
            {

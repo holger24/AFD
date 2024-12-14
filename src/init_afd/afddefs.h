@@ -1151,6 +1151,8 @@ typedef unsigned long       u_long_64;
 #define NO_DELIMITER_ID_LENGTH           (sizeof(NO_DELIMITER_ID) - 1)
 #define KEEP_PATH_ID                     "keep path"
 #define KEEP_PATH_ID_LENGTH              (sizeof(KEEP_PATH_ID) - 1)
+#define DIR_ZERO_SIZE_ID                 "retrieve zero size"
+#define DIR_ZERO_SIZE_ID_LENGTH          (sizeof(DIR_ZERO_SIZE_ID) - 1)
 #define UNKNOWN_FILES                    1
 #define QUEUED_FILES                     2
 #define OLD_LOCKED_FILES                 4
@@ -2119,39 +2121,39 @@ typedef unsigned long       u_long_64;
 
 /* Definitions for directory flags + options. */
 /* NOTE: Do not seperate these into flags + options. Reason is that */
-/*       Up to FRA version 7 these where all under flags. Only with */
-/*       version came the new variable dir_options.                 */
-#define MAX_COPIED                 1
-#define FILES_IN_QUEUE             2
-/* #define ____no_used____            4 */
-#define LINK_NO_EXEC               8
-#define DIR_DISABLED               16
-#define ACCEPT_DOT_FILES           32
-#define DONT_GET_DIR_LIST          64
-#define DIR_ERROR_SET              128
-#define WARN_TIME_REACHED          256
-#define DIR_ERROR_ACKN             512
-#define DIR_ERROR_OFFLINE          1024
-#define DIR_ERROR_ACKN_T           2048
-#define DIR_ERROR_OFFL_T           4096
-#define DIR_STOPPED                8192
+/*       up to FRA version 7 these where all under flags. Only with */
+/*       version 8 came the new variable dir_options.               */
+#define MAX_COPIED                 1              /*  1 */
+#define FILES_IN_QUEUE             2              /*  2 */
+#define DIR_ZERO_SIZE              4              /*  3 */
+#define LINK_NO_EXEC               8              /*  4 */
+#define DIR_DISABLED               16             /*  5 */
+#define ACCEPT_DOT_FILES           32             /*  6 */
+#define DONT_GET_DIR_LIST          64             /*  7 */
+#define DIR_ERROR_SET              128            /*  8 */
+#define WARN_TIME_REACHED          256            /*  9 */
+#define DIR_ERROR_ACKN             512            /* 10 */
+#define DIR_ERROR_OFFLINE          1024           /* 11 */
+#define DIR_ERROR_ACKN_T           2048           /* 12 */
+#define DIR_ERROR_OFFL_T           4096           /* 13 */
+#define DIR_STOPPED                8192           /* 14 */
 #ifdef WITH_INOTIFY
-# define INOTIFY_RENAME            16384
-# define INOTIFY_CLOSE             32768
+# define INOTIFY_RENAME            16384          /* 15 */
+# define INOTIFY_CLOSE             32768          /* 16 */
 #endif
-#define ALL_DISABLED               65536
+#define ALL_DISABLED               65536          /* 17 */
 #ifdef WITH_INOTIFY
-# define INOTIFY_ATTRIB            131072
-# define INOTIFY_NEEDS_SCAN        262144
-# define INOTIFY_CREATE            524288
+# define INOTIFY_ATTRIB            131072         /* 18 */
+# define INOTIFY_NEEDS_SCAN        262144         /* 19 */
+# define INOTIFY_CREATE            524288         /* 20 */
 #endif
-#define INFO_TIME_REACHED          1048576
-#define DO_NOT_PARALLELIZE         2097152
-#define DO_NOT_MOVE                4194304
+#define INFO_TIME_REACHED          1048576        /* 21 */
+#define DO_NOT_PARALLELIZE         2097152        /* 22 */
+#define DO_NOT_MOVE                4194304        /* 23 */
 #ifdef WITH_INOTIFY
-# define INOTIFY_DELETE            8388608
+# define INOTIFY_DELETE            8388608        /* 24 */
 #endif
-#define DIR_DISABLED_STATIC        16777216
+#define DIR_DISABLED_STATIC        16777216       /* 25 */
 #define ONE_PROCESS_JUST_SCANNING  33554432       /* 26 */
 #define URL_CREATES_FILE_NAME      67108864       /* 27 */
 #define URL_WITH_INDEX_FILE_NAME   134217728      /* 28 */
@@ -3092,7 +3094,9 @@ struct fileretrieve_status
                                             /*| 8-14| Not used.         |*/
                                             /*|    7| DONT_GET_DIR_LIST |*/
                                             /*|    6| ACCEPT_DOT_FILES  |*/
-                                            /*|  1-5| Not used.         |*/
+                                            /*|  4-5| Not used.         |*/
+                                            /*|    3| DIR_ZERO_SIZE     |*/
+                                            /*|  1-2| Not used.         |*/
                                             /*+-----+-------------------+*/
           unsigned int  dir_flag;           /* Flag for this directory   */
                                             /* informing about the       */

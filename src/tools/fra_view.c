@@ -569,6 +569,10 @@ main(int argc, char *argv[])
             {
                (void)fprintf(stdout, "ONE_PROCESS_JUST_SCANNING ");
             }
+            if (fra[i].dir_options & DIR_ZERO_SIZE)
+            {
+               (void)fprintf(stdout, "DIR_ZERO_SIZE ");
+            }
             (void)fprintf(stdout, "\n");
          }
          if (fra[i].in_dc_flag == 0)

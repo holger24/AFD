@@ -1505,126 +1505,133 @@ main(int argc, char *argv[])
                                 exit(TRANSFER_SUCCESS);
                              }
 
-                        bytes_done = 0;
-                        if (fsa->trl_per_process > 0)
+                        if ((fra->dir_options & DIR_ZERO_SIZE) == 0)
                         {
-                           init_limit_transfer_rate();
-                        }
-                        if (fsa->protocol_options & TIMEOUT_TRANSFER)
-                        {
-                           start_transfer_time_file = time(NULL);
-                        }
-
-                        do
-                        {
-                           if ((status = ftp_read(buffer, blocksize)) == INCORRECT)
-                           {
-                              status = errno;
-                              if (status == EPIPE)
-                              {
-                                 (void)ftp_get_reply();
-                              }
-                              trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
-                                        (status == EPIPE) ? msg_str : NULL,
-                                        "Failed to read from remote file %s in %s (%d)",
-                                        tmp_rl.file_name, fra->dir_alias,
-                                        status);
-                              reset_values(files_retrieved, file_size_retrieved,
-                                           files_to_retrieve,
-                                           file_size_to_retrieve,
-                                           (struct job *)&db);
-                              if (status == EPIPE)
-                              {
-                                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                           "Hmm. Pipe is broken. Will NOT send a QUIT.");
-                              }
-                              else
-                              {
-                                 (void)ftp_quit();
-                              }
-                              if (bytes_done == 0)
-                              {
-                                 (void)unlink(local_tmp_file);
-                              }
-                              exit(eval_timeout(READ_REMOTE_ERROR));
-                           }
-
+                           bytes_done = 0;
                            if (fsa->trl_per_process > 0)
                            {
-                              limit_transfer_rate(status, fsa->trl_per_process,
-                                                  clktck);
+                              init_limit_transfer_rate();
                            }
-                           if (status > 0)
+                           if (fsa->protocol_options & TIMEOUT_TRANSFER)
                            {
-                              if (write(fd, buffer, status) != status)
+                              start_transfer_time_file = time(NULL);
+                           }
+
+                           do
+                           {
+                              if ((status = ftp_read(buffer, blocksize)) == INCORRECT)
                               {
-                                 trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                           "Failed to write() to file %s : %s",
-                                           local_tmp_file, strerror(errno));
-                                 (void)ftp_quit();
-                                 reset_values(files_retrieved,
-                                              file_size_retrieved,
+                                 status = errno;
+                                 if (status == EPIPE)
+                                 {
+                                    (void)ftp_get_reply();
+                                 }
+                                 trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
+                                           (status == EPIPE) ? msg_str : NULL,
+                                           "Failed to read from remote file %s in %s (%d)",
+                                           tmp_rl.file_name, fra->dir_alias,
+                                           status);
+                                 reset_values(files_retrieved, file_size_retrieved,
                                               files_to_retrieve,
                                               file_size_to_retrieve,
                                               (struct job *)&db);
+                                 if (status == EPIPE)
+                                 {
+                                    trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                              "Hmm. Pipe is broken. Will NOT send a QUIT.");
+                                 }
+                                 else
+                                 {
+                                    (void)ftp_quit();
+                                 }
                                  if (bytes_done == 0)
                                  {
                                     (void)unlink(local_tmp_file);
                                  }
-                                 exit(WRITE_LOCAL_ERROR);
+                                 exit(eval_timeout(READ_REMOTE_ERROR));
                               }
-                              bytes_done += status;
-                           }
 
-                           if (gsf_check_fsa((struct job *)&db) != NEITHER)
-                           {
-                              fsa->job_status[(int)db.job_no].file_size_in_use_done = bytes_done;
-                              fsa->job_status[(int)db.job_no].file_size_done += status;
-                              fsa->job_status[(int)db.job_no].bytes_send += status;
-                              if (fsa->protocol_options & TIMEOUT_TRANSFER)
+                              if (fsa->trl_per_process > 0)
                               {
-                                 end_transfer_time_file = time(NULL);
-                                 if (end_transfer_time_file < start_transfer_time_file)
+                                 limit_transfer_rate(status, fsa->trl_per_process,
+                                                     clktck);
+                              }
+                              if (status > 0)
+                              {
+                                 if (write(fd, buffer, status) != status)
                                  {
-                                    start_transfer_time_file = end_transfer_time_file;
-                                 }
-                                 else
-                                 {
-                                    if ((end_transfer_time_file - start_transfer_time_file) > transfer_timeout)
+                                    trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                              "Failed to write() to file %s : %s",
+                                              local_tmp_file, strerror(errno));
+                                    (void)ftp_quit();
+                                    reset_values(files_retrieved,
+                                                 file_size_retrieved,
+                                                 files_to_retrieve,
+                                                 file_size_to_retrieve,
+                                                 (struct job *)&db);
+                                    if (bytes_done == 0)
                                     {
-                                       trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                       (void)unlink(local_tmp_file);
+                                    }
+                                    exit(WRITE_LOCAL_ERROR);
+                                 }
+                                 bytes_done += status;
+                              }
+
+                              if (gsf_check_fsa((struct job *)&db) != NEITHER)
+                              {
+                                 fsa->job_status[(int)db.job_no].file_size_in_use_done = bytes_done;
+                                 fsa->job_status[(int)db.job_no].file_size_done += status;
+                                 fsa->job_status[(int)db.job_no].bytes_send += status;
+                                 if (fsa->protocol_options & TIMEOUT_TRANSFER)
+                                 {
+                                    end_transfer_time_file = time(NULL);
+                                    if (end_transfer_time_file < start_transfer_time_file)
+                                    {
+                                       start_transfer_time_file = end_transfer_time_file;
+                                    }
+                                    else
+                                    {
+                                       if ((end_transfer_time_file - start_transfer_time_file) > transfer_timeout)
+                                       {
+                                          trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
 #if SIZEOF_TIME_T == 4
-                                                 "Transfer timeout reached for `%s' in %s after %ld seconds.",
+                                                    "Transfer timeout reached for `%s' in %s after %ld seconds.",
 #else
-                                                 "Transfer timeout reached for `%s' in %s after %lld seconds.",
+                                                    "Transfer timeout reached for `%s' in %s after %lld seconds.",
 #endif
-                                                 fsa->job_status[(int)db.job_no].file_name_in_use,
-                                                 fra->dir_alias,
-                                                 (pri_time_t)(end_transfer_time_file - start_transfer_time_file));
-                                       (void)ftp_quit();
-                                       exitflag = 0;
-                                       exit(STILL_FILES_TO_SEND);
+                                                    fsa->job_status[(int)db.job_no].file_name_in_use,
+                                                    fra->dir_alias,
+                                                    (pri_time_t)(end_transfer_time_file - start_transfer_time_file));
+                                          (void)ftp_quit();
+                                          exitflag = 0;
+                                          exit(STILL_FILES_TO_SEND);
+                                       }
                                     }
                                  }
                               }
-                           }
-                           else if (db.fsa_pos == INCORRECT)
-                                {
-                                   /* Host is no longer in FSA, so lets exit. */
-                                   trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                             "Database changed, exiting.");
-                                   (void)ftp_quit(); /* also closes data_fd */
-                                   (void)close(fd);
-                                   (void)unlink(local_tmp_file);
-                                   reset_values(files_retrieved,
-                                                file_size_retrieved,
-                                                files_to_retrieve,
-                                                file_size_to_retrieve,
-                                                (struct job *)&db);
-                                   exitflag = 0;
-                                   exit(TRANSFER_SUCCESS);
-                                }
-                        } while (status != 0);
+                              else if (db.fsa_pos == INCORRECT)
+                                   {
+                                      /* Host is no longer in FSA, so lets exit. */
+                                      trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                                "Database changed, exiting.");
+                                      (void)ftp_quit(); /* also closes data_fd */
+                                      (void)close(fd);
+                                      (void)unlink(local_tmp_file);
+                                      reset_values(files_retrieved,
+                                                   file_size_retrieved,
+                                                   files_to_retrieve,
+                                                   file_size_to_retrieve,
+                                                   (struct job *)&db);
+                                      exitflag = 0;
+                                      exit(TRANSFER_SUCCESS);
+                                   }
+                           } while (status != 0);
+                        }
+                        else
+                        {
+                           bytes_done = tmp_rl.size;
+                        }
 
                         /* Close the FTP data connection. */
                         if ((status = ftp_close_data()) != SUCCESS)
@@ -2087,8 +2094,16 @@ main(int argc, char *argv[])
                           }
                   }
 #endif
-                  trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s @%x",
-                            buffer, db.id.dir);
+                  if ((fra->dir_options & DIR_ZERO_SIZE) == 0)
+                  {
+                     trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s @%x",
+                               buffer, db.id.dir);
+                  }
+                  else
+                  {
+                     trans_log(INFO_SIGN, NULL, 0, NULL, NULL,
+                               "[Zero size] %s @%x", buffer, db.id.dir);
+                  }
                   prev_no_of_files_done = fsa->job_status[(int)db.job_no].no_of_files_done;
                   prev_file_size_done = fsa->job_status[(int)db.job_no].file_size_done;
                }

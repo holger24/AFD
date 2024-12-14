@@ -514,6 +514,10 @@ create_fra(int no_of_dirs)
          {
             fra[i].dir_options |= ONE_PROCESS_JUST_SCANNING;
          }
+         if (dd[i].dir_zero_size == YES)
+         {
+            fra[i].dir_options |= DIR_ZERO_SIZE;
+         }
          if (dd[i].create_source_dir == YES)
          {
             if (fra[i].dir_mode == 0)
@@ -744,6 +748,13 @@ create_fra(int no_of_dirs)
             {
                fra[i].dir_options ^= ONE_PROCESS_JUST_SCANNING;
             }
+            if (((fra[i].dir_options & DIR_ZERO_SIZE) &&
+                 (dd[i].dir_zero_size == NO)) ||
+                (((fra[i].dir_options & DIR_ZERO_SIZE) == 0) &&
+                 (dd[i].dir_zero_size == YES)))
+            {
+               fra[i].dir_options ^= DIR_ZERO_SIZE;
+            }
             if ((dd[i].create_source_dir == NO) &&
                 (fra[i].dir_mode != 0))
             {
@@ -893,6 +904,10 @@ create_fra(int no_of_dirs)
             if (dd[i].one_process_just_scaning == YES)
             {
                fra[i].dir_options |= ONE_PROCESS_JUST_SCANNING;
+            }
+            if (dd[i].dir_zero_size == YES)
+            {
+               fra[i].dir_options |= DIR_ZERO_SIZE;
             }
             if (dd[i].create_source_dir == YES)
             {

@@ -522,6 +522,16 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                goto done;
             }
          }
+         if (fra[i].dir_options & DIR_ZERO_SIZE)
+         {
+            (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
+                         DIR_ZERO_SIZE_ID);
+            d_o->no_of_dir_options++;
+            if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
+            {
+               goto done;
+            }
+         }
          else if (fra[i].dir_options & DONT_GET_DIR_LIST)
               {
                  if (fra[i].in_dc_flag & GET_DIR_LIST_IDC)
