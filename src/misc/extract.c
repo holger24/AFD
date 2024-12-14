@@ -1,6 +1,6 @@
 /*
  *  extract.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2024 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -97,6 +97,8 @@ DESCR__S_M3
  **                      terminating ETX is available and if not tries
  **                      to search for it's end.
  **   06.12.2017 H.Kiehl Add function separator_char().
+ **   14.12.2024 H.Kiehl Show job_id in most sub functions, not just in
+ **                      top level extract() function.
  **
  */
 DESCR__E_M3
@@ -167,29 +169,43 @@ static struct prod_log_db         *pld = NULL;
 #endif
 
 /* Local function prototypes. */
-static void                       ascii_sohetx(char *, off_t, time_t, char *),
+static void                       ascii_sohetx(char *, off_t, time_t, char *,
+                                               unsigned int),
                                   ascii_zczc_nnnn(char *, off_t, time_t,
-                                                  char *),
-                                  binary_sohetx(char *, off_t, time_t, char *),
-                                  four_byte(char *, off_t, time_t),
-                                  four_byte_swap(char *, off_t, time_t),
-                                  four_byte_mss(char *, off_t, time_t),
-                                  four_byte_mss_swap(char *, off_t, time_t),
+                                                  char *, unsigned int),
+                                  binary_sohetx(char *, off_t, time_t, char *,
+                                                unsigned int),
+                                  four_byte(char *, off_t, time_t,
+                                            unsigned int),
+                                  four_byte_swap(char *, off_t, time_t,
+                                                 unsigned int),
+                                  four_byte_mss(char *, off_t, time_t,
+                                                unsigned int),
+                                  four_byte_mss_swap(char *, off_t, time_t,
+                                                     unsigned int),
                                   hex_print(char *, char *, int),
-                                  separator_char(char *, off_t, time_t, char *, char),
+                                  separator_char(char *, off_t, time_t, char *,
+                                                 char, unsigned int),
                                   show_unknown_report(char *, int, char *,
-                                                      char *, int),
-                                  two_byte_vax(char *, off_t, time_t),
-                                  two_byte_vax_swap(char *, off_t, time_t),
-                                  wmo_standard(char *, off_t, time_t),
-                                  wmo_standard_chk(char *, off_t, time_t);
+                                                      unsigned int, char *,
+                                                      int),
+                                  two_byte_vax(char *, off_t, time_t,
+                                               unsigned int),
+                                  two_byte_vax_swap(char *, off_t, time_t,
+                                                    unsigned int),
+                                  wmo_standard(char *, off_t, time_t,
+                                               unsigned int),
+                                  wmo_standard_chk(char *, off_t, time_t,
+                                                   unsigned int);
 static int                        check_report(char *, unsigned int, int *),
-                                  find_offset(int, char *, int, int *, char *),
+                                  find_offset(int, char *, int, int *, char *,
+                                              unsigned int),
                                   get_rcdb_position(char *, int),
                                   get_station_id(char *, int, int *, char *,
                                                  int, int, int, char **,
                                                  int  *, int *, char *),
-                                  write_file(char *, unsigned int, time_t, int);
+                                  write_file(char *, unsigned int, time_t,
+                                             int, unsigned int);
 
 /* Local definitions. */
 #define MAX_WMO_HEADER_LENGTH  25
@@ -378,52 +394,57 @@ extract(char         *file_name,
    switch (type)
    {
       case ASCII_STANDARD: /* No length indicator, just locate SOH + ETX. */
+         ascii_sohetx(src_ptr,
 #ifdef HAVE_STATX
-         ascii_sohetx(src_ptr, stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
-                      file_name);
+                      stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
 #else
-         ascii_sohetx(src_ptr, stat_buf.st_size, stat_buf.st_mtime, file_name);
+                      stat_buf.st_size, stat_buf.st_mtime,
 #endif
+                      file_name, job_id);
          break;
 
       case BINARY_STANDARD: /* No length indicator, just cut away header. */
+         binary_sohetx(src_ptr,
 #ifdef HAVE_STATX
-         binary_sohetx(src_ptr, stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
-                       file_name);
+                       stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
 #else
-         binary_sohetx(src_ptr, stat_buf.st_size, stat_buf.st_mtime, file_name);
+                       stat_buf.st_size, stat_buf.st_mtime,
 #endif
+                       file_name, job_id);
          break;
 
       case ZCZC_NNNN: /* No length indicator, just locate ZCZC + NNNN. */
+         ascii_zczc_nnnn(src_ptr,
 #ifdef HAVE_STATX
-         ascii_zczc_nnnn(src_ptr, stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
-                         file_name);
+                         stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
 #else
-         ascii_zczc_nnnn(src_ptr, stat_buf.st_size, stat_buf.st_mtime,
-                         file_name);
+                         stat_buf.st_size, stat_buf.st_mtime,
 #endif
+                         file_name, job_id);
          break;
 
       case TWO_BYTE      : /* Vax Standard */
          if (*(char *)&byte_order == 1)
          {
             /* little-endian */
+            two_byte_vax(src_ptr,
 #ifdef HAVE_STATX
-            two_byte_vax(src_ptr, stat_buf.stx_size, stat_buf.stx_mtime.tv_sec);
+                         stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
 #else
-            two_byte_vax(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+                         stat_buf.st_size, stat_buf.st_mtime,
 #endif
+                         job_id);
          }
          else
          {
             /* big-endian */
+            two_byte_vax_swap(src_ptr,
 #ifdef HAVE_STATX
-            two_byte_vax_swap(src_ptr, stat_buf.stx_size,
-                              stat_buf.stx_mtime.tv_sec);
+                              stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
 #else
-            two_byte_vax_swap(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+                              stat_buf.st_size, stat_buf.st_mtime,
 #endif
+                              job_id);
          }
          break;
 
@@ -431,21 +452,24 @@ extract(char         *file_name,
          if (*(char *)&byte_order == 1)
          {
             /* little-endian */
+            four_byte(src_ptr,
 #ifdef HAVE_STATX
-            four_byte(src_ptr, stat_buf.stx_size, stat_buf.stx_mtime.tv_sec);
+                      stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
 #else
-            four_byte(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+                      stat_buf.st_size, stat_buf.st_mtime,
 #endif
+                      job_id);
          }
          else
          {
             /* big-endian */
+            four_byte_swap(src_ptr,
 #ifdef HAVE_STATX
-            four_byte_swap(src_ptr, stat_buf.stx_size,
-                           stat_buf.stx_mtime.tv_sec);
+                           stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
 #else
-            four_byte_swap(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+                           stat_buf.st_size, stat_buf.st_mtime,
 #endif
+                           job_id);
          }
          break;
 
@@ -453,21 +477,24 @@ extract(char         *file_name,
          if (*(char *)&byte_order == 1)
          {
             /* little-endian */
+            four_byte_swap(src_ptr,
 #ifdef HAVE_STATX
-            four_byte_swap(src_ptr, stat_buf.stx_size,
-                           stat_buf.stx_mtime.tv_sec);
+                           stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
 #else
-            four_byte_swap(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+                           stat_buf.st_size, stat_buf.st_mtime,
 #endif
+                           job_id);
          }
          else
          {
             /* big-endian */
+            four_byte(src_ptr,
 #ifdef HAVE_STATX
-            four_byte(src_ptr, stat_buf.stx_size, stat_buf.stx_mtime.tv_sec);
+                      stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
 #else
-            four_byte(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+                      stat_buf.st_size, stat_buf.st_mtime,
 #endif
+                      job_id);
          }
          break;
 
@@ -475,51 +502,56 @@ extract(char         *file_name,
          if (*(char *)&byte_order == 1)
          {
             /* little-endian */
+            four_byte_mss_swap(src_ptr,
 #ifdef HAVE_STATX
-            four_byte_mss_swap(src_ptr, stat_buf.stx_size,
-                               stat_buf.stx_mtime.tv_sec);
+                               stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
 #else
-            four_byte_mss_swap(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+                               stat_buf.st_size, stat_buf.st_mtime,
 #endif
+                               job_id);
          }
          else
          {
             /* big-endian */
+            four_byte_mss(src_ptr,
 #ifdef HAVE_STATX
-            four_byte_mss(src_ptr, stat_buf.stx_size,
-                          stat_buf.stx_mtime.tv_sec);
+                          stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
 #else
-            four_byte_mss(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+                          stat_buf.st_size, stat_buf.st_mtime,
 #endif
+                          job_id);
          }
          break;
 
       case WMO_STANDARD  : /* WMO Standard */
+         wmo_standard(src_ptr,
 #ifdef HAVE_STATX
-         wmo_standard(src_ptr, stat_buf.stx_size, stat_buf.stx_mtime.tv_sec);
+                      stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
 #else
-         wmo_standard(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+                      stat_buf.st_size, stat_buf.st_mtime,
 #endif
+                      job_id);
          break;
 
       case WMO_STANDARD_CHK : /* WMO Standard with end search. */
+         wmo_standard_chk(src_ptr,
 #ifdef HAVE_STATX
-         wmo_standard_chk(src_ptr, stat_buf.stx_size,
-                          stat_buf.stx_mtime.tv_sec);
+                          stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
 #else
-         wmo_standard_chk(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+                          stat_buf.st_size, stat_buf.st_mtime,
 #endif
+                          job_id);
          break;
 
       case SP_CHAR : /* No length indicator, just locate separator */
                      /* character at end.                          */
+         separator_char(src_ptr,
 #ifdef HAVE_STATX
-         separator_char(src_ptr, stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
-                        file_name, '=');
+                        stat_buf.stx_size, stat_buf.stx_mtime.tv_sec,
 #else
-         separator_char(src_ptr, stat_buf.st_size, stat_buf.st_mtime,
-                        file_name, '=');
+                        stat_buf.st_size, stat_buf.st_mtime,
 #endif
+                        file_name, '=', job_id);
          break;
 
       default            : /* Impossible! */
@@ -611,7 +643,11 @@ extract(char         *file_name,
 
 /*+++++++++++++++++++++++++++++ ascii_sohetx() ++++++++++++++++++++++++++*/
 static void
-ascii_sohetx(char *src_ptr, off_t total_length, time_t mtime, char *file_name)
+ascii_sohetx(char         *src_ptr,
+             off_t        total_length,
+             time_t       mtime,
+             char         *file_name,
+             unsigned int job_id)
 {
    if (*src_ptr == 1)
    {
@@ -634,8 +670,8 @@ ascii_sohetx(char *src_ptr, off_t total_length, time_t mtime, char *file_name)
             if (*ptr == 3)
             {
                ptr++;
-               if (write_file(ptr_start, (unsigned int)(ptr - ptr_start), mtime,
-                              YES) < 0)
+               if (write_file(ptr_start, (unsigned int)(ptr - ptr_start),
+                              mtime, YES, job_id) < 0)
                {
                   return;
                }
@@ -647,8 +683,8 @@ ascii_sohetx(char *src_ptr, off_t total_length, time_t mtime, char *file_name)
             else
             {
                receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                           _("Failed to locate terminating ETX in %s."),
-                           file_name);
+                           _("Failed to locate terminating ETX in %s. #%x"),
+                           file_name, job_id);
                return;
             }
          }
@@ -656,7 +692,8 @@ ascii_sohetx(char *src_ptr, off_t total_length, time_t mtime, char *file_name)
    }
    else
    {
-      (void)write_file(src_ptr, (unsigned int)(total_length), mtime, NO);
+      (void)write_file(src_ptr, (unsigned int)(total_length), mtime,
+                       NO, job_id);
    }
 
    return;
@@ -665,7 +702,11 @@ ascii_sohetx(char *src_ptr, off_t total_length, time_t mtime, char *file_name)
 
 /*++++++++++++++++++++++++++++ binary_sohetx() ++++++++++++++++++++++++++*/
 static void
-binary_sohetx(char *src_ptr, off_t total_length, time_t mtime, char *file_name)
+binary_sohetx(char         *src_ptr,
+              off_t        total_length,
+              time_t       mtime,
+              char         *file_name,
+              unsigned int job_id)
 {
    char *ptr = src_ptr,
         *ptr_start;
@@ -682,7 +723,7 @@ binary_sohetx(char *src_ptr, off_t total_length, time_t mtime, char *file_name)
       {
          ptr++;
          if (write_file(ptr_start, (unsigned int)(ptr - ptr_start), mtime,
-                        YES) < 0)
+                        YES, job_id) < 0)
          {
             return;
          }
@@ -694,8 +735,8 @@ binary_sohetx(char *src_ptr, off_t total_length, time_t mtime, char *file_name)
       else
       {
          receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                     _("Failed to locate terminating ETX in %s."),
-                     file_name);
+                     _("Failed to locate terminating ETX in %s. #%x"),
+                     file_name, job_id);
          return;
       }
    }
@@ -706,7 +747,11 @@ binary_sohetx(char *src_ptr, off_t total_length, time_t mtime, char *file_name)
 
 /*+++++++++++++++++++++++++++ ascii_zczc_nnnn() +++++++++++++++++++++++++*/
 static void
-ascii_zczc_nnnn(char *src_ptr, off_t total_length, time_t mtime, char *file_name)
+ascii_zczc_nnnn(char         *src_ptr,
+                off_t        total_length,
+                time_t       mtime,
+                char         *file_name,
+                unsigned int job_id)
 {
    char *ptr = src_ptr,
         *ptr_start;
@@ -737,7 +782,7 @@ ascii_zczc_nnnn(char *src_ptr, off_t total_length, time_t mtime, char *file_name
          {
             ptr += 5;
             if (write_file(ptr_start, (unsigned int)(ptr - ptr_start), mtime,
-                           NEITHER) < 0)
+                           NEITHER, job_id) < 0)
             {
                return;
             }
@@ -749,8 +794,8 @@ ascii_zczc_nnnn(char *src_ptr, off_t total_length, time_t mtime, char *file_name
          else
          {
             receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                        _("Failed to locate terminating NNNN in %s."),
-                        file_name);
+                        _("Failed to locate terminating NNNN in %s. #%x"),
+                        file_name, job_id);
             return;
          }
       }
@@ -762,7 +807,10 @@ ascii_zczc_nnnn(char *src_ptr, off_t total_length, time_t mtime, char *file_name
 
 /*+++++++++++++++++++++++++++++ two_byte_vax() ++++++++++++++++++++++++++*/
 static void
-two_byte_vax(char *src_ptr, off_t total_length, time_t mtime)
+two_byte_vax(char         *src_ptr,
+             off_t        total_length,
+             time_t       mtime,
+             unsigned int job_id)
 {
    unsigned short length;
    char           *ptr = src_ptr;
@@ -773,7 +821,7 @@ two_byte_vax(char *src_ptr, off_t total_length, time_t mtime)
    {
       for (;;)
       {
-         if (write_file(ptr + 2, (unsigned int)length, mtime, YES) < 0)
+         if (write_file(ptr + 2, (unsigned int)length, mtime, YES, job_id) < 0)
          {
             return;
          }
@@ -793,7 +841,10 @@ two_byte_vax(char *src_ptr, off_t total_length, time_t mtime)
 
 /*++++++++++++++++++++++++++ two_byte_vax_swap() ++++++++++++++++++++++++*/
 static void
-two_byte_vax_swap(char *src_ptr, off_t total_length, time_t mtime)
+two_byte_vax_swap(char         *src_ptr,
+                  off_t        total_length,
+                  time_t       mtime,
+                  unsigned int job_id)
 {
    unsigned short length;
    char           *ptr = src_ptr;
@@ -804,7 +855,7 @@ two_byte_vax_swap(char *src_ptr, off_t total_length, time_t mtime)
    {
       for (;;)
       {
-         if (write_file(ptr + 2, (unsigned int)length, mtime, YES) < 0)
+         if (write_file(ptr + 2, (unsigned int)length, mtime, YES, job_id) < 0)
          {
             return;
          }
@@ -824,7 +875,10 @@ two_byte_vax_swap(char *src_ptr, off_t total_length, time_t mtime)
 
 /*++++++++++++++++++++++++++++++ four_byte() ++++++++++++++++++++++++++++*/
 static void
-four_byte(char *src_ptr, off_t total_length, time_t mtime)
+four_byte(char         *src_ptr,
+          off_t        total_length,
+          time_t       mtime,
+          unsigned int job_id)
 {
    unsigned int length;
    char         *ptr = src_ptr;
@@ -837,7 +891,7 @@ four_byte(char *src_ptr, off_t total_length, time_t mtime)
    {
       for (;;)
       {
-         if (write_file(ptr + 4, length, mtime, YES) < 0)
+         if (write_file(ptr + 4, length, mtime, YES, job_id) < 0)
          {
             return;
          }
@@ -859,7 +913,10 @@ four_byte(char *src_ptr, off_t total_length, time_t mtime)
 
 /*+++++++++++++++++++++++++++ four_byte_swap() ++++++++++++++++++++++++++*/
 static void
-four_byte_swap(char *src_ptr, off_t total_length, time_t mtime)
+four_byte_swap(char         *src_ptr,
+               off_t        total_length,
+               time_t       mtime,
+               unsigned int job_id)
 {
    unsigned int length;
    char         *ptr = src_ptr;
@@ -872,7 +929,7 @@ four_byte_swap(char *src_ptr, off_t total_length, time_t mtime)
    {
       for (;;)
       {
-         if (write_file(ptr + 4, length, mtime, YES) < 0)
+         if (write_file(ptr + 4, length, mtime, YES, job_id) < 0)
          {
             return;
          }
@@ -894,7 +951,10 @@ four_byte_swap(char *src_ptr, off_t total_length, time_t mtime)
 
 /*++++++++++++++++++++++++++++ four_byte_mss() ++++++++++++++++++++++++++*/
 static void
-four_byte_mss(char *src_ptr, off_t total_length, time_t mtime)
+four_byte_mss(char         *src_ptr,
+              off_t        total_length,
+              time_t       mtime,
+              unsigned int job_id)
 {
    unsigned int length;
    char         *ptr = src_ptr;
@@ -907,7 +967,7 @@ four_byte_mss(char *src_ptr, off_t total_length, time_t mtime)
    {
       for (;;)
       {
-         if (write_file(ptr + 4, length, mtime, YES) < 0)
+         if (write_file(ptr + 4, length, mtime, YES, job_id) < 0)
          {
             return;
          }
@@ -928,7 +988,10 @@ four_byte_mss(char *src_ptr, off_t total_length, time_t mtime)
 
 /*+++++++++++++++++++++++++ four_byte_mss_swap() ++++++++++++++++++++++++*/
 static void
-four_byte_mss_swap(char *src_ptr, off_t total_length, time_t mtime)
+four_byte_mss_swap(char         *src_ptr,
+                   off_t        total_length,
+                   time_t       mtime,
+                   unsigned int job_id)
 {
    unsigned int length;
    char         *ptr = src_ptr;
@@ -941,7 +1004,7 @@ four_byte_mss_swap(char *src_ptr, off_t total_length, time_t mtime)
    {
       for (;;)
       {
-         if (write_file(ptr + 4, length, mtime, YES) < 0)
+         if (write_file(ptr + 4, length, mtime, YES, job_id) < 0)
          {
             return;
          }
@@ -962,7 +1025,10 @@ four_byte_mss_swap(char *src_ptr, off_t total_length, time_t mtime)
 
 /*+++++++++++++++++++++++++++ wmo_standard() ++++++++++++++++++++++++++++*/
 static void
-wmo_standard(char *src_ptr, off_t total_length, time_t mtime)
+wmo_standard(char         *src_ptr,
+             off_t        total_length,
+             time_t       mtime,
+             unsigned int job_id)
 {
    int          soh_etx;
    unsigned int length;
@@ -991,7 +1057,7 @@ wmo_standard(char *src_ptr, off_t total_length, time_t mtime)
          {
             soh_etx = YES;
          }
-         if (write_file(ptr + 10, length, mtime, soh_etx) < 0)
+         if (write_file(ptr + 10, length, mtime, soh_etx, job_id) < 0)
          {
             return;
          }
@@ -1005,7 +1071,10 @@ wmo_standard(char *src_ptr, off_t total_length, time_t mtime)
 
 /*+++++++++++++++++++++++++ wmo_standard_chk() ++++++++++++++++++++++++++*/
 static void
-wmo_standard_chk(char *src_ptr, off_t total_length, time_t mtime)
+wmo_standard_chk(char         *src_ptr,
+                 off_t        total_length,
+                 time_t       mtime,
+                 unsigned int job_id)
 {
    int          soh_etx;
    unsigned int additional_length,
@@ -1048,13 +1117,14 @@ wmo_standard_chk(char *src_ptr, off_t total_length, time_t mtime)
                if (*(ptr + length + 10 - 1 + additional_length) != 3)
                {
                   receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                              "Unable to determine terminating ETX in %s.",
-                              p_orig_name);
+                              "Unable to determine terminating ETX in %s. #%x",
+                              p_orig_name, job_id);
                   additional_length = 0;
                }
             }
          }
-         if (write_file(ptr + 10, length + additional_length, mtime, soh_etx) < 0)
+         if (write_file(ptr + 10, length + additional_length, mtime,
+                        soh_etx, job_id) < 0)
          {
             return;
          }
@@ -1068,11 +1138,12 @@ wmo_standard_chk(char *src_ptr, off_t total_length, time_t mtime)
 
 /*++++++++++++++++++++++++++++ separator_char() +++++++++++++++++++++++++*/
 static void
-separator_char(char   *src_ptr,
-               off_t  total_length,
-               time_t mtime,
-               char   *file_name,
-               char   separator)
+separator_char(char         *src_ptr,
+               off_t        total_length,
+               time_t       mtime,
+               char         *file_name,
+               char         separator,
+               unsigned int job_id)
 {
    char *ptr = src_ptr,
         *ptr_start;
@@ -1088,7 +1159,7 @@ separator_char(char   *src_ptr,
       {
          ptr++;
          if (write_file(ptr_start, (unsigned int)(ptr - ptr_start), mtime,
-                        NO) < 0)
+                        NO, job_id) < 0)
          {
             return;
          }
@@ -1100,8 +1171,8 @@ separator_char(char   *src_ptr,
       else
       {
          receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                     _("Failed to locate terminating character %c in %s."),
-                     separator, file_name);
+                     _("Failed to locate terminating character %c in %s. #%x"),
+                     separator, file_name, job_id);
          return;
       }
    } while ((ptr - src_ptr) <= total_length);
@@ -1112,7 +1183,11 @@ separator_char(char   *src_ptr,
 
 /*------------------------------ write_file() ---------------------------*/
 static int
-write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
+write_file(char         *msg,
+           unsigned int length,
+           time_t       mtime,
+           int          soh_etx,
+           unsigned int job_id)
 {
    int   bcdb_pos = -1,
          fd,
@@ -1127,8 +1202,8 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
    if ((soh_etx == YES) && (msg[0] != 1)) /* Must start with SOH */
    {
       receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                  _("Failed to read bulletin header. No SOH at start in %s."),
-                  p_orig_name);
+                  _("Failed to read bulletin header. No SOH at start in %s. #%x"),
+                  p_orig_name, job_id);
       return(INCORRECT);
    }
 
@@ -1146,8 +1221,8 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
    if ((ptr + 3 - msg) >= length)
    {
       receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                  _("Failed to read bulletin header. No header found in %s (%d >= %u)."),
-                  p_orig_name, (int)(ptr + 3 - msg), length);
+                  _("Failed to read bulletin header. No header found in %s (%d >= %u). #%x"),
+                  p_orig_name, (int)(ptr + 3 - msg), length, job_id);
       return(INCORRECT);
    }
    if (((ptr + 4 - msg) <= length) && (*ptr == 'Z') && (*(ptr + 1) == 'C') &&
@@ -1161,8 +1236,8 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
       if ((ptr + 3 - msg) >= length)
       {
          receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                     _("Failed to read bulletin header. No header found in %s."),
-                     p_orig_name);
+                     _("Failed to read bulletin header. No header found in %s. #%x"),
+                     p_orig_name, job_id);
          return(INCORRECT);
       }
    }
@@ -1259,8 +1334,8 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
    if (i == 0)
    {
       receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                  _("Length of WMO header is 0 in %s!? Discarding file."),
-                  p_orig_name);
+                  _("Length of WMO header is 0 in %s!? Discarding file. #%x"),
+                  p_orig_name, job_id);
       return(INCORRECT);
    }
    else
@@ -1394,7 +1469,7 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
          if ((bcdb_pos != -1) && (bcdb[bcdb_pos].rss != -1) &&
              (rcdb_pos != -1) && (rcdb[rcdb_pos].rt != RT_NOT_DEFINED) &&
              ((ret = find_offset(rcdb_pos, ptr, length - (ptr - msg),
-                                 &offset, wid)) == SUCCESS))
+                                 &offset, wid, job_id)) == SUCCESS))
          {
             int  begin_file_name_offset,
                  bul_name_length = i,
@@ -1558,8 +1633,8 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
                         else
                         {
                            receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                                       _("bulname to short, should be %d bytes long"),
-                                       bul_name_length);
+                                       _("bulname to short, should be %d bytes long. #%x"),
+                                       bul_name_length, job_id);
                            bulname[0] = '\0';
                         }
                         additional_offset += snprintf(&p_file_name[file_name_offset + end_offset],
@@ -1598,8 +1673,8 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
                                     file_mode)) < 0)
                      {
                         receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                                    _("Failed to open() `%s' while extracting reports : %s"),
-                                    p_full_file_name, strerror(errno));
+                                    _("Failed to open() `%s' while extracting reports : %s #%x"),
+                                    p_full_file_name, strerror(errno), job_id);
                         *p_file_name = '\0';
                         return(INCORRECT);
                      }
@@ -1611,8 +1686,8 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
                         if (writen(fd, p_file_name, length, 0) != (ssize_t)length)
                         {
                            receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                                       _("Failed to writen() file name : %s"),
-                                       strerror(errno));
+                                       _("Failed to writen() file name : %s #%x"),
+                                       strerror(errno), job_id);
                            (void)close(fd);
                            return(INCORRECT);
                         }
@@ -1620,8 +1695,8 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
                         if (writen(fd, " ", (size_t)1, 0) != (ssize_t)1)
                         {
                            receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                                       _("Failed to writen() space after file name : %s"),
-                                       strerror(errno));
+                                       _("Failed to writen() space after file name : %s #%x"),
+                                       strerror(errno), job_id);
                            (void)close(fd);
                            return(INCORRECT);
                         }
@@ -1630,8 +1705,8 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
                         if (writen(fd, p_orig_name, length, 0) != (ssize_t)length)
                         {
                            receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                                       _("Failed to writen() extract file name : %s"),
-                                       strerror(errno));
+                                       _("Failed to writen() extract file name : %s #%x"),
+                                       strerror(errno), job_id);
                            (void)close(fd);
                            return(INCORRECT);
                         }
@@ -1639,8 +1714,8 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
                         if (writen(fd, "\r\r\n", 3, 0) != 3)
                         {
                            receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                                       _("Failed to writen() carriage return, carriage return + line feed : %s"),
-                                       strerror(errno));
+                                       _("Failed to writen() carriage return, carriage return + line feed : %s #%x"),
+                                       strerror(errno), job_id);
                            (void)close(fd);
                            return(INCORRECT);
                         }
@@ -1651,8 +1726,8 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
                         if (writen(fd, p_extra_heading, (size_t)offset, 0) != (ssize_t)offset)
                         {
                            receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                                       _("Failed to writen() extra header in report : %s"),
-                                       strerror(errno));
+                                       _("Failed to writen() extra header in report : %s #%x"),
+                                       strerror(errno), job_id);
                            (void)close(fd);
                            return(INCORRECT);
                         }
@@ -1661,7 +1736,8 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
                      if (writen(fd, (p_start + overwrite_extra_heading), (size_t)size, 0) != (ssize_t)size)
                      {
                         receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                                    _("Failed to writen() report : %s"), strerror(errno));
+                                    _("Failed to writen() report : %s #%x"),
+                                    strerror(errno), job_id);
                         (void)close(fd);
                         if (p_extra_heading != NULL)
                         {
@@ -1672,8 +1748,8 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
                      if (writen(fd, "\r\r\n", 3, 0) != 3)
                      {
                         receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                                    _("Failed to writen() carriage return, carriage return + line feed : %s"),
-                                    strerror(errno));
+                                    _("Failed to writen() carriage return, carriage return + line feed : %s #%x"),
+                                    strerror(errno), job_id);
                         (void)close(fd);
                         return(INCORRECT);
                      }
@@ -1790,8 +1866,9 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
                     }
 
                receive_log(INFO_SIGN, __FILE__, __LINE__, 0L,
-                           "%s: Not extracting reports from %s because %s (pos bul=%d rep=%d)",
-                           p_file_name, p_orig_name, reason, bcdb_pos, rcdb_pos);
+                           "%s: Not extracting reports from %s because %s (pos bul=%d rep=%d). #%x",
+                           p_file_name, p_orig_name, reason, bcdb_pos,
+                           rcdb_pos, job_id);
 
 #ifdef WHEN_READY
                if (extract_options & EXTRACT_ALSO_WRITE_NO_REPORTS)
@@ -1853,8 +1930,9 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
             else if (ret == TEXT_MESSAGE)
                  {
                     receive_log(INFO_SIGN, __FILE__, __LINE__, 0L,
-                                "%s: Not extracting reports from %s because report type is TEXT (pos bul=%d rep=%d)",
-                                p_file_name, p_orig_name, bcdb_pos, rcdb_pos);
+                                "%s: Not extracting reports from %s because report type is TEXT (pos bul=%d rep=%d). #%x",
+                                p_file_name, p_orig_name, bcdb_pos,
+                                rcdb_pos, job_id);
                  }
          }
       }
@@ -1903,7 +1981,8 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
             }
             p_file_name[file_name_offset] = '-';
             file_name_offset++;
-            if ((extract_options & EXTRACT_EXTRA_REPORT_HEADING) && (offset > 0))
+            if ((extract_options & EXTRACT_EXTRA_REPORT_HEADING) &&
+                (offset > 0))
             {
                p_extra_heading = ptr;
             }
@@ -2014,7 +2093,8 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
                             }
                             else
                             {
-                               show_unknown_report(ptr, length, msg, __FILE__, __LINE__);
+                               show_unknown_report(ptr, length, msg,
+                                                   job_id,__FILE__, __LINE__);
                                break;
                             }
                     }
@@ -2197,7 +2277,8 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
                     }
                     else
                     {
-                       show_unknown_report(ptr, length, msg, __FILE__, __LINE__);
+                       show_unknown_report(ptr, length, msg, job_id,
+                                           __FILE__, __LINE__);
                        break;
                  }
 
@@ -2243,8 +2324,8 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
                      else
                      {
                         receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                                    _("bulname to short, should be %d bytes long"),
-                                    bul_name_length);
+                                    _("bulname to short, should be %d bytes long. #%x"),
+                                    bul_name_length, job_id);
                         bulname[0] = '\0';
                      }
                      additional_offset += snprintf(&p_file_name[file_name_offset + end_offset],
@@ -2402,7 +2483,8 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
          else
          {
             receive_log(DEBUG_SIGN, __FILE__, __LINE__, 0L,
-                        _("%s not marked as a report"), p_file_name);
+                        _("%s not marked as a report. #%x"),
+                        p_file_name, job_id);
          }
       }
    }
@@ -2585,7 +2667,12 @@ get_rcdb_position(char *p_file_name, int bcdb_pos)
 
 /*---------------------------- find_offset() ----------------------------*/
 static int
-find_offset(int rcdb_pos, char *ptr, int length, int *offset, char *p_wid)
+find_offset(int          rcdb_pos,
+            char         *ptr,
+            int          length,
+            int          *offset,
+            char         *p_wid,
+            unsigned int job_id)
 {
    char *p_start = ptr;
 
@@ -2759,8 +2846,8 @@ find_offset(int rcdb_pos, char *ptr, int length, int *offset, char *p_wid)
 
       default            : /* Unknown report type */
          receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                     "Unknown report type %d (%d), unable to extract reports.",
-                     rcdb[rcdb_pos].rt, rcdb_pos);
+                     "Unknown report type %d (%d), unable to extract reports. #%x",
+                     rcdb[rcdb_pos].rt, rcdb_pos, job_id);
          return(INCORRECT);
    }
    *offset = ptr - p_start;
@@ -4356,7 +4443,12 @@ check_report(char *ptr, unsigned int length, int *offset)
 
 /*------------------------- show_unknown_report() -----------------------*/
 static void
-show_unknown_report(char *ptr, int length, char *msg, char *file, int line)
+show_unknown_report(char         *ptr,
+                    int          length,
+                    char         *msg,
+                    unsigned int job_id,
+                    char         *file,
+                    int          line)
 {
    int  i = 0;
    char unknown_report[MAX_REPORT_LINE_LENGTH + 1];
@@ -4430,8 +4522,9 @@ show_unknown_report(char *ptr, int length, char *msg, char *file, int line)
       }
    }
    unknown_report[i] = '\0';
-   receive_log(DEBUG_SIGN, file, line, 0L, _("Unknown report type `%s' in %s"),
-               unknown_report, p_orig_name);
+   receive_log(DEBUG_SIGN, file, line, 0L,
+               _("Unknown report type `%s' in %s. #%x"),
+               unknown_report, p_orig_name, job_id);
 
    return;
 }
