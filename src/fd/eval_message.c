@@ -1,6 +1,6 @@
 /*
  *  eval_message.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2024 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -96,6 +96,7 @@ DESCR__S_M3
  **   22.06.2020 H.Kiehl Added option 'show no to line'.
  **   29.06.2020 H.Kiehl Added option 'group-to'.
  **   29.06.2023 H.Kiehl Ignore FD option 'ageing'.
+ **   14.12.2024 H.Kiehl Added option 'send zero size'.
  **
  */
 DESCR__E_M3
@@ -187,6 +188,7 @@ static char *store_mail_address(char *, char **, char *, unsigned int);
 #define GROUP_TO_FLAG               4096
 #define REMOTE_HARDLINK_FLAG        8192
 #define REMOTE_SYMLINK_FLAG         16384
+#define SEND_ZERO_SIZE_FLAG         32768
 
 
 #define MAX_HUNK                    4096
@@ -3032,6 +3034,22 @@ eval_message(char *message_name, struct job *p_db)
                  {
                     /* This option is for process FD, so ignore it. */
                     ptr += AGEING_ID_LENGTH;
+                    while ((*ptr != '\n') && (*ptr != '\0'))
+                    {
+                       ptr++;
+                    }
+                    while (*ptr == '\n')
+                    {
+                       ptr++;
+                    }
+                 }
+            else if (((used2 & SEND_ZERO_SIZE_FLAG) == 0) &&
+                     (CHECK_STRNCMP(ptr, SEND_ZERO_SIZE_ID,
+                                    SEND_ZERO_SIZE_ID_LENGTH) == 0))
+                 {
+                    used2 |= SEND_ZERO_SIZE_FLAG;
+                    p_db->special_flag |= SEND_ZERO_SIZE;
+                    ptr += SEND_ZERO_SIZE_ID_LENGTH;
                     while ((*ptr != '\n') && (*ptr != '\0'))
                     {
                        ptr++;

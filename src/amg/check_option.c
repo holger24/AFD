@@ -1,6 +1,6 @@
 /*
  *  check_option.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1840,7 +1840,9 @@ check_option(char *option, FILE *cmd_fp)
             ((CHECK_STRNCMP(option, ACTIVE_FTP_MODE, ACTIVE_FTP_MODE_LENGTH) == 0) &&
              (*(option + ACTIVE_FTP_MODE_LENGTH) == '\0')) ||
             ((CHECK_STRNCMP(option, PASSIVE_FTP_MODE, PASSIVE_FTP_MODE_LENGTH) == 0) &&
-             (*(option + PASSIVE_FTP_MODE_LENGTH) == '\0')))
+             (*(option + PASSIVE_FTP_MODE_LENGTH) == '\0')) ||
+            ((CHECK_STRNCMP(option, SEND_ZERO_SIZE_ID, SEND_ZERO_SIZE_ID_LENGTH) == 0) &&
+             (*(option + SEND_ZERO_SIZE_ID_LENGTH) == '\0')))
         {
            /* OK */;
         }

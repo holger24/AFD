@@ -1,6 +1,6 @@
 /*
  *  sf_scp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -65,6 +65,7 @@ DESCR__S_M1
  **                             The SCP protocol was not designed for this.
  **   13.06.2004 H.Kiehl        Added transfer rate limit.
  **   22.01.2005 H.Kiehl        Added burst2.
+ **   14.12.2024 H.Kiehl        Added 'send zero size' option.
  **
  */
 DESCR__E_M1
@@ -526,7 +527,8 @@ main(int argc, char *argv[])
             }
          }
 
-         if (*p_file_size_buffer > 0)
+         if ((*p_file_size_buffer > 0) &&
+             ((db.special_flag & SEND_ZERO_SIZE) == 0))
          {
             /* Open local file. */
 #ifdef O_LARGEFILE
@@ -1215,8 +1217,16 @@ sf_scp_exit(void)
                                 " [BURST * %u]", burst_2_counter);
               }
 #endif /* _WITH_BURST_2 */
-         trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s #%x",
-                   buffer, db.id.job);
+         if ((db.special_flag & SEND_ZERO_SIZE) == 0)
+         {
+            trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s #%x",
+                      buffer, db.id.job);
+         }
+         else
+         {
+            trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "[Zero size] %s #%x",
+                      buffer, db.id.job);
+         }
       }
       reset_fsa((struct job *)&db, exitflag, 0, 0);
       fsa_detach_pos(db.fsa_pos);

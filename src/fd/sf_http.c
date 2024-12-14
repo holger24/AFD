@@ -58,6 +58,7 @@ DESCR__S_M1
  **
  ** HISTORY
  **   10.12.2005 H.Kiehl Created
+ **   14.12.2024 H.Kiehl Added 'send zero size' option.
  **
  */
 DESCR__E_M1
@@ -678,400 +679,403 @@ main(int argc, char *argv[])
             }
          }
 
-         /* Open local file. */
+         if ((db.special_flag & SEND_ZERO_SIZE) == 0)
+         {
+            /* Open local file. */
 #ifdef O_LARGEFILE
-         if ((fd = open(fullname, O_RDONLY | O_LARGEFILE)) == -1)
+            if ((fd = open(fullname, O_RDONLY | O_LARGEFILE)) == -1)
 #else
-         if ((fd = open(fullname, O_RDONLY)) == -1)
+            if ((fd = open(fullname, O_RDONLY)) == -1)
 #endif
-         {
-            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                      "Failed to open local file `%s' : %s",
-                      fullname, strerror(errno));
-            rm_dupcheck_crc(fullname, p_file_name_buffer, *p_file_size_buffer);
-            http_quit();
-            exit(OPEN_LOCAL_ERROR);
-         }
-         if (fsa->debug > NORMAL_MODE)
-         {
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                         "Failed to open local file `%s' : %s",
+                         fullname, strerror(errno));
+               rm_dupcheck_crc(fullname, p_file_name_buffer, *p_file_size_buffer);
+               http_quit();
+               exit(OPEN_LOCAL_ERROR);
+            }
+            if (fsa->debug > NORMAL_MODE)
+            {
                trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
                             "Open local file `%s'", fullname);
-         }
+            }
 
 #ifdef _OUTPUT_LOG
-         if (db.output_log == YES)
-         {
-            start_time = times(&tmsdummy);
-         }
+            if (db.output_log == YES)
+            {
+               start_time = times(&tmsdummy);
+            }
 #endif
 
-         /*
-          * When the contents does not contain a bulletin header
-          * it must be stored in the file name.
-          */
-         if (db.special_flag & FILE_NAME_IS_HEADER)
-         {
-            int  space_count;
-            char *ptr = p_file_name_buffer;
-
-            length_type_indicator = 10;
-            buffer[length_type_indicator] = 1; /* SOH */
-            buffer[length_type_indicator + 1] = '\015'; /* CR */
-            buffer[length_type_indicator + 2] = '\015'; /* CR */
-            buffer[length_type_indicator + 3] = '\012'; /* LF */
-            header_length = 4;
-            space_count = 0;
-
-            if (wmo_counter_fd > 0)
+            /*
+             * When the contents does not contain a bulletin header
+             * it must be stored in the file name.
+             */
+            if (db.special_flag & FILE_NAME_IS_HEADER)
             {
-               if (next_counter(wmo_counter_fd, wmo_counter,
-                                MAX_WMO_COUNTER) < 0)
+               int  space_count;
+               char *ptr = p_file_name_buffer;
+
+               length_type_indicator = 10;
+               buffer[length_type_indicator] = 1; /* SOH */
+               buffer[length_type_indicator + 1] = '\015'; /* CR */
+               buffer[length_type_indicator + 2] = '\015'; /* CR */
+               buffer[length_type_indicator + 3] = '\012'; /* LF */
+               header_length = 4;
+               space_count = 0;
+
+               if (wmo_counter_fd > 0)
                {
-                  close_counter_file(wmo_counter_fd, &wmo_counter);
-                  wmo_counter_fd = -1;
-                  wmo_counter = NULL;
-                  system_log(ERROR_SIGN, __FILE__, __LINE__,
-                             "Failed to get next WMO counter.");
-               }
-               else
-               {
-                  if (*wmo_counter < 10)
+                  if (next_counter(wmo_counter_fd, wmo_counter,
+                                   MAX_WMO_COUNTER) < 0)
                   {
-                     buffer[length_type_indicator + header_length] = '0';
-                     buffer[length_type_indicator + header_length + 1] = '0';
-                     buffer[length_type_indicator + header_length + 2] = *wmo_counter + '0';
+                     close_counter_file(wmo_counter_fd, &wmo_counter);
+                     wmo_counter_fd = -1;
+                     wmo_counter = NULL;
+                     system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                "Failed to get next WMO counter.");
                   }
-                  else if (*wmo_counter < 100)
-                       {
-                          buffer[length_type_indicator + header_length] = '0';
-                          buffer[length_type_indicator + header_length + 1] = (*wmo_counter / 10) + '0';
-                          buffer[length_type_indicator + header_length + 2] = (*wmo_counter % 10) + '0';
-                       }
-                  else if (*wmo_counter < 1000)
-                       {
-                          buffer[length_type_indicator + header_length] = ((*wmo_counter / 100) % 10) + '0';
-                          buffer[length_type_indicator + header_length + 1] = ((*wmo_counter / 10) % 10) + '0';
-                          buffer[length_type_indicator + header_length + 2] = (*wmo_counter % 10) + '0';
-                       }
-                  buffer[length_type_indicator + header_length + 3] = '\015'; /* CR */
-                  buffer[length_type_indicator + header_length + 4] = '\015'; /* CR */
-                  buffer[length_type_indicator + header_length + 5] = '\012'; /* LF */
-                  header_length += 6;
-               }
-            } /* if (wmo_counter_fd > 0) */
-
-            for (;;)
-            {
-               while ((*ptr != '_') && (*ptr != '-') && (*ptr != ' ') &&
-                      (*ptr != '\0') && (*ptr != '.') && (*ptr != ';'))
-               {
-                  buffer[length_type_indicator + header_length] = *ptr;
-                  header_length++; ptr++;
-               }
-               if ((*ptr == '\0') || (*ptr == '.') || (*ptr == ';'))
-               {
-                  break;
-               }
-               else
-               {
-                  if (space_count == 2)
+                  else
                   {
-                     if ((isalpha((int)(*(ptr + 1)))) &&
-                         (isalpha((int)(*(ptr + 2)))) &&
-                         (isalpha((int)(*(ptr + 3)))))
+                     if (*wmo_counter < 10)
                      {
-                        buffer[length_type_indicator + header_length] = ' ';
-                        buffer[length_type_indicator + header_length + 1] = *(ptr + 1);
-                        buffer[length_type_indicator + header_length + 2] = *(ptr + 2);
-                        buffer[length_type_indicator + header_length + 3] = *(ptr + 3);
-                        header_length += 4;
+                        buffer[length_type_indicator + header_length] = '0';
+                        buffer[length_type_indicator + header_length + 1] = '0';
+                        buffer[length_type_indicator + header_length + 2] = *wmo_counter + '0';
                      }
+                     else if (*wmo_counter < 100)
+                          {
+                             buffer[length_type_indicator + header_length] = '0';
+                             buffer[length_type_indicator + header_length + 1] = (*wmo_counter / 10) + '0';
+                             buffer[length_type_indicator + header_length + 2] = (*wmo_counter % 10) + '0';
+                          }
+                     else if (*wmo_counter < 1000)
+                          {
+                             buffer[length_type_indicator + header_length] = ((*wmo_counter / 100) % 10) + '0';
+                             buffer[length_type_indicator + header_length + 1] = ((*wmo_counter / 10) % 10) + '0';
+                             buffer[length_type_indicator + header_length + 2] = (*wmo_counter % 10) + '0';
+                          }
+                     buffer[length_type_indicator + header_length + 3] = '\015'; /* CR */
+                     buffer[length_type_indicator + header_length + 4] = '\015'; /* CR */
+                     buffer[length_type_indicator + header_length + 5] = '\012'; /* LF */
+                     header_length += 6;
+                  }
+               } /* if (wmo_counter_fd > 0) */
+
+               for (;;)
+               {
+                  while ((*ptr != '_') && (*ptr != '-') && (*ptr != ' ') &&
+                         (*ptr != '\0') && (*ptr != '.') && (*ptr != ';'))
+                  {
+                     buffer[length_type_indicator + header_length] = *ptr;
+                     header_length++; ptr++;
+                  }
+                  if ((*ptr == '\0') || (*ptr == '.') || (*ptr == ';'))
+                  {
                      break;
                   }
                   else
                   {
-                     buffer[length_type_indicator + header_length] = ' ';
-                     header_length++; ptr++; space_count++;
-                  }
-               }
-            } /* for (;;) */
-            buffer[length_type_indicator + header_length] = '\015'; /* CR */
-            buffer[length_type_indicator + header_length + 1] = '\015'; /* CR */
-            buffer[length_type_indicator + header_length + 2] = '\012'; /* LF */
-            header_length += 3;
-            end_length = 4;
-         }
-         else
-         {
-            header_length = 0;
-            end_length = 0;
-            length_type_indicator = 0;
-         }
-
-         /* Read local and write remote file. */
-         no_of_bytes = 0;
-         loops = (length_type_indicator + header_length + *p_file_size_buffer) / blocksize;
-         rest = (length_type_indicator + header_length + *p_file_size_buffer) % blocksize;
-
-         if (db.special_flag & FILE_NAME_IS_HEADER)
-         {
-            if (rest == 0)
-            {
-               loops--;
-               rest = blocksize;
-            }
-
-            /* Write length and type indicator. */
-            (void)snprintf(buffer, blocksize + 1 + 4, "%08lu",
-                           (unsigned long)(*p_file_size_buffer + header_length + end_length));
-            if (db.transfer_mode == 'I')
-            {
-               buffer[length_type_indicator - 2] = 'B';
-               buffer[length_type_indicator - 1] = 'I';
-            }
-            else if (db.transfer_mode == 'A')
-                 {
-                    buffer[length_type_indicator - 2] = 'A';
-                    buffer[length_type_indicator - 1] = 'N';
-                 }
-                 else
-                 {
-                    buffer[length_type_indicator - 2] = 'F';
-                    buffer[length_type_indicator - 1] = 'X';
-                 }
-         }
-
-         if (fsa->trl_per_process > 0)
-         {
-            init_limit_transfer_rate();
-         }
-         if (fsa->protocol_options & TIMEOUT_TRANSFER)
-         {
-            start_transfer_time_file = time(NULL);
-         }
-
-         for (;;)
-         {
-            for (j = 0; j < loops; j++)
-            {
-#ifdef _SIMULATE_SLOW_TRANSFER
-               (void)sleep(_SIMULATE_SLOW_TRANSFER);
-#endif
-               if ((status = read(fd,
-                                  (buffer + length_type_indicator + header_length),
-                                  (blocksize - length_type_indicator - header_length))) != (blocksize - length_type_indicator - header_length))
-               {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            "Could not read() local file `%s' : %s",
-                            fullname, strerror(errno));
-                  rm_dupcheck_crc(fullname, p_file_name_buffer,
-                                  *p_file_size_buffer);
-                  http_quit();
-                  exit(READ_LOCAL_ERROR);
-               }
-               if ((status = http_write(buffer, NULL, blocksize)) != SUCCESS)
-               {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            "Failed to write block from file `%s' to remote port %d [%d].",
-                            p_file_name_buffer, db.port, status);
-                  rm_dupcheck_crc(fullname, p_file_name_buffer,
-                                  *p_file_size_buffer);
-                  http_quit();
-                  exit(eval_timeout(WRITE_REMOTE_ERROR));
-               }
-               if (fsa->trl_per_process > 0)
-               {
-                  limit_transfer_rate(blocksize, fsa->trl_per_process,
-                                      clktck);
-               }
-
-               no_of_bytes += blocksize;
-
-               if (gsf_check_fsa(p_db) != NEITHER)
-               {
-                  fsa->job_status[(int)db.job_no].file_size_in_use_done = no_of_bytes;
-                  fsa->job_status[(int)db.job_no].file_size_done += blocksize;
-                  fsa->job_status[(int)db.job_no].bytes_send += blocksize;
-                  if (fsa->protocol_options & TIMEOUT_TRANSFER)
-                  {
-                     end_transfer_time_file = time(NULL);
-                     if (end_transfer_time_file < start_transfer_time_file)
+                     if (space_count == 2)
                      {
-                        start_transfer_time_file = end_transfer_time_file;
+                        if ((isalpha((int)(*(ptr + 1)))) &&
+                            (isalpha((int)(*(ptr + 2)))) &&
+                            (isalpha((int)(*(ptr + 3)))))
+                        {
+                           buffer[length_type_indicator + header_length] = ' ';
+                           buffer[length_type_indicator + header_length + 1] = *(ptr + 1);
+                           buffer[length_type_indicator + header_length + 2] = *(ptr + 2);
+                           buffer[length_type_indicator + header_length + 3] = *(ptr + 3);
+                           header_length += 4;
+                        }
+                        break;
                      }
                      else
                      {
-                        if ((end_transfer_time_file - start_transfer_time_file) > transfer_timeout)
-                        {
-                           trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-#if SIZEOF_TIME_T == 4
-                                     "Transfer timeout reached for `%s' after %ld seconds.",
-#else
-                                     "Transfer timeout reached for `%s' after %lld seconds.",
-#endif
-                                     fsa->job_status[(int)db.job_no].file_name_in_use,
-                                     (pri_time_t)(end_transfer_time_file - start_transfer_time_file));
-                           rm_dupcheck_crc(fullname, p_file_name_buffer,
-                                           *p_file_size_buffer);
-                           http_quit();
-                           exitflag = 0;
-                           exit(STILL_FILES_TO_SEND);
-                        }
+                        buffer[length_type_indicator + header_length] = ' ';
+                        header_length++; ptr++; space_count++;
                      }
                   }
-               }
-               if (length_type_indicator > 0)
-               {
-                  length_type_indicator = 0;
-                  header_length = 0;
-               }
-            } /* for (j = 0; j < loops; j++) */
-
-            if (rest > 0)
-            {
-               if ((status = read(fd,
-                                  (buffer + length_type_indicator + header_length),
-                                  (rest - length_type_indicator - header_length))) != (rest - length_type_indicator - header_length))
-               {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            "Could not read() local file `%s' : %s",
-                            fullname, strerror(errno));
-                  rm_dupcheck_crc(fullname, p_file_name_buffer,
-                                  *p_file_size_buffer);
-                  http_quit();
-                  exit(READ_LOCAL_ERROR);
-               }
-               if (end_length == 4)
-               {
-                  buffer[rest] = '\015';
-                  buffer[rest + 1] = '\015';
-                  buffer[rest + 2] = '\012';
-                  buffer[rest + 3] = 3;  /* ETX */
-               }
-               if ((status = http_write(buffer, NULL, rest + end_length)) != SUCCESS)
-               {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            "Failed to write rest of file %s to remote port %d [%d].",
-                            p_file_name_buffer, db.port, status);
-                  rm_dupcheck_crc(fullname, p_file_name_buffer,
-                                  *p_file_size_buffer);
-                  http_quit();
-                  exit(eval_timeout(WRITE_REMOTE_ERROR));
-               }
-               if (fsa->trl_per_process > 0)
-               {
-                  limit_transfer_rate(rest + end_length,
-                                      fsa->trl_per_process, clktck);
-               }
-
-               no_of_bytes += rest + end_length;
-
-               if (gsf_check_fsa(p_db) != NEITHER)
-               {
-                  fsa->job_status[(int)db.job_no].file_size_in_use_done = no_of_bytes;
-                  fsa->job_status[(int)db.job_no].file_size_done += rest;
-                  fsa->job_status[(int)db.job_no].bytes_send += rest;
-               }
-            }
-
-            /*
-             * Since there are always some users sending files to the
-             * AFD not in dot notation, lets check here if this is really
-             * the EOF.
-             * If not lets continue so long until we hopefully have reached
-             * the EOF.
-             * NOTE: This is NOT a fool proof way. There must be a better
-             *       way!
-             */
-#ifdef HAVE_STATX
-            if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
-                      STATX_SIZE, &stat_buf) == -1)
-#else
-            if (fstat(fd, &stat_buf) == -1)
-#endif
-            {
-               (void)rec(transfer_log_fd, DEBUG_SIGN,
-#ifdef HAVE_STATX
-                         "Hmmm. Failed to statx() `%s' : %s (%s %d)\n",
-#else
-                         "Hmmm. Failed to fstat() `%s' : %s (%s %d)\n",
-#endif
-                         fullname, strerror(errno), __FILE__, __LINE__);
-               break;
+               } /* for (;;) */
+               buffer[length_type_indicator + header_length] = '\015'; /* CR */
+               buffer[length_type_indicator + header_length + 1] = '\015'; /* CR */
+               buffer[length_type_indicator + header_length + 2] = '\012'; /* LF */
+               header_length += 3;
+               end_length = 4;
             }
             else
             {
-#ifdef HAVE_STATX
-               if (stat_buf.stx_size > *p_file_size_buffer)
+               header_length = 0;
+               end_length = 0;
+               length_type_indicator = 0;
+            }
+
+            /* Read local and write remote file. */
+            no_of_bytes = 0;
+            loops = (length_type_indicator + header_length + *p_file_size_buffer) / blocksize;
+            rest = (length_type_indicator + header_length + *p_file_size_buffer) % blocksize;
+
+            if (db.special_flag & FILE_NAME_IS_HEADER)
+            {
+               if (rest == 0)
+               {
+                  loops--;
+                  rest = blocksize;
+               }
+
+               /* Write length and type indicator. */
+               (void)snprintf(buffer, blocksize + 1 + 4, "%08lu",
+                              (unsigned long)(*p_file_size_buffer + header_length + end_length));
+               if (db.transfer_mode == 'I')
+               {
+                  buffer[length_type_indicator - 2] = 'B';
+                  buffer[length_type_indicator - 1] = 'I';
+               }
+               else if (db.transfer_mode == 'A')
+                    {
+                       buffer[length_type_indicator - 2] = 'A';
+                       buffer[length_type_indicator - 1] = 'N';
+                    }
+                    else
+                    {
+                       buffer[length_type_indicator - 2] = 'F';
+                       buffer[length_type_indicator - 1] = 'X';
+                    }
+            }
+
+            if (fsa->trl_per_process > 0)
+            {
+               init_limit_transfer_rate();
+            }
+            if (fsa->protocol_options & TIMEOUT_TRANSFER)
+            {
+               start_transfer_time_file = time(NULL);
+            }
+
+            for (;;)
+            {
+               for (j = 0; j < loops; j++)
+               {
+#ifdef _SIMULATE_SLOW_TRANSFER
+                  (void)sleep(_SIMULATE_SLOW_TRANSFER);
+#endif
+                  if ((status = read(fd,
+                                     (buffer + length_type_indicator + header_length),
+                                     (blocksize - length_type_indicator - header_length))) != (blocksize - length_type_indicator - header_length))
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "Could not read() local file `%s' : %s",
+                               fullname, strerror(errno));
+                     rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                     *p_file_size_buffer);
+                     http_quit();
+                     exit(READ_LOCAL_ERROR);
+                  }
+                  if ((status = http_write(buffer, NULL, blocksize)) != SUCCESS)
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "Failed to write block from file `%s' to remote port %d [%d].",
+                               p_file_name_buffer, db.port, status);
+                     rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                     *p_file_size_buffer);
+                     http_quit();
+                     exit(eval_timeout(WRITE_REMOTE_ERROR));
+                  }
+                  if (fsa->trl_per_process > 0)
+                  {
+                     limit_transfer_rate(blocksize, fsa->trl_per_process,
+                                         clktck);
+                  }
+
+                  no_of_bytes += blocksize;
+
+                  if (gsf_check_fsa(p_db) != NEITHER)
+                  {
+                     fsa->job_status[(int)db.job_no].file_size_in_use_done = no_of_bytes;
+                     fsa->job_status[(int)db.job_no].file_size_done += blocksize;
+                     fsa->job_status[(int)db.job_no].bytes_send += blocksize;
+                     if (fsa->protocol_options & TIMEOUT_TRANSFER)
+                     {
+                        end_transfer_time_file = time(NULL);
+                        if (end_transfer_time_file < start_transfer_time_file)
+                        {
+                           start_transfer_time_file = end_transfer_time_file;
+                        }
+                        else
+                        {
+                           if ((end_transfer_time_file - start_transfer_time_file) > transfer_timeout)
+                           {
+                              trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+#if SIZEOF_TIME_T == 4
+                                        "Transfer timeout reached for `%s' after %ld seconds.",
 #else
-               if (stat_buf.st_size > *p_file_size_buffer)
+                                        "Transfer timeout reached for `%s' after %lld seconds.",
+#endif
+                                        fsa->job_status[(int)db.job_no].file_name_in_use,
+                                        (pri_time_t)(end_transfer_time_file - start_transfer_time_file));
+                              rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                              *p_file_size_buffer);
+                              http_quit();
+                              exitflag = 0;
+                              exit(STILL_FILES_TO_SEND);
+                           }
+                        }
+                     }
+                  }
+                  if (length_type_indicator > 0)
+                  {
+                     length_type_indicator = 0;
+                     header_length = 0;
+                  }
+               } /* for (j = 0; j < loops; j++) */
+
+               if (rest > 0)
+               {
+                  if ((status = read(fd,
+                                     (buffer + length_type_indicator + header_length),
+                                     (rest - length_type_indicator - header_length))) != (rest - length_type_indicator - header_length))
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "Could not read() local file `%s' : %s",
+                               fullname, strerror(errno));
+                     rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                     *p_file_size_buffer);
+                     http_quit();
+                     exit(READ_LOCAL_ERROR);
+                  }
+                  if (end_length == 4)
+                  {
+                     buffer[rest] = '\015';
+                     buffer[rest + 1] = '\015';
+                     buffer[rest + 2] = '\012';
+                     buffer[rest + 3] = 3;  /* ETX */
+                  }
+                  if ((status = http_write(buffer, NULL, rest + end_length)) != SUCCESS)
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "Failed to write rest of file %s to remote port %d [%d].",
+                               p_file_name_buffer, db.port, status);
+                     rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                     *p_file_size_buffer);
+                     http_quit();
+                     exit(eval_timeout(WRITE_REMOTE_ERROR));
+                  }
+                  if (fsa->trl_per_process > 0)
+                  {
+                     limit_transfer_rate(rest + end_length,
+                                         fsa->trl_per_process, clktck);
+                  }
+
+                  no_of_bytes += rest + end_length;
+
+                  if (gsf_check_fsa(p_db) != NEITHER)
+                  {
+                     fsa->job_status[(int)db.job_no].file_size_in_use_done = no_of_bytes;
+                     fsa->job_status[(int)db.job_no].file_size_done += rest;
+                     fsa->job_status[(int)db.job_no].bytes_send += rest;
+                  }
+               }
+
+               /*
+                * Since there are always some users sending files to the
+                * AFD not in dot notation, lets check here if this is really
+                * the EOF.
+                * If not lets continue so long until we hopefully have reached
+                * the EOF.
+                * NOTE: This is NOT a fool proof way. There must be a better
+                *       way!
+                */
+#ifdef HAVE_STATX
+               if (statx(fd, "", AT_STATX_SYNC_AS_STAT | AT_EMPTY_PATH,
+                         STATX_SIZE, &stat_buf) == -1)
+#else
+               if (fstat(fd, &stat_buf) == -1)
 #endif
                {
-                  char *sign;
-
-                  if (db.special_flag & SILENT_NOT_LOCKED_FILE)
-                  {
-                     sign = DEBUG_SIGN;
-                  }
-                  else
-                  {
-                     sign = WARN_SIGN;
-                  }
+                  (void)rec(transfer_log_fd, DEBUG_SIGN,
 #ifdef HAVE_STATX
-                  loops = (stat_buf.stx_size - *p_file_size_buffer) / blocksize;
-                  rest = (stat_buf.stx_size - *p_file_size_buffer) % blocksize;
-                  *p_file_size_buffer = stat_buf.stx_size;
+                            "Hmmm. Failed to statx() `%s' : %s (%s %d)\n",
 #else
-                  loops = (stat_buf.st_size - *p_file_size_buffer) / blocksize;
-                  rest = (stat_buf.st_size - *p_file_size_buffer) % blocksize;
-                  *p_file_size_buffer = stat_buf.st_size;
+                            "Hmmm. Failed to fstat() `%s' : %s (%s %d)\n",
 #endif
-
-                  /*
-                   * Give a warning in the system log, so some action
-                   * can be taken against the originator.
-                   */
-                  receive_log(sign, __FILE__, __LINE__, 0L, db.id.job,
-                              "File `%s' for host %s was DEFINITELY send without any locking. #%x",
-                              p_file_name_buffer, fsa->host_dsp_name, db.id.job);
+                            fullname, strerror(errno), __FILE__, __LINE__);
+                  break;
                }
                else
                {
-                  break;
-               }
-            }
-         } /* for (;;) */
-
-         if (fsa->debug > NORMAL_MODE)
-         {
-               trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-#if SIZEOF_OFF_T == 4
-                            "Wrote %ld bytes", (pri_off_t)no_of_bytes);
+#ifdef HAVE_STATX
+                  if (stat_buf.stx_size > *p_file_size_buffer)
 #else
-                            "Wrote %lld bytes", (pri_off_t)no_of_bytes);
+                  if (stat_buf.st_size > *p_file_size_buffer)
 #endif
-         }
+                  {
+                     char *sign;
+
+                     if (db.special_flag & SILENT_NOT_LOCKED_FILE)
+                     {
+                        sign = DEBUG_SIGN;
+                     }
+                     else
+                     {
+                        sign = WARN_SIGN;
+                     }
+#ifdef HAVE_STATX
+                     loops = (stat_buf.stx_size - *p_file_size_buffer) / blocksize;
+                     rest = (stat_buf.stx_size - *p_file_size_buffer) % blocksize;
+                     *p_file_size_buffer = stat_buf.stx_size;
+#else
+                     loops = (stat_buf.st_size - *p_file_size_buffer) / blocksize;
+                     rest = (stat_buf.st_size - *p_file_size_buffer) % blocksize;
+                     *p_file_size_buffer = stat_buf.st_size;
+#endif
+
+                     /*
+                      * Give a warning in the system log, so some action
+                      * can be taken against the originator.
+                      */
+                     receive_log(sign, __FILE__, __LINE__, 0L, db.id.job,
+                                 "File `%s' for host %s was DEFINITELY send without any locking. #%x",
+                                 p_file_name_buffer, fsa->host_dsp_name, db.id.job);
+                  }
+                  else
+                  {
+                     break;
+                  }
+               }
+            } /* for (;;) */
+
+            if (fsa->debug > NORMAL_MODE)
+            {
+                  trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+#if SIZEOF_OFF_T == 4
+                               "Wrote %ld bytes", (pri_off_t)no_of_bytes);
+#else
+                               "Wrote %lld bytes", (pri_off_t)no_of_bytes);
+#endif
+            }
 
 #ifdef _OUTPUT_LOG
-         if (db.output_log == YES)
-         {
-            end_time = times(&tmsdummy);
-         }
+            if (db.output_log == YES)
+            {
+               end_time = times(&tmsdummy);
+            }
 #endif
-         /* Close local file. */
-         if (close(fd) == -1)
-         {
-            (void)rec(transfer_log_fd, WARN_SIGN,
-                      "%-*s[%c]: Failed to close() local file %s : %s (%s %d)\n",
-                      MAX_HOSTNAME_LENGTH, tr_hostname, db.job_no + '0',
-                      p_file_name_buffer, strerror(errno),
-                      __FILE__, __LINE__);
-            /*
-             * Since we usually do not send more then 100 files and
-             * sf_http() will exit(), there is no point in stopping
-             * the transmission.
-             */
-         }
+            /* Close local file. */
+            if (close(fd) == -1)
+            {
+               (void)rec(transfer_log_fd, WARN_SIGN,
+                         "%-*s[%c]: Failed to close() local file %s : %s (%s %d)\n",
+                         MAX_HOSTNAME_LENGTH, tr_hostname, db.job_no + '0',
+                         p_file_name_buffer, strerror(errno),
+                         __FILE__, __LINE__);
+               /*
+                * Since we usually do not send more then 100 files and
+                * sf_http() will exit(), there is no point in stopping
+                * the transmission.
+                */
+            }
+         } /* ((db.special_flag & SEND_ZERO_SIZE) == 0) */
 
          if ((status = http_put_response()) != SUCCESS)
          {
@@ -1560,8 +1564,16 @@ sf_http_exit(void)
                                 " [BURST * %u]", burst_2_counter);
               }
 #endif /* _WITH_BURST_2 */
-         trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s #%x",
-                   buffer, db.id.job);
+         if ((db.special_flag & SEND_ZERO_SIZE) == 0)
+         {
+            trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s #%x",
+                      buffer, db.id.job);
+         }
+         else
+         {
+            trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "[Zero size] %s #%x",
+                      buffer, db.id.job);
+         }
       }
       reset_fsa((struct job *)&db, exitflag, 0, 0);
       fsa_detach_pos(db.fsa_pos);

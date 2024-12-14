@@ -1,6 +1,6 @@
 /*
  *  check_burst_sf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -353,8 +353,16 @@ check_burst_sf(char         *file_path,
                                       " [BURST * %u]", (burst_2_counter - 1));
                        burst_2_counter = 1;
                     }
-               trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s #%x",
-                         msg_str, db.id.job);
+               if ((db.special_flag & SEND_ZERO_SIZE) == 0)
+               {
+                  trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s #%x",
+                            msg_str, db.id.job);
+               }
+               else
+               {
+                  trans_log(INFO_SIGN, NULL, 0, NULL, NULL,
+                            "[Zero size] %s #%x", msg_str, db.id.job);
+               }
             }
 #endif
             (void)alarm(alarm_sleep_time);

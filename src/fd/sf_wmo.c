@@ -1,6 +1,6 @@
 /*
  *  sf_wmo.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2024 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -63,6 +63,7 @@ DESCR__S_M1
  **   08.07.2000 H.Kiehl Cleaned up log output to reduce code size.
  **   13.06.2004 H.Kiehl Added transfer rate limit.
  **   22.01.2005 H.Kiehl Added burst2.
+ **   14.12.2024 H.Kiehl Added 'send zero size' option.
  **
  */
 DESCR__E_M1
@@ -473,7 +474,8 @@ main(int argc, char *argv[])
          {
 # endif
 #endif
-         if (*p_file_size_buffer > 0)
+         if ((*p_file_size_buffer > 0) &&
+             ((db.special_flag & SEND_ZERO_SIZE) == 0))
          {
             int end_length = 0,
                 header_length = 0,
@@ -888,9 +890,12 @@ main(int argc, char *argv[])
          }
          else
          {
-            trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-                      "File `%s' is of zero length, ignoring.",
-                      p_file_name_buffer);
+            if ((db.special_flag & SEND_ZERO_SIZE) == 0)
+            {
+               trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                         "File `%s' is of zero length, ignoring.",
+                         p_file_name_buffer);
+            }
          }
 
          /* Update FSA, one file transmitted. */
@@ -1310,7 +1315,16 @@ sf_wmo_exit(void)
                                 " [BURST * %u]", burst_2_counter);
               }
 #endif /* _WITH_BURST_2 */
-         trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s #%x", buffer, db.id.job);
+         if ((db.special_flag & SEND_ZERO_SIZE) == 0)
+         {
+            trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s #%x",
+                      buffer, db.id.job);
+         }
+         else
+         {
+            trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "[Zero size] %s #%x",
+                      buffer, db.id.job);
+         }
       }
       reset_fsa((struct job *)&db, exitflag, 0, 0);
       fsa_detach_pos(db.fsa_pos);
