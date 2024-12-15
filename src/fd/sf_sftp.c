@@ -61,6 +61,7 @@ DESCR__S_M1
  **   03.01.2006 H.Kiehl Created
  **   06.07.2019 H.Kiehl Added trans_srename support.
  **   14.12.2024 H.Kiehl Added 'send zero size' option.
+ **   15.12.2024 H.Kiehl Added name2dir option.
  **
  */
 DESCR__E_M1
@@ -1674,42 +1675,51 @@ main(int argc, char *argv[])
          if ((db.lock == DOT) || (db.lock == POSTFIX) || (db.lock == DOT_VMS) ||
              (db.special_flag & SEQUENCE_LOCKING) ||
              (db.special_flag & UNIQUE_LOCKING) ||
-             (db.trans_rename_rule[0] != '\0'))
+             (db.trans_rename_rule[0] != '\0') || (db.name2dir_char != '\0'))
          {
             *p_remote_filename = '\0';
             if (db.lock == DOT_VMS)
             {
                (void)strcat(p_final_filename, DOT_NOTATION);
             }
-            if (db.trans_rename_rule[0] != '\0')
+            if (db.name2dir_char == '\0')
             {
-               register int k;
-
-               for (k = 0; k < rule[db.trans_rule_pos].no_of_rules; k++)
+               if (db.trans_rename_rule[0] != '\0')
                {
-                  if (pmatch(rule[db.trans_rule_pos].filter[k],
-                             p_final_filename, NULL) == 0)
+                  register int k;
+
+                  for (k = 0; k < rule[db.trans_rule_pos].no_of_rules; k++)
                   {
-                     change_name(p_final_filename,
-                                 rule[db.trans_rule_pos].filter[k],
-                                 rule[db.trans_rule_pos].rename_to[k],
-                                 p_remote_filename,
-                                 (MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH) - (p_remote_filename - remote_filename),
-                                 &counter_fd, &unique_counter, db.id.job);
-                     break;
+                     if (pmatch(rule[db.trans_rule_pos].filter[k],
+                                p_final_filename, NULL) == 0)
+                     {
+                        change_name(p_final_filename,
+                                    rule[db.trans_rule_pos].filter[k],
+                                    rule[db.trans_rule_pos].rename_to[k],
+                                    p_remote_filename,
+                                    (MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH) - (p_remote_filename - remote_filename),
+                                    &counter_fd, &unique_counter, db.id.job);
+                        break;
+                     }
                   }
                }
-            }
-            else if (db.cn_filter != NULL)
-                 {
-                    if (pmatch(db.cn_filter, p_final_filename, NULL) == 0)
+               else if (db.cn_filter != NULL)
                     {
-                       change_name(p_final_filename, db.cn_filter,
-                                   db.cn_rename_to, p_remote_filename,
-                                   (MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH) - (p_remote_filename - remote_filename),
-                                   &counter_fd, &unique_counter, db.id.job);
+                       if (pmatch(db.cn_filter, p_final_filename, NULL) == 0)
+                       {
+                          change_name(p_final_filename, db.cn_filter,
+                                      db.cn_rename_to, p_remote_filename,
+                                      (MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH) - (p_remote_filename - remote_filename),
+                                      &counter_fd, &unique_counter, db.id.job);
+                       }
                     }
-                 }
+            }
+            else
+            {
+               name2dir(db.name2dir_char, p_final_filename, p_remote_filename,
+                        (MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH) -
+                        (p_remote_filename - remote_filename));
+            }
 
             if (*p_remote_filename == '\0')
             {
@@ -1952,7 +1962,7 @@ main(int argc, char *argv[])
                {
                   (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
                   if ((db.trans_rename_rule[0] != '\0') ||
-                      (db.cn_filter != NULL))
+                      (db.cn_filter != NULL) || (db.name2dir_char != '\0'))
                   {
                      *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
                                                                      MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
@@ -2008,7 +2018,7 @@ main(int argc, char *argv[])
                {
                   (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
                   if ((db.trans_rename_rule[0] != '\0') ||
-                      (db.cn_filter != NULL))
+                      (db.cn_filter != NULL) || (db.name2dir_char != '\0'))
                   {
                      *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
                                                                      MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
@@ -2077,7 +2087,7 @@ try_again_unlink:
             {
                (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
                if ((db.trans_rename_rule[0] != '\0') ||
-                   (db.cn_filter != NULL))
+                   (db.cn_filter != NULL) || (db.name2dir_char != '\0'))
                {
                   *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
                                                                   MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,

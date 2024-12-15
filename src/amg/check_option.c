@@ -344,6 +344,23 @@ check_option(char *option, FILE *cmd_fp)
               return(INCORRECT);
            }
         }
+   else if ((CHECK_STRNCMP(option, NAME2DIR_ID, NAME2DIR_ID_LENGTH) == 0) &&
+            ((*(option + NAME2DIR_ID_LENGTH) == ' ') ||
+             (*(option + NAME2DIR_ID_LENGTH) == '\t')))
+        {
+           ptr += NAME2DIR_ID_LENGTH + 1;
+           while ((*ptr == ' ') || (*ptr == '\t'))
+           {
+              ptr++;
+           }
+           if (*ptr == '\0')
+           {
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No %s seperator character specified.",
+                            NAME2DIR_ID);
+              return(INCORRECT);
+           }
+        }
    else if ((CHECK_STRNCMP(option, TRANS_SRENAME_ID,
                            TRANS_SRENAME_ID_LENGTH) == 0) &&
             ((*(option + TRANS_SRENAME_ID_LENGTH) == ' ') ||

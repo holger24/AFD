@@ -147,6 +147,7 @@ init_sf(int argc, char *argv[], char *file_path, int protocol)
    db.special_ptr = NULL;
    db.subject = NULL;
    db.exec_cmd = NULL;
+   db.name2dir_char = '\0';
    db.group_mail_domain = NULL;
 #ifdef _WITH_TRANS_EXEC
    db.trans_exec_cmd = NULL;

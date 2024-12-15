@@ -1274,6 +1274,8 @@ typedef unsigned long       u_long_64;
 #define AGEING_ID_LENGTH                 (sizeof(AGEING_ID) - 1)
 #define SEND_ZERO_SIZE_ID                "send zero size"
 #define SEND_ZERO_SIZE_ID_LENGTH         (sizeof(SEND_ZERO_SIZE_ID) - 1)
+#define NAME2DIR_ID                      "name2dir"
+#define NAME2DIR_ID_LENGTH               (sizeof(NAME2DIR_ID) - 1)
 
 /* Definitions for ageing. */
 #define DEFAULT_AGEING                   5

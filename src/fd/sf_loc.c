@@ -66,6 +66,7 @@ DESCR__S_M1
  **   15.09.2014 H.Kiehl Added simulation mode.
  **   06.07.2019 H.Kiehl Added trans_srename support.
  **   15.06.2024 H.Kiehl Always print the full final name with path.
+ **   15.12.2024 H.Kiehl Added name2dir option.
  **
  */
 DESCR__E_M1
@@ -721,35 +722,43 @@ main(int argc, char *argv[])
                                 p_file_name_buffer, MAX_FILENAME_LENGTH);
             }
 
-            if (db.trans_rename_rule[0] != '\0')
+            if (db.name2dir_char == '\0')
             {
-               register int k;
-   
-               for (k = 0; k < rule[db.trans_rule_pos].no_of_rules; k++)
+               if (db.trans_rename_rule[0] != '\0')
                {
-                  if (pmatch(rule[db.trans_rule_pos].filter[k],
-                             p_file_name_buffer, NULL) == 0)
+                  register int k;
+   
+                  for (k = 0; k < rule[db.trans_rule_pos].no_of_rules; k++)
                   {
-                     change_name(p_file_name_buffer,
-                                 rule[db.trans_rule_pos].filter[k],
-                                 rule[db.trans_rule_pos].rename_to[k],
-                                 p_ff_name,
-                                 MAX_PATH_LENGTH - (p_ff_name - ff_name),
-                                 &counter_fd, &unique_counter, db.id.job);
-                     break;
+                     if (pmatch(rule[db.trans_rule_pos].filter[k],
+                                p_file_name_buffer, NULL) == 0)
+                     {
+                        change_name(p_file_name_buffer,
+                                    rule[db.trans_rule_pos].filter[k],
+                                    rule[db.trans_rule_pos].rename_to[k],
+                                    p_ff_name,
+                                    MAX_PATH_LENGTH - (p_ff_name - ff_name),
+                                    &counter_fd, &unique_counter, db.id.job);
+                        break;
+                     }
                   }
                }
-            }
-            else if (db.cn_filter != NULL)
-                 {
-                    if (pmatch(db.cn_filter, p_file_name_buffer, NULL) == 0)
+               else if (db.cn_filter != NULL)
                     {
-                       change_name(p_file_name_buffer, db.cn_filter,
-                                   db.cn_rename_to, p_ff_name,
-                                   MAX_PATH_LENGTH - (p_ff_name - ff_name),
-                                   &counter_fd, &unique_counter, db.id.job);
+                       if (pmatch(db.cn_filter, p_file_name_buffer, NULL) == 0)
+                       {
+                          change_name(p_file_name_buffer, db.cn_filter,
+                                      db.cn_rename_to, p_ff_name,
+                                      MAX_PATH_LENGTH - (p_ff_name - ff_name),
+                                      &counter_fd, &unique_counter, db.id.job);
+                       }
                     }
-                 }
+            }
+            else
+            {
+               name2dir(db.name2dir_char, p_file_name_buffer, p_ff_name,
+                        MAX_PATH_LENGTH - (p_ff_name - ff_name));
+            }
 
 #ifdef _OUTPUT_LOG
             if (db.output_log == YES)

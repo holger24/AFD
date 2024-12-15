@@ -189,7 +189,7 @@ static char *store_mail_address(char *, char **, char *, unsigned int);
 #define REMOTE_HARDLINK_FLAG        8192
 #define REMOTE_SYMLINK_FLAG         16384
 #define SEND_ZERO_SIZE_FLAG         32768
-
+#define NAME2DIR_FLAG               65536
 
 #define MAX_HUNK                    4096
 
@@ -570,6 +570,21 @@ eval_message(char *message_name, struct job *p_db)
                     {
                        ptr++;
                     }
+                    while (*ptr == '\n')
+                    {
+                       ptr++;
+                    }
+                 }
+            else if (((used2 & NAME2DIR_FLAG) == 0) &&
+                     (CHECK_STRNCMP(ptr, NAME2DIR_ID, NAME2DIR_ID_LENGTH) == 0))
+                 {
+                    used2 |= NAME2DIR_FLAG;
+                    ptr += NAME2DIR_ID_LENGTH;
+                    while ((*ptr == ' ') || (*ptr == '\t'))
+                    {
+                       ptr++;
+                    }
+                    p_db->name2dir_char = *ptr;
                     while (*ptr == '\n')
                     {
                        ptr++;

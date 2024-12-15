@@ -1,6 +1,6 @@
 /*
  *  sf_ftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2024 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -80,6 +80,7 @@ DESCR__S_M1
  **   18.02.2023 H.Kiehl Add option 'OPTS UTF8 ON' for windows FTP
  **                      server.
  **   14.12.2024 H.Kiehl Added 'send zero size' option.
+ **   15.12.2024 H.Kiehl Added name2dir option.
  **
  */
 DESCR__E_M1
@@ -1477,38 +1478,47 @@ main(int argc, char *argv[])
 # endif
 #endif
 
-         if ((db.trans_rename_rule[0] != '\0') || (db.cn_filter != NULL))
+         if ((db.trans_rename_rule[0] != '\0') || (db.cn_filter != NULL) ||
+             (db.name2dir_char != '\0'))
          {
             char tmp_initial_filename[MAX_PATH_LENGTH];
 
             tmp_initial_filename[0] = '\0';
-            if (db.trans_rename_rule[0] != '\0')
+            if (db.name2dir_char == '\0')
             {
-               register int k;
-
-               for (k = 0; k < rule[db.trans_rule_pos].no_of_rules; k++)
+               if (db.trans_rename_rule[0] != '\0')
                {
-                  if (pmatch(rule[db.trans_rule_pos].filter[k],
-                             p_file_name_buffer, NULL) == 0)
+                  register int k;
+
+                  for (k = 0; k < rule[db.trans_rule_pos].no_of_rules; k++)
                   {
-                     change_name(p_file_name_buffer,
-                                 rule[db.trans_rule_pos].filter[k],
-                                 rule[db.trans_rule_pos].rename_to[k],
-                                 tmp_initial_filename, MAX_PATH_LENGTH,
-                                 &counter_fd, &unique_counter, db.id.job);
-                     break;
+                     if (pmatch(rule[db.trans_rule_pos].filter[k],
+                                p_file_name_buffer, NULL) == 0)
+                     {
+                        change_name(p_file_name_buffer,
+                                    rule[db.trans_rule_pos].filter[k],
+                                    rule[db.trans_rule_pos].rename_to[k],
+                                    tmp_initial_filename, MAX_PATH_LENGTH,
+                                    &counter_fd, &unique_counter, db.id.job);
+                        break;
+                     }
+                  }
+               }
+               else
+               {
+                  if (pmatch(db.cn_filter, p_file_name_buffer, NULL) == 0)
+                  {
+                     change_name(p_file_name_buffer, db.cn_filter,
+                                 db.cn_rename_to, tmp_initial_filename,
+                                 MAX_PATH_LENGTH, &counter_fd, &unique_counter,
+                                 db.id.job);
                   }
                }
             }
             else
             {
-               if (pmatch(db.cn_filter, p_file_name_buffer, NULL) == 0)
-               {
-                  change_name(p_file_name_buffer, db.cn_filter,
-                              db.cn_rename_to, tmp_initial_filename,
-                              MAX_PATH_LENGTH, &counter_fd, &unique_counter,
-                              db.id.job);
-               }
+               name2dir(db.name2dir_char, p_file_name_buffer,
+                        tmp_initial_filename, MAX_PATH_LENGTH);
             }
             if (tmp_initial_filename[0] == '\0')
             {
@@ -3299,7 +3309,7 @@ main(int argc, char *argv[])
                {
                   (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
                   if ((db.trans_rename_rule[0] != '\0') ||
-                      (db.cn_filter != NULL))
+                      (db.cn_filter != NULL) || (db.name2dir_char != '\0'))
                   {
                      *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
                                                                      MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
@@ -3355,7 +3365,7 @@ main(int argc, char *argv[])
                {
                   (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
                   if ((db.trans_rename_rule[0] != '\0') ||
-                      (db.cn_filter != NULL))
+                      (db.cn_filter != NULL) || (db.name2dir_char != '\0'))
                   {
                      *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
                                                                      MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
@@ -3424,7 +3434,7 @@ try_again_unlink:
             {
                (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
                if ((db.trans_rename_rule[0] != '\0') ||
-                   (db.cn_filter != NULL))
+                   (db.cn_filter != NULL) || (db.name2dir_char != '\0'))
                {
                   *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
                                                                   MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,

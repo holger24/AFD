@@ -776,6 +776,7 @@ check_burst_sf(char         *file_path,
 #ifdef _OUTPUT_LOG
                p_new_db->output_log               = YES;
 #endif
+               p_new_db->name2dir_char            = '\0';
                p_new_db->lock                     = DEFAULT_LOCK;
                p_new_db->http_proxy[0]            = '\0';
                p_new_db->smtp_server[0]           = '\0';

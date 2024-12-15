@@ -1401,6 +1401,7 @@ section. Valid options can be taken from the following table:
    <th>sftp</th>
    <th>scp</th>
    <th>exec</th>
+   <th>http</th>
 </tr>
 <tr>
    <td><a name="priority">priority x</a></td>
@@ -1415,11 +1416,13 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td align=center>X</td>
    <td align=center>X</td>
+   <td align=center>X</td>
 </tr>
 <tr>
    <td><a name="delete">delete</a></td>
    <td>Deletes all files.</td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -1496,6 +1499,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="time_no_collect">time no collect &lt;min hour dom month dow&gt;</a></td>
@@ -1503,6 +1507,7 @@ section. Valid options can be taken from the following table:
        will be collected (these will be deleted) outside the given time
        frames. The number of time no collect option is not limited.</td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -1520,6 +1525,7 @@ section. Valid options can be taken from the following table:
        in /usr/share/zoneinfo, /usr/lib/zoneinfo, /usr/share/lib/zoneinfo,
        ...</td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -1546,6 +1552,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="extension">extension[ overwrite]</a></td>
@@ -1564,11 +1571,13 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="prefix_add">prefix add xx</td>
    <td>Adds a prefix to the file name.</td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -1591,6 +1600,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <th width="30%">Option name</th>
@@ -1604,6 +1614,7 @@ section. Valid options can be taken from the following table:
    <th>sftp</th>
    <th>scp</th>
    <th>exec</th>
+   <th>http</th>
 </tr>
 <tr>
    <td><a name="toupper">toupper</a></td>
@@ -1617,11 +1628,13 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="tolower">tolower</a></td>
    <td>Convert all letters of the file name to lower case.</td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -1650,11 +1663,13 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="mirror_source">mirror source</a></td>
    <td>Deletes all files from destination not found in source.</td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -1685,6 +1700,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="rename">rename &lt;rule&gt; [overwrite] [with_path]</a></td>
@@ -1698,6 +1714,7 @@ section. Valid options can be taken from the following table:
        (MAX_RULE_HEADER_LENGTH) characters.
    </td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -1731,6 +1748,7 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td align=center>X</td>
 </tr>
 <tr>
    <td><a name="trans_rename">trans_rename &lt;rule&gt; [primary_only|secondary_only|dupcheck[see dupcheck options]]</a></td>
@@ -1754,6 +1772,27 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td align=center>X</td>
+</tr>
+<tr>
+   <td><a name="name2dir">name2dir &lt;character&gt;</a></td>
+   <td>The file name will be used to put the file into a directory
+       by replacing all &lt;character&gt; in the original name
+       with a /. If it should create the directory either
+       <a href="dir_config.html#create_target_dir">create target dir</a> or
+       <a href="afd_config.html#create_target_dir">CREATE TARGET DIR</a>
+       must be set.
+   </td>
+   <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
+   <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
+   <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
+   <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
+   <td align=center>X</td>
 </tr>
 <tr>
    <td><a name="force_copy">force copy</a></td>
@@ -1765,6 +1804,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -1789,6 +1829,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="chmod">chmod mode</a></td>
@@ -1809,6 +1850,7 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td align=center>X</td>
    <td align=center>X</td>
+   <td align=center>X</td>
 </tr>
 <tr>
    <td><a name="hardlink">hardlink &lt;newname_1&gt;[ &lt;newname_n&gt;] </a></td>
@@ -1823,6 +1865,7 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="symlink">symlink &lt;newname_1&gt;[ &lt;newname_n&gt;] </a></td>
@@ -1835,6 +1878,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
 </tr>
@@ -1852,6 +1896,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -1883,6 +1928,7 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td align=center>X</td>
 </tr>
 <tr>
    <td><a name="do_not_create_target_dir">do not create target dir</a></td>
@@ -1899,6 +1945,7 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td align=center>X</td>
 </tr>
 <tr>
    <th width="30%">Option name</th>
@@ -1912,6 +1959,7 @@ section. Valid options can be taken from the following table:
    <th>sftp</th>
    <th>scp</th>
    <th>exec</th>
+   <th>http</th>
 </tr>
 <tr>
    <td><a name="tiff2gts">tiff2gts</a></td>
@@ -1925,11 +1973,13 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="gts2tiff">gts2tiff</a></td>
    <td>Converts T4-GTS files to TIFF-files.</td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -1985,6 +2035,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="grib2wmo">grib2wmo[ CCCC]</a></td>
@@ -1993,6 +2044,7 @@ section. Valid options can be taken from the following table:
        type indicator. You can optionally supply the CCCC if you
        do wish to overrule the one from the GRIB.</td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -2025,12 +2077,14 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td>afw2wmo</td>
    <td>afw2wmo will convert the old AFW format used at DWD to WMO
        bulletin format.</td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -2133,6 +2187,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <th width="30%">Option name</th>
@@ -2146,6 +2201,7 @@ section. Valid options can be taken from the following table:
    <th>sftp</th>
    <th>scp</th>
    <th>exec</th>
+   <th>http</th>
 </tr>
 <tr>
    <td><a name="convert">convert &lt;type&gt;</a></td>
@@ -2238,6 +2294,7 @@ section. Valid options can be taken from the following table:
       </table>
    </td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -2353,6 +2410,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <th width="30%">Option name</th>
@@ -2366,6 +2424,7 @@ section. Valid options can be taken from the following table:
    <th>sftp</th>
    <th>scp</th>
    <th>exec</th>
+   <th>http</th>
 </tr>
 <tr>
    <td><a name="exec">exec [-d|-D|-l|-L|-s|-t] &lt;command&gt;</a></td>
@@ -2406,12 +2465,14 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td>execd &lt;command&gt;</td>
    <td>Same as the exec option above, but deletes the original file
        after executing the command.</td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -2428,6 +2489,7 @@ section. Valid options can be taken from the following table:
        deleted. This only works if no %s is found in the command string,
        otherwise it will behave just like the exec option.</td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -2468,6 +2530,7 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td align=center>X</td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="lock">[u]lock &lt;type&gt;</a></td>
@@ -2518,6 +2581,7 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td align=center>X</td>
 </tr>
 <tr>
    <td><a name="lockp">lockp .zz</a></td>
@@ -2533,6 +2597,7 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td align=center>X</td>
 </tr>
 <tr>
    <td><a name="sequence_locking">sequence locking</a></td>
@@ -2554,6 +2619,7 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <th width="30%">Option name</th>
@@ -2567,6 +2633,7 @@ section. Valid options can be taken from the following table:
    <th>sftp</th>
    <th>scp</th>
    <th>exec</th>
+   <th>http</th>
 </tr>
 <tr>
    <td><a name="archive">archive x[d|h|m|s]</a></td>
@@ -2604,10 +2671,12 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td align=center>X</td>
    <td align=center>X</td>
+   <td align=center>X</td>
 </tr>
 <tr>
    <td><a name="age-limit">age-limit x</a></td>
    <td>Files older then x seconds will not get send. They will be removed.</td>
+   <td align=center>X</td>
    <td align=center>X</td>
    <td align=center>X</td>
    <td align=center>X</td>
@@ -2638,6 +2707,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="match_size">match size</a></td>
@@ -2653,6 +2723,7 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="silent_not_locked">silent not locked</a></td>
@@ -2660,6 +2731,7 @@ section. Valid options can be taken from the following table:
        without locking. The warn sign is changed to a debug sign.</td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td align=center>X</td>
    <td align=center>X</td>
    <td align=center>X</td>
    <td align=center>X</td>
@@ -2681,6 +2753,7 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td align=center>X</td>
    <td align=center>X</td>
+   <td align=center>X</td>
 </tr>
 <tr>
    <td><a name="file_name_is_subject">file name is subject</a></td>
@@ -2690,6 +2763,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -2712,6 +2786,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="file_name_is_target">file name is target[ &lt;rename rule name&gt;]</a></td>
@@ -2724,6 +2799,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -2750,6 +2826,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="attach_file">attach file[ &lt;rename rule name&gt;]</a></td>
@@ -2763,6 +2840,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -2786,6 +2864,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="show_all_group_members">show all group members</a></td>
@@ -2796,6 +2875,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -2816,6 +2896,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <th width="30%">Option name</th>
@@ -2829,6 +2910,7 @@ section. Valid options can be taken from the following table:
    <th>sftp</th>
    <th>scp</th>
    <th>exec</th>
+   <th>http</th>
 </tr>
 <tr>
    <td><a name="subject_file">subject &lt;full path to subject file&gt;[ &lt;rename rule name&gt;]</a></td>
@@ -2840,6 +2922,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -2892,6 +2975,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="from">from &lt;mail address&gt;</a></td>
@@ -2905,6 +2989,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -2928,6 +3013,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="group-to">group-to &lt;mail address&gt;</a></td>
@@ -2937,6 +3023,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -2952,6 +3039,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -2987,6 +3075,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="encode_ansi">encode ansi</a></td>
@@ -2997,6 +3086,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -3015,6 +3105,7 @@ section. Valid options can be taken from the following table:
    <th>sftp</th>
    <th>scp</th>
    <th>exec</th>
+   <th>http</th>
 </tr>
 <tr>
    <td><a name="file_name_is_header">file name is header</a></td>
@@ -3030,6 +3121,7 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td align=center>X</td>
    <td><pre>&nbsp;</pre></td>
+   <td align=center>X</td>
 </tr>
 <tr>
    <td><a name="sequence_numbering">sequence numbering</a></td>
@@ -3040,6 +3132,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -3061,6 +3154,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="mode">mode &lt;active | passive&gt;</a></td>
@@ -3079,6 +3173,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="login_site">login site &lt;command&gt;</a></td>
@@ -3086,6 +3181,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -3106,6 +3202,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="file_busy_rename">file busy rename &lt;character&gt;</a></td>
@@ -3115,6 +3212,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -3228,6 +3326,7 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td align=center>X</td>
    <td align=center>X</td>
+   <td align=center>X</td>
 </tr>
 <tr>
    <td><a name="socket_send_buffer">socket send buffer &lt;buffer size&gt;</a></td>
@@ -3241,6 +3340,7 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td align=center>X</td>
 </tr>
 <tr>
    <td><a name="socket_receive_buffer">socket receive buffer &lt;buffer size&gt;</a></td>
@@ -3254,6 +3354,7 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td align=center>X</td>
 </tr>
 <tr>
    <td><a name="eumetsat">eumetsat &lt;DestEnvId&gt;</a></td>
@@ -3273,6 +3374,7 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
    <td><a name="send_zero_size">send zero size</a></td>
@@ -3286,6 +3388,7 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
    <td align=center>X</td>
    <td><pre>&nbsp;</pre></td>
+   <td align=center>X</td>
 </tr>
 <tr>
    <td><a name="restart">restart &lt;file&gt;</a></td>
@@ -3297,6 +3400,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
 </tr>
@@ -3312,6 +3416,7 @@ section. Valid options can be taken from the following table:
    <th>sftp</th>
    <th>scp</th>
    <th>exec</th>
+   <th>http</th>
 </tr>
 </table>
 <hr size=3 noshade>
@@ -3320,7 +3425,7 @@ section. Valid options can be taken from the following table:
    <td width="90%"><address><small>
    Copyright &copy; 1997 - 2024 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 14.12.2024
+   Last updated: 15.12.2024
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

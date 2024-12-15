@@ -59,6 +59,7 @@ DESCR__S_M1
  ** HISTORY
  **   10.12.2005 H.Kiehl Created
  **   14.12.2024 H.Kiehl Added 'send zero size' option.
+ **   15.12.2024 H.Kiehl Added name2dir option.
  **
  */
 DESCR__E_M1
@@ -620,6 +621,8 @@ main(int argc, char *argv[])
             file_size = *p_file_size_buffer;
          }
          p_remote_filename = NULL;
+         if (db.name2dir_char == '\0')
+         {
          if (db.trans_rename_rule[0] != '\0')
          {
             register int k;
@@ -651,6 +654,14 @@ main(int argc, char *argv[])
                                 &counter_fd, &unique_counter, db.id.job);
                  }
               }
+         }
+         else
+         {
+            p_remote_filename = remote_filename;
+            name2dir(db.name2dir_char, p_file_name_buffer, p_remote_filename,
+                     (MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH) - (p_remote_filename - remote_filename));
+
+         }
          if (p_remote_filename == NULL)
          {
             p_remote_filename = p_file_name_buffer;
@@ -1206,7 +1217,7 @@ main(int argc, char *argv[])
                {
                   (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
                   if ((db.trans_rename_rule[0] != '\0') ||
-                      (db.cn_filter != NULL))
+                      (db.cn_filter != NULL) || (db.name2dir_char != '\0'))
                   {
                      *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
                                                                      MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
@@ -1262,7 +1273,7 @@ main(int argc, char *argv[])
                {
                   (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
                   if ((db.trans_rename_rule[0] != '\0') ||
-                      (db.cn_filter != NULL))
+                      (db.cn_filter != NULL) || (db.name2dir_char != '\0'))
                   {
                      *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
                                                                      MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
@@ -1331,7 +1342,7 @@ try_again_unlink:
             {
                (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
                if ((db.trans_rename_rule[0] != '\0') ||
-                   (db.cn_filter != NULL))
+                   (db.cn_filter != NULL) || (db.name2dir_char != '\0'))
                {
                   *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
                                                                   MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
