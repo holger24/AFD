@@ -585,6 +585,11 @@ eval_message(char *message_name, struct job *p_db)
                        ptr++;
                     }
                     p_db->name2dir_char = *ptr;
+                    ptr++;
+                    while ((*ptr != '\n') && (*ptr != '\0'))
+                    {
+                       ptr++;
+                    }
                     while (*ptr == '\n')
                     {
                        ptr++;
