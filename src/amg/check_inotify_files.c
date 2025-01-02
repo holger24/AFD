@@ -1023,6 +1023,27 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
    p_iwl->cur_fn_length = 0;
    p_iwl->alloc_fn_length = 0;
 
+#if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
+   /* Give up chown capability. */
+   if (can_do_chown == YES)
+   {
+      cap_value_t cap_value[1];
+
+      cap_value[0] = CAP_CHOWN;
+      cap_set_flag(caps, CAP_EFFECTIVE, 1, cap_value, CAP_CLEAR);
+      if (cap_set_proc(caps) == -1)
+      {
+         receive_log(WARN_SIGN, __FILE__, __LINE__, current_time,
+                     "cap_set_proc() error : %s", strerror(errno));
+         can_do_chown = NO;
+      }
+      else
+      {
+         can_do_chown = NEITHER;
+      }
+   }
+#endif
+
    /* So that we return only the directory name where */
    /* the files have been stored.                    */
    if (ptr != NULL)
