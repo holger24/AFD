@@ -1,6 +1,6 @@
 /*
  *  afdcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -89,6 +89,7 @@ DESCR__S_M1
  **   19.07.2019 H.Kiehl Write simulate mode to HOST_CONFIG.
  **   23.02.2020 H.Kiehl Added -h to change the real_hostname.
  **   12.10.2020 H.Kiehl Added -O to force a search for old files.
+ **   06.01.2025 H.Kiehl Send 'force archive check' to the correct fifo.
  **
  */
 DESCR__E_M1
@@ -2400,7 +2401,7 @@ main(int argc, char *argv[])
       char ac_cmd_fifo[MAX_PATH_LENGTH];
 
       (void)sprintf(ac_cmd_fifo, "%s%s%s",
-                    p_work_dir, FIFO_DIR, DC_CMD_FIFO);
+                    p_work_dir, FIFO_DIR, AW_CMD_FIFO);
 #ifdef WITHOUT_FIFO_RW_SUPPORT
       if (open_fifo_rw(ac_cmd_fifo, &ac_cmd_readfd, &ac_cmd_fd) == -1)
 #else
