@@ -1,6 +1,6 @@
 /*
  *  init_afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1567,6 +1567,12 @@ main(int argc, char *argv[])
                                         _("Failed to send ACKN : %s"),
                                         strerror(errno));
                           }
+#ifdef WITH_SYSTEMD
+                          if (started_as_daemon == NO)
+                          {
+                             check_dirs(work_dir);
+                          }
+#endif
                           get_afd_config_value(&afdd_port, &afdds_port,
                                                &default_age_limit,
                                                &in_global_filesystem,
