@@ -1,6 +1,6 @@
 /*
  *  dir_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -3784,8 +3784,11 @@ check_fifo(int read_fd, int write_fd)
 #endif
                (void)fprintf(stderr,
                              "%s terminated by fifo message %s.\n",
-                             DIR_CHECK,
-                             get_com_action_str((int)buffer[count]));
+                             DIR_CHECK, get_com_action_str((int)buffer[count]));
+               system_log(DEBUG_SIGN, NULL, 0,
+                          "%s got termination message %s. [%d subprocess active]",
+                          DIR_CHECK, get_com_action_str((int)buffer[count]),
+                          *no_of_process);
 #ifdef SHOW_EXEC_TIMES
                for (i = 0; i < no_fork_jobs; i++)
                {
@@ -4133,7 +4136,7 @@ terminate_subprocess(void)
       }
 
       system_log(INFO_SIGN, NULL, 0,
-                 "%s got termination message STOP, waiting for %d process to terminate.",
+                 "%s got termination message SHUTDOWN, waiting for %d process to terminate.",
                  DIR_CHECK, *no_of_process);
 
       for (i = 0; i < (max_shutdown_time - MIN_SHUTDOWN_TIME); i++)
