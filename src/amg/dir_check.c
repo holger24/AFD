@@ -585,8 +585,45 @@ main(int argc, char *argv[])
       }
       else
       {
-         system_log(DEBUG_SIGN, NULL, 0, "      Can do chown. Not verified.");
-         can_do_chown = NEITHER; /* Indicate that we must still set it. */
+         cap_value_t cap_value[1];
+
+         /* Now lets try to set it. */
+         cap_value[0] = CAP_CHOWN;
+         cap_set_flag(caps, CAP_EFFECTIVE, 1, cap_value, CAP_SET);
+         if (cap_set_proc(caps) == -1)
+         {
+            can_do_chown = NO;
+            system_log(DEBUG_SIGN, NULL, 0, "      Cannot do chown.");
+            if (errno == EPERM)
+            {
+               system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                          "cap_set_proc() failed. As root you need to 'setcap \"CAP_CHOWN+p\" %s'",
+                          DIR_CHECK);
+            }
+            else
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "cap_set_proc() failed : %s", strerror(errno));
+            }
+         }
+         else
+         {
+            /* Unset it. */
+            cap_value[0] = CAP_CHOWN;
+            cap_set_flag(caps, CAP_EFFECTIVE, 1, cap_value, CAP_CLEAR);
+            if (cap_set_proc(caps) == -1)
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "cap_set_proc() error, unable to clear capabilities : %s",
+                          strerror(errno));
+               can_do_chown = NO;
+            }
+            else
+            {
+               system_log(DEBUG_SIGN, NULL, 0, "      Can do chown. Verified.");
+               can_do_chown = NEITHER; /* Indicate that we must still set it. */
+            }
+         }
       }
    }
    else if (hardlinks_protected_set == PERMANENT_INCORRECT)
