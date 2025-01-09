@@ -1,6 +1,6 @@
 /*
  *  sf_loc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2024 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -67,6 +67,8 @@ DESCR__S_M1
  **   06.07.2019 H.Kiehl Added trans_srename support.
  **   15.06.2024 H.Kiehl Always print the full final name with path.
  **   15.12.2024 H.Kiehl Added name2dir option.
+ **   09.01.2025 H.Kiehl On linux, when link() returns EPERM, assume
+ **                      that hardlinks are protected and try copy file.
  **
  */
 DESCR__E_M1
@@ -880,11 +882,20 @@ try_link_again:
 
                                             if (link(source_file, p_to_name) == -1)
                                             {
-                                               if (errno == EXDEV)
+                                               if (errno == EXDEV) /* Cross link error. */
                                                {
                                                   lfs = NO;
-                                                  goto cross_link_error;
+                                                  goto link_error_try_copy;
                                                }
+#ifdef LINUX
+                                               else if (errno == EPERM)
+                                                    {
+                                                       trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                                                 "link() error, assume hardlinks are protected. Copying files.");
+                                                       lfs = NO;
+                                                       goto link_error_try_copy;
+                                                    }
+#endif
                                                else
                                                {
                                                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -904,10 +915,19 @@ try_link_again:
                                             }
                                          }
                                       }
-                                      else if (errno == EXDEV)
+#ifdef LINUX
+                                      else if (errno == EPERM)
+                                           {
+                                              trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                                        "link() error, assume hardlinks are protected. Copying files.");
+                                              lfs = NO;
+                                              goto link_error_try_copy;
+                                           }
+#endif
+                                      else if (errno == EXDEV) /* Cross link error. */
                                            {
                                               lfs = NO;
-                                              goto cross_link_error;
+                                              goto link_error_try_copy;
                                            }
                                            else
                                            {
@@ -986,10 +1006,19 @@ try_link_again:
                                 exit(MOVE_ERROR);
                              }
                           }
-                     else if (errno == EXDEV)
+#ifdef LINUX
+                     else if (errno == EPERM)
+                          {
+                             trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                       "link() error, assume hardlinks are protected. Copying files.");
+                             lfs = NO;
+                             goto link_error_try_copy;
+                          }
+#endif
+                     else if (errno == EXDEV) /* Cross link error. */
                           {
                              lfs = NO;
-                             goto cross_link_error;
+                             goto link_error_try_copy;
                           }
                           else
                           {
@@ -1015,7 +1044,7 @@ try_link_again:
             }
             else
             {
-cross_link_error:
+link_error_try_copy:
                if ((ret = copy_file_mkdir(source_file, p_to_name,
                                           p_file_name_buffer,
                                           &additional_length)) != SUCCESS)
