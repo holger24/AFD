@@ -1,6 +1,6 @@
 /*
  *  check_inotify_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2013 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -542,6 +542,8 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                                     what_done = DATA_MOVED;
 #if defined (LINUX) && defined (DIR_CHECK_CAP_CHOWN)
                                     if ((hardlinks_protected_set == YES) &&
+                                        ((can_do_chown == YES) ||
+                                         (can_do_chown == NEITHER)) &&
 # ifdef HAVE_STATX
                                         (stat_buf.stx_uid != afd_uid)
 # else
@@ -578,6 +580,13 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                                                          "chown() error : %s",
                                                          strerror(errno));
                                           }
+                                       }
+                                       else
+                                       {
+                                          receive_log(WARN_SIGN, __FILE__,
+                                                      __LINE__, current_time,
+                                                      "chown of %s is not possible (can_do_chown=%d)",
+                                                      tmp_file_dir, can_do_chown);
                                        }
                                     }
 #endif
