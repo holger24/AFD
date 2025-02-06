@@ -1347,40 +1347,45 @@ then
       AC_SUBST(AFD_SSL_LIBS)
       AC_DEFINE([WITH_SSL], [], [with TLS/SSL support])
 
-      dnl Version check taken from openssh package and modified it.
-      savedLIBS="$LIBS"
-      savedCPPFLAGS="$CPPFLAGS"
-      LIBS="$LIBS $AFD_SSL_LIBS"
-      CPPFLAGS="$CPPFLAGS $AFD_SSL_INCLUDES"
-      AC_MSG_CHECKING([correct OpenSSL version])
-      AC_RUN_IFELSE([AC_LANG_SOURCE([[
-                    #include <stdio.h>
-                    #include <string.h>
-                    #include <openssl/opensslv.h>
-                    #include <openssl/crypto.h>
-                    #include <openssl/ssl.h>
-                    #define DATA "conftest.ssllibver"
-                    int main(void)
-                    {
-                       FILE *fd;
-
-                       if ((fd = fopen(DATA,"w")) != NULL)
+      if test "$cross_compiling" = no
+      then
+         dnl Version check taken from openssh package and modified it.
+         savedLIBS="$LIBS"
+         savedCPPFLAGS="$CPPFLAGS"
+         LIBS="$LIBS $AFD_SSL_LIBS"
+         CPPFLAGS="$CPPFLAGS $AFD_SSL_INCLUDES"
+         AC_MSG_CHECKING([OpenSSL version])
+         AC_RUN_IFELSE([AC_LANG_SOURCE([[
+                       #include <stdio.h>
+                       #include <string.h>
+                       #include <openssl/opensslv.h>
+                       #include <openssl/crypto.h>
+                       #include <openssl/ssl.h>
+                       #define DATA "conftest.ssllibver"
+                       int main(void)
                        {
-                          if (fprintf(fd ,"%x (%s)\n", SSLeay(), SSLeay_version(SSLEAY_VERSION)) >= 0)
-                          {
-                             SSL_CTX *ssl_ctx;
+                          FILE *fd;
 
-                             SSLeay_add_ssl_algorithms();
-                             ssl_ctx=(SSL_CTX *)SSL_CTX_new(SSLv23_method());
-                             SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL);
-                             SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
-                             exit(0);
+                          if ((fd = fopen(DATA,"w")) != NULL)
+                          {
+                             if (fprintf(fd ,"%x (%s)\n", SSLeay(), SSLeay_version(SSLEAY_VERSION)) >= 0)
+                             {
+                                SSL_CTX *ssl_ctx;
+
+                                SSLeay_add_ssl_algorithms();
+                                ssl_ctx=(SSL_CTX *)SSL_CTX_new(SSLv23_method());
+                                SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL);
+                                SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
+                                exit(0);
+                             }
                           }
-                       }
-                       exit(1);
-                    }]])],[ssl_library_ver=`cat conftest.ssllibver`
-                  AC_MSG_RESULT(yes $ssl_library_ver)],[AC_MSG_RESULT(incorrect not found)
-                  AC_MSG_ERROR(incorect OpenSSL library or not found.)],[])
+                          exit(1);
+                       }]])],[ssl_library_ver=`cat conftest.ssllibver`
+                     AC_MSG_RESULT(yes $ssl_library_ver)],[AC_MSG_RESULT(incorrect not found)
+                     AC_MSG_ERROR(incorect OpenSSL library or not found.)],[])
+      else
+         ssl_library_ver="unknown version"
+      fi
       AC_CHECK_FUNC([TLS_client_method],
                     [AM_CONDITIONAL(HAVE_TLS_CLIENT_METHOD, true)
                      AC_DEFINE([HAVE_TLS_CLIENT_METHOD], [], [With TLS_client_method support])],
@@ -1803,7 +1808,18 @@ then
 fi
 
 dnl Check for zoneinfo information
-AX_ZONEINFO()
+if test "$cross_compiling" = yes
+then
+   AC_ARG_WITH(tzdir,
+               [  --with-tzdir=DIR         location of system timezone files],
+               tzdir_path="$withval")
+   if test "x$tzdir_path" != "x"
+   then
+      AC_DEFINE_UNQUOTED([TZDIR], ["$tzdir_path"], [Set TZDIR location])
+   fi
+else
+   AX_ZONEINFO()
+fi
 
 AC_CONFIG_FILES([Makefile
 po/Makefile.in
