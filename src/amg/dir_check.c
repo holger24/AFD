@@ -207,6 +207,10 @@ int                        afd_file_dir_length,
                            *time_job_list = NULL;
 unsigned int               default_age_limit,
                            force_reread_interval;
+#ifdef LINUX
+unsigned int               copy_due_to_eperm = 0;
+u_off_t                    copy_due_to_eperm_size = 0;
+#endif
 mode_t                     default_create_source_dir_mode = 0;
 time_t                     default_exec_timeout;
 clock_t                    clktck;
@@ -239,9 +243,6 @@ char                       *afd_file_dir,
                            **file_name_pool,
 #endif
                            first_time = YES,
-#ifdef LINUX
-                           hardlinks_protected = NEITHER,
-#endif
 #ifndef MULTI_FS_SUPPORT
                            outgoing_file_dir[MAX_PATH_LENGTH],
                            *p_time_dir_id,
@@ -753,6 +754,20 @@ main(int argc, char *argv[])
       }
       if (now >= next_search_time)
       {
+#ifdef LINUX
+         if (copy_due_to_eperm > 0)
+         {
+            system_log(DEBUG_SIGN, NULL, 0,
+# if SIZEOF_OFF_T == 4
+                       "%u files copied [%lu bytes] due to link() receiving EPERM.",
+# else
+                       "%u files copied [%llu bytes] due to link() receiving EPERM.",
+# endif
+                       copy_due_to_eperm, (pri_off_t)copy_due_to_eperm_size);
+            copy_due_to_eperm = 0;
+            copy_due_to_eperm_size = 0;
+         }
+#endif
          while (get_one_zombie(-1, now) > 0)
          {
             /* Do nothing. */;
@@ -4275,6 +4290,18 @@ sig_alarm(int signo)
 static void
 sig_exit(int signo)
 {
+#ifdef LINUX
+   if (copy_due_to_eperm > 0)
+   {
+      system_log(DEBUG_SIGN, NULL, 0,
+# if SIZEOF_OFF_T == 4
+                 "%u files copied [%lu bytes] due to link() receiving EPERM.",
+# else
+                 "%u files copied [%llu bytes] due to link() receiving EPERM.",
+# endif
+                 copy_due_to_eperm, (pri_off_t)copy_due_to_eperm_size);
+   }
+#endif
    terminate_subprocess();
 
    (void)fprintf(stderr,

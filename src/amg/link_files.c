@@ -1,6 +1,6 @@
 /*
  *  link_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -94,7 +94,8 @@ extern char                       *file_name_buffer,
 extern unsigned char              *file_length_pool;
 #endif
 #ifdef LINUX
-extern char                       hardlinks_protected;
+extern unsigned int               copy_due_to_eperm;
+extern u_off_t                    copy_due_to_eperm_size;
 #endif
 #ifdef _DELETE_LOG
 extern struct delete_log          dl;
@@ -134,6 +135,9 @@ link_files(char                   *src_file_path,
    int          files_linked = 0,
 #ifdef _DISTRIBUTION_LOG
                 dist_type,
+#endif
+#ifdef LINUX
+                hardlinks_protected = NEITHER,
 #endif
                 retstat;
    register int i,
@@ -438,6 +442,13 @@ try_copy_file:
                                      "Failed to copy file %s to %s",
                                      src_file_path, dest_file_path);
                        }
+#ifdef LINUX
+                       else if (hardlinks_protected == YES)
+                            {
+                               copy_due_to_eperm++;
+                               copy_due_to_eperm_size += file_size_pool[i];
+                            }
+#endif
                     }
                     else /* Just link() the files. */
                     {
@@ -481,15 +492,16 @@ try_copy_file:
                              if ((tmp_errno == EPERM) &&
                                  (hardlinks_protected == NEITHER))
                              {
-                                system_log(WARN_SIGN, __FILE__, __LINE__,
-                                           "Hardlinks are protected! You need to unset this in /proc/sys/fs/protected_hardlinks. Otherwise AFD must copy files!");
+                                receive_log(DEBUG_SIGN,  __FILE__, __LINE__, 0L,
+                                            "EPERM for %s #%x",
+                                            src_file_path, p_db->job_id);
                                 hardlinks_protected = YES;
 
                                 goto try_copy_file;
                              }
 #endif
 
-                             if (errno == EEXIST)
+                             if (tmp_errno == EEXIST)
                              {
                                 sign = WARN_SIGN;
                              }

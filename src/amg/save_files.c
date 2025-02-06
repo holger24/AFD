@@ -1,6 +1,6 @@
 /*
  *  save_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -97,7 +97,8 @@ extern char                       **file_name_pool;
 extern unsigned char              *file_length_pool;
 #endif
 #ifdef LINUX
-extern char                       hardlinks_protected;
+extern unsigned int               copy_due_to_eperm;
+extern u_off_t                    copy_due_to_eperm_size;
 #endif
 extern struct filetransfer_status *fsa;
 extern struct fileretrieve_status *fra;
@@ -140,6 +141,9 @@ save_files(char                   *src_path,
                 j;
    int          files_deleted = 0,
                 files_saved = 0,
+#ifdef LINUX
+                hardlinks_protected = NEITHER,
+#endif
                 retstat;
    off_t        file_size_deleted = 0,
                 file_size_saved = 0;
@@ -384,6 +388,11 @@ try_copy_file:
                         }
                         else
                         {
+                           if (hardlinks_protected == YES)
+                           {
+                              copy_due_to_eperm++;
+                              copy_due_to_eperm_size += file_size_pool[i];
+                           }
                            files_saved++;
                            file_size_saved += file_size_pool[i];
                         }
@@ -393,18 +402,21 @@ try_copy_file:
 #endif
                         if ((retstat = link(src_path, dest_path)) == -1)
                         {
+                           int tmp_errno = errno;
+
 #ifdef LINUX
-                           if ((errno == EPERM) &&
+                           if ((tmp_errno == EPERM) &&
                                (hardlinks_protected == NEITHER))
                            {
-                              system_log(WARN_SIGN, __FILE__, __LINE__,
-                                         "Hardlinks are protected! You need to unset this in /proc/sys/fs/protected_hardlinks. Otherwise AFD must copy files!");
+                              receive_log(DEBUG_SIGN,  __FILE__, __LINE__, 0L,
+                                          "EPERM for %s #%x",
+                                          src_path, p_db->job_id);
                               hardlinks_protected = YES;
 
                               goto try_copy_file;
                            }
 #endif
-                           if (errno == EEXIST)
+                           if (tmp_errno == EEXIST)
                            {
                               off_t del_file_size = 0;
 
@@ -469,7 +481,7 @@ try_copy_file:
                                  }
                               }
                            }
-                           else if (errno == EXDEV)
+                           else if (tmp_errno == EXDEV)
                                 {
                                    link_flag &= ~IN_SAME_FILESYSTEM;
                                    goto cross_link_error;
@@ -479,7 +491,7 @@ try_copy_file:
                                    system_log(WARN_SIGN, __FILE__, __LINE__,
                                               "Failed to link file `%s' to `%s' : %s",
                                               src_path, dest_path,
-                                              strerror(errno));
+                                              strerror(tmp_errno));
                                    errno = 0;
 #ifdef _DISTRIBUTION_LOG
                                    dist_type = ERROR_DIS_TYPE;
