@@ -891,7 +891,8 @@ try_link_again:
                                                else if (errno == EPERM)
                                                     {
                                                        trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                                                 "link() error, assume hardlinks are protected. Copying files.");
+                                                                 "link() error, assume hardlinks are protected for %s. Copying files.",
+                                                                 source_file);
                                                        lfs = NO;
                                                        goto link_error_try_copy;
                                                     }
@@ -919,7 +920,8 @@ try_link_again:
                                       else if (errno == EPERM)
                                            {
                                               trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                                        "link() error, assume hardlinks are protected. Copying files.");
+                                                        "link() error, assume hardlinks are protected for %s. Copying files.",
+                                                        source_file);
                                               lfs = NO;
                                               goto link_error_try_copy;
                                            }
@@ -1010,7 +1012,8 @@ try_link_again:
                      else if (errno == EPERM)
                           {
                              trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                       "link() error, assume hardlinks are protected. Copying files.");
+                                       "link() error, assume hardlinks are protected for %s. Copying files.",
+                                       source_file);
                              lfs = NO;
                              goto link_error_try_copy;
                           }
