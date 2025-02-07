@@ -1,6 +1,6 @@
 /*
  *  fra_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -161,7 +161,7 @@ main(int argc, char *argv[])
          }
          else
          {
-            (void)my_strlcpy(dir_alias, argv[1], MAX_DIR_ALIAS_LENGTH);
+            (void)my_strlcpy(dir_alias, argv[1], MAX_DIR_ALIAS_LENGTH + 1);
          }
       }
    }
