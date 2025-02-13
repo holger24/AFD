@@ -104,6 +104,9 @@ DESCR__S_M3
  **   16.06.2023 H.Kiehl Do not delete UNKNOWN_FILES inotify files
  **                      immediately by default. del_unknown_inotify_files()
  **                      will remove those files.
+ **   13.02.2025 H.Kiehl If host is disabled, we must do a pattern match
+ **                      because if the locking procedure is not dot
+ **                      we will delete files to early.
  **
  */
 DESCR__E_M3
@@ -894,135 +897,135 @@ check_files(struct directory_entry *p_de,
             if ((eaccess(fullname, R_OK) == 0))
 #endif
             {
-               if (fra[p_de->fra_pos].dir_flag & ALL_DISABLED)
-               {
-                  if ((fra[p_de->fra_pos].remove == YES) ||
-                      (fra[p_de->fra_pos].fsa_pos != -1))
-                  {
-                     if (unlink(fullname) == -1)
-                     {
-                        if (errno != ENOENT)
-                        {
-                           system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                      _("Failed to unlink() file `%s' : %s"),
-                                      fullname, strerror(errno));
-                        }
-                     }
-                     else
-                     {
-#ifdef _DELETE_LOG
-                        size_t        dl_real_size;
-#endif
-#ifdef _DISTRIBUTION_LOG
-                        unsigned int  dummy_job_id,
-                                      *p_dummy_job_id;
-                        unsigned char dummy_proc_cycles;
+               int gotcha;
 
-                        dummy_job_id = 0;
-                        p_dummy_job_id = &dummy_job_id;
-                        dummy_proc_cycles = 0;
-                        dis_log(DISABLED_DIS_TYPE, current_time, p_de->dir_id,
-                                0, p_dir->d_name, file_name_length,
-# ifdef HAVE_STATX
-                                stat_buf.stx_size, 1, &p_dummy_job_id,
-# else
-                                stat_buf.st_size, 1, &p_dummy_job_id,
-# endif
-                                &dummy_proc_cycles, 1);
-#endif
-#ifdef _DELETE_LOG
-                        (void)my_strncpy(dl.file_name, p_dir->d_name,
-                                         file_name_length + 1);
-                        (void)snprintf(dl.host_name,
-                                       MAX_HOSTNAME_LENGTH + 4 + 1,
-                                       "%-*s %03x",
-                                       MAX_HOSTNAME_LENGTH, "-",
-                                       DELETE_HOST_DISABLED);
-# ifdef HAVE_STATX
-                        *dl.file_size = stat_buf.stx_size;
-# else
-                        *dl.file_size = stat_buf.st_size;
-# endif
-                        *dl.dir_id = p_de->dir_id;
-                        *dl.job_id = 0;
-                        *dl.input_time = current_time;
-                        *dl.split_job_counter = 0;
-                        *dl.unique_number = 0;
-                        *dl.file_name_length = file_name_length;
-                        dl_real_size = *dl.file_name_length + dl.size +
-                                       snprintf((dl.file_name + *dl.file_name_length + 1),
-                                                MAX_FILENAME_LENGTH + 1,
-                                                "%s%c(%s %d)",
-                                                DIR_CHECK, SEPARATOR_CHAR,
-                                                __FILE__, __LINE__);
-                        if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
-                        {
-                           system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                      _("write() error : %s"),
-                                      strerror(errno));
-                        }
-#endif
-                        files_in_dir--;
-#ifdef HAVE_STATX
-                        bytes_in_dir -= stat_buf.stx_size;
-#else
-                        bytes_in_dir -= stat_buf.st_size;
-#endif
-                     }
-                  }
+               if (p_de->flag & ALL_FILES)
+               {
+                  gotcha = YES;
                }
                else
                {
-                  int gotcha;
+                  int j;
 
-                  if (p_de->flag & ALL_FILES)
+                  /* Filter out only those files we need for this directory. */
+                  gotcha = NO;
+                  if (p_de->paused_dir == NULL)
                   {
-                     gotcha = YES;
+                     pmatch_time = current_time;
                   }
                   else
                   {
-                     int j;
-
-                     /* Filter out only those files we need for this directory. */
-                     gotcha = NO;
-                     if (p_de->paused_dir == NULL)
-                     {
-                        pmatch_time = current_time;
-                     }
-                     else
-                     {
 #ifdef HAVE_STATX
-                        pmatch_time = stat_buf.stx_mtime.tv_sec;
+                     pmatch_time = stat_buf.stx_mtime.tv_sec;
 #else
-                        pmatch_time = stat_buf.st_mtime;
+                     pmatch_time = stat_buf.st_mtime;
 #endif
-                     }
-                     for (i = 0; i < p_de->nfg; i++)
-                     {
-                        for (j = 0; ((i < p_de->nfg) && (j < p_de->fme[i].nfm)); j++)
-                        {
-                           if ((ret = pmatch(p_de->fme[i].file_mask[j],
-                                             p_dir->d_name, &pmatch_time)) == 0)
-                           {
-                              gotcha = YES;
-                              i = p_de->nfg;
-                           } /* If file in file mask. */
-                           else if (ret == 1)
-                                {
-                                   /*
-                                    * This file is definitely NOT wanted, for
-                                    * this file group! However, the next file
-                                    * group might state that it does want this
-                                    * file. So only ignore all entries for
-                                    * this file group!
-                                    */
-                                   break;
-                                }
-                        } /* for (j = 0; ((i < p_de->nfg) && (j < p_de->fme[i].nfm)); j++) */
-                     } /* for (i = 0; i < p_de->nfg; i++) */
                   }
+                  for (i = 0; i < p_de->nfg; i++)
+                  {
+                     for (j = 0; ((i < p_de->nfg) && (j < p_de->fme[i].nfm)); j++)
+                     {
+                        if ((ret = pmatch(p_de->fme[i].file_mask[j],
+                                          p_dir->d_name, &pmatch_time)) == 0)
+                        {
+                           gotcha = YES;
+                           i = p_de->nfg;
+                        } /* If file in file mask. */
+                        else if (ret == 1)
+                             {
+                                /*
+                                 * This file is definitely NOT wanted, for
+                                 * this file group! However, the next file
+                                 * group might state that it does want this
+                                 * file. So only ignore all entries for
+                                 * this file group!
+                                 */
+                                break;
+                             }
+                     } /* for (j = 0; ((i < p_de->nfg) && (j < p_de->fme[i].nfm)); j++) */
+                  } /* for (i = 0; i < p_de->nfg; i++) */
+               }
 
-                  if (gotcha == YES)
+               if (gotcha == YES)
+               {
+                  if (fra[p_de->fra_pos].dir_flag & ALL_DISABLED)
+                  {
+                     if ((fra[p_de->fra_pos].remove == YES) ||
+                         (fra[p_de->fra_pos].fsa_pos != -1))
+                     {
+                        if (unlink(fullname) == -1)
+                        {
+                           if (errno != ENOENT)
+                           {
+                              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                         _("Failed to unlink() file `%s' : %s"),
+                                         fullname, strerror(errno));
+                           }
+                        }
+                        else
+                        {
+#ifdef _DELETE_LOG
+                           size_t        dl_real_size;
+#endif
+#ifdef _DISTRIBUTION_LOG
+                           unsigned int  dummy_job_id,
+                                         *p_dummy_job_id;
+                           unsigned char dummy_proc_cycles;
+
+                           dummy_job_id = 0;
+                           p_dummy_job_id = &dummy_job_id;
+                           dummy_proc_cycles = 0;
+                           dis_log(DISABLED_DIS_TYPE, current_time, p_de->dir_id,
+                                   0, p_dir->d_name, file_name_length,
+# ifdef HAVE_STATX
+                                   stat_buf.stx_size, 1, &p_dummy_job_id,
+# else
+                                   stat_buf.st_size, 1, &p_dummy_job_id,
+# endif
+                                   &dummy_proc_cycles, 1);
+#endif
+#ifdef _DELETE_LOG
+                           (void)my_strncpy(dl.file_name, p_dir->d_name,
+                                            file_name_length + 1);
+                           (void)snprintf(dl.host_name,
+                                          MAX_HOSTNAME_LENGTH + 4 + 1,
+                                          "%-*s %03x",
+                                          MAX_HOSTNAME_LENGTH, "-",
+                                          DELETE_HOST_DISABLED);
+# ifdef HAVE_STATX
+                           *dl.file_size = stat_buf.stx_size;
+# else
+                           *dl.file_size = stat_buf.st_size;
+# endif
+                           *dl.dir_id = p_de->dir_id;
+                           *dl.job_id = 0;
+                           *dl.input_time = current_time;
+                           *dl.split_job_counter = 0;
+                           *dl.unique_number = 0;
+                           *dl.file_name_length = file_name_length;
+                           dl_real_size = *dl.file_name_length + dl.size +
+                                          snprintf((dl.file_name + *dl.file_name_length + 1),
+                                                   MAX_FILENAME_LENGTH + 1,
+                                                   "%s%c(%s %d)",
+                                                   DIR_CHECK, SEPARATOR_CHAR,
+                                                   __FILE__, __LINE__);
+                           if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
+                           {
+                              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                         _("write() error : %s"),
+                                         strerror(errno));
+                           }
+#endif
+                           files_in_dir--;
+#ifdef HAVE_STATX
+                           bytes_in_dir -= stat_buf.stx_size;
+#else
+                           bytes_in_dir -= stat_buf.st_size;
+#endif
+                        }
+                     }
+                  }
+                  else
                   {
                      int rl_pos = -1;
 #ifdef WITH_DUP_CHECK
@@ -1237,7 +1240,8 @@ check_files(struct directory_entry *p_de,
                                           receive_log(WARN_SIGN, __FILE__,
                                                       __LINE__, current_time,
                                                       "chown of %s is not possible (can_do_chown=%d)",
-                                                      tmp_file_dir, can_do_chown);
+                                                      tmp_file_dir,
+                                                      can_do_chown);
                                        }
                                     }
 #endif
@@ -1598,76 +1602,76 @@ check_files(struct directory_entry *p_de,
                      }
 #endif /* WITH_DUP_CHECK */
                   }
-                  else /* gotcha == NO */
+               }
+               else /* gotcha == NO */
+               {
+                  if (fra[p_de->fra_pos].delete_files_flag & UNKNOWN_FILES)
                   {
-                     if (fra[p_de->fra_pos].delete_files_flag & UNKNOWN_FILES)
+#ifdef HAVE_STATX
+                     diff_time = current_time - stat_buf.stx_mtime.tv_sec;
+#else
+                     diff_time = current_time - stat_buf.st_mtime;
+#endif
+                     if ((fra[p_de->fra_pos].unknown_file_time == -2) ||
+                         ((diff_time > fra[p_de->fra_pos].unknown_file_time) &&
+                          (diff_time > DEFAULT_TRANSFER_TIMEOUT)))
                      {
-#ifdef HAVE_STATX
-                        diff_time = current_time - stat_buf.stx_mtime.tv_sec;
-#else
-                        diff_time = current_time - stat_buf.st_mtime;
-#endif
-                        if ((fra[p_de->fra_pos].unknown_file_time == -2) ||
-                            ((diff_time > fra[p_de->fra_pos].unknown_file_time) &&
-                             (diff_time > DEFAULT_TRANSFER_TIMEOUT)))
+                        if (unlink(fullname) == -1)
                         {
-                           if (unlink(fullname) == -1)
+                           if (errno != ENOENT)
                            {
-                              if (errno != ENOENT)
-                              {
-                                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                                            _("Failed to unlink() `%s' : %s"),
-                                            fullname, strerror(errno));
-                              }
+                              system_log(WARN_SIGN, __FILE__, __LINE__,
+                                         _("Failed to unlink() `%s' : %s"),
+                                         fullname, strerror(errno));
                            }
-                           else
-                           {
+                        }
+                        else
+                        {
 #ifdef _DELETE_LOG
-                              size_t dl_real_size;
+                           size_t dl_real_size;
 
-                              (void)my_strncpy(dl.file_name, p_dir->d_name,
-                                               file_name_length + 1);
-                              (void)snprintf(dl.host_name,
-                                             MAX_HOSTNAME_LENGTH + 4 + 1,
-                                             "%-*s %03x",
-                                             MAX_HOSTNAME_LENGTH, "-",
-                                             (fra[p_de->fra_pos].in_dc_flag & UNKNOWN_FILES_IDC) ?  DEL_UNKNOWN_FILE : DEL_UNKNOWN_FILE_GLOB);
+                           (void)my_strncpy(dl.file_name, p_dir->d_name,
+                                            file_name_length + 1);
+                           (void)snprintf(dl.host_name,
+                                          MAX_HOSTNAME_LENGTH + 4 + 1,
+                                          "%-*s %03x",
+                                          MAX_HOSTNAME_LENGTH, "-",
+                                          (fra[p_de->fra_pos].in_dc_flag & UNKNOWN_FILES_IDC) ?  DEL_UNKNOWN_FILE : DEL_UNKNOWN_FILE_GLOB);
 # ifdef HAVE_STATX
-                              *dl.file_size = stat_buf.stx_size;
+                           *dl.file_size = stat_buf.stx_size;
 # else
-                              *dl.file_size = stat_buf.st_size;
+                           *dl.file_size = stat_buf.st_size;
 # endif
-                              *dl.dir_id = p_de->dir_id;
-                              *dl.job_id = 0;
-                              *dl.input_time = 0L;
-                              *dl.split_job_counter = 0;
-                              *dl.unique_number = 0;
-                              *dl.file_name_length = file_name_length;
-                              dl_real_size = *dl.file_name_length + dl.size +
-                                             snprintf((dl.file_name + *dl.file_name_length + 1),
-                                                      MAX_FILENAME_LENGTH + 1,
+                           *dl.dir_id = p_de->dir_id;
+                           *dl.job_id = 0;
+                           *dl.input_time = 0L;
+                           *dl.split_job_counter = 0;
+                           *dl.unique_number = 0;
+                           *dl.file_name_length = file_name_length;
+                           dl_real_size = *dl.file_name_length + dl.size +
+                                          snprintf((dl.file_name + *dl.file_name_length + 1),
+                                                   MAX_FILENAME_LENGTH + 1,
 # if SIZEOF_TIME_T == 4
-                                                      "%s%c>%ld (%s %d)",
+                                                   "%s%c>%ld (%s %d)",
 # else
-                                                      "%s%c>%lld (%s %d)",
+                                                   "%s%c>%lld (%s %d)",
 # endif
-                                                      DIR_CHECK, SEPARATOR_CHAR,
-                                                      (pri_time_t)diff_time,
-                                                      __FILE__, __LINE__);
-                              if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
-                              {
-                                 system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                            _("write() error : %s"),
-                                            strerror(errno));
-                              }
-#endif
-                              files_in_dir--;
-#ifdef HAVE_STATX
-                              bytes_in_dir -= stat_buf.stx_size;
-#else
-                              bytes_in_dir -= stat_buf.st_size;
-#endif
+                                                   DIR_CHECK, SEPARATOR_CHAR,
+                                                   (pri_time_t)diff_time,
+                                                   __FILE__, __LINE__);
+                           if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
+                           {
+                              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                         _("write() error : %s"),
+                                         strerror(errno));
                            }
+#endif
+                           files_in_dir--;
+#ifdef HAVE_STATX
+                           bytes_in_dir -= stat_buf.stx_size;
+#else
+                           bytes_in_dir -= stat_buf.st_size;
+#endif
                         }
                      }
                   }
