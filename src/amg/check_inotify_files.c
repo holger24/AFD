@@ -46,6 +46,8 @@ DESCR__S_M1
  **   13.02.2025 H.Kiehl If host is disabled, we must do a pattern match
  **                      because if the locking procedure is not dot
  **                      we will delete files to early.
+ **   14.02.2025 H.Kiehl Improve above fix by just searching for not (!)
+ **                      sign. All other patterns should match.
  **
  */
 DESCR__E_M1
@@ -262,48 +264,57 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
             if ((eaccess(fullname, R_OK) == 0))
 #endif
             {
-               int gotcha;
-
-               if (p_de->flag & ALL_FILES)
+               if (fra[p_de->fra_pos].dir_flag & ALL_DISABLED)
                {
-                  gotcha = YES;
-               }
-               else
-               {
-                  int j, k;
-
-                  gotcha = NO;
-                  for (j = 0; j < p_de->nfg; j++)
+                  if ((fra[p_de->fra_pos].remove == YES) ||
+                      (fra[p_de->fra_pos].fsa_pos != -1))
                   {
-                     for (k = 0; ((j < p_de->nfg) && (k < p_de->fme[j].nfm)); k++)
+                     int gotcha;
+
+                     if (p_de->flag & ALL_FILES)
                      {
-                        if ((ret = pmatch(p_de->fme[j].file_mask[k],
-                                          &p_iwl->file_name[current_fnl_pos],
-                                          &current_time)) == 0)
-                        {
-                           gotcha = YES;
-                           j = p_de->nfg;
-                        } /* If file in file mask. */
-                        else if (ret == 1)
-                             {
-                                /*
-                                 * This file is definitely NOT wanted, for this
-                                 * file group! However, the next file group
-                                 * might state that it does want this file. So
-                                 * only ignore all entries for this file group!
-                                 */
-                                break;
-                             }
-                     } /* for (k = 0; ((j < p_de->nfg) && (k < p_de->fme[j].nfm)); k++) */
-                  } /* for (j = 0; j < p_de->nfg; j++) */
-               }
+                        gotcha = YES;
+                     }
+                     else
+                     {
+                        int j, k;
 
-               if (gotcha == YES)
-               {
-                  if (fra[p_de->fra_pos].dir_flag & ALL_DISABLED)
-                  {
-                     if ((fra[p_de->fra_pos].remove == YES) ||
-                         (fra[p_de->fra_pos].fsa_pos != -1))
+                        gotcha = NO;
+                        for (j = 0; j < p_de->nfg; j++)
+                        {
+                           for (k = 0; ((j < p_de->nfg) &&
+                                        (k < p_de->fme[j].nfm)); k++)
+                           {
+                              if ((p_de->fme[j].file_mask[k][0] != '!') ||
+                                  ((ret = pmatch(p_de->fme[j].file_mask[k],
+                                                 &p_iwl->file_name[current_fnl_pos],
+                                                 &current_time)) == 0))
+                              {
+                                 /*
+                                  * This file is wanted, for this file
+                                  * group! However, the next file group
+                                  * might state that it does want this file.
+                                  * So only ignore all entries for this
+                                  * file group!
+                                  */
+                                 gotcha = YES;
+                                 break;
+                              }
+                              else if (ret == 1)
+                                   {
+                                      /*
+                                       * This file is definitely NOT wanted.
+                                       * So it can be a temp file name
+                                       * used for locking.
+                                       */
+                                      gotcha = NO;
+                                      j = p_de->nfg;
+                                   }
+                           }
+                        } /* for (j = 0; j < p_de->nfg; j++) */
+                     }
+
+                     if (gotcha == YES)
                      {
                         if (unlink(fullname) == -1)
                         {
@@ -371,7 +382,48 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                         }
                      }
                   }
+               }
+               else
+               {
+                  int gotcha;
+
+                  if (p_de->flag & ALL_FILES)
+                  {
+                     gotcha = YES;
+                  }
                   else
+                  {
+                     int j, k;
+
+                     gotcha = NO;
+                     for (j = 0; j < p_de->nfg; j++)
+                     {
+                        for (k = 0; ((j < p_de->nfg) &&
+                                     (k < p_de->fme[j].nfm)); k++)
+                        {
+                           if ((ret = pmatch(p_de->fme[j].file_mask[k],
+                                             &p_iwl->file_name[current_fnl_pos],
+                                             &current_time)) == 0)
+                           {
+                              gotcha = YES;
+                              j = p_de->nfg;
+                           } /* If file in file mask. */
+                           else if (ret == 1)
+                                {
+                                   /*
+                                    * This file is definitely NOT wanted,
+                                    * for this * file group! However, the
+                                    * next file group might state that it
+                                    * does want this file. So only ignore
+                                    * all entries for this file group!
+                                    */
+                                   break;
+                                }
+                        }
+                     } /* for (j = 0; j < p_de->nfg; j++) */
+                  }
+
+                  if (gotcha == YES)
                   {
                      int rl_pos = -1;
 #ifdef WITH_DUP_CHECK
@@ -644,7 +696,8 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                                  if ((access(fullname, F_OK) == -1) &&
                                      (errno == ENOENT))
                                  {
-                                    (void)strcpy(reason_str, "(source missing) ");
+                                    (void)strcpy(reason_str,
+                                                 "(source missing) ");
 
                                     /*
                                      * With inotify it can happen that when
@@ -676,7 +729,8 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                                  reason_str[0] = '\0';
                                  sign = ERROR_SIGN;
                               }
-                              receive_log(sign, __FILE__, __LINE__, current_time,
+                              receive_log(sign, __FILE__, __LINE__,
+                                          current_time,
                                           _("Failed (%d) to %s file `%s' to `%s' %s: %s @%x"),
                                           ret,
                                           (what_done == DATA_MOVED) ? "move" : "copy",
@@ -699,7 +753,8 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                                                 fra[p_de->fra_pos].end_event_handle,
                                                 fra[p_de->fra_pos].dir_status);
                                  error_action(p_de->alias, "start",
-                                              DIR_ERROR_ACTION, receive_log_fd);
+                                              DIR_ERROR_ACTION,
+                                              receive_log_fd);
                                  event_log(0L, EC_DIR, ET_EXT, EA_ERROR_START,
                                            "%s", p_de->alias);
                               }
@@ -947,76 +1002,76 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                      }
 #endif /* WITH_DUP_CHECK */
                   }
-               }
-               else /* gotcha == NO */
-               {
-                  /*
-                   * For the UNKNOWN_FILES being being left,
-                   * del_unknown_inotify_files() is called by
-                   * dir_check() to do the cleanup.
-                   */
-                  if (fra[p_de->fra_pos].delete_files_flag & UNKNOWN_FILES)
+                  else /* gotcha == NO */
                   {
-#ifdef HAVE_STATX
-                     diff_time = current_time - stat_buf.stx_mtime.tv_sec;
-#else
-                     diff_time = current_time - stat_buf.st_mtime;
-#endif
-                     if ((fra[p_de->fra_pos].unknown_file_time == -2) ||
-                         ((diff_time > fra[p_de->fra_pos].unknown_file_time) &&
-                          (diff_time > DEFAULT_TRANSFER_TIMEOUT)))
+                     /*
+                      * For the UNKNOWN_FILES being being left,
+                      * del_unknown_inotify_files() is called by
+                      * dir_check() to do the cleanup.
+                      */
+                     if (fra[p_de->fra_pos].delete_files_flag & UNKNOWN_FILES)
                      {
-                        if (unlink(fullname) == -1)
-                        {
-                           if (errno != ENOENT)
-                           {                   
-                              system_log(WARN_SIGN, __FILE__, __LINE__,
-                                         _("Failed to unlink() `%s' : %s"),
-                                         fullname, strerror(errno));
-                           }
-                        }
-                        else
-                        {
-#ifdef _DELETE_LOG
-                           size_t dl_real_size;
-
-                           (void)my_strncpy(dl.file_name,
-                                            &p_iwl->file_name[current_fnl_pos],
-                                            p_iwl->fnl[i] + 1);
-                           (void)snprintf(dl.host_name,
-                                          MAX_HOSTNAME_LENGTH + 4 + 1,
-                                          "%-*s %03x",
-                                          MAX_HOSTNAME_LENGTH, "-",
-                                          (fra[p_de->fra_pos].in_dc_flag & UNKNOWN_FILES_IDC) ?  DEL_UNKNOWN_FILE : DEL_UNKNOWN_FILE_GLOB);
-# ifdef HAVE_STATX
-                           *dl.file_size = stat_buf.stx_size;
-# else
-                           *dl.file_size = stat_buf.st_size;
-# endif
-                           *dl.dir_id = p_de->dir_id;
-                           *dl.job_id = 0;
-                           *dl.input_time = 0L;
-                           *dl.split_job_counter = 0;
-                           *dl.unique_number = 0;
-                           *dl.file_name_length = p_iwl->fnl[i];
-                           dl_real_size = *dl.file_name_length + dl.size +
-                                          snprintf((dl.file_name + *dl.file_name_length + 1),
-                                                   MAX_FILENAME_LENGTH + 1,
-# if SIZEOF_TIME_T == 4
-                                                   "%s%c>%ld (%s %d)",
-# else
-                                                   "%s%c>%lld (%s %d)",
-# endif
-                                                   DIR_CHECK, SEPARATOR_CHAR,
-                                                   (pri_time_t)diff_time,
-                                                   __FILE__, __LINE__);
-                           if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
-                           {
-                              system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                         _("write() error : %s"),
-                                         strerror(errno));
-                           }
+#ifdef HAVE_STATX
+                        diff_time = current_time - stat_buf.stx_mtime.tv_sec;
+#else
+                        diff_time = current_time - stat_buf.st_mtime;
 #endif
+                        if ((fra[p_de->fra_pos].unknown_file_time == -2) ||
+                            ((diff_time > fra[p_de->fra_pos].unknown_file_time) &&
+                             (diff_time > DEFAULT_TRANSFER_TIMEOUT)))
+                        {
+                           if (unlink(fullname) == -1)
+                           {
+                              if (errno != ENOENT)
+                              {                   
+                                 system_log(WARN_SIGN, __FILE__, __LINE__,
+                                            _("Failed to unlink() `%s' : %s"),
+                                            fullname, strerror(errno));
+                              }
+                           }
+                           else
+                           {
+#ifdef _DELETE_LOG
+                              size_t dl_real_size;
+
+                              (void)my_strncpy(dl.file_name,
+                                               &p_iwl->file_name[current_fnl_pos],
+                                               p_iwl->fnl[i] + 1);
+                              (void)snprintf(dl.host_name,
+                                             MAX_HOSTNAME_LENGTH + 4 + 1,
+                                             "%-*s %03x",
+                                             MAX_HOSTNAME_LENGTH, "-",
+                                             (fra[p_de->fra_pos].in_dc_flag & UNKNOWN_FILES_IDC) ?  DEL_UNKNOWN_FILE : DEL_UNKNOWN_FILE_GLOB);
+# ifdef HAVE_STATX
+                              *dl.file_size = stat_buf.stx_size;
+# else
+                              *dl.file_size = stat_buf.st_size;
+# endif
+                              *dl.dir_id = p_de->dir_id;
+                              *dl.job_id = 0;
+                              *dl.input_time = 0L;
+                              *dl.split_job_counter = 0;
+                              *dl.unique_number = 0;
+                              *dl.file_name_length = p_iwl->fnl[i];
+                              dl_real_size = *dl.file_name_length + dl.size +
+                                             snprintf((dl.file_name + *dl.file_name_length + 1),
+                                                      MAX_FILENAME_LENGTH + 1,
+# if SIZEOF_TIME_T == 4
+                                                      "%s%c>%ld (%s %d)",
+# else
+                                                      "%s%c>%lld (%s %d)",
+# endif
+                                                      DIR_CHECK, SEPARATOR_CHAR,
+                                                      (pri_time_t)diff_time,
+                                                      __FILE__, __LINE__);
+                              if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
+                              {
+                                 system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                            _("write() error : %s"),
+                                            strerror(errno));
+                              }
+#endif
+                           }
                         }
                      }
                   }
