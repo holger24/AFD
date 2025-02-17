@@ -1,6 +1,6 @@
 /*
  *  view_hosts.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,9 +27,11 @@ DESCR__S_M1
  ** SYNOPSIS
  **   view_hosts [working directory] <option> <host name>
  **                                   -a  search alias names
- **                                   -r  search real names
  **                                   -A  search AFD alias names
  **                                   -C  same as -A, just show first found
+ **                                   -r  search real names
+ **                                   -m  get host list of given afd_mon real name
+ **                                   -M  get host list of given afd_mon alias name
  **
  ** DESCRIPTION
  **
@@ -43,6 +45,7 @@ DESCR__S_M1
  **   05.06.1999 H.Kiehl Created
  **   31.03.2017 H.Kiehl Show better help text.
  **                      Handle group names.
+ **   10.02.2025 H.Kiehl Added -m and -M options.
  **
  */
 DESCR__E_M1
@@ -79,11 +82,21 @@ main(int argc, char *argv[])
 {
    int  get_afd_alias = NO,
         get_afd_alias_cut = NO,
+        get_host_list_real = NO,
+        get_host_list_alias = NO,
         check_host_alias,
         i,
         j,
         no_of_filters;
    char work_dir[MAX_PATH_LENGTH];
+
+   if ((get_arg(&argc, argv, "-?", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "-help", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "--help", NULL, 0) == SUCCESS))
+   {
+      usage();
+      exit(SUCCESS);
+   }
 
    CHECK_FOR_VERSION(argc, argv);
 
@@ -94,8 +107,8 @@ main(int argc, char *argv[])
    p_work_dir = work_dir;
 
    if ((argc > 2) && (argv[1][0] == '-') &&
-       ((argv[1][1] == 'A') || (argv[1][1] == 'C') ||
-        (argv[1][1] == 'a') || (argv[1][1] == 'r')) &&
+       ((argv[1][1] == 'A') || (argv[1][1] == 'C') || (argv[1][1] == 'a') ||
+        (argv[1][1] == 'r') || (argv[1][1] == 'm') || (argv[1][1] == 'M')) &&
        (argv[1][2] == '\0'))
    {
       if (argv[1][1] == 'a')
@@ -109,6 +122,14 @@ main(int argc, char *argv[])
       else if (argv[1][1] == 'C')
            {
               get_afd_alias_cut = YES;
+           }
+      else if (argv[1][1] == 'm')
+           {
+              get_host_list_real = YES;
+           }
+      else if (argv[1][1] == 'M')
+           {
+              get_host_list_alias = YES;
            }
            else
            {
@@ -136,6 +157,123 @@ main(int argc, char *argv[])
       }
       exit(INCORRECT);
    }
+
+   if ((get_host_list_real == YES) || (get_host_list_alias == YES))
+   {
+      int                  ahl_fd,
+                           gotcha,
+                           k;
+      char                 ahl_file[MAX_PATH_LENGTH],
+                           group_identifier,
+                           *p_ahl_file,
+                           *ptr;
+      struct afd_host_list *ahl;
+#ifdef HAVE_STATX
+      struct statx         stat_buf;
+#else
+      struct stat          stat_buf;
+#endif
+
+      p_ahl_file = ahl_file +
+                   sprintf(ahl_file, "%s%s%s",
+                           p_work_dir, FIFO_DIR, AHL_FILE_NAME);
+      for (i = 0; i < no_of_afds; i++)
+      {
+         for (j = 0; j < no_of_filters; j++)
+         {
+            gotcha = NO;
+            if (get_host_list_real == YES)
+            {
+               if ((pmatch(argv[j + 2], msa[i].hostname[0], NULL) == 0) ||
+                   ((msa[i].hostname[1][0] != '\0') &&
+                    (pmatch(argv[j + 2], msa[i].hostname[1], NULL) == 0)))
+               {
+                  gotcha = YES;
+               }
+            }
+            else
+            {
+               if (pmatch(argv[j + 2], msa[i].afd_alias, NULL) == 0)
+               {
+                  gotcha = YES;
+               }
+            }
+            if (gotcha == YES)
+            {
+               (void)sprintf(p_ahl_file, "%s", msa[i].afd_alias);
+#ifdef HAVE_STATX
+               if ((statx(0, ahl_file, AT_STATX_SYNC_AS_STAT,
+                          STATX_SIZE, &stat_buf) == 0) && (stat_buf.stx_size > 0))
+#else
+               if ((stat(ahl_file, &stat_buf) == 0) && (stat_buf.st_size > 0))
+#endif
+               {
+                  if ((ptr = map_file(ahl_file, &ahl_fd, NULL, &stat_buf,
+                                      O_RDWR | O_CREAT, FILE_MODE)) == (caddr_t) -1)
+                  {
+                     (void)fprintf(stderr,
+                                   "ERROR : Failed to mmap() to %s : %s (%s %d)\n",
+                                   ahl_file, strerror(errno), __FILE__, __LINE__);
+                     exit(INCORRECT);
+                  }
+                  ahl = (struct afd_host_list *)ptr;
+                  if (close(ahl_fd) == -1)
+                  {
+                     (void)fprintf(stderr, "DEBUG : close() error : %s (%s %d)\n",
+                                   strerror(errno), __FILE__, __LINE__);
+                  }
+
+                  (void)fprintf(stdout, "------> %s <-------\n",
+                                msa[i].afd_alias);
+                  for (k = 0; k < msa[i].no_of_hosts; k++)
+                  {
+                     if (ahl[k].real_hostname[0][0] == GROUP_IDENTIFIER)
+                     {
+                        (void)fprintf(stdout, "%-4d: +%-*s->%-*x\n",
+                                      k,
+                                      MAX_HOSTNAME_LENGTH,
+                                      ahl[k].host_alias,
+                                      MAX_INT_HEX_LENGTH,
+                                      ahl[k].host_id);
+                     }
+                     else
+                     {
+                        if (ahl[k].real_hostname[1][0] == '\0')
+                        {
+                           (void)fprintf(stdout, "%-4d:  %-*s->%-*x %s\n",
+                                         k,
+                                         MAX_HOSTNAME_LENGTH,
+                                         ahl[k].host_alias,
+                                         MAX_INT_HEX_LENGTH,
+                                         ahl[k].host_id,
+                                         ahl[k].real_hostname[0]);
+                        }
+                        else
+                        {
+                           (void)fprintf(stdout, "%-4d:  %-*s->%-*x %s %s\n",
+                                         k,
+                                         MAX_HOSTNAME_LENGTH,
+                                         ahl[k].host_alias,
+                                         MAX_INT_HEX_LENGTH,
+                                         ahl[k].host_id,
+                                         ahl[k].real_hostname[0],
+                                         ahl[k].real_hostname[1]);
+                        }
+                     }
+                  }
+               }
+               else
+               {
+                  (void)fprintf(stderr,
+                                "WARN : Failed to stat() %s : %s (%s %d)\n",
+                                ahl_file, strerror(errno), __FILE__, __LINE__);
+               }
+            }
+         }
+      }
+      exit(SUCCESS);
+   }
+
    if ((get_afd_alias == YES) || (get_afd_alias_cut == YES))
    {
       for (i = 0; i < no_of_afds; i++)
@@ -432,5 +570,9 @@ usage(void)
                  "                                            -A  search AFD alias names\n");
    (void)fprintf(stderr,
                  "                                            -C  same as -A, just show first found\n");
+   (void)fprintf(stderr,
+                 "                                            -m  get host list of given afd_mon real name\n");
+   (void)fprintf(stderr,
+                 "                                            -M  get host list of given afd_mon alias name\n");
    return;
 }
