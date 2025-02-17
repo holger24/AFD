@@ -1,6 +1,6 @@
 /*
  *  evaluate_message.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -68,6 +68,7 @@ DESCR__S_M1
  **   21.04.2007 H.Kiehl Handle job ID data.
  **   23.11.2008 H.Kiehl Added DJ (Danger number of jobs).
  **   22.03.2014 H.Kiehl Added TD (Typesize data).
+ **   17.02.2025 H.Kiehl For HL try handle group identifier.
  **
  */
 DESCR__E_M1
@@ -877,9 +878,9 @@ evaluate_message(int *bytes_done)
                     ahl[pos].host_alias[i] = *ptr;
                     ptr++; i++;
                  }
+                 ahl[pos].host_alias[i] = '\0';
                  if (*ptr == ' ')
                  {
-                    ahl[pos].host_alias[i] = '\0';
                     ahl[pos].host_id = get_str_checksum(ahl[pos].host_alias);
                     i = 0;
                     ptr = ptr + 1;
@@ -907,10 +908,15 @@ evaluate_message(int *bytes_done)
                        ahl[pos].real_hostname[1][0] = '\0';
                     }
                  }
+                 else
+                 {
+                    /* Assume this is a group identifier. */
+                    ahl[pos].real_hostname[0][0] = GROUP_IDENTIFIER;
+                 }
 #ifdef _DEBUG_PRINT
                  (void)fprintf(stderr, "HL %d %s %s %s\n",
                                pos, ahl[pos].host_alias,
-                               ahl[pos].real_hostname[0],
+                               (ahl[pos].real_hostname[0][0] == GROUP_IDENTIFIER) ? "" : ahl[pos].real_hostname[0],
                                ahl[pos].real_hostname[1]);
 #endif
               }
