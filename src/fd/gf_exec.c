@@ -1,6 +1,6 @@
 /*
  *  gf_exec.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013 - 2024 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2013 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -46,6 +46,11 @@ DESCR__S_M1
  ** HISTORY
  **   23.01.2013 H.Kiehl Created
  **   14.01.2024 H.Kiehl Add more debug log information.
+ **   25.02.2025 H.Kiehl To help the external program, export
+ **                      the following environment variables:
+ **                         AFD_HC_TIMEOUT
+ **                         AFD_HC_BLOCKSIZE
+ **                         AFD_CURRENT_HOSTNAME
  **
  */
 DESCR__E_M1
@@ -57,6 +62,9 @@ DESCR__E_M1
 #include <sys/types.h>
 #include <dirent.h>                    /* opendir()                      */
 #include <sys/stat.h>
+#ifdef _OUTPUT_LOG
+# include <sys/times.h>                /* times()                        */
+#endif
 #include <fcntl.h>
 #include <signal.h>                    /* signal()                       */
 #include <unistd.h>                    /* close(), getpid()              */
@@ -93,6 +101,24 @@ int                        *current_no_of_listed_files = NULL,
 #endif
                            sys_log_fd = STDERR_FILENO,
                            timeout_flag;
+#ifdef _OUTPUT_LOG
+int                        ol_fd = -2;
+# ifdef WITHOUT_FIFO_RW_SUPPORT
+int                        ol_readfd = -2;
+# endif
+unsigned int               *ol_job_number,
+                           *ol_retries;
+char                       *ol_data = NULL,
+                           *ol_file_name,
+                           *ol_output_type;
+unsigned short             *ol_archive_name_length,
+                           *ol_file_name_length,
+                           *ol_unl;
+off_t                      *ol_file_size;
+size_t                     ol_size,
+                           ol_real_size;
+clock_t                    *ol_transfer_time;
+#endif
 off_t                      file_size_to_retrieve_shown = 0,
                            rl_size = 0;
 #ifdef HAVE_MMAP
@@ -109,6 +135,12 @@ struct fileretrieve_status *fra;
 struct job                 db;
 const char                 *sys_log_name = SYSTEM_LOG_FIFO;
 
+/* Static local variables. */
+#ifdef _OUTPUT_LOG
+static clock_t             end_time = 0,
+                           start_time = 0;
+#endif
+
 /* Local function prototypes. */
 static int                 exec_timeup(void);
 static void                gf_exec_exit(void),
@@ -122,7 +154,9 @@ static void                gf_exec_exit(void),
 int
 main(int argc, char *argv[])
 {
-   int              files_retrieved = 0,
+   int              add_env_var_length,
+                    current_toggle,
+                    files_retrieved = 0,
                     files_to_retrieve = 0,
                     local_file_length,
                     more_files_in_list,
@@ -133,7 +167,8 @@ main(int argc, char *argv[])
    unsigned int     crc_val;
    off_t            file_size_retrieved = 0,
                     file_size_to_retrieve = 0;
-   char             command_str[MAX_PATH_LENGTH + MAX_RECIPIENT_LENGTH],
+   char             add_env_var[15 + MAX_LONG_LENGTH + 1 + 17 + MAX_INT_LENGTH + 1 + 21 + MAX_REAL_HOSTNAME_LENGTH + 2 + 59 + 2],
+                    *command_str,
                     job_str[4],
                     local_file[MAX_PATH_LENGTH],
                     local_tmp_file[MAX_PATH_LENGTH],
@@ -152,6 +187,9 @@ main(int argc, char *argv[])
 #endif
 #ifdef SA_FULLDUMP
    struct sigaction sact;
+#endif
+#ifdef _OUTPUT_LOG
+   struct tms       tmsdummy;
 #endif
 
    CHECK_FOR_VERSION(argc, argv);
@@ -202,14 +240,17 @@ main(int argc, char *argv[])
       if (fsa->host_toggle == HOST_ONE)
       {
          (void)strcpy(db.hostname, fsa->real_hostname[HOST_TWO - 1]);
+         current_toggle = HOST_TWO;
       }
       else
       {
          (void)strcpy(db.hostname, fsa->real_hostname[HOST_ONE - 1]);
+         current_toggle = HOST_ONE;
       }
    }
    else
    {
+      current_toggle = (int)fsa->host_toggle;
       (void)strcpy(db.hostname,
                    fsa->real_hostname[(int)(fsa->host_toggle - 1)]);
    }
@@ -224,7 +265,7 @@ main(int argc, char *argv[])
    crc_val = get_str_checksum_crc32c(db.exec_cmd);
 #endif
    (void)snprintf(str_crc_val, MAX_INT_HEX_LENGTH, "%x", crc_val);
-   if (create_remote_dir(NULL, fra->retrieve_work_dir, db.user, db.hostname,
+   if (create_remote_dir(NULL, fra->retrieve_work_dir, db.user, fsa->host_alias,
                          str_crc_val, local_file, &local_file_length) == INCORRECT)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -249,14 +290,30 @@ main(int argc, char *argv[])
       p_local_file = local_file + local_file_length;
    }
 
+    /* Add additional environment variables. */
+   add_env_var_length = snprintf(add_env_var,
+                                 15 + MAX_LONG_LENGTH + 1 + 17 + MAX_INT_LENGTH + 1 + 21 + MAX_REAL_HOSTNAME_LENGTH + 2 + 59 + 2,
+                                 "AFD_HC_TIMEOUT=%ld;AFD_HC_BLOCKSIZE=%d;AFD_CURRENT_HOSTNAME=%s;export AFD_HC_TIMEOUT AFD_HC_BLOCKSIZE AFD_CURRENT_HOSTNAME",
+                                 transfer_timeout, fsa->block_size,
+                                 db.hostname);
+
+   /* Allocate buffer for command string. */
+   if ((command_str = malloc(add_env_var_length + 1 + local_file_length + MAX_RECIPIENT_LENGTH + 2)) == NULL)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 "malloc() error : %s", strerror(errno));
+      exit(ALLOC_ERROR);
+   }
+
    /* Prepare command string that we want to execute. */
    p_command = db.exec_cmd;
    while ((*p_command == ' ') || (*p_command == '\t'))
    {
       p_command++;
    }
-   (void)snprintf(command_str, MAX_PATH_LENGTH + MAX_RECIPIENT_LENGTH,
-                  "cd %s && %s", local_tmp_file, p_command);
+   (void)snprintf(command_str,
+                  add_env_var_length + 1 + local_file_length + MAX_RECIPIENT_LENGTH,
+                  "%s;cd %s && %s", add_env_var, local_tmp_file, p_command);
 
    /* Init job_str for exec_cmd(). */
    job_str[0] = '[';
@@ -345,6 +402,12 @@ main(int argc, char *argv[])
          sched_priority = NO_PRIORITY;
       }                               
 #endif
+#ifdef _OUTPUT_LOG
+      if (db.output_log == YES)
+      {
+         start_time = times(&tmsdummy);
+      }
+#endif
       if ((ret = exec_cmd(command_str, &return_str, transfer_log_fd,
                           fsa->host_dsp_name, MAX_HOSTNAME_LENGTH,
 #ifdef HAVE_SETPRIORITY
@@ -412,6 +475,13 @@ main(int argc, char *argv[])
       }
       free(return_str);
       return_str = NULL;
+
+#ifdef _OUTPUT_LOG
+      if (db.output_log == YES)
+      {
+         end_time = times(&tmsdummy);
+      }
+#endif
 
       /* Now lets see what the command got for us and move this to  */
       /* a place where AMG can pick them up for further processing. */
@@ -485,6 +555,57 @@ main(int argc, char *argv[])
             }
             else
             {
+#ifdef _OUTPUT_LOG
+               if (db.output_log == YES)
+               {
+                  if (ol_fd == -2)
+                  {
+# ifdef WITHOUT_FIFO_RW_SUPPORT
+                     output_log_fd(&ol_fd, &ol_readfd, &db.output_log);
+# else
+                     output_log_fd(&ol_fd, &db.output_log);
+# endif
+                  }
+                  if ((ol_fd > -1) && (ol_data == NULL))
+                  {
+                     output_log_ptrs(&ol_retries, &ol_job_number, &ol_data,
+                                     &ol_file_name, &ol_file_name_length,
+                                     &ol_archive_name_length, &ol_file_size,
+                                     &ol_unl, &ol_size, &ol_transfer_time,
+                                     &ol_output_type, db.host_alias,
+                                     (current_toggle - 1), EXEC,
+                                     &db.output_log);
+                  }
+
+                  (void)strcpy(ol_file_name, p_local_file);
+                  *ol_file_name_length = (unsigned short)strlen(ol_file_name);
+                  ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
+                  ol_file_name[*ol_file_name_length + 1] = '\0';
+                  (*ol_file_name_length)++;
+# ifdef HAVE_STATX
+                  *ol_file_size = stat_buf.stx_size;
+# else
+                  *ol_file_size = stat_buf.st_size;
+# endif
+                  *ol_job_number = db.id.dir;
+                  *ol_retries = db.retries;
+                  *ol_unl = 0;
+                  /*
+                   * Note: The next is wrong, when more then one
+                   *       file was downloaded. But we just do not
+                   *       know how long each data set took.
+                   */
+                  *ol_transfer_time = end_time - start_time;
+                  *ol_archive_name_length = 0;
+                  *ol_output_type = OT_NORMAL_RECEIVED + '0';
+                  ol_real_size = *ol_file_name_length + ol_size;
+                  if (write(ol_fd, ol_data, ol_real_size) != ol_real_size)
+                  {
+                     system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                "write() error : %s", strerror(errno));
+                  }
+               }
+#endif
                if (db.fsa_pos != INCORRECT)
                {
 #ifdef HAVE_STATX
@@ -530,6 +651,7 @@ main(int argc, char *argv[])
    {
       fsa->job_status[(int)db.job_no].connect_status = CLOSING_CONNECTION;
    }
+   free(command_str);
 
    exitflag = 0;
    exit(TRANSFER_SUCCESS);

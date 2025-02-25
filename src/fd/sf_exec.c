@@ -1,6 +1,6 @@
 /*
  *  sf_exec.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -50,6 +50,11 @@ DESCR__S_M1
  **   27.11.2011 H.Kiehl Created
  **   15.09.2014 H.Kiehl Added simulation mode.
  **   14.01.2024 H.Kiehl Add more debug log information.
+ **   25.02.2025 H.Kiehl To help the external program, export
+ **                      the following environment variables:
+ **                         AFD_HC_TIMEOUT
+ **                         AFD_HC_BLOCKSIZE
+ **                         AFD_CURRENT_HOSTNAME
  **
  */
 DESCR__E_M1
@@ -175,8 +180,11 @@ main(int argc, char *argv[])
 #ifdef _WITH_BURST_2
    int              cb2_ret = NO;
 #endif
-   int              exec_done,
+   int              add_env_var_length,
+                    current_toggle,
+                    exec_done,
                     exit_status = TRANSFER_SUCCESS,
+                    file_path_length,
                     ii,
                     k,
                     last_k,
@@ -197,7 +205,8 @@ main(int argc, char *argv[])
                     last_update_time,
                     now,
                     *p_file_mtime_buffer;
-   char             command_str[3 + MAX_PATH_LENGTH + 4 + 1024 + 2],
+   char             add_env_var[15 + MAX_LONG_LENGTH + 1 + 17 + MAX_INT_LENGTH + 1 + 21 + MAX_REAL_HOSTNAME_LENGTH + 2 + 59 + 2],
+                    *command_str,
                     file_name[MAX_FILENAME_LENGTH],
                     file_path[MAX_PATH_LENGTH],
                     *fnp,
@@ -270,6 +279,50 @@ main(int argc, char *argv[])
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  "Failed to set signal handlers : %s", strerror(errno));
       exit(INCORRECT);
+   }
+
+   /* Now determine the real hostname. */
+   if (fsa->real_hostname[1][0] == '\0')
+   {
+      (void)strcpy(db.hostname, fsa->real_hostname[0]);
+      current_toggle = HOST_ONE;
+   }
+   else
+   {
+      if (db.toggle_host == YES)
+      {
+         if (fsa->host_toggle == HOST_ONE)
+         {
+            (void)strcpy(db.hostname, fsa->real_hostname[HOST_TWO - 1]);
+            current_toggle = HOST_TWO;
+         }
+         else
+         {
+            (void)strcpy(db.hostname, fsa->real_hostname[HOST_ONE - 1]);
+            current_toggle = HOST_ONE;
+         }
+      }
+      else
+      {
+         current_toggle = (int)fsa->host_toggle;
+         (void)strcpy(db.hostname, fsa->real_hostname[(current_toggle - 1)]);
+      }
+   }
+
+   /* Add additional environment variables. */
+   add_env_var_length = snprintf(add_env_var,
+                                 15 + MAX_LONG_LENGTH + 1 + 17 + MAX_INT_LENGTH + 1 + 21 + MAX_REAL_HOSTNAME_LENGTH + 2 + 59 + 2,
+                                 "AFD_HC_TIMEOUT=%ld;AFD_HC_BLOCKSIZE=%d;AFD_CURRENT_HOSTNAME=%s;export AFD_HC_TIMEOUT AFD_HC_BLOCKSIZE AFD_CURRENT_HOSTNAME",
+                                 transfer_timeout, fsa->block_size,
+                                 db.hostname);
+
+   /* Allocate buffer for command string. */
+   file_path_length = (int)strlen(file_path);
+   if ((command_str = malloc(add_env_var_length + 3 + file_path_length + 4 + 1024 + 2)) == NULL)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 "malloc() error : %s", strerror(errno));
+      exit(ALLOC_ERROR);
    }
 
    /* Inform FSA that we have are ready to copy the files. */
@@ -463,8 +516,9 @@ main(int argc, char *argv[])
                }
 #endif
                (void)snprintf(command_str,
-                              3 + MAX_PATH_LENGTH + 4 + 1024 + 1,
-                              "cd %s && %s", file_path, p_command);
+                              add_env_var_length + 1 + 3 + file_path_length + 4 + 1024 + 1,
+                              "%s;cd %s && %s",
+                              add_env_var, file_path, p_command);
                if (fsa->debug > NORMAL_MODE)
                {
                   trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
@@ -573,8 +627,9 @@ main(int argc, char *argv[])
             tmp_char = *insert_list[0];
             *insert_list[0] = '\0';
             length_start = snprintf(command_str,
-                                    3 + MAX_PATH_LENGTH + 4 + 1024 + 1,
-                                    "cd %s && %s", file_path, p_command);
+                                    add_env_var_length + 1 + 3 + file_path_length + 4 + 1024 + 1,
+                                    "%s;cd %s && %s",
+                                    add_env_var, file_path, p_command);
             *insert_list[0] = tmp_char;
 
             fnp = p_file_name_buffer;
@@ -741,8 +796,8 @@ main(int argc, char *argv[])
                                &ol_file_name, &ol_file_name_length,
                                &ol_archive_name_length, &ol_file_size,
                                &ol_unl, &ol_size, &ol_transfer_time,
-                               &ol_output_type, db.host_alias, 0, EXEC,
-                               &db.output_log);
+                               &ol_output_type, db.host_alias,
+                               (current_toggle - 1), EXEC, &db.output_log);
             }
          }
 #endif
@@ -1006,6 +1061,7 @@ try_again_unlink:
 # endif
                                       NULL)) == YES);
    burst_2_counter--;
+   free(command_str);
 
    if (cb2_ret == NEITHER)
    {

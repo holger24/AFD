@@ -83,7 +83,32 @@ There are currently five schemes for fetching files supported:
 </tr>
 <tr>
    <td>exec</td>
-   <td>Execute some external command to retrieve data.</td>
+   <td>Execute some external command to retrieve data.
+       The following environment variables are set:
+       <table border>
+       <tr>
+          <th>Variable name</th>
+          <th>Description</th>
+          <th>Example</th>
+      </tr>
+      <tr>
+         <td>AFD_HC_TIMEOUT</td>
+         <td>Transfer timeout in seconds set in HOST_CONFIG.</td>
+         <td>AFD_HC_TIMEOUT=120</td>
+      </tr>
+      <tr>
+         <td>AFD_HC_BLOCKSIZE</td>
+         <td>Transfer blocksize in bytes set in HOST_CONFIG.</td>
+         <td>AFD_HC_BLOCKSIZE=4096</td>
+      </tr>
+      <tr>
+         <td>AFD_CURRENT_HOSTNAME</td>
+         <td>The real hostname set in HOST_CONFIG. If two host names
+             are set, this will hold the current active hosstname.</td>
+         <td>AFD_CURRENT_HOSTNAME=ducktown.org</td>
+      </tr>
+      </table>
+   </td>
    <td>exec://ext_fetch/fetch_command</td>
 </tr>
 </table>
@@ -1351,13 +1376,46 @@ There are currently seven schemes supported:
 </tr>
 <tr>
    <td>file</td>
-   <td>Copies files to another directory.</td>
+   <td>Moves the files to another directory, if the file is in the
+       same filesystem. Otherwise the files will be copied.</td>
    <td>file://local/directory</td>
 </tr>
 <tr>
    <td>exec</td>
    <td>Calls an external program to transmit the file to another
-       destination.</td>
+       destination. The program will be executed in the directory
+       with all the files AFD has available for the job. If
+       no %s modifier is set, the program will be called once
+       for all files. If the %s modifier is set to substitute the
+       file name in the command line it will execute the program for
+       each file in the job. If there are three files, it will then
+       call the program 3 times. The %s modifier may be set 10
+       (MAX_EXEC_FILE_SUBSTITUTION) times. The following environment
+       variables are set:
+       <table border>
+       <tr>
+          <th>Variable name</th>
+          <th>Description</th>
+          <th>Example</th>
+      </tr>
+      <tr>
+         <td>AFD_HC_TIMEOUT</td>
+         <td>Transfer timeout in seconds set in HOST_CONFIG.</td>
+         <td>AFD_HC_TIMEOUT=120</td>
+      </tr>
+      <tr>
+         <td>AFD_HC_BLOCKSIZE</td>
+         <td>Transfer blocksize in bytes set in HOST_CONFIG.</td>
+         <td>AFD_HC_BLOCKSIZE=4096</td>
+      </tr>
+      <tr>
+         <td>AFD_CURRENT_HOSTNAME</td>
+         <td>The real hostname set in HOST_CONFIG. If two host names
+             are set, this will hold the current active hosstname.</td>
+         <td>AFD_CURRENT_HOSTNAME=ducktown.org</td>
+      </tr>
+      </table>
+       </td>
    <td>exec://printer/lpr -Pmy_printer %s</td>
 </tr>
 <tr>
@@ -1374,6 +1432,16 @@ There are currently seven schemes supported:
    <td>scp</td>
    <td>Sends files via SSH using the SCP protocol.</td>
    <td>scp://donald:secret@ducktown/directory</td>
+</tr>
+<tr>
+   <td>http</td>
+   <td>Sends files via HTTP.</td>
+   <td>http://donald:secret@ducktown/directory</td>
+</tr>
+<tr>
+   <td>https</td>
+   <td>Sends files via HTTPS.</td>
+   <td>https://donald:secret@ducktown/directory</td>
 </tr>
 </table>
 <p>
@@ -3423,9 +3491,9 @@ section. Valid options can be taken from the following table:
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 1997 - 2024 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2025 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 15.12.2024
+   Last updated: 26.02.2025
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

@@ -1,7 +1,7 @@
 /*
  *  edit_hc_callbacks.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1997 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -51,6 +51,8 @@ DESCR__S_M3
  **   25.10.2021 H.Kiehl Added option bucketname in path.
  **   10.01.2022 H.Kiehl Added no expect option.
  **   18.02.2023 H.Kiehl Added 'Send UTF8 on'.
+ **   25.02.2025 H.Kiehl Allow to set real hostname, host switching and
+ **                      transfer timeout for EXEC protocol.
  **
  */
 DESCR__E_M3
@@ -1551,6 +1553,7 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
          if ((fsa[cur_pos].protocol & FTP_FLAG) ||
              (fsa[cur_pos].protocol & SFTP_FLAG) ||
              (fsa[cur_pos].protocol & HTTP_FLAG) ||
+             (fsa[cur_pos].protocol & EXEC_FLAG) ||
 #ifdef _WITH_SCP_SUPPORT
              (fsa[cur_pos].protocol & SCP_FLAG) ||
 #endif
@@ -1842,6 +1845,7 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
          if ((fsa[cur_pos].protocol & FTP_FLAG) ||
              (fsa[cur_pos].protocol & SFTP_FLAG) ||
              (fsa[cur_pos].protocol & HTTP_FLAG) ||
+             (fsa[cur_pos].protocol & EXEC_FLAG) ||
 #ifdef _WITH_SCP_SUPPORT
              (fsa[cur_pos].protocol & SCP_FLAG) ||
 #endif
