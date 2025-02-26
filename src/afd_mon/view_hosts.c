@@ -164,7 +164,6 @@ main(int argc, char *argv[])
                            gotcha,
                            k;
       char                 ahl_file[MAX_PATH_LENGTH],
-                           group_identifier,
                            *p_ahl_file,
                            *ptr;
       struct afd_host_list *ahl;
