@@ -1,7 +1,7 @@
 /*
  *  create_remote_dir.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -62,6 +62,9 @@ DESCR__S_M3
  **   24.10.2008 H.Kiehl Additional parameter to return the length of
  **                      remote_dir.
  **   22.04.2016 H.Kiehl Added parameter local_work_dir.
+ **   26.02.2025 H.Kiehl When url is not NULL, allow overriding values
+ **                      user, host_alias and directory by passing a none
+ **                      NULL argument.
  **
  */
 DESCR__E_M3
@@ -132,17 +135,49 @@ create_remote_dir(char *url,
    else
    {
       unsigned int error_mask;
-      char         directory[MAX_RECIPIENT_LENGTH + 1],
-                   host_alias[MAX_REAL_HOSTNAME_LENGTH + 1],
-                   user[MAX_USER_NAME_LENGTH + 1];
+      char         *p_directory,
+                   *p_host_alias,
+                   *p_user,
+                   url_directory[MAX_RECIPIENT_LENGTH + 1],
+                   url_host_alias[MAX_REAL_HOSTNAME_LENGTH + 1],
+                   url_user[MAX_USER_NAME_LENGTH + 1];
 
-      if ((error_mask = url_evaluate(url, NULL, user, NULL, NULL,
+      if (user == NULL)
+      {
+         p_user = url_user;
+      }
+      else
+      {
+         p_user = user;
+      }
+      if (host_alias == NULL)
+      {
+         p_host_alias = url_host_alias;
+      }
+      else
+      {
+         p_host_alias = host_alias;
+      }
+      if (directory == NULL)
+      {
+         p_directory = url_directory;
+      }
+      else
+      {
+         p_directory = directory;
+      }
+      if ((error_mask = url_evaluate(url, NULL,
+                                     (user == NULL) ? url_user : NULL, NULL,
+                                     NULL,
 #ifdef WITH_SSH_FINGERPRINT
                                      NULL, NULL,
 #endif
-                                     NULL, NO, host_alias, NULL, directory,
-                                     NULL, NULL, NULL, NULL, NULL, NULL,
-                                     NULL, NULL)) > 3)
+                                     NULL, NO,
+                                     (host_alias == NULL) ? url_host_alias : NULL,
+                                     NULL,
+                                     (directory == NULL) ? url_directory : NULL,
+                                     NULL, NULL, NULL, NULL,
+                                     NULL, NULL, NULL, NULL)) > 3)
       {
          char error_msg[MAX_URL_ERROR_MSG];
 
@@ -154,49 +189,51 @@ create_remote_dir(char *url,
       }
       else
       {
-         if (directory[0] == '/')
+         if (p_directory[0] == '/')
          {
             *remote_dir_length = snprintf(remote_dir, MAX_PATH_LENGTH,
                                           "%s%s%s/%s@%s%s",
                                           local_work_dir, AFD_FILE_DIR,
-                                          INCOMING_DIR, user, host_alias,
-                                          directory) + 1;
+                                          INCOMING_DIR, p_user,
+                                          p_host_alias, p_directory) + 1;
          }
-         else if (directory[0] == '\0')
+         else if (p_directory[0] == '\0')
               {
-                 if (user[0] == '\0')
+                 if (p_user[0] == '\0')
                  {
                     *remote_dir_length = snprintf(remote_dir, MAX_PATH_LENGTH,
                                                   "%s%s%s/@%s",
                                                   local_work_dir, AFD_FILE_DIR,
-                                                  INCOMING_DIR, host_alias) + 1;
+                                                  INCOMING_DIR,
+                                                  p_host_alias) + 1;
                  }
                  else
                  {
                     *remote_dir_length = snprintf(remote_dir, MAX_PATH_LENGTH,
                                                   "%s%s%s/%s@%s/%s",
                                                   local_work_dir, AFD_FILE_DIR,
-                                                  INCOMING_DIR, user, host_alias,
-                                                  user) + 1;
+                                                  INCOMING_DIR, p_user,
+                                                  p_host_alias, p_user) + 1;
                  }
               }
               else
               {
-                 if (user[0] == '\0')
+                 if (p_user[0] == '\0')
                  {
                     *remote_dir_length = snprintf(remote_dir, MAX_PATH_LENGTH,
                                                   "%s%s%s/@%s/%s",
                                                   local_work_dir, AFD_FILE_DIR,
-                                                  INCOMING_DIR, host_alias,
-                                                  directory) + 1;
+                                                  INCOMING_DIR, p_host_alias,
+                                                  p_directory) + 1;
                  }
                  else
                  {
                     *remote_dir_length = snprintf(remote_dir, MAX_PATH_LENGTH,
                                                   "%s%s%s/%s@%s/%s/%s",
                                                   local_work_dir, AFD_FILE_DIR,
-                                                  INCOMING_DIR, user,
-                                                  host_alias, user, directory) + 1;
+                                                  INCOMING_DIR, p_user,
+                                                  p_host_alias, p_user,
+                                                  p_directory) + 1;
                  }
               }
          ret = SUCCESS;

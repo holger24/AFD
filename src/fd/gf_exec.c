@@ -265,8 +265,9 @@ main(int argc, char *argv[])
    crc_val = get_str_checksum_crc32c(db.exec_cmd);
 #endif
    (void)snprintf(str_crc_val, MAX_INT_HEX_LENGTH, "%x", crc_val);
-   if (create_remote_dir(NULL, fra->retrieve_work_dir, db.user, fsa->host_alias,
-                         str_crc_val, local_file, &local_file_length) == INCORRECT)
+   if (create_remote_dir(fra->url, fra->retrieve_work_dir, NULL,
+                         NULL, str_crc_val, local_file,
+                         &local_file_length) == INCORRECT)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  "Failed to determine local incoming directory for <%s>.",
