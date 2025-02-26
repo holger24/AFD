@@ -1,6 +1,6 @@
 /*
  *  eval_input_gf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -77,7 +77,7 @@ extern char                       *p_work_dir;
 extern struct filetransfer_status *fsa;
 
 /* Local function prototypes. */
-static void                       usage(char *);
+static void                       usage(char *, unsigned int);
 
 
 /*########################### eval_input_gf() ###########################*/
@@ -88,7 +88,7 @@ eval_input_gf(int argc, char *argv[], struct job *p_db)
 
    if (argc < 7)
    {
-      usage(argv[0]);
+      usage(argv[0], p_db->protocol);
       ret = SYNTAX_ERROR;
    }
    else
@@ -117,7 +117,7 @@ eval_input_gf(int argc, char *argv[], struct job *p_db)
          (void)fprintf(stderr,
                        "ERROR   : None nummeric value for job number : %s.\n",
                        argv[2]);
-         usage(argv[0]);
+         usage(argv[0], p_db->protocol);
          ret = SYNTAX_ERROR;
       }
       else
@@ -214,7 +214,7 @@ eval_input_gf(int argc, char *argv[], struct job *p_db)
                                        {
                                           (void)fprintf(stderr,
                                                         "ERROR   : No disconnect time specified for -d option.\n");
-                                          usage(argv[0]);
+                                          usage(argv[0], p_db->protocol);
                                           ret = SYNTAX_ERROR;
                                        }
                                        break;
@@ -254,7 +254,7 @@ eval_input_gf(int argc, char *argv[], struct job *p_db)
                                                               "ERROR   : Default HTTP proxy specified for -h option is to long, may only be %d bytes long.\n",
                                                               MAX_REAL_HOSTNAME_LENGTH);
                                              }
-                                             usage(argv[0]);
+                                             usage(argv[0], p_db->protocol);
                                              ret = SYNTAX_ERROR;
                                           }
                                        }
@@ -262,7 +262,7 @@ eval_input_gf(int argc, char *argv[], struct job *p_db)
                                        {
                                           (void)fprintf(stderr,
                                                         "ERROR   : No default HTTP proxy specified for -h option.\n");
-                                          usage(argv[0]);
+                                          usage(argv[0], p_db->protocol);
                                           ret = SYNTAX_ERROR;
                                        }
                                        break;
@@ -296,7 +296,7 @@ eval_input_gf(int argc, char *argv[], struct job *p_db)
                                        {
                                           (void)fprintf(stderr,
                                                         "ERROR   : No interval specified for -i option.\n");
-                                          usage(argv[0]);
+                                          usage(argv[0], p_db->protocol);
                                           ret = SYNTAX_ERROR;
                                        }
                                        break;
@@ -339,7 +339,7 @@ eval_input_gf(int argc, char *argv[], struct job *p_db)
                                        {
                                           (void)fprintf(stderr,
                                                         "ERROR   : No mode specified for -m option.\n");
-                                          usage(argv[0]);
+                                          usage(argv[0], p_db->protocol);
                                           ret = SYNTAX_ERROR;
                                        }
                                        break;
@@ -374,7 +374,7 @@ eval_input_gf(int argc, char *argv[], struct job *p_db)
                                        {
                                           (void)fprintf(stderr,
                                                         "ERROR   : No retries specified for -o option.\n");
-                                          usage(argv[0]);
+                                          usage(argv[0], p_db->protocol);
                                           ret = SYNTAX_ERROR;
                                        }
                                        break;
@@ -402,7 +402,7 @@ eval_input_gf(int argc, char *argv[], struct job *p_db)
                         (void)fprintf(stderr,
                                       "ERROR   : Wrong value for FRA position : %s.\n",
                                       argv[6]);
-                        usage(argv[0]);
+                        usage(argv[0], p_db->protocol);
                         ret = SYNTAX_ERROR;
                      }
                   }
@@ -411,7 +411,7 @@ eval_input_gf(int argc, char *argv[], struct job *p_db)
                      (void)fprintf(stderr,
                                    "ERROR   : Could not resolve directory ID %s : %s\n",
                                    argv[5], strerror(errno));
-                     usage(argv[0]);
+                     usage(argv[0], p_db->protocol);
                      ret = SYNTAX_ERROR;
                   }
                }
@@ -420,7 +420,7 @@ eval_input_gf(int argc, char *argv[], struct job *p_db)
                   (void)fprintf(stderr,
                                 "ERROR   : FRA ID does not look like a hex number or is to long or short : %s.\n",
                                 argv[5]);
-                  usage(argv[0]);
+                  usage(argv[0], p_db->protocol);
                   ret = SYNTAX_ERROR;
                }
             }
@@ -429,7 +429,7 @@ eval_input_gf(int argc, char *argv[], struct job *p_db)
                (void)fprintf(stderr,
                              "ERROR   : Wrong value for FSA position : %s.\n",
                              argv[4]);
-               usage(argv[0]);
+               usage(argv[0], p_db->protocol);
                ret = SYNTAX_ERROR;
             }
          }
@@ -437,7 +437,7 @@ eval_input_gf(int argc, char *argv[], struct job *p_db)
          {
             (void)fprintf(stderr,
                           "ERROR   : Wrong value for FSA ID : %s.\n", argv[3]);
-            usage(argv[0]);
+            usage(argv[0], p_db->protocol);
             ret = SYNTAX_ERROR;
          }
       }
@@ -452,7 +452,7 @@ eval_input_gf(int argc, char *argv[], struct job *p_db)
 
 /*+++++++++++++++++++++++++++++++ usage() ++++++++++++++++++++++++++++++*/
 static void
-usage(char *name)
+usage(char *name, unsigned int protocol)
 {
    (void)fprintf(stderr, "SYNTAX: %s <work dir> <job no.> <FSA id> <FSA pos> <dir alias> [options]\n\n", name);
    (void)fprintf(stderr, "OPTIONS                       DESCRIPTION\n");
@@ -462,7 +462,10 @@ usage(char *name)
 #endif
    (void)fprintf(stderr, "  -d                        - this is a distributed helper job\n");
    (void)fprintf(stderr, "  -e <seconds>              - Disconnect after the given amount of time.\n");
-   (void)fprintf(stderr, "  -h <HTTP proxy>[:<port>]  - Proxy where to send the HTTP request.\n");
+   if (protocol == HTTP_FLAG)
+   {
+      (void)fprintf(stderr, "  -h <HTTP proxy>[:<port>]  - Proxy where to send the HTTP request.\n");
+   }
    (void)fprintf(stderr, "  -i <interval>             - interval at which we should retry\n");
    (void)fprintf(stderr, "  -m <mode>                 - mode of the created source dir\n");
    (void)fprintf(stderr, "  -o <retries>              - old/error message\n");

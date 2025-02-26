@@ -1,6 +1,6 @@
 /*
  *  eval_input_sf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -97,7 +97,7 @@ extern char                       *p_work_dir;
 extern struct filetransfer_status *fsa;
 
 /* Local function prototypes. */
-static void                       usage(char *);
+static void                       usage(char *, unsigned int);
 
 
 /*########################### eval_input_sf() ###########################*/
@@ -108,7 +108,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
 
    if (argc < 6)
    {
-      usage(argv[0]);
+      usage(argv[0], p_db->protocol);
       ret = SYNTAX_ERROR;
    }
    else
@@ -137,7 +137,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
          (void)fprintf(stderr,
                        "ERROR   : None nummeric value for job number : %s.\n",
                        argv[2]);
-         usage(argv[0]);
+         usage(argv[0], p_db->protocol);
          ret = SYNTAX_ERROR;
       }
       else
@@ -273,7 +273,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                                     {
                                        (void)fprintf(stderr,
                                                      "ERROR   : No age limit specified for -a option.\n");
-                                       usage(argv[0]);
+                                       usage(argv[0], p_db->protocol);
                                        ret = SYNTAX_ERROR;
                                     }
                                     break;
@@ -314,7 +314,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                                     {
                                        (void)fprintf(stderr,
                                                      "ERROR   : No default charset specified for -C option.\n");
-                                       usage(argv[0]);
+                                       usage(argv[0], p_db->protocol);
                                        ret = SYNTAX_ERROR;
                                     }
                                     break;
@@ -348,7 +348,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                                     {
                                        (void)fprintf(stderr,
                                                      "ERROR   : No DE-Mail sender address specified for -D option.\n");
-                                       usage(argv[0]);
+                                       usage(argv[0], p_db->protocol);
                                        ret = SYNTAX_ERROR;
                                     }
                                     break;
@@ -363,7 +363,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                                     {
                                        (void)fprintf(stderr,
                                                      "ERROR   : No disconnect time specified for -d option.\n");
-                                       usage(argv[0]);
+                                       usage(argv[0], p_db->protocol);
                                        ret = SYNTAX_ERROR;
                                     }
                                     break;
@@ -396,7 +396,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                                     {
                                        (void)fprintf(stderr,
                                                      "ERROR   : No default SMTP from specified for -f option.\n");
-                                       usage(argv[0]);
+                                       usage(argv[0], p_db->protocol);
                                        ret = SYNTAX_ERROR;
                                     }
                                     break;
@@ -429,7 +429,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                                     {
                                        (void)fprintf(stderr,
                                                      "ERROR   : No mail group domain specified for -g option.\n");
-                                       usage(argv[0]);
+                                       usage(argv[0], p_db->protocol);
                                        ret = SYNTAX_ERROR;
                                     }
                                     break;
@@ -469,7 +469,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                                                            "ERROR   : Default HTTP proxy specified for -h option is to long, may only be %d bytes long.\n",
                                                            MAX_REAL_HOSTNAME_LENGTH);
                                           }
-                                          usage(argv[0]);
+                                          usage(argv[0], p_db->protocol);
                                           ret = SYNTAX_ERROR;
                                        }
                                     }
@@ -477,7 +477,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                                     {
                                        (void)fprintf(stderr,
                                                      "ERROR   : No default HTTP proxy specified for -h option.\n");
-                                       usage(argv[0]);
+                                       usage(argv[0], p_db->protocol);
                                        ret = SYNTAX_ERROR;
                                     }
                                     break;
@@ -521,7 +521,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                                     {
                                        (void)fprintf(stderr,
                                                      "ERROR   : No mode specified for -m option.\n");
-                                       usage(argv[0]);
+                                       usage(argv[0], p_db->protocol);
                                        ret = SYNTAX_ERROR;
                                     }
                                     break;
@@ -554,7 +554,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                                     {
                                        (void)fprintf(stderr,
                                                      "ERROR   : No default SMTP reply-to specified for -R option.\n");
-                                       usage(argv[0]);
+                                       usage(argv[0], p_db->protocol);
                                        ret = SYNTAX_ERROR;
                                     }
                                     break;
@@ -592,7 +592,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                                     {
                                        (void)fprintf(stderr,
                                                      "ERROR   : No retries specified for -o option.\n");
-                                       usage(argv[0]);
+                                       usage(argv[0], p_db->protocol);
                                        ret = SYNTAX_ERROR;
                                     }
                                     break;
@@ -633,7 +633,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                                                            "ERROR   : Default SMTP server specified for -s option is to long, may only be %d bytes long.\n",
                                                            MAX_REAL_HOSTNAME_LENGTH);
                                           }
-                                          usage(argv[0]);
+                                          usage(argv[0], p_db->protocol);
                                           ret = SYNTAX_ERROR;
                                        }
                                     }
@@ -641,7 +641,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                                     {
                                        (void)fprintf(stderr,
                                                      "ERROR   : No default SMTP server specified for -s option.\n");
-                                       usage(argv[0]);
+                                       usage(argv[0], p_db->protocol);
                                        ret = SYNTAX_ERROR;
                                     }
                                     break;
@@ -696,7 +696,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                   (void)fprintf(stderr,
                                 "ERROR   : Wrong message name : %s.\n",
                                 argv[5]);
-                  usage(argv[0]);
+                  usage(argv[0], p_db->protocol);
                   ret = SYNTAX_ERROR;
                }
             }
@@ -705,7 +705,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                (void)fprintf(stderr,
                              "ERROR   : Wrong value for FSA position : %s.\n",
                              argv[4]);
-               usage(argv[0]);
+               usage(argv[0], p_db->protocol);
                ret = SYNTAX_ERROR;
             }
          }
@@ -713,7 +713,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
          {
             (void)fprintf(stderr,
                           "ERROR   : Wrong value for FSA ID : %s.\n", argv[3]);
-            usage(argv[0]);
+            usage(argv[0], p_db->protocol);
             ret = SYNTAX_ERROR;
          }
       }
@@ -728,7 +728,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
 
 /*+++++++++++++++++++++++++++++++ usage() ++++++++++++++++++++++++++++++*/
 static void
-usage(char *name)
+usage(char *name, unsigned int protocol)
 {
    (void)fprintf(stderr,
                  "SYNTAX: %s <work dir> <job no.> <FSA id> <FSA pos> <msg name> [options]\n\n",
@@ -740,19 +740,34 @@ usage(char *name)
 #ifdef HAVE_HW_CRC32
    (void)fprintf(stderr, "  -c                        - Enable support for hardware CRC-32.\n");
 #endif
-   (void)fprintf(stderr, "  -C <charset>              - Set the default charset.\n");
+   if (protocol == SMTP_FLAG)
+   {
+      (void)fprintf(stderr, "  -C <charset>              - Set the default charset.\n");
+   }
 #ifdef _WITH_DE_MAIL_SUPPORT
-   (void)fprintf(stderr, "  -D <DE-Mail sender>       - DE-Mail sender address.\n");
+   if (protocol == DE_MAIL_FLAG)
+   {
+      (void)fprintf(stderr, "  -D <DE-Mail sender>       - DE-Mail sender address.\n");
+   }
 #endif
    (void)fprintf(stderr, "  -e <seconds>              - Disconnect after the given amount of time.\n");
-   (void)fprintf(stderr, "  -f <SMTP from>            - Default from identifier to send.\n");
-   (void)fprintf(stderr, "  -g <group mail domain>    - Group mail domain.\n");
-   (void)fprintf(stderr, "  -h <HTTP proxy>[:<port>]  - Proxy where to send the HTTP request.\n");
+   if (protocol == SMTP_FLAG)
+   {
+      (void)fprintf(stderr, "  -f <SMTP from>            - Default from identifier to send.\n");
+      (void)fprintf(stderr, "  -g <group mail domain>    - Group mail domain.\n");
+   }
+   if (protocol == HTTP_FLAG)
+   {
+      (void)fprintf(stderr, "  -h <HTTP proxy>[:<port>]  - Proxy where to send the HTTP request.\n");
+   }
    (void)fprintf(stderr, "  -m <mode>                 - Mode of the created target dir.\n");
    (void)fprintf(stderr, "  -o <retries>              - Old/error message and number of retries.\n");
    (void)fprintf(stderr, "  -r                        - Resend from archive.\n");
-   (void)fprintf(stderr, "  -R <SMTP reply-to>        - Default reply-to identifier to send.\n");
-   (void)fprintf(stderr, "  -s <SMTP server>[:<port>] - Server where to send the mails.\n");
+   if (protocol == SMTP_FLAG)
+   {
+      (void)fprintf(stderr, "  -R <SMTP reply-to>        - Default reply-to identifier to send.\n");
+      (void)fprintf(stderr, "  -s <SMTP server>[:<port>] - Server where to send the mails.\n");
+   }
    (void)fprintf(stderr, "  -S                        - Simulation mode.\n");
    (void)fprintf(stderr, "  -t                        - Use other host (toggle).\n");
 
