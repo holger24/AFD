@@ -473,6 +473,26 @@ main(int argc, char *argv[])
                } while (*end_ptr != '\0');
             }
          }
+         if (gsf_check_fsa((struct job *)&db) != NEITHER)
+         {
+            (void)gsf_check_fra((struct job *)&db);
+            unset_error_counter_fra(fra_fd, p_work_dir, fra,
+                                    (struct job *)&db);
+            unset_error_counter_fsa(fsa_fd, transfer_log_fd,
+                                    p_work_dir, fsa,
+                                    (struct job *)&db);
+#ifdef WITH_ERROR_QUEUE    
+            if (fsa->host_status & ERROR_QUEUE_SET)
+            {
+               remove_from_error_queue(db.id.dir, fsa, db.fsa_pos, fsa_fd);
+            }
+#endif                      
+            if (fsa->host_status & HOST_ACTION_SUCCESS)
+            {
+               error_action(fsa->host_alias, "start",
+                            HOST_SUCCESS_ACTION, transfer_log_fd);
+            }
+         }
       }
       free(return_str);
       return_str = NULL;

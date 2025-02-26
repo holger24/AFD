@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2024 Holger Kiehl
+## Copyright (C) 2001 - 2025 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -544,7 +544,8 @@ bin_gf_exec_SOURCES        = src/fd/eval_input_gf.c\
                              src/fd/reset_values.c\
                              src/fd/send_proc_fin.c\
                              src/fd/trans_db_log.c\
-                             src/fd/trans_log.c
+                             src/fd/trans_log.c\
+                             src/fd/unset_error_counter.c
 bin_gf_exec_LDADD          = lib/libafd.a
 bin_gf_ftp_SOURCES         = src/fd/check_burst_gf.c\
                              src/fd/handle_ls_data.c\
