@@ -1,6 +1,6 @@
 /*
  *  sftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -100,6 +100,9 @@ DESCR__S_M3
  **                      process to terminate.
  **   30.05.2023 H.Kiehl Added functions sftp_hardlink() and sftp_symlink().
  **   15.06.2023 H.Kiehl Add support for support2 structure of Version 6.
+ **   26.02.2025 H.Kiehl If sftp_mkdir() fails with SSH_FX_FAILURE,
+ **                      check with sftp_stat() if someone else has
+ **                      created the directory.
  **
  */
 DESCR__E_M3
@@ -2556,11 +2559,16 @@ sftp_mkdir(char *directory, mode_t dir_mode)
    if ((status = write_msg(msg, (4 + 1 + 4 + 4 + status + 4 + attr_len),
                            __LINE__)) == SUCCESS)
    {
-      if ((status = get_reply(scd.request_id, NULL, __LINE__)) == SUCCESS)
+      unsigned int ret_msg_length;
+
+      if ((status = get_reply(scd.request_id,
+                              &ret_msg_length, __LINE__)) == SUCCESS)
       {
          if (msg[0] == SSH_FXP_STATUS)
          {
-            if (get_xfer_uint(&msg[5]) == SSH_FX_OK)
+            unsigned int ret_status;
+
+            if ((ret_status = get_xfer_uint(&msg[5])) == SSH_FX_OK)
             {
                if (dir_mode != 0)
                {
@@ -2579,10 +2587,51 @@ sftp_mkdir(char *directory, mode_t dir_mode)
             else
             {
                /* Some error has occured. */
-               get_msg_str(&msg[9]);
-               trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_mkdir", NULL,
-                         "%s", error_2_str(&msg[5]));
-               status = get_xfer_uint(&msg[5]);
+               if (ret_status == SSH_FX_FAILURE)
+               {
+                  char        *tmp_msg;
+                  struct stat rdir_stat_buf;
+
+                  /* Lets store the current returned status. */
+                  if ((tmp_msg = malloc(ret_msg_length)) == NULL)
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_connect", NULL,
+                               _("malloc() error : %s"), strerror(errno));
+                     return(INCORRECT);
+                  }
+                  (void)memcpy(tmp_msg, msg, ret_msg_length);
+
+                  /*
+                   * If there are several process trying to create
+                   * the same directory at the same time only one
+                   * will be successful. So check if we lost the
+                   * race and the directory exists ie. another
+                   * process was quicker.
+                   */
+                  if ((sftp_stat(directory, &rdir_stat_buf) == SUCCESS) &&
+                      (S_ISDIR(rdir_stat_buf.st_mode)))
+                  {
+                     trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                               "sftp_mkdir", NULL,
+                               _("Direcctory `%s' does already exist."),
+                               directory);
+                     ret_status = SSH_FX_OK;
+                     status = SUCCESS;
+                  }
+                  else
+                  {
+                     /* Put back the original status msg. */
+                     (void)memcpy(msg, tmp_msg, ret_msg_length);
+                  }
+                  free(tmp_msg);
+               }
+               if (ret_status != SSH_FX_OK)
+               {
+                  get_msg_str(&msg[9]);
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_mkdir", NULL,
+                            "%s", error_2_str(&msg[5]));
+                  status = ret_status;
+               }
             }
          }
          else
@@ -2806,7 +2855,7 @@ retry_move:
                   get_msg_str(&msg[9]);
                   trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_move", NULL,
                             "%s", error_2_str(&msg[5]));
-                  status = get_xfer_uint(&msg[5]);
+                  status = ret_status;
                }
             }
          }
@@ -4017,7 +4066,7 @@ retry_hardlink:
                      get_msg_str(&msg[9]);
                      trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_hardlink", NULL,
                                "%s", error_2_str(&msg[5]));
-                     status = get_xfer_uint(&msg[5]);
+                     status = ret_status;
                   }
                }
             }
@@ -4245,7 +4294,7 @@ retry_symlink:
                      get_msg_str(&msg[9]);
                      trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_symlink", NULL,
                                "%s", error_2_str(&msg[5]));
-                     status = get_xfer_uint(&msg[5]);
+                     status = ret_status;
                   }
                }
             }
