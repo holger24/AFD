@@ -1,6 +1,6 @@
 /*
  *  amgdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@
                                         /* specified, assume this value. */
 
 /* Definitions of maximum values. */
-#define MAX_CHECK_FILE_DIRS        152  /* AMG should only check the file*/
+#define MAX_CHECK_FILE_DIRS       2050  /* AMG should only check the file*/
                                         /* directory if it is less then  */
                                         /* this value. Don't forget to   */
                                         /* add 2 for "." and "..".       */
