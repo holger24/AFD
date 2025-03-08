@@ -1,6 +1,6 @@
 /*
  *  afddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2024 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1351,6 +1351,7 @@ typedef unsigned long       u_long_64;
 #define ONE_DIR_COPY_TIMEOUT_DEF         "ONE_DIR_COPY_TIMEOUT"
 #define FULL_SCAN_TIMEOUT_DEF            "FULL_SCAN_TIMEOUT"
 #define REMOTE_FILE_CHECK_INTERVAL_DEF   "REMOTE_FILE_CHECK_INTERVAL"
+#define MAX_CHECK_FILE_DIR_DEFS          "MAX_CHECK_FILE_DIR"
 #ifdef WITH_INOTIFY
 # define DEFAULT_INOTIFY_FLAG_DEF        "DEFAULT_INOTIFY_FLAG"
 #endif

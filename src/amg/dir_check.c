@@ -75,6 +75,8 @@ DESCR__S_M1
  **   18.09.2003 H.Kiehl Check if time goes backward.
  **   01.03.2008 H.Kiehl check_file_dir() is now performed by dir_check.
  **   01.02.2010 H.Kiehl Option to set system wide force reread interval.
+ **   08.03.2025 H.Kiehl MAX_CHECK_FILE_DIRS is configurable via AFD_CONFIG,
+ **                      show the value at startup.
  **
  */
 DESCR__E_M1
@@ -206,7 +208,8 @@ int                        afd_file_dir_length,
                            sys_log_fd = STDERR_FILENO,
                            *time_job_list = NULL;
 unsigned int               default_age_limit,
-                           force_reread_interval;
+                           force_reread_interval,
+                           max_check_file_dirs;
 #ifdef LINUX
 unsigned int               copy_due_to_eperm = 0;
 u_off_t                    copy_due_to_eperm_size = 0;
@@ -685,6 +688,16 @@ main(int argc, char *argv[])
       }
    }
 #endif
+   if (max_check_file_dirs == 0)
+   {
+      system_log(DEBUG_SIGN, NULL, 0, "%s: MAX_CHECK_FILE_DIRS   : Disabled, always doing full check.",
+                 DC_PROC_NAME);
+   }
+   else
+   {
+      system_log(DEBUG_SIGN, NULL, 0, "%s: MAX_CHECK_FILE_DIRS   : %u",
+                 DC_PROC_NAME, max_check_file_dirs);
+   }
 
    /*
     * Before we start lets make sure that there are no old
@@ -790,13 +803,14 @@ main(int argc, char *argv[])
          {
             if (ewl[i].dir_name != NULL)
             {
-               check_file_dir(time(NULL), ewl[i].dev,
+               check_file_dir(time(NULL), ewl[i].dev, force_check,
                               ewl[i].outgoing_file_dir,
                               ewl[i].outgoing_file_dir_length);
             }
          }
 #else
-         check_file_dir(now, outgoing_file_dir, outgoing_file_dir_length);
+         check_file_dir(now, force_check, outgoing_file_dir,
+                        outgoing_file_dir_length);
 #endif
          next_dir_check_time = ((time(&now) / DIR_CHECK_TIME) * DIR_CHECK_TIME) +
                                DIR_CHECK_TIME;

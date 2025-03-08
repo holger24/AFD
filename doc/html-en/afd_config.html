@@ -665,6 +665,21 @@ the new value:
    <td valign=top>amg</td>
 </tr>
 <tr>
+   <td valign=top><a name="max_check_file_dir">MAX_CHECK_FILE_DIR</a></td>
+   <td>AFD checks every 25 minutes (DIR_CHECK_TIME) if there are files
+       without a job. This can happen during an unclean shutdown or an
+       error in the code. If many such jobs have accumulated, depending
+       on the speed of the system, it can take very long before AFD
+       starts handling new jobs. The MAX_CHECK_FILE_DIR parameter allows
+       the administrator to tune this value. A zero will make AFD to
+       always do a full check. If inotify is used it is recommended to
+       set this value higher, since it will generate lots of jobs with
+       only one file. With 'afdcmd -k' one can also force a full check.
+       </td>
+   <td valign=top>2050</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
    <td valign=top><a name="additional_locked_files">ADDITIONAL_LOCKED_FILES</a></td>
    <td>Allows the administrator to set a default list of locked files
        that gets added to each [files] section in DIR_CONFIG. Each element
@@ -918,9 +933,9 @@ restarted.
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1999 - 2024 by H.Kiehl<br>
+   Copyright &copy; 1999 - 2025 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 10.12.2024
+   Last updated: 08.03.2025
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

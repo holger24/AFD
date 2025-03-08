@@ -488,9 +488,23 @@ ONE_DIR_COPY_TIMEOUT             5
 # When the administrator has marked one or more directories as important,#
 # this is the minimum time in second that these directories have to wait #
 # during one scan of all directories.                                    #
-#  Default: 30                                                           #
+# Default: 30                                                            #
 ##########################################################################
 #DIR_CHECK_TIMEOUT                30
+
+##########################################################################
+# AFD checks every 25 minutes (DIR_CHECK_TIME) if there are files        #
+# without a job. This can happen during an unclean shutdown or an error  #
+# in the code. If many such jobs have accumulated, depending on the      #
+# speed of the system, it can take very long before AFD starts handling  #
+# new jobs. The MAX_CHECK_FILE_DIR parameter allows the administrator    #
+# to tune this value. A zero will make AFD to always do a full check.    #
+# If inotify is used it is recommended to set this value higher, since   #
+# it will generate lots of jobs with only one file. With 'afdcmd -k'     #
+# one can also force a full check.                                       #
+# Default: 2050                                                          #
+##########################################################################
+#MAX_CHECK_FILE_DIR               2050
 
 ##########################################################################
 # Allows the administrator to set a default list of locked files that    #

@@ -1,6 +1,6 @@
 /*
  *  check_file_dir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -29,6 +29,7 @@ DESCR__S_M3
  ** SYNOPSIS
  **   void check_file_dir(time_t now,
  **                       dev_t  dev,
+ **                       int    do_complete_check,
  **                       char   *outgoing_file_dir,
  **                       int    outgoing_file_dir_length)
  **
@@ -49,6 +50,10 @@ DESCR__S_M3
  **   18.09.2021 H.Kiehl Tell user when we omit directories due to too many
  **                      links.
  **                      Make use of linux readdir() d_type to avoid stat().
+ **   08.03.2025 H.Kiehl Add parameter so we can do a complete check. One
+ **                      can do a full check by setting MAX_CHECK_FILE_DIR
+ **                      to zero. The value is now configurable via
+ **                      AFD_CONFIG.
  **
  */
 DESCR__E_M3
@@ -74,6 +79,7 @@ DESCR__E_M3
 /* External global variables. */
 extern int                        no_of_jobs,
                                   *no_of_process;
+extern unsigned int               max_check_file_dirs;
 extern char                       *p_work_dir;
 extern struct instant_db          *db;
 extern struct filetransfer_status *fsa;
@@ -103,12 +109,12 @@ static int                        not_a_multi_fs_link(unsigned int),
                                   message_in_queue(char *, int, char *);
 static void                       add_message_to_queue(char *, dev_t, int, off_t,
                                                        unsigned int, int),
-                                  check_jobs(dev_t);
+                                  check_jobs(dev_t, int);
 #else
 static int                        message_in_queue(char *);
 static void                       add_message_to_queue(char *, int, off_t,
                                                        unsigned int, int),
-                                  check_jobs(void);
+                                  check_jobs(int);
 #endif
 static int                        lookup_db_pos(unsigned int);
 
@@ -119,6 +125,7 @@ check_file_dir(time_t now,
 #ifdef MULTI_FS_SUPPORT
                dev_t  dev,
 #endif
+               int    do_complete_check,
                char   *outgoing_file_dir,
                int    outgoing_file_dir_length)
 {
@@ -166,9 +173,9 @@ check_file_dir(time_t now,
    }
 
 #ifdef MULTI_FS_SUPPORT
-   check_jobs(dev);
+   check_jobs(dev, do_complete_check);
 #else
-   check_jobs();
+   check_jobs(do_complete_check);
 #endif
 
    p_afd_status->amg_jobs &= ~CHECK_FILE_DIR_ACTIVE;
@@ -254,9 +261,9 @@ check_file_dir(time_t now,
 /*++++++++++++++++++++++++++++++ check_jobs() +++++++++++++++++++++++++++*/
 static void
 #ifdef MULTI_FS_SUPPORT
-check_jobs(dev_t dev)
+check_jobs(dev_t dev, int do_complete_check)
 #else
-check_jobs(void)
+check_jobs(int do_complete_check)
 #endif
 {
    int           i,
@@ -442,11 +449,14 @@ check_jobs(void)
                                  if (S_ISDIR(stat_buf.st_mode))
 #endif
                                  {
+                                    if ((do_complete_check == YES) ||
+                                        (max_check_file_dirs == 0) ||
 #ifdef HAVE_STATX
-                                    if (stat_buf.stx_nlink < MAX_CHECK_FILE_DIRS)
+                                        (stat_buf.stx_nlink < max_check_file_dirs)
 #else
-                                    if (stat_buf.st_nlink < MAX_CHECK_FILE_DIRS)
+                                        (stat_buf.st_nlink < max_check_file_dirs)
 #endif
+                                       )
                                     {
                                        if ((dir_no_dp = opendir(file_dir)) == NULL)
                                        {
@@ -722,7 +732,7 @@ check_jobs(void)
 #else
                  _("Did not check %u job directories because of more then %d links in %s (max=%d #%x )"),
 #endif
-                 max_nlinks_reached, MAX_CHECK_FILE_DIRS, file_dir,
+                 max_nlinks_reached, max_check_file_dirs, file_dir,
                  (pri_nlink_t)max_nlinks, max_nlinks_job_id);
       *ptr = '\0';
    }

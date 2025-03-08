@@ -984,9 +984,9 @@ extern char   *check_paused_dir(struct directory_entry *, int *, int *, int *),
 
 extern void   add_file_mask(char *, struct dir_group *),
 #ifdef MULTI_FS_SUPPORT
-              check_file_dir(time_t, dev_t, char *, int),
+              check_file_dir(time_t, dev_t, int, char *, int),
 #else
-              check_file_dir(time_t, char *, int),
+              check_file_dir(time_t, int, char *, int),
 #endif
               check_file_pool_mem(int),
               check_old_time_jobs(int, char *),
