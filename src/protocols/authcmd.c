@@ -1,6 +1,6 @@
 /*
  *  authcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2021 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2021 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -73,6 +73,10 @@ DESCR__E_M3
 # define EVP_MD_CTX_free EVP_MD_CTX_destroy
 #endif
 
+#ifndef EVP_MAX_MD_SIZE
+# define EVP_MAX_MD_SIZE 64
+#endif
+
 /* Hash types function str2hash knows. */
 #define AFD_MD5        1
 #define AFD_SHA256     2
@@ -81,16 +85,16 @@ DESCR__E_M3
 /* External global variables. */
 extern char msg_str[];
 
-#ifdef WITH_SSL
 /* Local function prototypes. */
+#ifdef WITH_SSL
 static int     aws4_cmd_authentication(char *, char *, char *, char *,
                                        struct http_message_reply *),
                aws_cmd_no_sign_request(struct http_message_reply *),
                sha256_file(char *, char *),
                str2hash(int, char *, int, char *);
 static void    hash_2_hex(const unsigned char *, const int, char *);
-#endif
 static int32_t get_random(void);
+#endif
 
 
 /*######################## basic_authentication() #######################*/
@@ -175,6 +179,7 @@ basic_authentication(struct http_message_reply *p_hmr)
 }
 
 
+#ifdef WITH_SSL
 /*####################### digest_authentication() #######################*/
 int
 digest_authentication(char                      *method,
@@ -835,7 +840,6 @@ digest_authentication(char                      *method,
 }
 
 
-#ifdef WITH_SSL
 /*############################# aws_cmd() ###############################*/
 int
 aws_cmd(char                      *cmd,

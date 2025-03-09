@@ -78,14 +78,12 @@ struct http_message_reply
           char          http_proxy[MAX_REAL_HOSTNAME_LENGTH + 1];
           char          user[MAX_USER_NAME_LENGTH + 1];
           char          passwd[MAX_USER_NAME_LENGTH + 1];
-#ifdef WITH_SSL
           char          region[MAX_REAL_HOSTNAME_LENGTH + 1];
           char          marker[MAX_FILENAME_LENGTH + 1];
           char          service[3];
           char          tls_auth;
           unsigned char service_type;
           unsigned char listobject_version;
-#endif
 #ifdef _WITH_EXTRA_CHECK
           char          http_etag[MAX_EXTRA_LS_DATA_LENGTH + 1];
 #endif

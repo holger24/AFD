@@ -1,7 +1,7 @@
 /*
  *  ahtml_list.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2024 Deutscher Wetterdienst (DWD),
- *                     Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2024, 2025 Deutscher Wetterdienst (DWD),
+ *                           Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -165,7 +165,9 @@ main(int argc, char *argv[])
             {
                db.port = DEFAULT_HTTPS_PORT;
             }
+#ifdef WITH_SSL
             db.tls_auth = YES;
+#endif
          }
          else
          {
@@ -174,7 +176,9 @@ main(int argc, char *argv[])
             {
                db.port = DEFAULT_HTTP_PORT;
             }
+#ifdef WITH_SSL
             db.tls_auth = NO;
+#endif
          }
          get_html_content(html_list_filename, &db);
       }

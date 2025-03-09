@@ -1,6 +1,6 @@
 /*
  *  get_html_content.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2024, 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -71,6 +71,7 @@ get_html_content(char *html_content_filename, struct data *p_db)
          content_length;
    FILE  *fp;
 
+#ifdef WITH_SSL
    if (p_db->strict == YES)
    {
       features |= PROT_OPT_TLS_STRICT_VERIFY;
@@ -80,6 +81,7 @@ get_html_content(char *html_content_filename, struct data *p_db)
       features |= PROT_OPT_TLS_LEGACY_RENEGOTIATION;
    }
    if (p_db->no_expect == YES)
+#endif
    {
       features |= PROT_OPT_NO_EXPECT;
    }

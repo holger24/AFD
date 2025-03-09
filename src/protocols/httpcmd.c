@@ -1,6 +1,6 @@
 /*
  *  httpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1436,7 +1436,6 @@ retry_get_range:
       }
       else
       {
-#endif
          if (hmr.authorization == NULL)
          {
             if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
@@ -1465,7 +1464,14 @@ retry_get_range:
                }
             }
          }
-#ifdef WITH_SSL
+      }
+#else
+      if (hmr.authorization == NULL)
+      {
+         if (basic_authentication(&hmr) != SUCCESS)
+         {
+            return(INCORRECT);
+         }
       }
 #endif
 #ifdef EXTERNAL_TEST
@@ -1965,7 +1971,6 @@ http_put(char *path,
    }
    else
    {
-#endif
       if (hmr.authorization == NULL)
       {
          if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
@@ -1994,7 +1999,14 @@ http_put(char *path,
             }
          }
       }
-#ifdef WITH_SSL
+   }
+#else
+   if (hmr.authorization == NULL)
+   {
+      if (basic_authentication(&hmr) != SUCCESS)
+      {
+         return(INCORRECT);
+      }
    }
 #endif
 
@@ -2218,7 +2230,6 @@ http_del(char *path, char *filename)
       }
       else
       {
-#endif
          if (hmr.authorization == NULL)
          {
             if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
@@ -2247,7 +2258,14 @@ http_del(char *path, char *filename)
                }
             }
          }
-#ifdef WITH_SSL
+      }
+#else
+      if (hmr.authorization == NULL)
+      {
+         if (basic_authentication(&hmr) != SUCCESS)
+         {
+            return(INCORRECT);
+         }
       }
 #endif
 retry_del:
@@ -2370,7 +2388,6 @@ http_options(char *path)
       }
       else
       {
-#endif
          if (hmr.authorization == NULL)
          {
             if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
@@ -2398,7 +2415,14 @@ http_options(char *path)
                }
             }
          }
-#ifdef WITH_SSL
+      }
+#else
+      if (hmr.authorization == NULL)
+      {
+         if (basic_authentication(&hmr) != SUCCESS)
+         {
+            return(INCORRECT);
+         }
       }
 #endif
 retry_options:
@@ -2586,7 +2610,6 @@ http_head(char *path, char *filename, off_t *content_length, time_t *date)
       }
       else
       {
-#endif
          if (hmr.authorization == NULL)
          {
             if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
@@ -2615,7 +2638,14 @@ http_head(char *path, char *filename, off_t *content_length, time_t *date)
                }
             }
          }
-#ifdef WITH_SSL
+      }
+#else
+      if (hmr.authorization == NULL)
+      {
+         if (basic_authentication(&hmr) != SUCCESS)
+         {
+            return(INCORRECT);
+         }
       }
 #endif
 retry_head:
@@ -3327,7 +3357,6 @@ http_noop(char *path)
       }
       else
       {
-#endif
          if (hmr.authorization == NULL)
          {
             if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
@@ -3355,7 +3384,14 @@ http_noop(char *path)
                }
             }
          }
-#ifdef WITH_SSL
+      }
+#else
+      if (hmr.authorization == NULL)
+      {
+         if (basic_authentication(&hmr) != SUCCESS)
+         {
+            return(INCORRECT);
+         }
       }
 #endif
 
@@ -3498,6 +3534,7 @@ init_authentication(char *method, char *path, char *filename)
 {
    int ret;
 
+#ifdef WITH_SSL
    if ((hmr.auth_type == AUTH_NONE) || (hmr.auth_type == AUTH_BASIC) ||
        (hmr.auth_type == AUTH_DIGEST))
    {
@@ -3531,6 +3568,31 @@ init_authentication(char *method, char *path, char *filename)
    {
       ret = INCORRECT;
    }
+#else
+   if ((hmr.auth_type == AUTH_NONE) || (hmr.auth_type == AUTH_BASIC))
+   {
+      if ((hmr.user[0] == '\0') ||
+          (hmr.www_authenticate == WWW_AUTHENTICATE_UNKNOWN))
+      {
+         ret = INCORRECT;
+      }
+      else
+      {
+         if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
+         {
+            if ((ret = basic_authentication(&hmr)) != SUCCESS)
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, "init_authentication", NULL,
+                         _("Failed to create basic authentication."));
+            }
+         }
+      }
+   }
+   else
+   {
+      ret = INCORRECT;
+   }
+#endif
 
    return(ret);
 }

@@ -499,8 +499,10 @@ AC_ARG_ENABLE([ssl],
           ssl_all_roots="/usr/local/ssl /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr /opt"
        fi
        with_ssl="yes"
+       AM_CONDITIONAL(WITH_SSL_SUPPORT, true)
     else
        with_ssl="no"
+       AM_CONDITIONAL(WITH_SSL_SUPPORT, false)
     fi],
    [if test x$enableval != xyes
     then
@@ -508,7 +510,8 @@ AC_ARG_ENABLE([ssl],
     else
        ssl_all_roots="/usr/local/ssl /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr /opt"
     fi
-    with_ssl="yes"])
+    with_ssl="yes"]
+    AM_CONDITIONAL(WITH_SSL_SUPPORT, true))
 
 AC_ARG_WITH(ssl-includes,
    [  --with-ssl-includes=DIR         location where TLS/SSL includes are],
@@ -1420,10 +1423,14 @@ then
       AC_MSG_RESULT(no)
       AM_CONDITIONAL(HAVE_TLS_CLIENT_METHOD, false)
       AM_CONDITIONAL(HAVE_TLS_SERVER_METHOD, false)
+      AM_CONDITIONAL(HAVE_EVP_SHA256, false)
+      AM_CONDITIONAL(HAVE_EVP_SHA512_256, false)
    fi
 else
    AM_CONDITIONAL(HAVE_TLS_CLIENT_METHOD, false)
    AM_CONDITIONAL(HAVE_TLS_SERVER_METHOD, false)
+   AM_CONDITIONAL(HAVE_EVP_SHA256, false)
+   AM_CONDITIONAL(HAVE_EVP_SHA512_256, false)
 fi
 
 no_x=""
@@ -1752,9 +1759,12 @@ AC_FUNC_STRFTIME
 AC_FUNC_UTIME_NULL
 AC_FUNC_VPRINTF
 
-AC_CONFIG_LIBOBJ_DIR([src/init_afd/ports])
-HW_FUNC_VSNPRINTF
-HW_FUNC_SNPRINTF
+if test "$cross_compiling" = no
+then
+   AC_CONFIG_LIBOBJ_DIR([src/init_afd/ports])
+   HW_FUNC_VSNPRINTF
+   HW_FUNC_SNPRINTF
+fi
 
 dnl There is no "standard" pty allocation method. Every system is different.
 dnl The following was taken from the xemacs package and modified for AFD.

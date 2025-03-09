@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2022 Holger Kiehl
+## Copyright (C) 2001 - 2025 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -135,7 +135,9 @@ include src/statistics/Makemodule.am
 include src/tools/Makemodule.am
 include src/servers/common/Makemodule.am
 include src/servers/afdd/Makemodule.am
+if WITH_SSL_SUPPORT
 include src/servers/afdds/Makemodule.am
+endif
 if WITH_ATPD_SUPPORT
 include src/servers/atpd/Makemodule.am
 endif
