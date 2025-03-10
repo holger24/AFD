@@ -557,6 +557,7 @@ main(int argc, char *argv[])
       p_ff_name = ff_name + strlen(ff_name);
       *p_ff_name++ = '/';
       *p_ff_name = '\0';
+      move_flag = 0;
 
       if ((db.lock == DOT) || (db.lock == DOT_VMS) ||
           (db.special_flag & UNIQUE_LOCKING))
@@ -567,7 +568,6 @@ main(int argc, char *argv[])
       {
          p_to_name = ff_name;
       }
-      move_flag = 0;
 
 #ifdef WITH_FAST_MOVE
       /*
@@ -639,6 +639,11 @@ main(int argc, char *argv[])
                     *p_if_name = '\0';
                     (void)strcat(if_name, p_file_name_buffer);
                     (void)strcat(if_name, db.lock_notation);
+                 }
+                 else
+                 {
+                    *p_if_name = '\0';
+                    (void)strcat(if_name, p_file_name_buffer);
                  }
 
             if (db.special_flag & UNIQUE_LOCKING)
@@ -804,7 +809,7 @@ try_link_again:
                            if (errno != ENOENT)
                            {
                               trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                        "File `%s' did already exist, removed it and linked again.",
+                                        "File `%s' did already exist, removed it.",
                                         p_to_name);
                            }
 #endif
@@ -1270,72 +1275,113 @@ link_error_try_copy:
                            exit(RENAME_ERROR);
                         }
                      }
-                     else
-                     {
-                        char reason_str[23],
-                             *sign;
+                     else if (errno == EXDEV) /* Cross link error. */
+                          {
+                             if ((ret = copy_file_mkdir(if_name, ff_name,
+                                                        p_file_name_buffer,
+                                                        &additional_length)) != SUCCESS)
+                             {
+                                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                          "Failed to copy file `%s' to `%s'",
+                                          if_name, ff_name);
+                                rm_dupcheck_crc(source_file, p_file_name_buffer,
+                                                *p_file_size_buffer);
+                                exit(ret);
+                             }
+                             else
+                             {
+                                move_flag |= FILES_COPIED;
+                                if ((fsa->protocol_options & KEEP_TIME_STAMP) &&
+                                    (file_mtime_buffer != NULL) &&
+                                    (simulation_mode != YES))
+                                {
+                                   struct utimbuf old_time;
 
-                        if (errno == ENOENT)
-                        {
-                           int          tmp_errno = errno;
-                           char         tmp_char = *p_ff_name;
+                                   old_time.actime = time(NULL);
+                                   old_time.modtime = *p_file_mtime_buffer;
+                                   if (utime(ff_name, &old_time) == -1)
+                                   {
+                                      trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                                "Failed to set time of file %s : %s",
+                                                ff_name, strerror(errno));
+                                   }
+                                }
+                                if (fsa->debug > NORMAL_MODE)
+                                {
+                                   trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                                "Copied file `%s' to `%s'.",
+                                                source_file, ff_name);
+                                }
+                             }
+                          }
+                          else
+                          {
+                             char reason_str[23],
+                                  *sign;
+
+                             if (errno == ENOENT)
+                             {
+                                int          tmp_errno = errno;
+                                char         tmp_char = *p_ff_name;
 #ifdef HAVE_STATX
-                           struct statx tmp_stat_buf;
+                                struct statx tmp_stat_buf;
 #else
-                           struct stat  tmp_stat_buf;
+                                struct stat  tmp_stat_buf;
 #endif
 
-                           *p_ff_name = '\0';
+                                *p_ff_name = '\0';
 #ifdef HAVE_STATX
-                           if ((statx(0, if_name, AT_STATX_SYNC_AS_STAT,
-                                      0, &tmp_stat_buf) == -1) &&
-                               (errno == ENOENT))
-#else
-                           if ((stat(if_name, &tmp_stat_buf) == -1) &&
-                               (errno == ENOENT))
-#endif
-                           {
-                              (void)strcpy(reason_str, "(source missing) ");
-                              ret = STILL_FILES_TO_SEND;
-                              sign = DEBUG_SIGN;
-                           }
-#ifdef HAVE_STATX
-                           else if ((statx(0, ff_name, AT_STATX_SYNC_AS_STAT,
+                                if ((statx(0, if_name, AT_STATX_SYNC_AS_STAT,
                                            0, &tmp_stat_buf) == -1) &&
                                     (errno == ENOENT))
 #else
-                           else if ((stat(ff_name, &tmp_stat_buf) == -1) &&
+                                if ((stat(if_name, &tmp_stat_buf) == -1) &&
                                     (errno == ENOENT))
 #endif
                                 {
                                    (void)strcpy(reason_str,
-                                                "(destination missing) ");
-                                   ret = RENAME_ERROR;
-                                   sign = WARN_SIGN;
+                                                "(source missing) ");
+                                   ret = STILL_FILES_TO_SEND;
+                                   sign = DEBUG_SIGN;
                                 }
-                                else
-                                {
-                                   reason_str[0] = '\0';
-                                   ret = RENAME_ERROR;
-                                   sign = WARN_SIGN;
-                                }
+#ifdef HAVE_STATX
+                                else if ((statx(0, ff_name,
+                                                AT_STATX_SYNC_AS_STAT,
+                                                0, &tmp_stat_buf) == -1) &&
+                                         (errno == ENOENT))
+#else
+                                else if ((stat(ff_name, &tmp_stat_buf) == -1) &&
+                                         (errno == ENOENT))
+#endif
+                                     {
+                                        (void)strcpy(reason_str,
+                                                     "(destination missing) ");
+                                        ret = RENAME_ERROR;
+                                        sign = WARN_SIGN;
+                                     }
+                                     else
+                                     {
+                                        reason_str[0] = '\0';
+                                        ret = RENAME_ERROR;
+                                        sign = WARN_SIGN;
+                                     }
 
-                           *p_ff_name = tmp_char;
-                           errno = tmp_errno;
-                        }
-                        else
-                        {
-                           ret = RENAME_ERROR;
-                           sign = WARN_SIGN;
-                        }
-                        trans_log(sign, __FILE__, __LINE__, NULL, NULL,
-                                  "Failed to rename() file `%s' to `%s' %s: %s",
-                                  if_name, ff_name, reason_str,
-                                  strerror(errno));
-                        rm_dupcheck_crc(source_file, p_file_name_buffer,
-                                        *p_file_size_buffer);
-                        exit(ret);
-                     }
+                                *p_ff_name = tmp_char;
+                                errno = tmp_errno;
+                             }
+                             else
+                             {
+                                ret = RENAME_ERROR;
+                                sign = WARN_SIGN;
+                             }
+                             trans_log(sign, __FILE__, __LINE__, NULL, NULL,
+                                       "Failed to rename() file `%s' to `%s' %s: %s",
+                                       source_file, ff_name, reason_str,
+                                       strerror(errno));
+                             rm_dupcheck_crc(source_file, p_file_name_buffer,
+                                             *p_file_size_buffer);
+                             exit(ret);
+                          }
                   }
                   else
                   {

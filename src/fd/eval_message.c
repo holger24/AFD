@@ -1,6 +1,6 @@
 /*
  *  eval_message.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2024 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -97,6 +97,8 @@ DESCR__S_M3
  **   29.06.2020 H.Kiehl Added option 'group-to'.
  **   29.06.2023 H.Kiehl Ignore FD option 'ageing'.
  **   14.12.2024 H.Kiehl Added option 'send zero size'.
+ **   10.03.2025 h.Kiehl When 'ulock OFF' is set, we should still do
+ **                      the unique locking.
  **
  */
 DESCR__E_M3
@@ -533,7 +535,6 @@ eval_message(char *message_name, struct job *p_db)
                     else if (CHECK_STRCMP(ptr, LOCK_OFF) == 0)
                          {
                             p_db->lock = OFF;
-                            p_db->special_flag &= ~UNIQUE_LOCKING;
                          }
 #ifdef WITH_READY_FILES
                     else if (CHECK_STRCMP(ptr, LOCK_READY_A_FILE) == 0)
