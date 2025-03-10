@@ -1,6 +1,6 @@
 /*
  *  sf_sftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -632,6 +632,7 @@ main(int argc, char *argv[])
          /* Create lock file on remote host. */
          if ((status = sftp_open_file(SFTP_WRITE_FILE, db.lock_file_name, 0,
                                       (db.special_flag & CHANGE_PERMISSION) ? &db.chmod : NULL,
+                                      NO, db.dir_mode, NULL,
                                       blocksize, &buffer_offset)) != SUCCESS)
          {
             trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
@@ -1002,18 +1003,188 @@ main(int argc, char *argv[])
 # endif
 #endif
 
-         /* Send file in dot notation? */
-         if ((db.lock == DOT) || (db.lock == DOT_VMS))
+         if ((db.trans_rename_rule[0] != '\0') || (db.cn_filter != NULL) ||
+             (db.name2dir_char != '\0'))
          {
-            (void)strcpy(p_initial_filename, db.lock_notation);
-            (void)strcat(p_initial_filename, p_final_filename);
+            char tmp_initial_filename[MAX_PATH_LENGTH];
+
+            tmp_initial_filename[0] = '\0';
+            if (db.name2dir_char == '\0')
+            {
+               if (db.trans_rename_rule[0] != '\0')
+               {
+                  register int k;
+
+                  for (k = 0; k < rule[db.trans_rule_pos].no_of_rules; k++)
+                  {
+                     if (pmatch(rule[db.trans_rule_pos].filter[k],
+                                p_file_name_buffer, NULL) == 0)
+                     {
+                        change_name(p_file_name_buffer,
+                                    rule[db.trans_rule_pos].filter[k],
+                                    rule[db.trans_rule_pos].rename_to[k],
+                                    tmp_initial_filename, MAX_PATH_LENGTH,
+                                    &counter_fd, &unique_counter, db.id.job);
+                        break;
+                     }
+                  }
+               }
+               else
+               {
+                  if (pmatch(db.cn_filter, p_file_name_buffer, NULL) == 0)
+                  {
+                     change_name(p_file_name_buffer, db.cn_filter,
+                                 db.cn_rename_to, tmp_initial_filename,
+                                 MAX_PATH_LENGTH, &counter_fd, &unique_counter,
+                                 db.id.job);
+                  }
+               }
+            }
+            else
+            {
+               name2dir(db.name2dir_char, p_file_name_buffer,
+                        tmp_initial_filename, MAX_PATH_LENGTH);
+            }
+            if (tmp_initial_filename[0] == '\0')
+            {
+               char *p_initial_filename_offset = p_initial_filename;
+
+               if ((db.lock == DOT) || (db.lock == DOT_VMS))
+               {
+                  if ((db.lock_notation[0] == '.') &&
+                      (db.lock_notation[1] == '\0'))
+                  {
+                     *p_initial_filename = '.';
+                     p_initial_filename_offset++;
+                  }
+                  else
+                  {
+                     int k;
+
+                     k = strlen(db.lock_notation);
+                     (void)my_strncpy(p_initial_filename, db.lock_notation, k);
+                     p_initial_filename_offset += k;
+                  }
+               }
+               (void)my_strncpy(p_initial_filename_offset, p_file_name_buffer,
+                                (MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH) - (p_initial_filename_offset - initial_filename));
+               (void)my_strncpy(p_remote_filename, p_file_name_buffer,
+                                (MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH) - (p_remote_filename - remote_filename));
+            }
+            else
+            {
+               int k;
+
+               /*
+                * Check if we have a path in the name. If that is
+                * the case, we must get to the filename, so that in
+                * case we lock in any form, we only rename the file
+                * name.
+                */
+               k = 0;
+               while (tmp_initial_filename[k] != '\0')
+               {
+                  if (tmp_initial_filename[k] == '/')
+                  {
+                     break;
+                  }
+                  k++;
+               }
+
+               if ((db.lock == DOT) || (db.lock == DOT_VMS))
+               {
+                  if (tmp_initial_filename[k] == '/')
+                  {
+                     char *p_last_dir_sign = &tmp_initial_filename[k];
+
+                     k++;
+                     while (tmp_initial_filename[k] != '\0')
+                     {
+                        if (tmp_initial_filename[k] == '/')
+                        {
+                           p_last_dir_sign = &tmp_initial_filename[k];
+                        }
+                        k++;
+                     }
+                     p_last_dir_sign++;
+                     k = p_last_dir_sign - tmp_initial_filename;
+                     (void)memcpy(p_initial_filename, tmp_initial_filename, k);
+                     if ((db.lock_notation[0] == '.') &&
+                         (db.lock_notation[1] == '\0'))
+                     {
+                        *(p_initial_filename + k) = '.';
+                        (void)strcpy(p_initial_filename + k + 1,
+                                     p_last_dir_sign);
+                     }
+                     else
+                     {
+                        (void)strcpy(p_initial_filename + k, db.lock_notation);
+                        (void)strcat(p_initial_filename, p_last_dir_sign);
+                     }
+                  }
+                  else
+                  {
+                     if ((db.lock_notation[0] == '.') &&
+                         (db.lock_notation[1] == '\0'))
+                     {
+                        *p_initial_filename = '.';
+                        (void)strcpy(p_initial_filename + 1,
+                                     p_file_name_buffer);
+                     }
+                     else
+                     {
+                        (void)strcpy(p_initial_filename, db.lock_notation);
+                        (void)strcat(p_initial_filename, p_file_name_buffer);
+                     }
+                  }
+               }
+               else
+               {
+                  if (tmp_initial_filename[k] == '/')
+                  {
+                     (void)strcpy(p_initial_filename, tmp_initial_filename);
+                  }
+                  else
+                  {
+                     (void)strcpy(p_initial_filename, p_file_name_buffer);
+                  }
+               }
+               (void)my_strncpy(p_remote_filename, tmp_initial_filename,
+                                (MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH) - (p_remote_filename - remote_filename));
+            }
+            if ((db.lock != DOT) && (db.lock != DOT_VMS) &&
+                (db.lock == POSTFIX))
+            {
+               (void)strcat(p_initial_filename, db.lock_notation);
+            }
          }
          else
          {
-            (void)strcpy(p_initial_filename, p_final_filename);
-            if (db.lock == POSTFIX)
+            /* Send file in dot notation? */
+            if ((db.lock == DOT) || (db.lock == DOT_VMS))
             {
-               (void)strcat(p_initial_filename, db.lock_notation);
+               (void)strcpy(p_initial_filename, db.lock_notation);
+               (void)strcat(p_initial_filename, p_final_filename);
+            }
+            else
+            {
+               (void)strcpy(p_initial_filename, p_final_filename);
+               if (db.lock == POSTFIX)
+               {
+                  (void)strcat(p_initial_filename, db.lock_notation);
+               }
+            }
+            if ((db.lock == DOT) || (db.lock == POSTFIX) ||
+                (db.lock == DOT_VMS) ||
+                (db.special_flag & SEQUENCE_LOCKING) ||
+                (db.special_flag & UNIQUE_LOCKING))
+            {
+               (void)my_strncpy(p_remote_filename, p_final_filename,
+                                (MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH) - (p_remote_filename - remote_filename));
+               if (db.lock == DOT_VMS)
+               {
+                  (void)strcat(p_remote_filename, DOT_NOTATION);
+               }
             }
          }
 
@@ -1070,6 +1241,7 @@ main(int argc, char *argv[])
          append_file_number = -1;
          if ((fsa->file_size_offset != -1) &&
              ((db.special_flag & SEQUENCE_LOCKING) == 0) &&
+             ((db.special_flag & UNIQUE_LOCKING) == 0) &&
              (db.no_of_restart_files > 0))
          {
             int ii;
@@ -1140,6 +1312,8 @@ main(int argc, char *argv[])
             if ((status = sftp_open_file(SFTP_WRITE_FILE, initial_filename,
                                          append_offset,
                                          (db.special_flag & CHANGE_PERMISSION) ? &db.chmod : NULL,
+                                         (db.special_flag & CREATE_TARGET_DIR) ? YES : NO,
+                                         db.dir_mode, created_path,
                                          blocksize, &buffer_offset)) != SUCCESS)
             {
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
@@ -1677,55 +1851,6 @@ main(int argc, char *argv[])
              (db.special_flag & UNIQUE_LOCKING) ||
              (db.trans_rename_rule[0] != '\0') || (db.name2dir_char != '\0'))
          {
-            *p_remote_filename = '\0';
-            if (db.lock == DOT_VMS)
-            {
-               (void)strcat(p_final_filename, DOT_NOTATION);
-            }
-            if (db.name2dir_char == '\0')
-            {
-               if (db.trans_rename_rule[0] != '\0')
-               {
-                  register int k;
-
-                  for (k = 0; k < rule[db.trans_rule_pos].no_of_rules; k++)
-                  {
-                     if (pmatch(rule[db.trans_rule_pos].filter[k],
-                                p_final_filename, NULL) == 0)
-                     {
-                        change_name(p_final_filename,
-                                    rule[db.trans_rule_pos].filter[k],
-                                    rule[db.trans_rule_pos].rename_to[k],
-                                    p_remote_filename,
-                                    (MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH) - (p_remote_filename - remote_filename),
-                                    &counter_fd, &unique_counter, db.id.job);
-                        break;
-                     }
-                  }
-               }
-               else if (db.cn_filter != NULL)
-                    {
-                       if (pmatch(db.cn_filter, p_final_filename, NULL) == 0)
-                       {
-                          change_name(p_final_filename, db.cn_filter,
-                                      db.cn_rename_to, p_remote_filename,
-                                      (MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH) - (p_remote_filename - remote_filename),
-                                      &counter_fd, &unique_counter, db.id.job);
-                       }
-                    }
-            }
-            else
-            {
-               name2dir(db.name2dir_char, p_final_filename, p_remote_filename,
-                        (MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH) -
-                        (p_remote_filename - remote_filename));
-            }
-
-            if (*p_remote_filename == '\0')
-            {
-               (void)my_strncpy(p_remote_filename, p_final_filename,
-                                (MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH) - (p_remote_filename - remote_filename));
-            }
             if ((status = sftp_move(initial_filename,
                                     remote_filename,
                                     (db.special_flag & CREATE_TARGET_DIR) ? YES : NO,

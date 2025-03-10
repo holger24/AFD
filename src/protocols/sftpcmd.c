@@ -1854,10 +1854,14 @@ sftp_open_file(int    openmode,
                char   *filename,
                off_t  offset,
                mode_t *mode,
+               int    create_dir,
+               mode_t dir_mode,
+               char   *created_path,
                int    blocksize,
                int    *buffer_offset)
 {
    int pos,
+       retries = 0,
        status;
 #ifdef WITH_TRACE
    int length = 0;
@@ -1877,6 +1881,7 @@ sftp_open_file(int    openmode,
     * uint32 flags
     * ATTRS  attrs
     */
+retry_open_file:
    msg[4] = SSH_FXP_OPEN;
    scd.request_id++;
    set_xfer_uint(&msg[4 + 1], scd.request_id);
@@ -2107,11 +2112,95 @@ sftp_open_file(int    openmode,
          }
          else if (msg[0] == SSH_FXP_STATUS)
               {
-                 /* Some error has occured. */
-                 get_msg_str(&msg[9]);
-                 trans_log(DEBUG_SIGN, __FILE__, __LINE__,
-                           "sftp_open_file", NULL, "%s", error_2_str(&msg[5]));
-                 status = get_xfer_uint(&msg[5]);
+                 unsigned int ret_status;
+
+                 ret_status = get_xfer_uint(&msg[5]);
+                 if (ret_status != SSH_FX_OK)
+                 {
+                    /*
+                     * In version 3 the default behaviour is to fail
+                     * when we try to overwrite an existing file.
+                     * So we must delete it and then retry.
+                     */
+                    if ((((ret_status == SSH_FX_FAILURE) &&
+                          (scd.version < 5)) ||
+                         ((ret_status == SSH_FX_NO_SUCH_FILE) &&
+                          (create_dir == YES) &&
+                          (is_with_path(filename) == YES))) &&
+                        (retries == 0))
+                    {
+                       if (ret_status == SSH_FX_NO_SUCH_FILE)
+                       {
+                          char tmp_filename[MAX_PATH_LENGTH],
+                               *ptr;
+
+                          (void)strcpy(tmp_filename, filename);
+                          ptr = tmp_filename + strlen(tmp_filename) - 1;
+                          while ((*ptr != '/') && (ptr != tmp_filename))
+                          {
+                             ptr--;
+                          }
+                          if ((*ptr == '/') && (tmp_filename != ptr))
+                          {
+                             char *p_filename,
+                                  *tmp_cwd = scd.cwd;
+
+                             *ptr = '\0';
+                             if (tmp_cwd == NULL)
+                             {
+                                p_filename = filename;
+                             }
+                             else
+                             {
+                                scd.cwd = NULL;
+                                (void)snprintf(tmp_filename, MAX_PATH_LENGTH,
+                                               "%s/%s", tmp_cwd, filename);
+                                p_filename = tmp_filename;
+                             }
+
+                             /*
+                              * NOTE: We do NOT want to go into this directory.
+                              *       We just misuse sftp_cd() to create the
+                              *       directory for us, nothing more.
+                              */
+                             if ((status = sftp_cd(p_filename, YES, dir_mode,
+                                                   created_path)) == SUCCESS)
+                             {
+                                retries++;
+                                *ptr = '/';
+                                free(scd.cwd);
+                                scd.cwd = tmp_cwd;
+                                goto retry_open_file;
+                             }
+                          }
+                          else
+                          {
+                             trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                       "sftp_open_file", NULL,
+                                       _("Hmm, something wrong here bailing out."));
+                             msg_str[0] = '\0';
+                             status = INCORRECT;
+                          }
+                       }
+                       else
+                       {
+                          trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                    "sftp_open_file", NULL,
+                                    _("Hmm, something wrong here bailing out."));
+                          msg_str[0] = '\0';
+                          status = INCORRECT;
+                       }
+                    }
+                    else
+                    {
+                       /* Some error has occured. */
+                       get_msg_str(&msg[9]);
+                       trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                 "sftp_open_file", NULL,
+                                 "%s", error_2_str(&msg[5]));
+                       status = ret_status;
+                    }
+                 }
               }
               else
               {

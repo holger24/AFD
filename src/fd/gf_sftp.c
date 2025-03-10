@@ -1,6 +1,6 @@
 /*
  *  gf_sftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -878,7 +878,9 @@ main(int argc, char *argv[])
 
                      if ((status = sftp_open_file(SFTP_READ_FILE,
                                                   tmp_rl.file_name,
-                                                  offset, NULL, blocksize,
+                                                  offset, NULL,
+                                                  NO, db.dir_mode, NULL,
+                                                  blocksize,
                                                   &buffer_offset)) != SUCCESS)
                      {
                         if (status == SSH_FX_NO_SUCH_FILE)
