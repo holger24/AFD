@@ -1,6 +1,6 @@
 /*
  *  get_free_connection.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2005 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@ DESCR__S_M3
  */
 DESCR__E_M3
 
-#include "server_common_defs.h"
+#include "afdd_common_defs.h"
 
 /* External global variables. */
 extern pid_t *pid;

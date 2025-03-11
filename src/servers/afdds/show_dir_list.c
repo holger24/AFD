@@ -1,6 +1,6 @@
 /*
  *  show_dir_list.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -57,7 +57,6 @@ DESCR__E_M3
 #include <unistd.h>
 #include <errno.h>
 #include "afddsdefs.h"
-#include "server_common_defs.h"
 
 /* External global variables. */
 extern int                        no_of_dirs;

@@ -1,5 +1,5 @@
 ## Makemodule.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2015 - 2022 Holger Kiehl
+## Copyright (C) 2015 - 2025 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -16,8 +16,6 @@
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
 
-noinst_HEADERS             += src/servers/common/afdd_common_defs.h\
-                              src/servers/common/server_common_defs.h
+noinst_HEADERS             += src/servers/common/afdd_common_defs.h
 noinst_LIBRARIES           += lib/libserverafd.a
-lib_libserverafd_a_SOURCES  = src/servers/common/ssl_common.c\
-                              src/servers/common/get_free_connection.c
+lib_libserverafd_a_SOURCES  = src/servers/common/get_free_connection.c

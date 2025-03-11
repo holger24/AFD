@@ -1,6 +1,6 @@
 /*
  *  afddsdefs - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -31,14 +31,16 @@
 #define AFDDS_SHUTDOWN_MESSAGE   "500 AFDDS shutdown."
 
 /* Function prototypes. */
-extern void check_changes(SSL *),
-            display_file(SSL *),
-            handle_request(SSL *, int, int, int, char *),
-            show_dir_list(SSL *),
-            show_host_list(SSL *),
-            show_host_stat(SSL *),
-            show_job_list(SSL *),
-            show_summary_stat(SSL *);
-extern int  get_display_data(SSL *, char *, int, char *, int, int, int, int);
+extern void    check_changes(SSL *),
+               display_file(SSL *),
+               handle_request(SSL *, int, int, int, char *),
+               show_dir_list(SSL *),
+               show_host_list(SSL *),
+               show_host_stat(SSL *),
+               show_job_list(SSL *),
+               show_summary_stat(SSL *);
+extern int     command(SSL *ssl, char *fmt, ...),
+               get_display_data(SSL *, char *, int, char *, int, int, int, int);
+extern ssize_t ssl_write(SSL *, const char *, size_t);
 
 #endif /* __afddsdefs_h */

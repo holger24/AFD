@@ -1,6 +1,6 @@
 /*
  *  get_display_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -60,7 +60,6 @@ DESCR__E_M3
 #include <unistd.h>                     /* read(), write(), close()      */
 #include <errno.h>
 #include "afddsdefs.h"
-#include "server_common_defs.h"
 
 /* Local global variables. */
 static struct fd_cache fc[MAX_AFDD_LOG_FILES];

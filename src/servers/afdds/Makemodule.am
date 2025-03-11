@@ -31,7 +31,8 @@ bin_afdds_SOURCES = src/servers/afdds/afdds.c\
                     src/servers/afdds/show_host_list.c\
                     src/servers/afdds/show_host_stat.c\
                     src/servers/afdds/show_job_list.c\
-                    src/servers/afdds/show_summary_stat.c
+                    src/servers/afdds/show_summary_stat.c\
+                    src/servers/afdds/ssl_common.c
 bin_afdds_LDADD   = lib/libafd.a\
                     lib/libserverafd.a\
                     @EXTRA_SOCKET_LIBS@\
