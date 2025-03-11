@@ -721,10 +721,12 @@ main(int argc, char *argv[])
             (void)strcpy(proc_table[i].proc_name, AFDD);
             break;
 
+#ifdef WITH_SSL
          case AFDDS_NO :
             proc_table[i].status = &p_afd_status->afdds;
             (void)strcpy(proc_table[i].proc_name, AFDDS);
             break;
+#endif
 
 #ifdef _WITH_ATPD_SUPPORT
          case ATPD_NO :
