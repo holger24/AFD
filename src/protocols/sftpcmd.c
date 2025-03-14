@@ -2134,13 +2134,12 @@ retry_open_file:
                           char tmp_filename[MAX_PATH_LENGTH],
                                *ptr;
 
-                          (void)strcpy(tmp_filename, filename);
-                          ptr = tmp_filename + strlen(tmp_filename) - 1;
-                          while ((*ptr != '/') && (ptr != tmp_filename))
+                          ptr = filename + strlen(filename) - 1;
+                          while ((*ptr != '/') && (ptr != filename))
                           {
                              ptr--;
                           }
-                          if ((*ptr == '/') && (tmp_filename != ptr))
+                          if ((*ptr == '/') && (filename != ptr))
                           {
                              char *p_filename,
                                   *tmp_cwd = scd.cwd;
