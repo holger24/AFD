@@ -369,7 +369,9 @@ typedef unsigned long       u_long_64;
 #define AFD_CTRL                   "afd_ctrl"
 #define AFD_CTRL_LENGTH            (sizeof(AFD_CTRL) - 1)
 #define AFDD                       "afdd"
-#define AFDDS                      "afdds"
+#ifdef WITH_SSL
+# define AFDDS                     "afdds"
+#endif
 #ifdef _WITH_ATPD_SUPPORT
 # define ATPD                      "atpd"
 #endif
@@ -499,43 +501,31 @@ typedef unsigned long       u_long_64;
 #define AW_LOCK_ID                 4    /* Archive watch                */
 #define AS_LOCK_ID                 5    /* AFD statistics               */
 #define AFDD_LOCK_ID               6    /* AFD TCP Daemon               */
-#define AFDDS_LOCK_ID              7    /* AFD TLS TCP Daemon           */
-#ifdef _WITH_ATPD_SUPPORT
-# define ATPD_LOCK_ID              8    /* AFD Transfer Protocol Daemon */
-# ifdef _WITH_WMOD_SUPPORT
-#  define WMOD_LOCK_ID             9    /* WMO protocol Daemon          */
-#  ifdef _WITH_DE_MAIL_SUPPORT
-#   define DEMCD_LOCK_ID           10   /* De Mail Confirmation Daemon  */
-#   define NO_OF_LOCK_PROC         11
-#  else
-#   define NO_OF_LOCK_PROC         10
-#  endif
-# else
-#  ifdef _WITH_DE_MAIL_SUPPORT
-#   define DEMCD_LOCK_ID           9    /* De Mail Confirmation Daemon  */
-#   define NO_OF_LOCK_PROC         10
-#  else
-#   define NO_OF_LOCK_PROC         9
-#  endif
-# endif
+#ifdef WITH_SSL
+# define AFDDS_LOCK_OFFSET         1
+# define AFDDS_LOCK_ID             (AFDD_LOCK_ID + AFDDS_LOCK_OFFSET) /* AFD TLS TCP Daemon */
 #else
-# ifdef _WITH_WMOD_SUPPORT
-#  define WMOD_LOCK_ID             8    /* WMO protocol Daemon          */
-#  ifdef _WITH_DE_MAIL_SUPPORT
-#   define DEMCD_LOCK_ID           9    /* De Mail Confirmation Daemon  */
-#   define NO_OF_LOCK_PROC         10
-#  else
-#   define NO_OF_LOCK_PROC         9
-#  endif
-# else
-#  ifdef _WITH_DE_MAIL_SUPPORT
-#   define DEMCD_LOCK_ID           8    /* De Mail Confirmation Daemon  */
-#   define NO_OF_LOCK_PROC         9
-#  else
-#   define NO_OF_LOCK_PROC         8
-#  endif
-# endif
+# define AFDDS_LOCK_OFFSET         0
 #endif
+#ifdef _WITH_ATPD_SUPPORT
+# define ATPD_LOCK_OFFSET          1
+# define ATPD_LOCK_ID              (AFDD_LOCK_ID + AFDDS_LOCK_OFFSET + ATPD_LOCK_OFFSET) /* AFD Transfer Protocol Daemon */
+#else
+# define ATPD_LOCK_OFFSET          0
+#endif
+#ifdef _WITH_WMOD_SUPPORT
+# define WMOD_LOCK_OFFSET          1
+# define WMOD_LOCK_ID              (AFDD_LOCK_ID + AFDDS_LOCK_OFFSET + ATPD_LOCK_OFFSET + WMOD_LOCK_OFFSET) /* WMO protocol Daemon */
+#else
+# define WMOD_LOCK_OFFSET          0
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+# define DEMCD_LOCK_OFFSET         1
+# define DEMCD_NO                  (AFDD_LOCK_ID + AFDDS_LOCK_OFFSET + ATPD_LOCK_OFFSET + WMOD_LOCK_OFFSET + DEMCD_LOCK_OFFSET) /* De Mail Confirmation Daemon */
+#else
+# define DEMCD_LOCK_OFFSET         0
+#endif
+#define NO_OF_LOCK_PROC            (AFDD_LOCK_ID + AFDDS_LOCK_OFFSET + ATPD_LOCK_OFFSET + WMOD_LOCK_OFFSET + DEMCD_LOCK_OFFSET + 1)
 
 /* Commands that can be send to DB_UPDATE_FIFO of the AMG. */
 #define HOST_CONFIG_UPDATE          4
@@ -595,22 +585,27 @@ typedef unsigned long       u_long_64;
 #define STAT_NO                    8
 #define DC_NO                      9
 #define AFDD_NO                    10
-#define AFDDS_NO                   11
+#ifdef WITH_SSL
+# define AFDDS_OFFSET              1
+# define AFDDS_NO                  (AFDD_NO + AFDDS_OFFSET)
+#else
+# define AFDDS_OFFSET              0
+#endif
 #ifdef _WITH_ATPD_SUPPORT
 # define ATPD_OFFSET               1
-# define ATPD_NO                   (AFDDS_NO + ATPD_OFFSET)
+# define ATPD_NO                   (AFDD_NO + AFDDS_OFFSET + ATPD_OFFSET)
 #else
 # define ATPD_OFFSET               0
 #endif
 #ifdef _WITH_WMOD_SUPPORT
 # define WMOD_OFFSET               1
-# define WMOD_NO                   (AFDDS_NO + ATPD_OFFSET + WMOD_OFFSET)
+# define WMOD_NO                   (AFDD_NO + AFDDS_OFFSET + ATPD_OFFSET + WMOD_OFFSET)
 #else
 # define WMOD_OFFSET               0
 #endif
 #ifdef _WITH_DE_MAIL_SUPPORT
 # define DEMCD_OFFSET              1
-# define DEMCD_NO                  (AFDDS_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET)
+# define DEMCD_NO                  (AFDD_NO + AFDDS_OFFSET + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET)
 #else
 # define DEMCD_OFFSET              0
 #endif
@@ -618,59 +613,59 @@ typedef unsigned long       u_long_64;
 # define MAPPER_OFFSET             0
 #else
 # define MAPPER_OFFSET             1
-# define MAPPER_NO                 (AFDDS_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET)
+# define MAPPER_NO                 (AFDD_NO + AFDDS_OFFSET + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET)
 #endif
 #ifdef _INPUT_LOG
 # define INPUT_OFFSET              1
-# define INPUT_LOG_NO              (AFDDS_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET)
+# define INPUT_LOG_NO              (AFDD_NO + AFDDS_OFFSET + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET)
 #else
 # define INPUT_OFFSET              0
 #endif
 #ifdef _OUTPUT_LOG
 # define OUTPUT_OFFSET             1
-# define OUTPUT_LOG_NO             (AFDDS_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET)
+# define OUTPUT_LOG_NO             (AFDD_NO + AFDDS_OFFSET + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET)
 #else
 # define OUTPUT_OFFSET             0
 #endif
 #ifdef _CONFIRMATION_LOG
 # define CONFIRMATION_OFFSET       1
-# define CONFIRMATION_LOG_NO       (AFDDS_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET)
+# define CONFIRMATION_LOG_NO       (AFDD_NO + AFDDS_OFFSET + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET)
 #else
 # define CONFIRMATION_OFFSET       0
 #endif
 #ifdef _DELETE_LOG
 # define DELETE_OFFSET             1
-# define DELETE_LOG_NO             (AFDDS_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET)
+# define DELETE_LOG_NO             (AFDD_NO + AFDDS_OFFSET + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET)
 #else
 # define DELETE_OFFSET             0
 #endif
 #ifdef _PRODUCTION_LOG
 # define PRODUCTION_OFFSET         1
-# define PRODUCTION_LOG_NO         (AFDDS_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET)
+# define PRODUCTION_LOG_NO         (AFDD_NO + AFDDS_OFFSET + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET)
 #else
 # define PRODUCTION_OFFSET         0
 #endif
 #ifdef _DISTRIBUTION_LOG
 # define DISTRIBUTION_OFFSET       1
-# define DISTRIBUTION_LOG_NO       (AFDDS_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET)
+# define DISTRIBUTION_LOG_NO       (AFDD_NO + AFDDS_OFFSET + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET)
 #else
 # define DISTRIBUTION_OFFSET       0
 #endif
 #ifdef _TRANSFER_RATE_LOG
 # define TRANSFER_RATE_OFFSET      1
-# define TRANSFER_RATE_LOG_NO      (AFDDS_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET)
+# define TRANSFER_RATE_LOG_NO      (AFDD_NO + AFDDS_OFFSET + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET)
 #else
 # define TRANSFER_RATE_OFFSET      0
 #endif
-#define MAINTAINER_LOG_NO          (AFDDS_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET + 1)
-#define AFD_WORKER_NO              (AFDDS_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET + 1 + 1)
+#define MAINTAINER_LOG_NO          (AFDD_NO + AFDDS_OFFSET + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET + 1)
+#define AFD_WORKER_NO              (AFDD_NO + AFDDS_OFFSET + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET + 1 + 1)
 #if defined (_INPUT_LOG) || defined (_OUTPUT_LOG) || defined (_CONFIRMATION_LOG) || defined (_DELETE_LOG) || defined (_PRODUCTION_LOG) || defined (_DISTRIBUTION_LOG)
 # define ALDAD_OFFSET              1
-# define ALDAD_NO                  (AFDDS_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET + 1 + 1 + ALDAD_OFFSET)
+# define ALDAD_NO                  (AFDD_NO + AFDDS_OFFSET + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET + 1 + 1 + ALDAD_OFFSET)
 #else
 # define ALDAD_OFFSET              0
 #endif
-#define NO_OF_PROCESS              (AFDDS_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET + 1 + 1 + ALDAD_OFFSET + 1)
+#define NO_OF_PROCESS              (AFDD_NO + AFDDS_OFFSET + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET + 1 + 1 + ALDAD_OFFSET + 1)
 #define SHOW_OLOG_NO               30
 
 #define NA                         -1
@@ -3349,7 +3344,9 @@ struct afd_status
           signed char    archive_watch;
           signed char    afd_stat;        /* Statistic program            */
           signed char    afdd;
+#ifdef WITH_SSL
           signed char    afdds;
+#endif
 #ifdef _WITH_ATPD_SUPPORT
           signed char    atpd;            /* AFD Transfer Protocol Daemon.*/
 #endif

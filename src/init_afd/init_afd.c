@@ -622,7 +622,9 @@ main(int argc, char *argv[])
       p_afd_status->archive_watch     = 0;
       p_afd_status->afd_stat          = 0;
       p_afd_status->afdd              = 0;
+#ifdef WITH_SSL
       p_afd_status->afdds             = 0;
+#endif
 #ifndef HAVE_MMAP
       p_afd_status->mapper            = 0;
 #endif
@@ -727,7 +729,6 @@ main(int argc, char *argv[])
             (void)strcpy(proc_table[i].proc_name, AFDDS);
             break;
 #endif
-
 #ifdef _WITH_ATPD_SUPPORT
          case ATPD_NO :
             proc_table[i].status = &p_afd_status->atpd;
@@ -3072,7 +3073,10 @@ zombie_check(void)
                          (i == ALDAD_NO) ||
 #endif
                          (i == TDBLOG_NO) || (i == AW_NO) ||
-                         (i == AFDD_NO) || (i == AFDDS_NO) ||
+                         (i == AFDD_NO) ||
+#if AFDDS_OFFSET == 1
+                         (i == AFDDS_NO) ||
+#endif
                          (i == STAT_NO) || (i == AFD_WORKER_NO))
                      {
                         proc_table[i].pid = make_process(proc_table[i].proc_name,
@@ -3371,6 +3375,7 @@ start_afd(int          binary_changed,
       *proc_table[AFDD_NO].status = NEITHER;
    }
 
+#if AFDDS_OFFSET == 1
    /* Start TLS TCP daemon of AFD. */
    if (afdds_port > 0)
    {
@@ -3383,6 +3388,7 @@ start_afd(int          binary_changed,
       proc_table[AFDDS_NO].pid = -1;
       *proc_table[AFDDS_NO].status = NEITHER;
    }
+#endif
 
 #ifdef _WITH_ATPD_SUPPORT
    /* Start AFD Transfer Protocol daemon. */
@@ -3584,7 +3590,9 @@ stop_afd(void)
                      if (((i - 1) != DC_NO) &&
                          (proc_table[i - 1].status != NULL) &&
                          (((i - 1) != AFDD_NO) ||
+#ifdef WITH_SSL
                           ((i - 1) != AFDDS_NO) ||
+#endif
                           (*proc_table[i - 1].status != NEITHER)))
                      {
                         kill_list[kill_counter] = *(pid_t *)ptr;
@@ -3600,7 +3608,9 @@ stop_afd(void)
                   if (((i - 1) != DC_NO) &&
                       (proc_table[i - 1].status != NULL) &&
                       (((i - 1) != AFDD_NO) ||
+#ifdef WITH_SSL
                        ((i - 1) != AFDDS_NO) ||
+#endif
                        (*proc_table[i - 1].status != NEITHER)))
                   {
                      *proc_table[i - 1].status = STOPPED;

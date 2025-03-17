@@ -1,7 +1,7 @@
 /*
  *  get_afd_status_struct_size.c - Part of AFD, an automatic file distribution
  *                                 program.
- *  Copyright (c) 2017 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2017 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -60,7 +60,9 @@ get_afd_status_struct_size(void)
           sizeof(signed char) +       /* archive_watch     */
           sizeof(signed char) +       /* afd_stat          */
           sizeof(signed char) +       /* afdd              */
+#ifdef WITH_SSL
           sizeof(signed char) +       /* afdds             */
+#endif
 #ifdef _WITH_ATPD_SUPPORT
           sizeof(signed char) +       /* atpd              */
 #endif
