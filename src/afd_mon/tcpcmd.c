@@ -1,6 +1,6 @@
 /*
  *  tcpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -111,8 +111,8 @@ extern long               tcp_timeout;
 /* Local global variables */
 #ifdef WITH_SSL
 static SSL_CTX            *ssl_ctx = NULL;
-#endif
 static sigjmp_buf         env_alrm;
+#endif
 static struct sockaddr_in ctrl;
 static struct timeval     timeout;
 
@@ -128,7 +128,11 @@ static void               sig_handler(int);
 
 /*########################## tcp_connect() ##############################*/
 int
+#ifdef WITH_SSL
 tcp_connect(char *hostname, int port, int sending_logdata, int encrypt)
+#else
+tcp_connect(char *hostname, int port, int sending_logdata)
+#endif
 {
    int                     reply;
    my_socklen_t            length;
