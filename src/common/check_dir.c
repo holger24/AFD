@@ -1,6 +1,6 @@
 /*
  *  check_dir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,6 +42,8 @@ DESCR__S_M3
  **
  ** HISTORY
  **   25.12.1996 H.Kiehl Created
+ **   19.03.2025 H.Kiehl Print the directories and mode when creating
+ **                      them.
  **
  */
 DESCR__E_M3
@@ -70,6 +72,15 @@ check_dir(char *directory, int access_mode)
                     _("Failed to create directory `%s' : %s"),
                     directory, strerror(errno));
          return(INCORRECT);
+      }
+      else
+      {
+         char str_mode[11];
+
+         mode_t2str(DIR_MODE, str_mode);
+         system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                    _("Created directory `%s' with mode `%s'."),
+                    directory, str_mode);
       }
    }
    else if (!S_ISDIR(stat_buf.st_mode))
