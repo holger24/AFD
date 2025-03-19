@@ -1,6 +1,6 @@
 /*
  *  reread_dir_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -407,16 +407,17 @@ reread_dir_config(int              dc_changed,
 #else
                           "Done with rereading %d DIR_CONFIG files (time: %llds).",
 #endif
-                          no_of_dir_configs);
+                          no_of_dir_configs, (pri_off_t)diff_time);
             }
             else
             {
                system_log(INFO_SIGN, NULL, 0,
 #if SIZEOF_TIME_T == 4
-                          "Done with rereading DIR_CONFIG file (time: %lds).");
+                          "Done with rereading DIR_CONFIG file (time: %lds).",
 #else
-                          "Done with rereading DIR_CONFIG file (time: %llds).");
+                          "Done with rereading DIR_CONFIG file (time: %llds).",
 #endif
+                          (pri_off_t)diff_time);
             }
          }
          else
