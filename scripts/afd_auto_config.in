@@ -11,6 +11,8 @@
 #                                    same check for rename.rule.
 #                 23.06.2016 H.Kiehl Added afd.init file.
 #                 25.12.2019 H.Kiehl Use separate info directory.
+#                 19.03.2025 H.Kiehl When creating info directory
+#                                    do a chmod.
 #
 
 if [ $# -eq 1 ]
@@ -69,7 +71,10 @@ else
       then
          if [ ! -d $AFD_WORK_DIR/etc/info ]
          then
-            mkdir $AFD_WORK_DIR/etc/info
+            if mkdir $AFD_WORK_DIR/etc/info;
+            then
+               chmod 775 $AFD_WORK_DIR/etc/info
+            fi
          fi
          cp @docdir@/etc/INFO-LOOP.sample $AFD_WORK_DIR/etc/info/LOOP
       fi
