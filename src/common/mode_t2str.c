@@ -1,6 +1,6 @@
 /*
  *  mode_t2str.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2018 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,6 +40,8 @@ DESCR__S_M3
  **
  ** HISTORY
  **   12.08.2018 H.Kiehl Created
+ **   19.03.2025 H.Kiehl When type is not set return ' ' (space)
+ **                      instead of '?'.
  **
  */
 DESCR__E_M3
@@ -117,6 +119,6 @@ mode_t2type(mode_t mode)
       case S_IFCHR : return 'c';
       case S_IFBLK : return 'b';
       case S_IFIFO : return 'p';
-      default      : return '?';
+      default      : return ' ';
    }
 }
