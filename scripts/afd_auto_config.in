@@ -29,12 +29,11 @@ else
 fi
 
 GOTCHA="NO"
-if [ -f $AFD_WORK_DIR/etc/AFD_CONFIG ]
+if [ -f "$AFD_WORK_DIR"/etc/AFD_CONFIG ]
 then
-   grep ^DIR_CONFIG_NAME $AFD_WORK_DIR/etc/AFD_CONFIG > /dev/null
-   if [ $? -eq 0 ]
+   if grep ^DIR_CONFIG_NAME "$AFD_WORK_DIR"/etc/AFD_CONFIG > /dev/null;
    then
-      for i in `grep ^DIR_CONFIG_NAME $AFD_WORK_DIR/etc/AFD_CONFIG | tr -s ' ' | cut -d ' ' -f 2`
+      for i in $(grep ^DIR_CONFIG_NAME "$AFD_WORK_DIR"/etc/AFD_CONFIG | tr -s ' ' | cut -d ' ' -f 2)
       do
          if [ -f "$i" ]
          then
@@ -61,22 +60,22 @@ then
 else
    if [ -f @docdir@/etc/AFD_CONFIG.sample ]
    then
-      cp @docdir@/etc/AFD_CONFIG.sample $AFD_WORK_DIR/etc/AFD_CONFIG
-      chmod 640 $AFD_WORK_DIR/etc/AFD_CONFIG
+      cp @docdir@/etc/AFD_CONFIG.sample "$AFD_WORK_DIR"/etc/AFD_CONFIG
+      chmod 640 "$AFD_WORK_DIR"/etc/AFD_CONFIG
    fi
 
    if [ ! -f "$AFD_WORK_DIR/etc/info/LOOP" ]
    then
       if [ -f @docdir@/etc/INFO-LOOP.sample ]
       then
-         if [ ! -d $AFD_WORK_DIR/etc/info ]
+         if [ ! -d "$AFD_WORK_DIR"/etc/info ]
          then
-            if mkdir $AFD_WORK_DIR/etc/info;
+            if mkdir "$AFD_WORK_DIR"/etc/info;
             then
-               chmod 775 $AFD_WORK_DIR/etc/info
+               chmod 775 "$AFD_WORK_DIR"/etc/info
             fi
          fi
-         cp @docdir@/etc/INFO-LOOP.sample $AFD_WORK_DIR/etc/info/LOOP
+         cp @docdir@/etc/INFO-LOOP.sample "$AFD_WORK_DIR"/etc/info/LOOP
       fi
    fi
 
@@ -86,7 +85,7 @@ else
       then
          if [ ! -f "$AFD_WORK_DIR/etc/afd.name.sample" ]
          then
-            cp @docdir@/etc/afd.name.sample $AFD_WORK_DIR/etc
+            cp @docdir@/etc/afd.name.sample "$AFD_WORK_DIR"/etc
          fi
       fi
    fi
@@ -95,9 +94,9 @@ else
    then
       if [ -f @docdir@/etc/afd.users.sample ]
       then
-         if [ ! -f $AFD_WORK_DIR/etc/afd.users.sample ]
+         if [ ! -f "$AFD_WORK_DIR"/etc/afd.users.sample ]
          then
-            cp @docdir@/etc/afd.users.sample $AFD_WORK_DIR/etc
+            cp @docdir@/etc/afd.users.sample "$AFD_WORK_DIR"/etc
          fi
       fi
    fi
@@ -106,7 +105,7 @@ else
    then
       if [ -f @docdir@/etc/host.info.sample ]
       then
-         cp @docdir@/etc/host.info.sample $AFD_WORK_DIR/etc/host.info
+         cp @docdir@/etc/host.info.sample "$AFD_WORK_DIR"/etc/host.info
       fi
    fi
 
@@ -114,9 +113,9 @@ else
    then
       if [ -f @docdir@/etc/afd.init.sample ]
       then
-         if [ ! -f $AFD_WORK_DIR/etc/afd.init.sample ]
+         if [ ! -f "$AFD_WORK_DIR"/etc/afd.init.sample ]
          then
-            cp @docdir@/etc/afd.init.sample $AFD_WORK_DIR/etc
+            cp @docdir@/etc/afd.init.sample "$AFD_WORK_DIR"/etc
          fi
       fi
    fi
@@ -131,33 +130,32 @@ if [ $GOTCHA = "NO" ]
 then
    if [ ! -f "$AFD_WORK_DIR/etc/DIR_CONFIG" ]
    then
-      echo "#" > $AFD_WORK_DIR/etc/DIR_CONFIG
-      echo "# Sample DIR_CONFIG for AFD" >> $AFD_WORK_DIR/etc/DIR_CONFIG
-      echo "#" >> $AFD_WORK_DIR/etc/DIR_CONFIG
-      echo "" >> $AFD_WORK_DIR/etc/DIR_CONFIG
-      echo "[directory]" >> $AFD_WORK_DIR/etc/DIR_CONFIG
-      echo "~/test" >> $AFD_WORK_DIR/etc/DIR_CONFIG
-      echo "" >> $AFD_WORK_DIR/etc/DIR_CONFIG
-      echo "   [files]" >> $AFD_WORK_DIR/etc/DIR_CONFIG
-      echo "   *" >> $AFD_WORK_DIR/etc/DIR_CONFIG
-      echo "" >> $AFD_WORK_DIR/etc/DIR_CONFIG
-      echo "      [destination]" >> $AFD_WORK_DIR/etc/DIR_CONFIG
-      echo "" >> $AFD_WORK_DIR/etc/DIR_CONFIG
-      echo "         [recipient]" >> $AFD_WORK_DIR/etc/DIR_CONFIG
-      echo "         file://`whoami`:secret@LOOP/test" >> $AFD_WORK_DIR/etc/DIR_CONFIG
-      echo "" >> $AFD_WORK_DIR/etc/DIR_CONFIG
-      echo "         [options]" >> $AFD_WORK_DIR/etc/DIR_CONFIG
-      echo "         priority 9" >> $AFD_WORK_DIR/etc/DIR_CONFIG
-      echo "         rename disneyland" >> $AFD_WORK_DIR/etc/DIR_CONFIG
-      chmod 600 $AFD_WORK_DIR/etc/DIR_CONFIG
+      echo "#" > "$AFD_WORK_DIR"/etc/DIR_CONFIG
+      echo "# Sample DIR_CONFIG for AFD" >> "$AFD_WORK_DIR"/etc/DIR_CONFIG
+      echo "#" >> "$AFD_WORK_DIR"/etc/DIR_CONFIG
+      echo "" >> "$AFD_WORK_DIR"/etc/DIR_CONFIG
+      echo "[directory]" >> "$AFD_WORK_DIR"/etc/DIR_CONFIG
+      echo "~/test" >> "$AFD_WORK_DIR"/etc/DIR_CONFIG
+      echo "" >> "$AFD_WORK_DIR"/etc/DIR_CONFIG
+      echo "   [files]" >> "$AFD_WORK_DIR"/etc/DIR_CONFIG
+      echo "   *" >> "$AFD_WORK_DIR"/etc/DIR_CONFIG
+      echo "" >> "$AFD_WORK_DIR"/etc/DIR_CONFIG
+      echo "      [destination]" >> "$AFD_WORK_DIR"/etc/DIR_CONFIG
+      echo "" >> "$AFD_WORK_DIR"/etc/DIR_CONFIG
+      echo "         [recipient]" >> "$AFD_WORK_DIR"/etc/DIR_CONFIG
+      echo "         file://$(whoami):secret@LOOP/test" >> "$AFD_WORK_DIR"/etc/DIR_CONFIG
+      echo "" >> "$AFD_WORK_DIR"/etc/DIR_CONFIG
+      echo "         [options]" >> "$AFD_WORK_DIR"/etc/DIR_CONFIG
+      echo "         priority 9" >> "$AFD_WORK_DIR"/etc/DIR_CONFIG
+      echo "         rename disneyland" >> "$AFD_WORK_DIR"/etc/DIR_CONFIG
+      chmod 600 "$AFD_WORK_DIR"/etc/DIR_CONFIG
    fi
 fi
 
 GOTCHA="NO"
-grep ^RENAME_RULE_NAME $AFD_WORK_DIR/etc/AFD_CONFIG > /dev/null
-if [ $? -eq 0 ]
+if grep ^RENAME_RULE_NAME "$AFD_WORK_DIR"/etc/AFD_CONFIG > /dev/null;
 then
-   for i in `grep ^RENAME_RULE_NAME $AFD_WORK_DIR/etc/AFD_CONFIG | tr -s ' ' | cut -d ' ' -f 2`
+   for i in $(grep ^RENAME_RULE_NAME "$AFD_WORK_DIR"/etc/AFD_CONFIG | tr -s ' ' | cut -d ' ' -f 2)
    do
       if [ -f "$i" ]
       then
@@ -186,6 +184,6 @@ if [ $GOTCHA = "NO" ]
 then
    if [ -f @docdir@/etc/rename.rule.sample ]
    then
-      cp @docdir@/etc/rename.rule.sample $AFD_WORK_DIR/etc/rename.rule
+      cp @docdir@/etc/rename.rule.sample "$AFD_WORK_DIR"/etc/rename.rule
    fi
 fi
