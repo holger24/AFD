@@ -1806,10 +1806,10 @@ AC_CHECK_FUNC([mmap],
               [AM_CONDITIONAL(WITHOUT_MMAP, false)
                AC_DEFINE([HAVE_MMAP], [], [With mmap support])],
               [AM_CONDITIONAL(WITHOUT_MMAP, true)])
-AC_CHECK_FUNCS(fdatasync gai_strerror getline getaddrinfo gethostname memcpy\
-               mkdir mkfifo mktime rmdir select setpriority seteuid setreuid\
-               socket strcasestr strerror strtod strtol strtoll strtoul\
-               strtoull unsetenv statx)
+AC_CHECK_FUNCS(fdatasync gai_strerror getline getaddrinfo gethostid\
+               gethostname memcpy mkdir mkfifo mktime rmdir select\
+               setpriority seteuid setreuid socket strcasestr strerror\
+               strtod strtol strtoll strtoul strtoull unsetenv statx)
 
 AM_GNU_GETTEXT([external])
 if test "x$LIBINTL" != "x"

@@ -1,6 +1,6 @@
 /*
  *  alda.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -104,6 +104,7 @@ int                        data_printed,
                            log_date_length = LOG_DATE_LENGTH,
                            max_hostname_length = MAX_HOSTNAME_LENGTH,
                            no_of_dirs = 0,
+                           no_of_header_lines = 0,
                            no_of_hosts = 0,
                            rotate_limit,
                            *search_afd_msa_pos = NULL,
@@ -136,6 +137,7 @@ char                       **end_alias,
                            footer_filename[MAX_PATH_LENGTH],
                            *format_str = NULL,
                            header_filename[MAX_PATH_LENGTH],
+                           **header_line = NULL,
                            output_filename[MAX_PATH_LENGTH],
                            *p_work_dir,
                            **search_afd_start_alias = NULL,

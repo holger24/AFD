@@ -1,6 +1,6 @@
 /*
  *  eval_input_alda.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -232,6 +232,13 @@ DESCR__S_M3
  **           -O <file name>               File where to write output.
  **           -v[v[v[v[v[v]]]]]            Verbose mode.
  **           -w <work dir>                Working directory of the AFD.
+ **           --header_line=<line>         Add the given header line to
+ **                                        output. The following
+ **                                        % parameters can be used to
+ **                                        insert additional system
+ **                                        infomation:
+ **                                          %I - inode number of the log file
+ **                                          %H - host ID
  **
  **   To be able to differentiate between name, alias and ID:
  **       alias - must always begin with %
@@ -249,6 +256,8 @@ DESCR__S_M3
  **   15.04.2007 H.Kiehl Created
  **   04.05.2024 H.Kiehl Setup umask so we do not create log files wih
  **                      mode 666.
+ **   19.03.2025 H.Kiehl Add --header_line=<line> parameter to add
+ **                      a header line with additional system information.
  **
  */
 DESCR__E_M3
@@ -311,6 +320,7 @@ extern unsigned int end_alias_counter,
 extern int          gt_lt_sign,
                     gt_lt_sign_duration,
                     gt_lt_sign_orig,
+                    no_of_header_lines,
                     rotate_limit,
                     trace_mode,
                     verbose;
@@ -329,6 +339,7 @@ extern char         **end_alias,
                     footer_filename[],
                     *format_str,
                     header_filename[],
+                    **header_line,
                     output_filename[],
                     **search_dir_alias,
                     **search_dir_name,
@@ -341,6 +352,7 @@ extern FILE         *output_fp;
 /* Local function prototypes. */
 static int          eval_time(char *, int, time_t),
                     get_time_value(char *, char **, time_t),
+                    insert_line(char ***, const char *, size_t),
                     store_protocols(char *);
 static void         store_name_alias_id(char *, int),
                     usage(char *);
@@ -1072,10 +1084,28 @@ eval_input_alda(int *argc, char *argv[])
                }
                break;
 
+            case '-' : /* Other parameters starting with --. */
+               {
+                  char *p_name = &argv[0][2];
+
+                  /* --header_line= */
+                  if (strcmp(p_name, "header_line=") != 0)
+                  {
+                     if (insert_line(&header_line, &argv[0][14],
+                                     no_of_header_lines))
+                     {
+                        no_of_header_lines++;
+                     }
+                  }
+                  (*argc)--;
+                  argv++;
+                  break;
+               }
+
             default : /* Unknown parameter. */
                (void)fprintf(stderr,
-                             "ERROR  : Unknown parameter %c. (%s %d)\n",
-                             *(argv[0] + 1), __FILE__, __LINE__);
+                             "ERROR  : Unknown parameter `%s' [argc=%d] (%s %d)\n",
+                             argv[0], *argc, __FILE__, __LINE__);
                (*argc)--;
                argv++;
                correct = NO;
@@ -1697,6 +1727,37 @@ store_protocols(char *str_protocols)
    }
 
    return(ret);
+}
+
+
+/*++++++++++++++++++++++++++++ insert_line() +++++++++++++++++++++++++++*/
+/*                             -------------                            */
+/* Taken from a stackoverflow awnser:                                   */
+/*    https://stackoverflow.com/questions/61941666                      */
+/*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+int
+insert_line(char ***root, const char str[], size_t i)
+{
+   char *p = malloc(strlen(str) + 1);
+   int  success = p != NULL;
+
+   if (success)
+   {
+      char **tmp = realloc(*root, (i + 1) * sizeof(char *));
+
+      if (success)
+      {
+         (void)strcpy(p, str);
+         tmp[i] = p;
+         *root = tmp;
+      }
+      else
+      {
+         free(p);
+      }
+   }
+
+   return(success);
 }
 
 
@@ -2475,8 +2536,17 @@ usage(char *progname)
    (void)fprintf(stderr, "            -H <file name>               Header to add to output.\n");
    (void)fprintf(stderr, "            -O <file name>               File where to write output.\n");
    (void)fprintf(stderr, "            -v[v[v[v[v[v]]]]]            Verbose mode.\n");
-   (void)fprintf(stderr, "            -w <work dir>                Working directory of the AFD.");
-   (void)fprintf(stderr, "\n    To be able to differentiate between name, alias and ID:\n");
+   (void)fprintf(stderr, "            -w <work dir>                Working directory of the AFD.\n");
+   (void)fprintf(stderr, "            --header_line=<line>         Add the given header line to\n");
+   (void)fprintf(stderr, "                                         output. The following\n");
+   (void)fprintf(stderr, "                                         %% parameters can be used to\n");
+   (void)fprintf(stderr, "                                         insert additional system\n");
+   (void)fprintf(stderr, "                                         infomation:\n");
+   (void)fprintf(stderr, "                                           %%I - inode number of the log file\n");
+#ifdef HAVE_GETHOSTID
+   (void)fprintf(stderr, "                                           %%H - host ID\n");
+#endif
+   (void)fprintf(stderr, "    To be able to differentiate between name, alias and ID:\n");
    (void)fprintf(stderr, "        alias - must always begin with %%\n");
    (void)fprintf(stderr, "        ID    - must always begin with #\n");
    (void)fprintf(stderr, "        name  - just the name without extra identifier\n");

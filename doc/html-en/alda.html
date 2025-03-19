@@ -34,7 +34,7 @@ Usage: alda [options] &lt;file name pattern&gt;
            -e &lt;AFD host name/alias/ID&gt;  Ending AFD hostname/alias/ID.
            -t &lt;start&gt;[-&lt;end&gt;]           Time frame at starting point.
               Time is specified as follows:
-                 Absolute: MMMDDhhmmss, MDDhhmm, DDhhmm or hhmm
+                 Absolute: MMDDhhmmss, MMDDhhmm, DDhhmm or hhmm
                  Relative: -DDhhmm, -hhmm or -mm
               Where MMDDhhmmss have the following meaning:
                  MM - The month as a decimal number (range 01 to 12).
@@ -49,7 +49,6 @@ Usage: alda [options] &lt;file name pattern&gt;
                                           I - Input Log
                                           U - Distribution Log
                                           P - Production Log
-                                          C - Output Log confirmed
                                           R - Output Log retrieved
                                           O - Output Log delivered
                                           D - Delete Log
@@ -225,7 +224,7 @@ Usage: alda [options] &lt;file name pattern&gt;
             -j &lt;job ID&gt;                  Job identifier.
             -u &lt;unique number&gt;           Unique number.
             -z &lt;size&gt;                    Original file size in byte.
-                                               (Production log only!)
+                                         (Production log only!)
             -S[I|U|P|O|D] &lt;size&gt;         File size in byte.
             -D[P|O] &lt;time&gt;               Duration in seconds.
             -p &lt;protocol&gt;                Protocol used for transport:
@@ -249,6 +248,13 @@ Usage: alda [options] &lt;file name pattern&gt;
             -O &lt;file name&gt;               File where to write output.
             -v[v[v[v[v[v]]]]]            Verbose mode.
             -w &lt;work dir&gt;                Working directory of the AFD.
+            --header_line=&lt;line&gt;         Add the given header line to
+                                         output. The following
+                                         % parameters can be used to
+                                         insert additional system
+                                         infomation:
+                                           %I - inode number of the log file
+                                           %H - host ID
     To be able to differentiate between name, alias and ID:
         alias - must always begin with %
         ID    - must always begin with #
@@ -451,9 +457,9 @@ comma.
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 2009 - 2024 by H.Kiehl<br>
+   Copyright &copy; 2009 - 2025 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 29.02.2024
+   Last updated: 19.03.2025
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

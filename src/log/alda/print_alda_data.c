@@ -1,6 +1,6 @@
 /*
  *  print_alda_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,6 +40,8 @@ DESCR__S_M3
  **                      about remote AFD.
  **   11.02.2019 H.Kiehl Function pri_string() can now print only certain
  **                      characters from the given string.
+ **   18.03.2025 H.Kiehl Add header line support with additional
+ **                      information about the node.
  **
  */
 DESCR__E_M3
@@ -50,6 +52,7 @@ DESCR__E_M3
 #include <ctype.h>       /* isdigit()                                   */
 #include <time.h>        /* strftime()                                  */
 #include <unistd.h>      /* STDERR_FILENO                               */
+#include <errno.h>
 #include "aldadefs.h"
 #ifdef _DELETE_LOG
 # include "dr_str.h"
@@ -60,10 +63,12 @@ DESCR__E_M3
 
 /* External global variables. */
 extern unsigned int      mode;
-extern int               data_printed;
+extern int               data_printed,
+                         no_of_header_lines;
 extern off_t             log_data_written;
 extern char              *format_str,
                          header_filename[],
+                         **header_line,
                          output_filename[];
 extern FILE              *output_fp;
 extern struct afd_info   afd;
@@ -116,6 +121,160 @@ print_alda_data(void)
         *p_start,
         *ptr = format_str,
         str_number[MAX_INT_LENGTH + 1];
+
+   if (header_line != NULL)
+   {
+      char *p_percent;
+
+      for (j = 0; j < no_of_header_lines; j++)
+      {
+         p_percent = header_line[j];
+         while (*p_percent != '\0')
+         {
+            if (*p_percent == '\\')
+            {
+               p_percent++;
+            }
+            else
+            {
+               if (*p_percent == '%')
+               {
+                  if (*(p_percent + 1) == 'I')
+                  {
+                     int fd;
+
+                     if ((fd = fileno(output_fp)) == -1)
+                     {
+                        (void)fprintf(stderr, "fileno() error: %s (%s %d)\n",
+                                      strerror(errno), __FILE__, __LINE__);
+                        if (fputc((int)*p_percent, output_fp) == EOF)
+                        {
+                           (void)fprintf(stderr,
+                                         "fputc()  error: %s (%s %d)\n",
+                                         strerror(errno), __FILE__, __LINE__);
+                           return;
+                        }
+                        p_percent++;
+                        if (fputc((int)*p_percent, output_fp) == EOF)
+                        {
+                           (void)fprintf(stderr,
+                                         "fputc()  error: %s (%s %d)\n",
+                                         strerror(errno), __FILE__, __LINE__);
+                           return;
+                        }
+                        p_percent++;
+                     }
+                     else
+                     {
+                        struct stat stat_buf;
+
+                        if (fstat(fd, &stat_buf) == -1)
+                        {
+                           (void)fprintf(stderr, "fstat() error: %s (%s %d)\n",
+                                         strerror(errno), __FILE__, __LINE__);
+                           if (fputc((int)*p_percent, output_fp) == EOF)
+                           {
+                              (void)fprintf(stderr,
+                                            "fputc()  error: %s (%s %d)\n",
+                                            strerror(errno),
+                                            __FILE__, __LINE__);
+                              return;
+                           }
+                           p_percent++;
+                           if (fputc((int)*p_percent, output_fp) == EOF)
+                           {
+                              (void)fprintf(stderr,
+                                            "fputc()  error: %s (%s %d)\n",
+                                            strerror(errno),
+                                            __FILE__, __LINE__);
+                              return;
+                           }
+                           p_percent++;
+                        }
+                        else
+                        {
+                           log_data_written += (off_t)fprintf(output_fp,
+#if SIZEOF_INO_T == 4
+                                                              "%ld",
+#else
+                                                              "%lld",
+#endif
+                                                              (pri_ino_t)stat_buf.st_ino);
+                           p_percent += 2;
+                        }
+                     }
+                  }
+#ifdef HAVE_GETHOSTID
+                  else if (*(p_percent + 1) == 'H')
+                       {
+                          long hostid;
+
+                          if ((hostid = gethostid()) == -1)
+                          {
+                             (void)fprintf(stderr,
+                                           "gethostid() error: %s (%s %d)\n",
+                                           strerror(errno),
+                                           __FILE__, __LINE__);
+                             if (fputc((int)*p_percent, output_fp) == EOF)
+                             {
+                                (void)fprintf(stderr,
+                                              "fputc()  error: %s (%s %d)\n",
+                                              strerror(errno),
+                                              __FILE__, __LINE__);
+                                return;
+                             }
+                             p_percent++;
+                             if (fputc((int)*p_percent, output_fp) == EOF)
+                             {
+                                (void)fprintf(stderr,
+                                              "fputc()  error: %s (%s %d)\n",
+                                              strerror(errno),
+                                              __FILE__, __LINE__);
+                                return;
+                             }
+                             p_percent++;
+                          }
+                          else
+                          {
+                             log_data_written += (off_t)fprintf(output_fp,
+                                                                "%x",
+                                                                (unsigned int)hostid);
+                             p_percent += 2;
+                          }
+                       }
+#endif
+                       else
+                       {
+                           if (fputc((int)*p_percent, output_fp) == EOF)
+                           {
+                              (void)fprintf(stderr,
+                                            "fputc()  error: %s (%s %d)\n",
+                                            strerror(errno),
+                                            __FILE__, __LINE__);
+                              return;
+                           }
+                           p_percent++;
+                       }
+               }
+               else
+               {
+                  if (fputc((int)*p_percent, output_fp) == EOF)
+                  {
+                     (void)fprintf(stderr, "fputc()  error: %s (%s %d)\n",
+                                   strerror(errno), __FILE__, __LINE__);
+                     return;
+                  }
+                  p_percent++;
+               }
+            }
+         }
+         log_data_written += (off_t)fprintf(output_fp, "\n");
+         free(header_line[j]);
+      }
+      free(header_line);
+      header_line = NULL;
+      no_of_header_lines = 0;
+   }
 
    if (header_filename[0] != '\0')
    {
