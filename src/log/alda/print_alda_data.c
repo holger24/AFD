@@ -64,6 +64,7 @@ DESCR__E_M3
 /* External global variables. */
 extern unsigned int      mode;
 extern int               data_printed,
+                         header_line_shown,
                          no_of_header_lines;
 extern off_t             log_data_written;
 extern char              *format_str,
@@ -122,7 +123,7 @@ print_alda_data(void)
         *ptr = format_str,
         str_number[MAX_INT_LENGTH + 1];
 
-   if (header_line != NULL)
+   if ((header_line != NULL) && (header_line_shown == NO))
    {
       char *p_percent;
 
@@ -269,11 +270,8 @@ print_alda_data(void)
             }
          }
          log_data_written += (off_t)fprintf(output_fp, "\n");
-         free(header_line[j]);
       }
-      free(header_line);
-      header_line = NULL;
-      no_of_header_lines = 0;
+      header_line_shown = YES;
    }
 
    if (header_filename[0] != '\0')

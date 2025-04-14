@@ -64,6 +64,7 @@ unsigned int               end_alias_counter,
                            end_id_counter,
                            end_name_counter,
                            file_pattern_counter,
+                           header_line_shown = NO,
                            mode,
 #ifdef WITH_AFD_MON
                            msa_fd = -1,
@@ -800,6 +801,7 @@ main(int argc, char *argv[])
                      }
                   }
                }
+               header_line_shown = NO;
                if ((output_fp = fopen(output_filename, "a")) == NULL)
                {
                   (void)fprintf(stderr, "Failed to fopen() `%s' : %s (%s %d)\n",
@@ -817,6 +819,19 @@ main(int argc, char *argv[])
    if (verbose)
    {
       end = time(NULL);
+   }
+
+   if (header_line != NULL)
+   {
+      int j;
+
+      for (j = 0; j < no_of_header_lines; j++)
+      {
+         free(header_line[j]);
+      }
+      free(header_line);
+      header_line = NULL;
+      no_of_header_lines = 0;
    }
 
    if (verbose)
