@@ -1,6 +1,6 @@
 /*
  *  convert.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -246,7 +246,8 @@ convert(char         *file_path,
 #endif
            {
               receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                          _("Got a file for converting that is less then 10 bytes long!"));
+                          _("Got a file for converting that is less then 10 bytes long!  #%x"),
+                          job_id);
               (void)close(from_fd);
               return(INCORRECT);
            }
@@ -476,11 +477,11 @@ convert(char         *file_path,
                        (void)strcpy(length_indicator, "99999999");
                        receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
 #if SIZEOF_OFF_T == 4
-                                   "Data length (%ld) greater then what is possible in WMO header size, inserting maximum possible 99999999.",
+                                   "Data length (%ld) greater then what is possible in WMO header size, inserting maximum possible 99999999. #%x",
 #else
-                                   "Data length (%lld) greater then what is possible in WMO header size, inserting maximum possible 99999999.",
+                                   "Data length (%lld) greater then what is possible in WMO header size, inserting maximum possible 99999999. #%x",
 #endif
-                                   (pri_off_t)size);
+                                   (pri_off_t)size, job_id);
                     }
                     else
                     {
@@ -752,16 +753,16 @@ convert(char         *file_path,
                        (void)strcpy(length_indicator, "99999999");
                        receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
 #if SIZEOF_OFF_T == 4
-                                   "Data length (%ld) greater then what is possible in WMO header size, inserting maximum possible 99999999.",
+                                   "Data length (%ld) greater then what is possible in WMO header size, inserting maximum possible 99999999. #%x",
 #else
-                                   "Data length (%lld) greater then what is possible in WMO header size, inserting maximum possible 99999999.",
+                                   "Data length (%lld) greater then what is possible in WMO header size, inserting maximum possible 99999999. #%x",
 #endif
 #ifdef HAVE_STATX
-                                   (pri_off_t)(stat_buf.stx_size - front_offset - end_offset + additional_length)
+                                   (pri_off_t)(stat_buf.stx_size - front_offset - end_offset + additional_length),
 #else
-                                   (pri_off_t)(stat_buf.st_size - front_offset - end_offset + additional_length)
+                                   (pri_off_t)(stat_buf.st_size - front_offset - end_offset + additional_length),
 #endif
-                                  );
+                                  job_id);
                     }
                     else
                     {
@@ -1062,11 +1063,12 @@ convert(char         *file_path,
                                 (void)strcpy(length_indicator, "99999999");
                                 receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
 #if SIZEOF_OFF_T == 4
-                                            "Data length (%ld) greater then what is possible in WMO header size, inserting maximum possible 99999999.",
+                                            "Data length (%ld) greater then what is possible in WMO header size, inserting maximum possible 99999999. #%x",
 #else
-                                            "Data length (%lld) greater then what is possible in WMO header size, inserting maximum possible 99999999.",
+                                            "Data length (%lld) greater then what is possible in WMO header size, inserting maximum possible 99999999. #%x",
 #endif
-                                             (pri_off_t)(length + end_length));
+                                             (pri_off_t)(length + end_length),
+                                             job_id);
                              }
                              else
                              {
@@ -1200,8 +1202,8 @@ convert(char         *file_path,
                                                     job_id)) < 0)
                  {
                     receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                                _("Failed to convert MRZ file `%s' to WMO-format."),
-                                file_name);
+                                _("Failed to convert MRZ file `%s' to WMO-format. #%x"),
+                                file_name, job_id);
                     *file_size = 0;
                  }
                  break;
@@ -1247,8 +1249,8 @@ convert(char         *file_path,
 #endif
                     {
                        receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                                   _("Failed to convert ISO8859 file `%s' to ASCII."),
-                                   file_name);
+                                   _("Failed to convert ISO8859 file `%s' to ASCII. #%x"),
+                                   file_name, job_id);
                        *file_size = 0;
                     }
                     else
@@ -1292,7 +1294,8 @@ convert(char         *file_path,
 #endif
            {
               receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                          _("Failed to munmap() `%s' : %s"), fullname, strerror(errno));
+                          _("Failed to munmap() `%s' : %s"),
+                          fullname, strerror(errno));
            }
 
            if (close(from_fd) == -1)
