@@ -1,6 +1,6 @@
 /*
  *  fddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -194,6 +194,10 @@
 #define NO_MESSAGE_FILE          41     /* The message file does not     */
                                         /* exist.                        */
 #define NO_MESSAGE_FILE_STR      "The message file does not exist"
+#define STAT_REMOTE_ERROR        42     /* Used by sf_sftp().            */
+#define STAT_REMOTE_ERROR_STR    "Failed to stat() remote file/dir"
+#define PIPE_CLOSED_ERROR        43     /* Used by sf_sftp() + gf_sftp() */
+#define PIPE_CLOSED_ERROR_STR    "Pipe closed"
 #define REMOTE_USER_ERROR        50     /* Failed to send mail address.  */
 #define REMOTE_USER_ERROR_STR    "Failed to send mail address"
 #define DATA_ERROR               51     /* Failed to send data command.  */

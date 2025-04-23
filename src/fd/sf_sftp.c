@@ -1266,12 +1266,25 @@ main(int argc, char *argv[])
                if ((status = sftp_stat(initial_filename,
                                        &rdir_stat_buf)) != SUCCESS)
                {
-                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                            "Failed to stat() file `%s' (%d).",
-                            initial_filename, status);
-                  if (timeout_flag == ON)
+                  if (timeout_flag == PIPE_CLOSED)
                   {
-                     timeout_flag = OFF;
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                               "Failed to stat() remote file %s (%d)",
+                               initial_filename, status);
+                     rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                     *p_file_size_buffer);
+                     sftp_quit();
+                     exit(eval_timeout(STAT_REMOTE_ERROR));
+                  }
+                  else
+                  {
+                     trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                               "Failed to stat() file `%s' (%d).",
+                               initial_filename, status);
+                     if (timeout_flag == ON)
+                     {
+                        timeout_flag = OFF;
+                     }
                   }
                }
                else
@@ -1758,12 +1771,25 @@ main(int argc, char *argv[])
                if ((status = sftp_stat(initial_filename,
                                        &rdir_stat_buf)) != SUCCESS)
                {
-                  trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                            "Failed to stat() remote file `%s' (%d).",
-                            initial_filename, status);
-                  if (timeout_flag == ON)
+                  if (timeout_flag == PIPE_CLOSED)
                   {
-                     timeout_flag = OFF;
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                               "Failed to stat() remote file %s (%d)",
+                               initial_filename, status);
+                     rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                     *p_file_size_buffer);
+                     sftp_quit();
+                     exit(eval_timeout(STAT_REMOTE_ERROR));
+                  }
+                  else
+                  {
+                     trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                               "Failed to stat() remote file `%s' (%d).",
+                               initial_filename, status);
+                     if (timeout_flag == ON)
+                     {
+                        timeout_flag = OFF;
+                     }
                   }
                }
                else
@@ -1803,13 +1829,22 @@ main(int argc, char *argv[])
             if ((status = sftp_stat(initial_filename,
                                     &rdir_stat_buf)) != SUCCESS)
             {
-               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                         "Failed to stat() remote file `%s' (%d). Cannot validate remote size.",
-                         initial_filename, status);
+               if (timeout_flag == PIPE_CLOSED)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                            "Failed to stat() remote file %s (%d)",
+                            initial_filename, status);
+               }
+               else
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                            "Failed to stat() remote file `%s' (%d). Cannot validate remote size.",
+                            initial_filename, status);
+               }
                rm_dupcheck_crc(fullname, p_file_name_buffer,
                                *p_file_size_buffer);
                sftp_quit();
-               exit(eval_timeout(STAT_TARGET_ERROR));
+               exit(eval_timeout(STAT_REMOTE_ERROR));
             }
             if (simulation_mode == YES)
             {

@@ -587,6 +587,16 @@ main(int argc, char *argv[])
 #endif
                }
             }
+            else
+            {
+               if (timeout_flag == PIPE_CLOSED)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                            "Failed to stat() remote dir '.' (%d)", status);
+                  sftp_quit();
+                  exit(eval_timeout(STAT_REMOTE_ERROR));
+               }
+            }
          }
       }
 
@@ -1492,14 +1502,29 @@ main(int argc, char *argv[])
                               if (sftp_stat(tmp_rl.file_name,
                                             &rdir_stat_buf) != SUCCESS)
                               {
-                                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                                           "Failed to stat() file `%s' (%d).",
-                                           tmp_rl.file_name, status);
-                                 if (timeout_flag == ON)
+                                 if (timeout_flag == PIPE_CLOSED)
                                  {
-                                    timeout_flag = OFF;
+                                    trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                             "Failed to stat() remote file %s (%d)",
+                                             tmp_rl.file_name, status);
+                                    sftp_quit();
+                                    reset_values(files_retrieved, file_size_retrieved,
+                                                 files_to_retrieve,
+                                                 file_size_to_retrieve,
+                                                 (struct job *)&db);
+                                    exit(eval_timeout(STAT_REMOTE_ERROR));
                                  }
-                                 old_time.modtime = old_time.actime;
+                                 else
+                                 {
+                                    trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                              "Failed to stat() file `%s' (%d).",
+                                              tmp_rl.file_name, status);
+                                    if (timeout_flag == ON)
+                                    {
+                                       timeout_flag = OFF;
+                                    }
+                                    old_time.modtime = old_time.actime;
+                                 }
                               }
                               else
                               {

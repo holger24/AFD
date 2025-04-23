@@ -1,6 +1,6 @@
 /*
  *  get_error_str.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -96,6 +96,8 @@ get_error_str(int error_code)
       case FILE_SIZE_MATCH_ERROR : return(FILE_SIZE_MATCH_ERROR_STR);      /* 38 */
       case OPEN_FILE_DIR_ERROR : return(OPEN_FILE_DIR_ERROR_STR);          /* 40 */
       case NO_MESSAGE_FILE : return(NO_MESSAGE_FILE_STR);                  /* 41 */
+      case STAT_REMOTE_ERROR : return(STAT_REMOTE_ERROR_STR);              /* 42 */
+      case PIPE_CLOSED_ERROR : return(PIPE_CLOSED_ERROR_STR);              /* 43 */
       case REMOTE_USER_ERROR : return(REMOTE_USER_ERROR_STR);              /* 50 */
       case DATA_ERROR : return(DATA_ERROR_STR);                            /* 51 */
 #ifdef _WITH_WMO_SUPPORT

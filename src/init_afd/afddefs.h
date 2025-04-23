@@ -680,6 +680,7 @@ typedef unsigned long       u_long_64;
 #define STALE                      -1
 #define CON_RESET                  2
 #define CON_REFUSED                3
+#define PIPE_CLOSED                4
 #define ON                         1
 #define OFF                        0
 #define ALL                        0

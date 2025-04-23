@@ -157,7 +157,8 @@ DESCR__E_M3
                  {                                                        \
                     tmp_char = *ptr;                                      \
                     *ptr = '\0';                                          \
-                    if ((status = sftp_stat(directory, NULL)) != SUCCESS) \
+                    if (((status = sftp_stat(directory, NULL)) != SUCCESS) &&\
+                        (timeout_flag == OFF))                            \
                     {                                                     \
                        status = sftp_mkdir(directory, dir_mode);          \
                        if (status == SUCCESS)                             \
@@ -1325,7 +1326,8 @@ retry_cd:
                      char *tmp_cwd = scd.cwd;
 
                      scd.cwd = NULL;
-                     if (sftp_stat(tmp_cwd, NULL) != SUCCESS)
+                     if ((sftp_stat(tmp_cwd, NULL) != SUCCESS) &&
+                         (timeout_flag == OFF))
                      {
                         SFTP_CD_TRY_CREATE_DIR();
                         free(scd.cwd);
@@ -1372,7 +1374,8 @@ retry_cd:
                      {
                         tmp_char = *ptr;
                         *ptr = '\0';
-                        if ((status = sftp_stat(directory, NULL)) != SUCCESS)
+                        if (((status = sftp_stat(directory, NULL)) != SUCCESS) &&
+                            (timeout_flag == OFF))
                         {
                            status = sftp_mkdir(directory, dir_mode);
                            if (status == SUCCESS)
@@ -2677,6 +2680,7 @@ sftp_mkdir(char *directory, mode_t dir_mode)
                /* Some error has occured. */
                if (ret_status == SSH_FX_FAILURE)
                {
+                  int         tmp_status;
                   char        *tmp_msg;
                   struct stat rdir_stat_buf;
 
@@ -2696,7 +2700,7 @@ sftp_mkdir(char *directory, mode_t dir_mode)
                    * race and the directory exists ie. another
                    * process was quicker.
                    */
-                  if ((sftp_stat(directory, &rdir_stat_buf) == SUCCESS) &&
+                  if (((tmp_status = sftp_stat(directory, &rdir_stat_buf)) == SUCCESS) &&
                       (S_ISDIR(rdir_stat_buf.st_mode)))
                   {
                      trans_log(DEBUG_SIGN, __FILE__, __LINE__,
@@ -2710,6 +2714,11 @@ sftp_mkdir(char *directory, mode_t dir_mode)
                   {
                      /* Put back the original status msg. */
                      (void)memcpy(msg, tmp_msg, ret_msg_length);
+
+                     if (timeout_flag == PIPE_CLOSED)
+                     {
+                        status = tmp_status;
+                     }
                   }
                   free(tmp_msg);
                }
@@ -5342,7 +5351,7 @@ read_msg(char *block, int blocksize, int line)
                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
                            _("Pipe has been closed! [%d]"), line);
                  (void)strcpy(msg_str, "Connection closed");
-                 timeout_flag = NEITHER;
+                 timeout_flag = PIPE_CLOSED;
                  return(INCORRECT);
               }
               else
