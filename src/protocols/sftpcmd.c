@@ -221,7 +221,7 @@ static unsigned short           get_xfer_uint16(char *);
 static unsigned int             get_xfer_uint(char *);
 static u_long_64                get_xfer_uint64(char *);
 static int                      check_msg_pending(void),
-                                get_limits(void),
+                                get_limits(int),
                                 get_reply(unsigned int, unsigned int *, int),
                                 get_write_reply(unsigned int, int),
                                 get_xfer_names(unsigned int, unsigned int, char *),
@@ -445,7 +445,7 @@ retry_connect:
 
                         if (scd.limits == 1)
                         {
-                           if (get_limits() != SUCCESS)
+                           if (get_limits(YES) != SUCCESS)
                            {
                               /* Set some default values. */
                               scd.oss_limits.max_packet_length = INITIAL_SFTP_MSG_LENGTH;
@@ -903,7 +903,7 @@ eval_version_extensions(char *msg, unsigned int ui_var)
 
 /*+++++++++++++++++++++++++++++ get_limits() ++++++++++++++++++++++++++++*/
 static int
-get_limits(void)
+get_limits(int store_value)
 {
    int status;
 #ifdef WITH_TRACE
@@ -942,14 +942,17 @@ get_limits(void)
          {
             if ((msg_length - 1 - 4) >= (8 + 8 + 8 + 8))
             {
-               scd.oss_limits.max_packet_length = get_xfer_uint64(&msg[5]);
-               scd.oss_limits.max_read_length = get_xfer_uint64(&msg[5 + 8]);
-               scd.oss_limits.max_write_length = get_xfer_uint64(&msg[5 + 8 + 8]);
-               scd.oss_limits.max_open_handles = get_xfer_uint64(&msg[5 + 8 + 8 + 8]);
-               if ((scd.oss_limits.max_open_handles > 0) &&
-                   (scd.oss_limits.max_open_handles < MAX_SFTP_REPLY_BUFFER))
+               if (store_value == YES)
                {
-                  scd.max_open_handles = scd.oss_limits.max_open_handles;
+                  scd.oss_limits.max_packet_length = get_xfer_uint64(&msg[5]);
+                  scd.oss_limits.max_read_length = get_xfer_uint64(&msg[5 + 8]);
+                  scd.oss_limits.max_write_length = get_xfer_uint64(&msg[5 + 8 + 8]);
+                  scd.oss_limits.max_open_handles = get_xfer_uint64(&msg[5 + 8 + 8 + 8]);
+                  if ((scd.oss_limits.max_open_handles > 0) &&
+                      (scd.oss_limits.max_open_handles < MAX_SFTP_REPLY_BUFFER))
+                  {
+                     scd.max_open_handles = scd.oss_limits.max_open_handles;
+                  }
                }
             }
             else
@@ -974,10 +977,13 @@ get_limits(void)
       }
       else if (status == SIMULATION)
            {
-              scd.oss_limits.max_packet_length = INITIAL_SFTP_MSG_LENGTH;
-              scd.oss_limits.max_read_length   = MIN_SFTP_BLOCKSIZE;
-              scd.oss_limits.max_write_length  = MIN_SFTP_BLOCKSIZE;
-              scd.oss_limits.max_open_handles  = SFTP_DEFAULT_MAX_OPEN_REQUEST;
+              if (store_value == YES)
+              {
+                 scd.oss_limits.max_packet_length = INITIAL_SFTP_MSG_LENGTH;
+                 scd.oss_limits.max_read_length   = MIN_SFTP_BLOCKSIZE;
+                 scd.oss_limits.max_write_length  = MIN_SFTP_BLOCKSIZE;
+                 scd.oss_limits.max_open_handles  = SFTP_DEFAULT_MAX_OPEN_REQUEST;
+              }
               status = SUCCESS;
            }
    }
@@ -4594,8 +4600,16 @@ sftp_noop(void)
 #ifdef WITH_TRACE
    if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
    {
-      trace_log(__FILE__, __LINE__, C_TRACE, NULL, 0,
-                "sftp_noop(): Calling sftp_stat(\".\", NULL)");
+      if (scd.limits == 1)
+      {
+         trace_log(__FILE__, __LINE__, C_TRACE, NULL, 0,
+                   "sftp_noop(): Calling get_limits(NO)");
+      }
+      else
+      {
+         trace_log(__FILE__, __LINE__, C_TRACE, NULL, 0,
+                   "sftp_noop(): Calling sftp_stat(\".\", NULL)");
+      }
    }
 #endif
 
@@ -4604,10 +4618,11 @@ sftp_noop(void)
       return(INCORRECT);
    }
 
-   /* I do not know of a better way. SFTP does not support */
-   /* a NOOP command, so lets just do a stat() on the      */
-   /* current working directory.                           */
-   return(sftp_stat(".", NULL));
+   /* I do not know of a better way. SFTP does not support  */
+   /* a NOOP command, so lets just do a stat() on the       */
+   /* current working directory, but if the server supports */
+   /* limits, just query the limit.                         */
+   return((scd.limits == 1) ? get_limits(NO) : sftp_stat(".", NULL));
 }
 
 
