@@ -1570,29 +1570,43 @@ sftp_stat(char *filename, struct stat *p_stat_buf)
            }
    }
    pos = 4 + 1 + 4 + 4 + status;
-   if (scd.version > 4)
+   if (p_stat_buf != NULL)
    {
-      set_xfer_uint(&msg[pos],
-                    (SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_MODIFYTIME));
-#ifdef WITH_TRACE
-      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      if (scd.version > 4)
       {
-         length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
-                            " attributes=%d (SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_MODIFYTIME)",
-                            SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_MODIFYTIME);
-      }
+         set_xfer_uint(&msg[pos],
+                       (SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_MODIFYTIME));
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                               " attributes=%d (SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_MODIFYTIME)",
+                               SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_MODIFYTIME);
+         }
 #endif
+      }
+      else
+      {
+         set_xfer_uint(&msg[pos],
+                       (SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_ACMODTIME));
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                               " attributes=%d (SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_ACMODTIME)",
+                               SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_ACMODTIME);
+         }
+#endif
+      }
    }
    else
    {
-      set_xfer_uint(&msg[pos],
-                    (SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_ACMODTIME));
+      set_xfer_uint(&msg[pos], 0);
 #ifdef WITH_TRACE
       if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
       {
          length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
-                            " attributes=%d (SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_ACMODTIME)",
-                            SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_ACMODTIME);
+                            " attributes=0");
       }
 #endif
    }
