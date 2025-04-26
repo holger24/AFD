@@ -103,6 +103,9 @@ DESCR__S_M3
  **   26.02.2025 H.Kiehl If sftp_mkdir() fails with SSH_FX_FAILURE,
  **                      check with sftp_stat() if someone else has
  **                      created the directory.
+ **   26.04.2025 H.Kiehl Added option keep_connected_set to sftp_connect()
+ **                      so set ServerAliveInterval can be set when keep
+ **                      connected is set.
  **
  */
 DESCR__E_M3
@@ -255,6 +258,9 @@ sftp_connect(char          *hostname,
              int           port,
              unsigned char ssh_protocol,
              int           ssh_options,
+#ifndef FORCE_SFTP_NOOP
+             int           keep_connected_set,
+#endif
              char          *user,
 #ifdef WITH_SSH_FINGERPRINT
              char          *fingerprint,
@@ -339,8 +345,9 @@ retry_connect:
       return(SUCCESS);
    }
 
-   if ((status = ssh_exec(hostname, port, ssh_protocol, ssh_options, user,
-                          passwd, NULL, "sftp", &data_fd)) == SUCCESS)
+   if ((status = ssh_exec(hostname, port, ssh_protocol, ssh_options,
+                          keep_connected_set, user, passwd, NULL,
+                          "sftp", &data_fd)) == SUCCESS)
    {
       unsigned int ui_var = 5;
 
@@ -4600,6 +4607,7 @@ sftp_noop(void)
 #ifdef WITH_TRACE
    if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
    {
+# ifdef FORCE_SFTP_NOOP
       if (scd.limits == 1)
       {
          trace_log(__FILE__, __LINE__, C_TRACE, NULL, 0,
@@ -4610,6 +4618,10 @@ sftp_noop(void)
          trace_log(__FILE__, __LINE__, C_TRACE, NULL, 0,
                    "sftp_noop(): Calling sftp_stat(\".\", NULL)");
       }
+# else
+         trace_log(__FILE__, __LINE__, C_TRACE, NULL, 0,
+                   "sftp_noop(): Handled via ServerAliveInterval");
+# endif
    }
 #endif
 
@@ -4618,11 +4630,15 @@ sftp_noop(void)
       return(INCORRECT);
    }
 
+#ifdef FORCE_SFTP_NOOP
    /* I do not know of a better way. SFTP does not support  */
    /* a NOOP command, so lets just do a stat() on the       */
    /* current working directory, but if the server supports */
    /* limits, just query the limit.                         */
    return((scd.limits == 1) ? get_limits(NO) : sftp_stat(".", NULL));
+#else
+   return(SUCCESS);
+#endif
 }
 
 

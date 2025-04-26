@@ -334,7 +334,11 @@ extern int          sftp_cd(char *, int, mode_t, char *),
                     sftp_chmod(char *, mode_t),
                     sftp_close_dir(void),
                     sftp_close_file(void),
-                    sftp_connect(char *, int, unsigned char, int, char *,
+                    sftp_connect(char *, int, unsigned char, int,
+#ifndef FORCE_SFTP_NOOP
+                                 int,
+#endif
+                                 char *,
 #ifdef WITH_SSH_FINGERPRINT
                                  char *, char *, char),
 #else

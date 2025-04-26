@@ -1,6 +1,6 @@
 /*
  *  ssh_common.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -51,6 +51,7 @@ DESCR__S_M3
  **                      alarm().
  **   19.10.2018 H.Kiehl Change compression parameter to ssh_options to be
  **                      able to path more options.
+ **   26.04.2025 H.Kiehl Set ServerAliveInterval when keep connected is set.
  */
 DESCR__E_M3
 
@@ -129,6 +130,9 @@ ssh_exec(char          *host,
          int           port,
          unsigned char ssh_protocol,
          int           ssh_options,
+#ifndef FORCE_SFTP_NOOP
+         int           keep_connected_set,
+#endif
          char          *user,
          char          *passwd,
          char          *cmd,
@@ -235,6 +239,7 @@ ssh_exec(char          *host,
                     dummy,
                     str_protocol[1 + 3 + 1],
                     str_port[MAX_INT_LENGTH],
+                    str_server_alive_interval[22 + MAX_INT_LENGTH + 1],
                     str_timeout[17 + MAX_INT_LENGTH + 1];
                int  argcount,
                     fds;
@@ -307,6 +312,20 @@ ssh_exec(char          *host,
                argcount++;
                (void)snprintf(str_timeout, 17 + MAX_INT_LENGTH + 1,
                               "-oConnectTimeout %ld", transfer_timeout);
+               if (keep_connected_set == YES)
+               {
+                  int alive_interval = transfer_timeout - 4;
+
+                  if (alive_interval > 0)
+                  {
+                     (void)snprintf(str_server_alive_interval,
+                                    22 + MAX_INT_LENGTH + 1,
+                                    "-oServerAliveInterval %d",
+                                    alive_interval);
+                     args[argcount] = str_server_alive_interval;
+                     argcount++;
+                  }
+               }
 #ifdef _WITH_FALLBACK_TO_RSH_NO
                args[argcount] = "-oFallBackToRsh no";
                argcount++;

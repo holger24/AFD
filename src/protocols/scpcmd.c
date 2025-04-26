@@ -1,6 +1,6 @@
 /*
  *  scpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -159,8 +159,11 @@ scp_connect(char          *hostname,
    {
 # endif
 #endif
-      if ((status = ssh_exec(hostname, port, ssh_protocol, ssh_options, user,
-                             passwd, cmd, NULL, &data_fd)) == SUCCESS)
+      if ((status = ssh_exec(hostname, port, ssh_protocol, ssh_options,
+#ifndef FORCE_SFTP_NOOP
+                             NO,
+#endif
+                             user, passwd, cmd, NULL, &data_fd)) == SUCCESS)
       {
 #ifdef WITH_SSH_FINGERPRINT
          status = ssh_login(data_fd, passwd, 0, fingerprint);

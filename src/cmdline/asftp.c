@@ -174,8 +174,11 @@ main(int argc, char *argv[])
    sigpipe_flag = timeout_flag = OFF;
 
    /* Connect to remote SFTP-server. */
-   if ((status = sftp_connect(db.hostname, db.port, db.ssh_protocol,
-                              0, db.user,
+   if ((status = sftp_connect(db.hostname, db.port, db.ssh_protocol, 0,
+#ifndef FORCE_SFTP_NOOP
+                              NO,
+#endif
+                              db.user,
 #ifdef WITH_SSH_FINGERPRINT
                               db.ssh_fingerprint,
 #endif
