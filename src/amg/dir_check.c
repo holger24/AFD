@@ -228,9 +228,9 @@ pthread_mutex_t            fsa_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_t                  *thread;
 #else
 unsigned int               max_file_buffer;
-time_t                     *file_mtime_pool;
+time_t                     *file_mtime_pool = NULL;
 off_t                      *file_size_buffer = NULL,
-                           *file_size_pool;
+                           *file_size_pool = NULL;
 #endif
 #ifdef _POSIX_SAVED_IDS
 int                        no_of_sgids;
