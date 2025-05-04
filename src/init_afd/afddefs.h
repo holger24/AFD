@@ -521,7 +521,7 @@ typedef unsigned long       u_long_64;
 #endif
 #ifdef _WITH_DE_MAIL_SUPPORT
 # define DEMCD_LOCK_OFFSET         1
-# define DEMCD_NO                  (AFDD_LOCK_ID + AFDDS_LOCK_OFFSET + ATPD_LOCK_OFFSET + WMOD_LOCK_OFFSET + DEMCD_LOCK_OFFSET) /* De Mail Confirmation Daemon */
+# define DEMCD_LOCK_ID             (AFDD_LOCK_ID + AFDDS_LOCK_OFFSET + ATPD_LOCK_OFFSET + WMOD_LOCK_OFFSET + DEMCD_LOCK_OFFSET) /* De Mail Confirmation Daemon */
 #else
 # define DEMCD_LOCK_OFFSET         0
 #endif
