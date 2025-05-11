@@ -106,6 +106,8 @@ DESCR__S_M3
  **   26.04.2025 H.Kiehl Added option keep_connected_set to sftp_connect()
  **                      so set ServerAliveInterval can be set when keep
  **                      connected is set.
+ **   11.05.2025 H.Kiehl In sftp_stat() only send flags when protocol
+ **                      version is 6 or higher.
  **
  */
 DESCR__E_M3
@@ -1583,9 +1585,9 @@ sftp_stat(char *filename, struct stat *p_stat_buf)
            }
    }
    pos = 4 + 1 + 4 + 4 + status;
-   if (p_stat_buf != NULL)
+   if (scd.version > 5)
    {
-      if (scd.version > 4)
+      if (p_stat_buf != NULL)
       {
          set_xfer_uint(&msg[pos],
                        (SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_MODIFYTIME));
@@ -1600,30 +1602,17 @@ sftp_stat(char *filename, struct stat *p_stat_buf)
       }
       else
       {
-         set_xfer_uint(&msg[pos],
-                       (SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_ACMODTIME));
+         set_xfer_uint(&msg[pos], 0);
 #ifdef WITH_TRACE
          if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
          {
             length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
-                               " attributes=%d (SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_ACMODTIME)",
-                               SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_ACMODTIME);
+                               " attributes=0");
          }
 #endif
       }
+      pos += 4;
    }
-   else
-   {
-      set_xfer_uint(&msg[pos], 0);
-#ifdef WITH_TRACE
-      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
-      {
-         length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
-                            " attributes=0");
-      }
-#endif
-   }
-   pos += 4;
    set_xfer_uint(msg, (pos - 4)); /* Write message length at start. */
 #ifdef WITH_TRACE
    if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
