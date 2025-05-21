@@ -673,7 +673,7 @@ main(int argc, char *argv[])
                  DC_PROC_NAME, force_reread_interval);
    }
 #ifdef WITH_INOTIFY
-   system_log(DEBUG_SIGN, NULL, 0, "%s: Inotfiy directories   : %d",
+   system_log(DEBUG_SIGN, NULL, 0, "%s: Inotify directories : %d",
               DC_PROC_NAME, no_of_inotify_dirs);
 #endif
 #ifdef MULTI_FS_SUPPORT
