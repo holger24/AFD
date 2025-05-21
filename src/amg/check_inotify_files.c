@@ -1171,6 +1171,11 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
       {
          fra[p_de->fra_pos].dir_flag &= ~MAX_COPIED;
       }
+      if ((full_scan == NO) &&
+          ((fra[p_de->fra_pos].dir_flag & INOTIFY_NEEDS_SCAN) == 0))
+      {
+         fra[p_de->fra_pos].dir_flag |= INOTIFY_NEEDS_SCAN;
+      }
    }
 
    /*
