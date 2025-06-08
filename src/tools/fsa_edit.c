@@ -1,6 +1,6 @@
 /*
  *  fsa_edit.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -556,7 +556,7 @@ menu(int position)
    if ((fsa[position].auto_toggle == ON) &&
        (fsa[position].original_toggle_pos != NONE))
    {
-      (void)fprintf(stdout, "        |  h  |Original toggle   | %14s |\n", (fsa[position].original_toggle_pos != HOST_ONE) ? "HOST_ONE" : "HOST_TWO");
+      (void)fprintf(stdout, "        |  h  |Original toggle   | %14s |\n", (fsa[position].original_toggle_pos == HOST_ONE) ? "HOST_ONE" : "HOST_TWO");
    }
    (void)fprintf(stdout, "        +-----+------------------+----------------+\n");
 
