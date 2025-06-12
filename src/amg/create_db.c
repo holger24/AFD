@@ -1,6 +1,6 @@
 /*
  *  create_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -541,7 +541,7 @@ create_db(FILE *udc_reply_fp, int write_fd)
 #endif
 #ifdef _MAINTAINER_LOG
          maintainer_log(INFO_SIGN, NULL, 0,
-                        "%s not in same filesystem", db[0].dir);
+                        "%s not in same filesystem", de[0].dir);
 #endif
          not_in_same_file_system++;
 #ifdef MULTI_FS_SUPPORT
