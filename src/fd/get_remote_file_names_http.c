@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_http.c - Part of AFD, an automatic file distribution
  *                                 program.
- *  Copyright (c) 2006 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -3995,14 +3995,14 @@ check_list(char   *file,
        ((fra->gt_lt_sign & ISIZE_GREATER_THEN) &&
         (fra->ignore_size > rl[no_of_listed_files].size)))
    {
+      int incremented = NO;
+
       if ((rl[no_of_listed_files].got_date == NO) ||
           (fra->ignore_file_time == 0))
       {
          *files_to_retrieve += 1;
-         if (file_size > 0)
-         {
-            *file_size_to_retrieve += file_size;
-         }
+         *file_size_to_retrieve += file_size;
+         incremented = YES;
          no_of_listed_files++;
       }
       else
@@ -4018,10 +4018,8 @@ check_list(char   *file,
               (fra->ignore_file_time > diff_time)))
          {
             *files_to_retrieve += 1;
-            if (file_size > 0)
-            {
-               *file_size_to_retrieve += file_size;
-            }
+            *file_size_to_retrieve += file_size;
+            incremented = YES;
             no_of_listed_files++;
          }
          else
@@ -4052,9 +4050,9 @@ check_list(char   *file,
       else
       {
          rl[no_of_listed_files - 1].assigned = 0;
-         *files_to_retrieve -= 1;
-         if (rl[no_of_listed_files - 1].size > 0)
+         if (incremented == YES)
          {
+            *files_to_retrieve -= 1;
             *file_size_to_retrieve -= rl[no_of_listed_files - 1].size;
          }
          *more_files_in_list = YES;

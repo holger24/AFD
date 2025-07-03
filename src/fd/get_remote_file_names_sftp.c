@@ -1235,10 +1235,13 @@ check_list(char        *file,
        ((fra->gt_lt_sign & ISIZE_GREATER_THEN) &&
         (fra->ignore_size > rl[no_of_listed_files].size)))
    {
+      int incremented = NO;
+
       if (fra->ignore_file_time == 0)
       {
          *file_size_to_retrieve += p_stat_buf->st_size;
          *files_to_retrieve += 1;
+         incremented = YES;
          no_of_listed_files++;
       }
       else
@@ -1255,6 +1258,7 @@ check_list(char        *file,
          {
             *file_size_to_retrieve += p_stat_buf->st_size;
             *files_to_retrieve += 1;
+            incremented = YES;
             no_of_listed_files++;
          }
          else
@@ -1285,8 +1289,11 @@ check_list(char        *file,
       else
       {
          rl[no_of_listed_files - 1].assigned = 0;
-         *file_size_to_retrieve -= p_stat_buf->st_size;
-         *files_to_retrieve -= 1;
+         if (incremented == YES)
+         {
+            *file_size_to_retrieve -= p_stat_buf->st_size;
+            *files_to_retrieve -= 1;
+         }
          *more_files_in_list = YES;
       }
       *(int *)((char *)rl - AFD_WORD_OFFSET) = no_of_listed_files;
