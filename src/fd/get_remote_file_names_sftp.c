@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_sftp.c - Part of AFD, an automatic file distribution
  *                                 program.
- *  Copyright (c) 2006 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -199,8 +199,7 @@ try_attach_again:
                       ((fra->gt_lt_sign & ISIZE_GREATER_THEN) &&
                        (fra->ignore_size > rl[i].size)))
                   {
-                     if ((rl[i].got_date == NO) ||
-                         (fra->ignore_file_time == 0))
+                     if (fra->ignore_file_time == 0)
                      {
                         files_to_retrieve++;
                         if ((fra->stupid_mode == APPEND_ONLY) &&
@@ -531,7 +530,8 @@ do_scan(int   *files_to_retrieve,
 #ifdef _DELETE_LOG
                                               DELETE_HOST_DISABLED, 0, 0, 0,
 #endif
-                                              &files_deleted, &file_size_deleted,
+                                              &files_deleted,
+                                              &file_size_deleted,
                                               stat_buf.st_size);
                            break;
                         }
@@ -609,7 +609,8 @@ do_scan(int   *files_to_retrieve,
                      delete_remote_file(SFTP, filename, namelen,
 #ifdef _DELETE_LOG
                                         (fra->in_dc_flag & UNKNOWN_FILES_IDC) ?  DEL_UNKNOWN_FILE : DEL_UNKNOWN_FILE_GLOB,
-                                        diff_time, current_time, stat_buf.st_mtime,
+                                        diff_time, current_time,
+                                        stat_buf.st_mtime,
 #endif
                                         &files_deleted, &file_size_deleted,
                                         stat_buf.st_size);
@@ -1030,8 +1031,7 @@ check_list(char        *file,
                   {
                      off_t size_to_retrieve;
 
-                     if ((rl[i].got_date == NO) ||
-                         (fra->ignore_file_time == 0))
+                     if (fra->ignore_file_time == 0)
                      {
                         if ((fra->stupid_mode == APPEND_ONLY) &&
                             (rl[i].size > prev_size))
@@ -1235,8 +1235,7 @@ check_list(char        *file,
        ((fra->gt_lt_sign & ISIZE_GREATER_THEN) &&
         (fra->ignore_size > rl[no_of_listed_files].size)))
    {
-      if ((rl[no_of_listed_files].got_date == NO) ||
-          (fra->ignore_file_time == 0))
+      if (fra->ignore_file_time == 0)
       {
          *file_size_to_retrieve += p_stat_buf->st_size;
          *files_to_retrieve += 1;
