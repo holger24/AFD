@@ -1,6 +1,6 @@
 /*
  *  get_data_points.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2005 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -58,8 +58,7 @@ extern int            data_length,
                       no_of_x_data_points,
                       no_of_y_data_points,
                       time_type,
-                      x_data_spacing,
-                      y_data_spacing;
+                      x_data_spacing;
 extern struct afdstat *stat_db;
 
 #define SHOW_BYTES     1

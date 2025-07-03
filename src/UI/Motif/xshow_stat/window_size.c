@@ -1,6 +1,6 @@
 /*
  *  window_size.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2005 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -61,6 +61,7 @@ extern int            data_height,
                       x_data_spacing,
                       x_offset_left_xaxis,
                       x_offset_right_xaxis,
+                      y_data_spacing,
                       y_offset_top_yaxis,
                       y_offset_bottom_yaxis;
 extern unsigned int   glyph_height,
@@ -80,8 +81,7 @@ window_size(int *window_width,
           i,
           host_to_search,
           j,
-          window_size_changed,
-          y_data_spacing;
+          window_size_changed;
    double max_y_value,
           total_value;
 
