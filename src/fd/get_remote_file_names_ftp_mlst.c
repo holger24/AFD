@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_ftp_mlst.c - Part of AFD, an automatic file
  *                                     distribution program.
- *  Copyright (c) 2013 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2013 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -193,11 +193,11 @@ try_attach_again:
          {
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
             if ((fra->stupid_mode == YES) || (fra->remove == YES) ||
-                ((files_to_retrieve < fra->max_copied_files) &&
-                 (*file_size_to_retrieve < fra->max_copied_file_size)))
+                ((files_to_retrieve <= fra->max_copied_files) &&
+                 (*file_size_to_retrieve <= fra->max_copied_file_size)))
 #else
-            if ((files_to_retrieve < fra->max_copied_files) &&
-                (*file_size_to_retrieve < fra->max_copied_file_size))
+            if ((files_to_retrieve <= fra->max_copied_files) &&
+                (*file_size_to_retrieve <= fra->max_copied_file_size))
 #endif
             {
                /* Lock this file in list. */
@@ -1130,11 +1130,11 @@ check_list(char   *file,
                      *files_to_retrieve += 1;
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
                      if ((fra->stupid_mode == YES) || (fra->remove == YES) ||
-                         ((*files_to_retrieve < fra->max_copied_files) &&
-                          (*file_size_to_retrieve < fra->max_copied_file_size)))
+                         ((*files_to_retrieve <= fra->max_copied_files) &&
+                          (*file_size_to_retrieve <= fra->max_copied_file_size)))
 #else
-                     if ((*files_to_retrieve < fra->max_copied_files) &&
-                         (*file_size_to_retrieve < fra->max_copied_file_size))
+                     if ((*files_to_retrieve <= fra->max_copied_files) &&
+                         (*file_size_to_retrieve <= fra->max_copied_file_size))
 #endif
                      {
                         rl[i].retrieved = NO;
@@ -1175,11 +1175,11 @@ check_list(char   *file,
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
                         if ((fra->stupid_mode == YES) ||
                             (fra->remove == YES) ||
-                            ((*files_to_retrieve < fra->max_copied_files) &&
-                             (*file_size_to_retrieve < fra->max_copied_file_size)))
+                            ((*files_to_retrieve <= fra->max_copied_files) &&
+                             (*file_size_to_retrieve <= fra->max_copied_file_size)))
 #else
-                        if ((*files_to_retrieve < fra->max_copied_files) &&
-                            (*file_size_to_retrieve < fra->max_copied_file_size))
+                        if ((*files_to_retrieve <= fra->max_copied_files) &&
+                            (*file_size_to_retrieve <= fra->max_copied_file_size))
 #endif
                         {
                            rl[i].retrieved = NO;
@@ -1338,11 +1338,11 @@ check_list(char   *file,
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
                         if ((fra->stupid_mode == YES) ||
                             (fra->remove == YES) ||
-                            (((*files_to_retrieve + 1) < fra->max_copied_files) &&
-                             ((*file_size_to_retrieve + size_to_retrieve) < fra->max_copied_file_size)))
+                            (((*files_to_retrieve + 1) <= fra->max_copied_files) &&
+                             ((*file_size_to_retrieve + size_to_retrieve) <= fra->max_copied_file_size)))
 #else
-                        if (((*files_to_retrieve + 1) < fra->max_copied_files) &&
-                            ((*file_size_to_retrieve + size_to_retrieve) < fra->max_copied_file_size))
+                        if (((*files_to_retrieve + 1) <= fra->max_copied_files) &&
+                            ((*file_size_to_retrieve + size_to_retrieve) <= fra->max_copied_file_size))
 #endif
                         {
                            if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
@@ -1390,11 +1390,11 @@ check_list(char   *file,
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
                            if ((fra->stupid_mode == YES) ||
                                (fra->remove == YES) ||
-                               (((*files_to_retrieve + 1) < fra->max_copied_files) &&
-                                ((*file_size_to_retrieve + size_to_retrieve) < fra->max_copied_file_size)))
+                               (((*files_to_retrieve + 1) <= fra->max_copied_files) &&
+                                ((*file_size_to_retrieve + size_to_retrieve) <= fra->max_copied_file_size)))
 #else
                            if (((*files_to_retrieve + 1) < fra->max_copied_files) &&
-                               ((*file_size_to_retrieve + size_to_retrieve) < fra->max_copied_file_size))
+                               ((*file_size_to_retrieve + size_to_retrieve) <= fra->max_copied_file_size))
 #endif
                            {
                               if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
@@ -1556,11 +1556,11 @@ check_list(char   *file,
       }
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
       if ((fra->stupid_mode == YES) || (fra->remove == YES) ||
-          ((*files_to_retrieve < fra->max_copied_files) &&
-           (*file_size_to_retrieve < fra->max_copied_file_size)))
+          ((*files_to_retrieve <= fra->max_copied_files) &&
+           (*file_size_to_retrieve <= fra->max_copied_file_size)))
 #else
-      if ((*files_to_retrieve < fra->max_copied_files) &&
-          (*file_size_to_retrieve < fra->max_copied_file_size))
+      if ((*files_to_retrieve <= fra->max_copied_files) &&
+          (*file_size_to_retrieve <= fra->max_copied_file_size))
 #endif
       {
          if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
