@@ -414,7 +414,7 @@ do_scan(int   *files_to_retrieve,
    }
    else
    {
-      initial_list_is_empty = YES;
+      initial_list_is_empty = NO;
    }
 
    if ((fra->ignore_file_time != 0) ||
