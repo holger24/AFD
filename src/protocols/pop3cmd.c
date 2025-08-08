@@ -1,6 +1,6 @@
 /*
  *  pop3cmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -468,23 +468,23 @@ pop3_read(char *block, int blocksize)
            else
            {
               if ((bytes_read = SSL_read(ssl_con, &block[rb_offset],
-                                         blocksize - rb_offset)) == INCORRECT)
+                                         blocksize - rb_offset)) <= 0)
               {
-                 if ((status = SSL_get_error(ssl_con,
-                                             bytes_read)) == SSL_ERROR_SYSCALL)
+                 (void)ssl_error_msg("SSL_read", ssl_con, &status, bytes_read,
+                                     msg_str);
+                 if (status == SSL_ERROR_SYSCALL)
                  {
                     if (errno == ECONNRESET)
                     {
                        timeout_flag = CON_RESET;
                     }
-                    trans_log(ERROR_SIGN, __FILE__, __LINE__, "pop3_read", NULL,
-                              _("SSL_read() error : %s"), strerror(errno));
                  }
-                 else
-                 {
-                    trans_log(ERROR_SIGN, __FILE__, __LINE__, "pop3_read", NULL,
-                              _("SSL_read() error %d"), status);
-                 }
+                 else if (status == SSL_ERROR_SSL)
+                      {
+                         timeout_flag = CON_RESET;
+                      }
+                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, "pop3_read", NULL,
+                           _("SSL_read() error %d"), status);
                  return(INCORRECT);
               }
            }
@@ -797,29 +797,30 @@ read_msg(void)
                     {
                        if (bytes_read == 0)
                        {
-                          trans_log(ERROR_SIGN,  __FILE__, __LINE__, "read_msg", NULL,
+                          trans_log(ERROR_SIGN,  __FILE__, __LINE__,
+                                    "read_msg", NULL,
                                     _("Remote hang up."));
                           timeout_flag = NEITHER;
                        }
                        else
                        {
-                          if ((status = SSL_get_error(ssl_con,
-                                                      bytes_read)) == SSL_ERROR_SYSCALL)
+                          (void)ssl_error_msg("SSL_read", ssl_con, &status,
+                                              bytes_read, msg_str);
+                          if (status == SSL_ERROR_SYSCALL)
                           {
                              if (errno == ECONNRESET)
                              {
                                 timeout_flag = CON_RESET;
                              }
-                             trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
-                                       _("SSL_read() error (after reading %d bytes) : %s"),
-                                       bytes_buffered, strerror(errno));
                           }
-                          else
-                          {
-                             trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
-                                       _("SSL_read() error (after reading %d bytes) (%d)"),
-                                       bytes_buffered, status);
-                          }
+                          else if (status == SSL_ERROR_SSL)
+                               {
+                                  timeout_flag = CON_RESET;
+                               }
+                          trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                    "read_msg", msg_str,
+                                    _("SSL_read() error (after reading %d bytes) (%d)"),
+                                    bytes_buffered, status);
                           bytes_read = 0;
                        }
                        return(INCORRECT);

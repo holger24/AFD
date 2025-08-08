@@ -209,7 +209,8 @@ http_connect(char          *hostname,
    {
       if ((http_fd = open("/dev/null", O_RDWR)) == -1)
       {
-         trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_connect", "Simulated http_connect()",
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_connect",
+                   "Simulated http_connect()",
                    _("Failed to open() /dev/null : %s"), strerror(errno));
          return(INCORRECT);
       }
@@ -2785,6 +2786,7 @@ http_write(char *block, char *buffer, int size)
                  {
                     timeout_flag = CON_RESET;
                  }
+                 msg_str[0] = '\0';
                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_write", NULL,
                            _("write() error (%d) : %s"),
                            status, strerror(errno));
@@ -2881,25 +2883,24 @@ http_read(char *block, int blocksize)
 #ifdef WITH_SSL
    if ((ssl_con != NULL) && (SSL_pending(ssl_con)))
    {
-      if ((bytes_read = SSL_read(ssl_con, block, blocksize)) == INCORRECT)
+      if ((bytes_read = SSL_read(ssl_con, block, blocksize)) <= 0)
       {
          int status;
 
-         if ((status = SSL_get_error(ssl_con,
-                                     bytes_read)) == SSL_ERROR_SYSCALL)
+         (void)ssl_error_msg("SSL_read", ssl_con, &status, bytes_read, msg_str);
+         if (status == SSL_ERROR_SYSCALL)
          {
             if (errno == ECONNRESET)
             {
                timeout_flag = CON_RESET;
             }
-            trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_read", NULL,
-                      _("SSL_read() error : %s"), strerror(errno));
          }
-         else
-         {
-            trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_read", NULL,
-                      _("SSL_read() error %d"), status);
-         }
+         else if (status == SSL_ERROR_SSL)
+              {
+                 timeout_flag = CON_RESET;
+              }
+         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_read", NULL,
+                   _("SSL_read() error %d"), status);
          return(INCORRECT);
       }
 # ifdef WITH_TRACE
@@ -2939,6 +2940,7 @@ http_read(char *block, int blocksize)
                     {
                        timeout_flag = CON_RESET;
                     }
+                    msg_str[0] = '\0';
                     trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_read", NULL,
                               _("read() error : %s"), strerror(errno));
                     return(INCORRECT);
@@ -2963,6 +2965,7 @@ http_read(char *block, int blocksize)
                     trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_read", NULL,
                               _("SSL_read() timeout (%ld)"), transfer_timeout);
                     timeout_flag = ON;
+                    msg_str[0] = '\0';
                     return(INCORRECT);
                  }
                  (void)alarm(transfer_timeout);
@@ -2970,24 +2973,24 @@ http_read(char *block, int blocksize)
                  tmp_errno = errno;
                  (void)alarm(0);
 
-                 if (bytes_read == INCORRECT)
+                 if (bytes_read <= 0)
                  {
-                    if ((status = SSL_get_error(ssl_con,
-                                                bytes_read)) == SSL_ERROR_SYSCALL)
+                    errno = tmp_errno;
+                    (void)ssl_error_msg("SSL_read", ssl_con, &status,
+                                        bytes_read, msg_str);
+                    if (status == SSL_ERROR_SYSCALL)
                     {
                        if (tmp_errno == ECONNRESET)
                        {
                           timeout_flag = CON_RESET;
                        }
-                       trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_read", NULL,
-                                 _("SSL_read() error : %s"),
-                                 strerror(tmp_errno));
                     }
-                    else
-                    {
-                       trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_read", NULL,
-                                 _("SSL_read() error %d"), status);
-                    }
+                    else if (status == SSL_ERROR_SSL)
+                         {
+                            timeout_flag = CON_RESET;
+                         }
+                    trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_read", NULL,
+                              _("SSL_read() error %d"), status);
                     return(INCORRECT);
                  }
               }
@@ -3093,31 +3096,23 @@ http_chunk_read(char **chunk, int *chunksize)
          if ((ssl_con != NULL) && (SSL_pending(ssl_con)))
          {
             if ((bytes_read = SSL_read(ssl_con, (*chunk + bytes_buffered),
-                                       tmp_chunksize - bytes_buffered)) == INCORRECT)
+                                       tmp_chunksize - bytes_buffered)) <= 0)
             {
-               if ((status = SSL_get_error(ssl_con,
-                                           bytes_read)) == SSL_ERROR_SYSCALL)
+               (void)ssl_error_msg("SSL_read", ssl_con, &status, bytes_read,
+                                   msg_str);
+               if (status == SSL_ERROR_SYSCALL)
                {
                   if (errno == ECONNRESET)
                   {
                      timeout_flag = CON_RESET;
                   }
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_chunk_read", NULL,
-                            _("SSL_read() error : %s"), strerror(errno));
                }
-               else
-               {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_chunk_read", NULL,
-                            _("SSL_read() error %d"), status);
-               }
-               return(INCORRECT);
-            }
-            if (bytes_read == 0)
-            {
-               /* Premature end, remote side has closed connection. */
-               trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_chunk_read", NULL,
-                         _("Remote side closed connection (expected: %d read: %d)"),
-                         tmp_chunksize, bytes_buffered);
+               else if (status == SSL_ERROR_SSL)
+                    {
+                       timeout_flag = CON_RESET;
+                    }
+               trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_chunk_read",
+                         NULL, _("SSL_read() error %d"), status);
                return(INCORRECT);
             }
 # ifdef WITH_TRACE
@@ -3155,7 +3150,9 @@ http_chunk_read(char **chunk, int *chunksize)
                           {
                              timeout_flag = CON_RESET;
                           }
-                          trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_chunk_read", NULL,
+                          msg_str[0] = '\0';
+                          trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                    "http_chunk_read", NULL,
                                     _("read() error : %s"), strerror(errno));
                           return(INCORRECT);
                        }
@@ -3188,24 +3185,25 @@ http_chunk_read(char **chunk, int *chunksize)
                        tmp_errno = errno;
                        (void)alarm(0);
 
-                       if (bytes_read == INCORRECT)
+                       if (bytes_read <= 0)
                        {
-                          if ((status = SSL_get_error(ssl_con,
-                                                      bytes_read)) == SSL_ERROR_SYSCALL)
+                          errno = tmp_errno;
+                          (void)ssl_error_msg("SSL_read", ssl_con, &status,
+                                              bytes_read, msg_str);
+                          if (status == SSL_ERROR_SYSCALL)
                           {
                              if (tmp_errno == ECONNRESET)
                              {
                                 timeout_flag = CON_RESET;
                              }
-                             trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_chunk_read", NULL,
-                                       _("SSL_read() error : %s"),
-                                       strerror(tmp_errno));
                           }
-                          else
-                          {
-                             trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_chunk_read", NULL,
-                                       _("SSL_read() error %d"), status);
-                          }
+                          else if (status == SSL_ERROR_SSL)
+                               {
+                                  timeout_flag = CON_RESET;
+                               }
+                          trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                    "http_chunk_read", NULL,
+                                    _("SSL_read() error %d"), status);
                           return(INCORRECT);
                        }
                     }
@@ -4454,23 +4452,25 @@ read_msg(int *read_length, int offset, int line)
                }
                else
                {
-                  if ((status = SSL_get_error(ssl_con,
-                                              hmr.bytes_read)) == SSL_ERROR_SYSCALL)
+                  char extra_msg_str[MAX_RET_MSG_LENGTH];
+
+                  (void)ssl_error_msg("SSL_read", ssl_con, &status,
+                                      hmr.bytes_read, extra_msg_str);
+                  if (status == SSL_ERROR_SYSCALL)
                   {
                      if (errno == ECONNRESET)
                      {
                         timeout_flag = CON_RESET;
                      }
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
-                               _("SSL_read() error (after reading %d bytes) [%d] : %s"),
-                               bytes_buffered, line, strerror(errno));
                   }
-                  else
-                  {
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
-                               _("SSL_read() error (after reading %d bytes) (%d) [%d]"),
-                               bytes_buffered, status, line);
-                  }
+                  else if (status == SSL_ERROR_SSL)
+                       {
+                          timeout_flag = CON_RESET;
+                       }
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg",
+                            extra_msg_str,
+                            _("SSL_read() error (after reading %d bytes) (%d) [%d]"),
+                            bytes_buffered, status, line);
                   hmr.bytes_read = 0;
                   return(INCORRECT);
                }
@@ -4484,7 +4484,7 @@ read_msg(int *read_length, int offset, int line)
          }
          else
          {
-#endif
+#endif /* WITH_SSL */
             /* Initialise descriptor set. */
             FD_SET(http_fd, &rset);
             timeout.tv_usec = 0L;
@@ -4523,7 +4523,9 @@ read_msg(int *read_length, int offset, int line)
                              {
                                 timeout_flag = CON_RESET;
                              }
-                             trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
+                             msg_str[0] = '\0';
+                             trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                       "read_msg", NULL,
                                        _("read() error (after reading %d bytes) [%d] : %s"),
                                        bytes_buffered, line, strerror(errno));
                              hmr.bytes_read = 0;
@@ -4571,30 +4573,32 @@ read_msg(int *read_length, int offset, int line)
                           }
                           else
                           {
-                             if ((status = SSL_get_error(ssl_con,
-                                                         hmr.bytes_read)) == SSL_ERROR_SYSCALL)
+                             char extra_msg_str[MAX_RET_MSG_LENGTH];
+
+                             errno = tmp_errno;
+                             (void)ssl_error_msg("SSL_read", ssl_con, &status,
+                                                 hmr.bytes_read, extra_msg_str);
+                             if (status == SSL_ERROR_SYSCALL)
                              {
                                 if (tmp_errno == ECONNRESET)
                                 {
                                    timeout_flag = CON_RESET;
                                 }
-                                trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
-                                          _("SSL_read() error (after reading %d bytes) [%d] : %s"),
-                                          bytes_buffered, line,
-                                          strerror(tmp_errno));
                              }
-                             else
-                             {
-                                trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
-                                          _("SSL_read() error (after reading %d bytes) (%d) [%d]"),
-                                          bytes_buffered, status, line);
-                             }
+                             else if (status == SSL_ERROR_SSL)
+                                  {
+                                     timeout_flag = CON_RESET;
+                                  }
+                             trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                       "read_msg", extra_msg_str,
+                                       _("SSL_read() error (after reading %d bytes) (%d) [%d]"),
+                                       bytes_buffered, status, line);
                              hmr.bytes_read = 0;
                              return(INCORRECT);
                           }
                        }
                     }
-#endif
+#endif /* WITH_SSL */
 #ifdef WITH_TRACE
                     trace_log(NULL, 0, BIN_CMD_R_TRACE,
                               &msg_str[bytes_buffered], hmr.bytes_read, NULL);

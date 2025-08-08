@@ -621,11 +621,20 @@ try_again_read_msg:
                        }
                        else
                        {
-                          int ssl_ret;
+                          int  ssl_ret;
+                          char extra_msg_str[MAX_RET_MSG_LENGTH];
 
-                          ssl_error_msg("SSL_read", ssl_con, &ssl_ret,
-                                        bytes_read, msg_str);
-                          mon_log(ERROR_SIGN, __FILE__, __LINE__, 0L, msg_str,
+                          (void)ssl_error_msg("SSL_read", ssl_con, &ssl_ret,
+                                              bytes_read, extra_msg_str);
+                          if (ssl_ret == SSL_ERROR_SYSCALL)
+                          {
+                             if (errno == ECONNRESET)
+                             {
+                                timeout_flag = CON_RESET;
+                             }
+                          }
+                          mon_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
+                                  extra_msg_str,
                                   _("SSL_read() error (after reading %d bytes) (%d)"),
                                   bytes_buffered, status);
 
@@ -636,13 +645,6 @@ try_again_read_msg:
                            */
                           if (ssl_ret == SSL_ERROR_SSL)
                           {
-                             if (timeout_flag != CON_RESET)
-                             {
-                                if (SSL_shutdown(ssl_con) == 0)
-                                {
-                                   (void)SSL_shutdown(ssl_con);
-                                }
-                             }
                              SSL_free(ssl_con);
                              ssl_con = NULL;
                              goto try_again_read_msg;

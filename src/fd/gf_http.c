@@ -1,6 +1,6 @@
 /*
  *  gf_http.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1207,7 +1207,7 @@ main(int argc, char *argv[])
                                                     (pri_off_t)bytes_done);
                                     }
 #endif
-                                    if ((status = http_read(buffer, blocksize)) <= 0)
+                                    if ((status = http_read(buffer, blocksize)) == INCORRECT)
                                     {
                                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
                                                  (status > 0) ? msg_str : NULL,
@@ -1336,7 +1336,8 @@ main(int argc, char *argv[])
                                  while (bytes_done != content_length_to_fetch)
                                  {
                                     hunk_size = content_length_to_fetch - bytes_done;
-                                    if (hunk_size > blocksize)
+                                    if ((hunk_size > blocksize) ||
+                                        (hunk_size <= 0))
                                     {
                                        hunk_size = blocksize;
                                     }
@@ -1353,10 +1354,10 @@ main(int argc, char *argv[])
                                                     (pri_off_t)bytes_done);
                                     }
 #endif
-                                    if ((status = http_read(buffer, hunk_size)) <= 0)
+                                    if ((status = http_read(buffer, hunk_size)) == INCORRECT)
                                     {
                                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
-                                                 (status > 0) ? msg_str : NULL,
+                                                 msg_str,
                                                  "Failed to read from remote file %s in %s (%d)",
                                                  tmp_rl.file_name,
                                                  fra->dir_alias, status);
@@ -1464,7 +1465,7 @@ main(int argc, char *argv[])
                                             exitflag = 0;
                                             exit(TRANSFER_SUCCESS);
                                          }
-                                 }
+                                 } /* while (bytes_done != content_length_to_fetch) */
                               }
                            }
                            else /* We need to read data in chunks dictated by the server. */

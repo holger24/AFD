@@ -1,6 +1,6 @@
 /*
  *  ftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -4926,10 +4926,10 @@ ftp_read(char *block, int blocksize)
 #ifdef WITH_SSL
    if ((ssl_data != NULL) && (SSL_pending(ssl_data)))
    {
-      if ((bytes_read = SSL_read(ssl_data, block, blocksize)) == INCORRECT)
+      if ((bytes_read = SSL_read(ssl_data, block, blocksize)) <= 0)
       {
-         ssl_error_msg("SSL_read", ssl_con, NULL, bytes_read, msg_str);
-         trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_read", msg_str,
+         (void)ssl_error_msg("SSL_read", ssl_con, NULL, bytes_read, msg_str);
+         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ftp_read", NULL,
                    _("SSL_read() error"));
 
          return(INCORRECT);
@@ -4971,6 +4971,7 @@ ftp_read(char *block, int blocksize)
                     {
                        timeout_flag = CON_RESET;
                     }
+                    msg_str[0] = '\0';
                     trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_read", NULL,
                               _("read() error : %s"), strerror(errno));
                     return(INCORRECT);
@@ -4979,12 +4980,11 @@ ftp_read(char *block, int blocksize)
               }
               else
               {
-                 if ((bytes_read = SSL_read(ssl_data, block,
-                                            blocksize)) == INCORRECT)
+                 if ((bytes_read = SSL_read(ssl_data, block, blocksize)) <= 0)
                  {
-                    ssl_error_msg("SSL_read", ssl_con, NULL,
+                    (void)ssl_error_msg("SSL_read", ssl_con, NULL,
                                   bytes_read, msg_str);
-                    trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_read", msg_str,
+                    trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ftp_read", NULL,
                               _("SSL_read() error %d"), status);
                     return(INCORRECT);
                  }

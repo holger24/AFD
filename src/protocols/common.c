@@ -1,6 +1,6 @@
 /*
  *  common.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -642,7 +642,7 @@ ssl_write(SSL *ssl, const char *buf, size_t count)
       {
          int ret;
 
-         ret = SSL_get_error(ssl, bytes_done);
+         (void)ssl_error_msg("SSL_write", ssl, &ret, bytes_done, msg_str);
          switch (ret)
          {
             case SSL_ERROR_WANT_READ : /* Renegotiation takes place. */
@@ -670,14 +670,20 @@ ssl_write(SSL *ssl, const char *buf, size_t count)
                   {
                      sign = ERROR_SIGN;
                   }
-                  trans_log(sign, __FILE__, __LINE__, "ssl_write", NULL,
+                  trans_log(sign, __FILE__, __LINE__, "ssl_write", msg_str,
                             _("SSL_write() error (%d) : %s"),
                             ret, strerror(errno));
                }
                return(INCORRECT);
 
+            case SSL_ERROR_SSL :
+               timeout_flag = CON_RESET;
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssl_write", msg_str,
+                         _("SSL_write() error (%d)"), ret);
+               return(INCORRECT);
+
             default : /* Error */
-               trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssl_write", NULL,
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssl_write", msg_str,
                          _("SSL_write() error (%d)"), ret);
                return(INCORRECT);
          }

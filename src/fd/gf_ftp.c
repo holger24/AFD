@@ -1,6 +1,6 @@
 /*
  *  gf_ftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1524,10 +1524,11 @@ main(int argc, char *argv[])
                                  status = errno;
                                  if (status == EPIPE)
                                  {
+                                    timeout_flag = CON_RESET;
                                     (void)ftp_get_reply();
                                  }
-                                 trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
-                                           (status == EPIPE) ? msg_str : NULL,
+                                 trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                           NULL, msg_str,
                                            "Failed to read from remote file %s in %s (%d)",
                                            tmp_rl.file_name, fra->dir_alias,
                                            status);
@@ -1535,15 +1536,7 @@ main(int argc, char *argv[])
                                               files_to_retrieve,
                                               file_size_to_retrieve,
                                               (struct job *)&db);
-                                 if (status == EPIPE)
-                                 {
-                                    trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                              "Hmm. Pipe is broken. Will NOT send a QUIT.");
-                                 }
-                                 else
-                                 {
-                                    (void)ftp_quit();
-                                 }
+                                 (void)ftp_quit();
                                  if (bytes_done == 0)
                                  {
                                     (void)unlink(local_tmp_file);

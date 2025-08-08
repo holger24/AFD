@@ -1,6 +1,6 @@
 /*
  *  smtpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1505,7 +1505,8 @@ try_again_read_msg:
                     {
                        if (bytes_read == 0)
                        {
-                          trans_log(ERROR_SIGN,  __FILE__, __LINE__, "read_msg", NULL,
+                          trans_log(ERROR_SIGN,  __FILE__, __LINE__,
+                                    "read_msg", NULL,
                                     _("Remote hang up. [%d]"), line);
                           timeout_flag = NEITHER;
                        }
@@ -1540,9 +1541,17 @@ try_again_read_msg:
                        {
                           int ssl_ret;
 
-                          ssl_error_msg("SSL_read", ssl_con, &ssl_ret,
-                                        bytes_read, msg_str);
-                          trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", msg_str,
+                          (void)ssl_error_msg("SSL_read", ssl_con, &ssl_ret,
+                                              bytes_read, msg_str);
+                          if (ssl_ret == SSL_ERROR_SYSCALL)
+                          {
+                             if (errno == ECONNRESET)
+                             {
+                                timeout_flag = CON_RESET;
+                             }
+                          }
+                          trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                    "read_msg", msg_str,
                                     _("SSL_read() error (after reading %d bytes) (%d) [%d]"),
                                     bytes_buffered, status, line);
 
@@ -1556,6 +1565,7 @@ try_again_read_msg:
                              SSL_free(ssl_con);
                              ssl_con = NULL;
                              ssc.ssl_enabled = NO;
+                             timeout_flag = OFF;
                              goto try_again_read_msg;
                           }
                           bytes_read = 0;
