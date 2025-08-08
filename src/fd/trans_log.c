@@ -1,6 +1,6 @@
 /*
  *  trans_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ DESCR__S_M3
  **   21.03.2009 H.Kiehl Added function parameter.
  **   10.08.2012 H.Kiehl Added some more length checking.
  **   17.08.2018 H.Kiehl Do not show empty lines.
+ **   07.08.2025 H.Kiehl Show msg_str even when timeout_flag is set.
  **
  */
 DESCR__E_M3
@@ -226,8 +227,15 @@ trans_log(char *sign,
          }
       }
 
-      if ((msg_str != NULL) && (msg_str[0] != '\0') && (timeout_flag == OFF) &&
-          (length < (MAX_LINE_LENGTH + MAX_LINE_LENGTH)))
+      /*
+       * Note. Do not add (timeout_flag == OFF), only show msg_str
+       * when timeout_flag is not set. With SSL/TLS we do provide
+       * useful messages via ssl_error_msg(). These will then be lost.
+       * Good example is when SSL_read() fails.
+       */
+      if ((msg_str != NULL) && (msg_str[0] != '\0') &&
+          (length < (MAX_LINE_LENGTH + MAX_LINE_LENGTH)) &&
+          (timeout_flag != ON))
       {
          char *end_ptr,
               tmp_char;
