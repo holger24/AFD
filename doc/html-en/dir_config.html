@@ -2710,6 +2710,8 @@ section. Valid options can be taken from the following table:
    <td>Tells the AFD to archive files to this user for x days if no
        unit [d|h|m|s] is specified. The meaning of the units is as
        follows:
+       <p>
+       <center>
        <table border>
        <tr>
           <td>d</td>
@@ -2728,6 +2730,8 @@ section. Valid options can be taken from the following table:
           <td>Seconds</td>
        </tr>
        </table>
+       </center>
+       </p>
        When no archive option is set, the default (0 = no archiving
        (DEFAULT_ARCHIVE_TIME)) is set. With <a href="tools.html#afdcfg">
        afdcfg -A</a> the system administrator can disable archiving
@@ -2745,7 +2749,11 @@ section. Valid options can be taken from the following table:
 </tr>
 <tr>
    <td><a name="age-limit">age-limit x</a></td>
-   <td>Files older then x seconds will not get send. They will be removed.</td>
+   <td>Files older then x seconds will not get send. They will be removed.
+       If x is zero, it will disable age-limit, which can be usefull when
+       it is set globally in AFD_CONFIG
+       <a href="afd_config.html#default_age_limit">DEFAULT_AGE_LIMIT</a>.
+       </td>
    <td align=center>X</td>
    <td align=center>X</td>
    <td align=center>X</td>
@@ -3495,7 +3503,7 @@ section. Valid options can be taken from the following table:
    <td width="90%"><address><small>
    Copyright &copy; 1997 - 2025 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 21.05.2025
+   Last updated: 22.08.2025
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
