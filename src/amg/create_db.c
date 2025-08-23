@@ -64,6 +64,7 @@ DESCR__S_M3
  **                      directories are in different DIR_CONFIGS.
  **   11.05.2017 H.Kiehl Use update_db_log() when printing errrors so
  **                      one sees them with udc.
+ **   23.08.2025 H.Kiehl Added units s,m,h,d support to age-limit option.
  **
  */
 DESCR__E_M3
@@ -1102,22 +1103,54 @@ create_db(FILE *udc_reply_fp, int write_fd)
          if ((sptr = lposi(db[i].soptions, AGE_LIMIT_ID,
                            AGE_LIMIT_ID_LENGTH)) != NULL)
          {
-            int  count = 0;
+            int  count = 0,
+                 unit;
             char str_number[MAX_INT_LENGTH];
 
             while ((*sptr == ' ') || (*sptr == '\t'))
             {
                sptr++;
             }
-            while ((*sptr != '\n') && (*sptr != '\0'))
+            while ((isdigit((int)(*sptr))) && (count < MAX_INT_LENGTH))
             {
                str_number[count] = *sptr;
                count++; sptr++;
             }
             str_number[count] = '\0';
+
+            switch (*sptr)
+            {
+               case '\n' :
+               case '\0' : /* Default unit. */
+                  unit = DEFAUL_AGE_LIMIT_UNIT;
+                  break;
+
+               case 'd' : /* Days. */
+                  unit = 86400;
+                  break;
+
+               case 'h' : /* Hours. */
+                  unit = 3600;
+                  break;
+
+               case 'm' : /* Minutes. */
+                  unit = 60;
+                  break;
+
+               case 's' : /* Seconds. */
+                  unit = 1;
+                  break;
+
+               default : /* Unknown. */
+                  update_db_log(WARN_SIGN, __FILE__, __LINE__, udc_reply_fp, NULL,
+                                "Unknown unit type `%c' (%d) for %s option. Taking default.",
+                                *sptr, (int)(*sptr), AGE_LIMIT_ID);
+                  unit = DEFAUL_AGE_LIMIT_UNIT;
+                  break;
+            }
             errno = 0;
             db[i].age_limit = (unsigned int)strtoul(str_number,
-                                                    (char **)NULL, 10);
+                                                    (char **)NULL, 10) * unit;
             if (errno == ERANGE)
             {
                update_db_log(WARN_SIGN, __FILE__, __LINE__, udc_reply_fp, NULL,

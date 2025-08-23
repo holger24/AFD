@@ -1,6 +1,6 @@
 /*
  *  check_option.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@ DESCR__S_M3
  **   07.07.2019 H.Kiehl Added trans_srename.
  **   31.05.2023 H.Kiehl Added hardlink and symlink.
  **   27.05.2023 H.Kiehl Added ageing.
+ **   23.08.2025 H.Kiehl Added units s,m,h,d support to age-limit option.
  **
  */
 DESCR__E_M3
@@ -299,14 +300,19 @@ check_option(char *option, FILE *cmd_fp)
               }
               switch (*(ptr + i))
               {
-                 case '\0' :
-                 case ' '  :
-                 case '\t' :
+                 case '\0' : /* Default unit seconds */
+                 case 'd'  : /* Days */
+                 case 'h'  : /* Hours */
+                 case 'm'  : /* Minutes */
+                 case 's'  : /* Seconds */
+                 case ' '  : /* Default unit seconds */
+                 case '\t' : /* Default unit seconds */
                     /* OK */;
                     break;
                  default   : /* Incorrect */
                     update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
-                                  "Invalid age limit specified.");
+                                 "Unknown %s unit %c (%d).",
+                                 AGE_LIMIT_ID, *(ptr + i), (int)(*(ptr + i)));
                     return(INCORRECT);
               }
            }

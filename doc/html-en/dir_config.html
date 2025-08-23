@@ -2748,8 +2748,33 @@ section. Valid options can be taken from the following table:
    <td align=center>X</td>
 </tr>
 <tr>
-   <td><a name="age-limit">age-limit x</a></td>
-   <td>Files older then x seconds will not get send. They will be removed.
+   <td><a name="age-limit">age-limit x[d|h|m|s]</a></td>
+   <td>Files older then x seconds, if no unit [d|h|m|s] is specified,
+       will not get send. They will be removed. The meaning of the units
+       is as
+       follows:
+       <p>
+       <center>
+       <table border>
+       <tr>
+          <td>d</td>
+          <td>Days</td>
+       </tr>
+       <tr>
+          <td>h</td>
+          <td>Hours</td>
+       </tr>
+       <tr>
+          <td>m</td>
+          <td>Minutes</td>
+       </tr>
+       <tr>
+          <td>s</td>
+          <td>Seconds</td>
+       </tr>
+       </table>
+       </center>
+       </p>
        If x is zero, it will disable age-limit, which can be usefull when
        it is set globally in AFD_CONFIG
        <a href="afd_config.html#default_age_limit">DEFAULT_AGE_LIMIT</a>.
@@ -3503,7 +3528,7 @@ section. Valid options can be taken from the following table:
    <td width="90%"><address><small>
    Copyright &copy; 1997 - 2025 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 22.08.2025
+   Last updated: 23.08.2025
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

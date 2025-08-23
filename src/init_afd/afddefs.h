@@ -1687,6 +1687,7 @@ typedef unsigned long       u_long_64;
 #ifndef DEFAULT_ARCHIVE_UNIT
 # define DEFAULT_ARCHIVE_UNIT      86400  /* Seconds => 1 day             */
 #endif
+#define DEFAUL_AGE_LIMIT_UNIT      1      /* Seconds                      */
 #define WD_ENV_NAME                "AFD_WORK_DIR"   /* The working dir-   */
                                                     /* ectory environment */
 #define WAIT_AFD_STATUS_ATTACH     80

@@ -99,6 +99,7 @@ DESCR__S_M3
  **   14.12.2024 H.Kiehl Added option 'send zero size'.
  **   10.03.2025 h.Kiehl When 'ulock OFF' is set, we should still do
  **                      the unique locking.
+ **   23.08.2025 H.Kiehl Added units s,m,h,d support to age-limit option.
  **
  */
 DESCR__E_M3
@@ -324,7 +325,7 @@ eval_message(char *message_name, struct job *p_db)
                while ((isdigit((int)(*end_ptr))) && (*end_ptr != '\n') &&
                       (*end_ptr != '\0'))
                {
-                 end_ptr++;
+                  end_ptr++;
                }
                byte_buf = *end_ptr;
                *end_ptr = '\0';
@@ -380,6 +381,8 @@ eval_message(char *message_name, struct job *p_db)
                      (CHECK_STRNCMP(ptr, AGE_LIMIT_ID,
                                     AGE_LIMIT_ID_LENGTH) == 0))
                  {
+                    int unit;
+
                     used |= AGE_LIMIT_FLAG;
                     ptr += AGE_LIMIT_ID_LENGTH;
                     while ((*ptr == ' ') || (*ptr == '\t'))
@@ -387,15 +390,51 @@ eval_message(char *message_name, struct job *p_db)
                        ptr++;
                     }
                     end_ptr = ptr;
-                    while ((*end_ptr != '\n') && (*end_ptr != '\0'))
+                    while ((isdigit((int)(*end_ptr))) && (*end_ptr != '\n') &&
+                           (*end_ptr != '\0'))
                     {
-                      end_ptr++;
+                       end_ptr++;
                     }
                     byte_buf = *end_ptr;
                     *end_ptr = '\0';
-                    p_db->age_limit = (unsigned int)atoi(ptr);
+                    switch (byte_buf)
+                    {
+                       case '\n' :
+                       case '\0' : /* Default unit. */
+                          unit = DEFAUL_AGE_LIMIT_UNIT;
+                          break;
+
+                       case 'd' : /* Days. */
+                          unit = 86400;
+                          break;
+
+                       case 'h' : /* Hours. */
+                          unit = 3600;
+                          break;
+
+                       case 'm' : /* Minutes. */
+                          unit = 60;
+                          break;
+
+                       case 's' : /* Seconds. */
+                          unit = 1;
+                          break;
+
+                       default : /* Unknown. */
+                          system_log(WARN_SIGN, __FILE__, __LINE__,
+                                     "Unknown unit type `%c' (%d) for %s option. Taking default. #%x",
+                                     byte_buf, (int)byte_buf, AGE_LIMIT_ID,
+                                     p_db->id.job);
+                          unit = DEFAUL_AGE_LIMIT_UNIT;
+                          break;
+                    }
+                    p_db->age_limit = (unsigned int)atoi(ptr) * unit;
                     *end_ptr = byte_buf;
                     ptr = end_ptr;
+                    while ((*ptr != '\n') && (*ptr != '\0'))
+                    {
+                       ptr++;
+                    }
                     while (*ptr == '\n')
                     {
                        ptr++;
