@@ -1976,10 +1976,6 @@ main(int argc, char *argv[])
                /* Free memory for the read buffer. */
                free(buffer);
             }
-            else
-            {
-               more_files_in_list = NO;
-            }
 
 #ifdef _WITH_BURST_2
             if (in_burst_loop == YES)

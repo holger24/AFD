@@ -42,6 +42,9 @@ DESCR__S_M3
  **   03.09.2017 H.Kiehl Added option to get only appended part.
  **   29.07.2019 H.Kiehl Added check if ls_data file is changed while we
  **                      work with it.
+ **   06.07.2025 H.Kiehl Impose some limits when we scan the remote
+ **                      directory. For now lets just use some compile
+ **                      time fix limits to see how these workout.
  **
  */
 DESCR__E_M3
@@ -59,6 +62,9 @@ DESCR__E_M3
 #include <errno.h>
 #include "sftpdefs.h"
 #include "fddefs.h"
+
+#define SFTP_FILES_TO_RETRIEVE_LIMIT_MIN 150000
+#define SFTP_FILES_TO_RETRIEVE_TIMEOUT       30  /* Seconds */
 
 
 /* External global variables. */
@@ -82,7 +88,7 @@ static time_t                     current_time;
 /* Local function prototypes. */
 static void                       do_scan(int *, off_t *, int *);
 static int                        check_list(int, char *, struct stat *,
-                                             int *, off_t *, int *);
+                                             int *, off_t *, int *, int *);
 
 
 /*#################### get_remote_file_names_sftp() #####################*/
@@ -176,11 +182,11 @@ try_attach_again:
          {
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
             if ((fra->stupid_mode == YES) || (fra->remove == YES) ||
-                ((files_to_retrieve <= fra->max_copied_files) &&
-                 (*file_size_to_retrieve <= fra->max_copied_file_size)))
+                ((files_to_retrieve < fra->max_copied_files) &&
+                 (*file_size_to_retrieve < fra->max_copied_file_size)))
 #else
-            if ((files_to_retrieve <= fra->max_copied_files) &&
-                (*file_size_to_retrieve <= fra->max_copied_file_size))
+            if ((files_to_retrieve < fra->max_copied_files) &&
+                (*file_size_to_retrieve < fra->max_copied_file_size))
 #endif
             {
                /* Lock this file in list. */
@@ -306,7 +312,8 @@ do_scan(int   *files_to_retrieve,
 {
    unsigned int     files_deleted = 0,
                     list_length = 0;
-   int              gotcha,
+   int              files_added_to_list = 0,
+                    gotcha,
                     i,
                     initial_list_is_empty,
                     j,
@@ -316,6 +323,7 @@ do_scan(int   *files_to_retrieve,
                     *p_mask;
    off_t            file_size_deleted = 0,
                     list_size = 0;
+   time_t           scan_start_time;
    struct file_mask *fml = NULL;
    struct tm        *p_tm;
    struct stat      stat_buf;
@@ -417,16 +425,11 @@ do_scan(int   *files_to_retrieve,
       initial_list_is_empty = NO;
    }
 
-   if ((fra->ignore_file_time != 0) ||
-       (fra->delete_files_flag & UNKNOWN_FILES) ||
-       (fra->delete_files_flag & OLD_RLOCKED_FILES))
-   {
-      /*
-       * Note: For SFTP lets NOT assume the server returns GMT.
-       *       So do not try convert current_time to GMT to.
-       */
-      current_time = time(NULL);
-   }
+   /*
+    * Note: For SFTP lets NOT assume the server returns GMT.
+    *       So do not try convert current_time to GMT to.
+    */
+   current_time = scan_start_time = time(NULL);
 
    /*
     * Get a directory listing from the remote site so we can see
@@ -589,6 +592,7 @@ do_scan(int   *files_to_retrieve,
                                        filename, &stat_buf,
                                        files_to_retrieve,
                                        file_size_to_retrieve,
+                                       &files_added_to_list,
                                        more_files_in_list) == 0)
                         {
                            gotcha = YES;
@@ -632,6 +636,39 @@ do_scan(int   *files_to_retrieve,
                                         stat_buf.st_size);
                   }
                }
+            }
+         }
+
+         /*
+          * We cannot keep collecting file names forever. Impose
+          * some limit so we can start fetching files as early as
+          * possible. If possible inform FD to start helper jobs.
+          * Note, maybe we should also set a maximum limit on how
+          * many files (no_of_listed_files) we can put into the
+          * list because if the files constantly keep coming we
+          * never resize the array, ie. it grows endlessly. For
+          * now lets not handle this and see how this works out
+          * in practice.
+          */
+         if (files_added_to_list >= SFTP_FILES_TO_RETRIEVE_LIMIT_MIN)
+         {
+            time_t now = time(NULL);
+
+            if ((now - scan_start_time) > SFTP_FILES_TO_RETRIEVE_TIMEOUT)
+            {
+               if (fsa->debug > NORMAL_MODE)
+               {
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "Timeout (%ds) for scanning directory reached.",
+                            SFTP_FILES_TO_RETRIEVE_TIMEOUT);
+               }
+               if (((fra->dir_options & DO_NOT_PARALLELIZE) == 0) &&
+                   (fsa->active_transfers < fsa->allowed_transfers))
+               {
+                  /* Tell fd that he may start some more helper jobs. */
+                  send_proc_fin(YES);
+               }
+               scan_start_time = now;
             }
          }
       } /* while (sftp_readdir() == SUCCESS) */
@@ -764,7 +801,7 @@ do_scan(int   *files_to_retrieve,
 
          if (old_size != new_size)
          {
-            char   *ptr;
+            char *ptr;
 
             ptr = (char *)rl - AFD_WORD_OFFSET;
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
@@ -811,6 +848,7 @@ check_list(int         initial_list_is_empty,
            struct stat *p_stat_buf,
            int         *files_to_retrieve,
            off_t       *file_size_to_retrieve,
+           int         *files_added_to_list,
            int         *more_files_in_list)
 {
    if (initial_list_is_empty == NO)
@@ -868,11 +906,11 @@ check_list(int         initial_list_is_empty,
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
                         if ((fra->stupid_mode == YES) ||
                             (fra->remove == YES) ||
-                            ((*files_to_retrieve <= fra->max_copied_files) &&
-                             (*file_size_to_retrieve <= fra->max_copied_file_size)))
+                            ((*files_to_retrieve < fra->max_copied_files) &&
+                             (*file_size_to_retrieve < fra->max_copied_file_size)))
 #else
-                        if ((*files_to_retrieve <= fra->max_copied_files) &&
-                            (*file_size_to_retrieve <= fra->max_copied_file_size))
+                        if ((*files_to_retrieve < fra->max_copied_files) &&
+                            (*file_size_to_retrieve < fra->max_copied_file_size))
 #endif
                         {
                            rl[i].retrieved = NO;
@@ -913,11 +951,11 @@ check_list(int         initial_list_is_empty,
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
                            if ((fra->stupid_mode == YES) ||
                                (fra->remove == YES) ||
-                               ((*files_to_retrieve <= fra->max_copied_files) &&
-                                (*file_size_to_retrieve <= fra->max_copied_file_size)))
+                               ((*files_to_retrieve < fra->max_copied_files) &&
+                                (*file_size_to_retrieve < fra->max_copied_file_size)))
 #else
-                           if ((*files_to_retrieve <= fra->max_copied_files) &&
-                               (*file_size_to_retrieve <= fra->max_copied_file_size))
+                           if ((*files_to_retrieve < fra->max_copied_files) &&
+                               (*file_size_to_retrieve < fra->max_copied_file_size))
 #endif
                            {
                               rl[i].retrieved = NO;
@@ -1076,11 +1114,11 @@ check_list(int         initial_list_is_empty,
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
                            if ((fra->stupid_mode == YES) ||
                                (fra->remove == YES) ||
-                               (((*files_to_retrieve + 1) <= fra->max_copied_files) &&
-                                ((*file_size_to_retrieve + size_to_retrieve) <= fra->max_copied_file_size)))
+                               (((*files_to_retrieve + 1) < fra->max_copied_files) &&
+                                ((*file_size_to_retrieve + size_to_retrieve) < fra->max_copied_file_size)))
 #else
-                           if (((*files_to_retrieve + 1) <= fra->max_copied_files) &&
-                               ((*file_size_to_retrieve + size_to_retrieve) <= fra->max_copied_file_size))
+                           if (((*files_to_retrieve + 1) < fra->max_copied_files) &&
+                               ((*file_size_to_retrieve + size_to_retrieve) < fra->max_copied_file_size))
 #endif
                            {
                               if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
@@ -1128,11 +1166,11 @@ check_list(int         initial_list_is_empty,
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
                               if ((fra->stupid_mode == YES) ||
                                   (fra->remove == YES) ||
-                                  (((*files_to_retrieve + 1) <= fra->max_copied_files) &&
-                                   ((*file_size_to_retrieve  + size_to_retrieve) <= fra->max_copied_file_size)))
+                                  (((*files_to_retrieve + 1) < fra->max_copied_files) &&
+                                   ((*file_size_to_retrieve  + size_to_retrieve) < fra->max_copied_file_size)))
 #else
-                              if (((*files_to_retrieve + 1) <= fra->max_copied_files) &&
-                                  ((*file_size_to_retrieve  + size_to_retrieve) <= fra->max_copied_file_size))
+                              if (((*files_to_retrieve + 1) < fra->max_copied_files) &&
+                                  ((*file_size_to_retrieve  + size_to_retrieve) < fra->max_copied_file_size))
 #endif
                               {
                                  if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
@@ -1272,6 +1310,7 @@ check_list(int         initial_list_is_empty,
       {
          *file_size_to_retrieve += p_stat_buf->st_size;
          *files_to_retrieve += 1;
+         *files_added_to_list += 1;
          incremented = YES;
          no_of_listed_files++;
       }
@@ -1289,6 +1328,7 @@ check_list(int         initial_list_is_empty,
          {
             *file_size_to_retrieve += p_stat_buf->st_size;
             *files_to_retrieve += 1;
+            *files_added_to_list += 1;
             incremented = YES;
             no_of_listed_files++;
          }
@@ -1299,11 +1339,11 @@ check_list(int         initial_list_is_empty,
       }
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
       if ((fra->stupid_mode == YES) || (fra->remove == YES) ||
-          ((*files_to_retrieve <= fra->max_copied_files) &&
-           (*file_size_to_retrieve <= fra->max_copied_file_size)))
+          ((*files_to_retrieve < fra->max_copied_files) &&
+           (*file_size_to_retrieve < fra->max_copied_file_size)))
 #else
-      if ((*files_to_retrieve <= fra->max_copied_files) &&
-          (*file_size_to_retrieve <= fra->max_copied_file_size))
+      if ((*files_to_retrieve < fra->max_copied_files) &&
+          (*file_size_to_retrieve < fra->max_copied_file_size))
 #endif
       {
          if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
