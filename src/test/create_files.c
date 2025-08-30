@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -27,17 +29,20 @@ main(void)
                        file_name, strerror(errno));
          exit(1);
       }
-      if (lseek(fd, FILE_SIZE - 1, SEEK_SET) == -1)
+      if (FILE_SIZE > 0)
       {
-         (void)fprintf(stderr, "Failed to lseek() in %s : %s\n",
-                       file_name, strerror(errno));
-         exit(1);
-      }
-      if (write(fd, "", 1) != 1)
-      {
-         (void)fprintf(stderr, "Failed to write() to %s : %s\n",
-                       file_name, strerror(errno));
-         exit(1);
+         if (lseek(fd, FILE_SIZE - 1, SEEK_SET) == -1)
+         {
+            (void)fprintf(stderr, "Failed to lseek() in %s : %s\n",
+                          file_name, strerror(errno));
+            exit(1);
+         }
+         if (write(fd, "", 1) != 1)
+         {
+            (void)fprintf(stderr, "Failed to write() to %s : %s\n",
+                          file_name, strerror(errno));
+            exit(1);
+         }
       }
       if (close(fd) == -1)
       {
