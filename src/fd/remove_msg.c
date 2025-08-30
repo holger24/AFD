@@ -1,6 +1,6 @@
 /*
  *  remove_msg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -40,6 +40,8 @@ DESCR__S_M3
  **   27.07.1998 H.Kiehl Created
  **   11.08.2000 H.Kiehl Support for retrieving files.
  **   29.09.2006 H.Kiehl Added error_counter handling for FRA.
+ **   16.07.2025 H.Kiehl Before changing anything in FRA, check
+ **                      if it has changed.
  **
  */
 DESCR__E_M3
@@ -55,6 +57,10 @@ DESCR__E_M3
 
 /* External global variables. */
 extern int                        fra_fd,
+#ifndef WITH_MULTI_FSA_CHECKS
+                                  fsa_out_of_sync,
+#endif
+                                  last_pos_lookup,
                                   no_of_dirs,
                                   *no_msg_queued;
 extern char                       *p_work_dir;
@@ -73,6 +79,21 @@ remove_msg(int qb_pos, int remove_only)
    if ((fra != NULL) && (qb[qb_pos].special_flag & FETCH_JOB) &&
        (qb[qb_pos].pos < no_of_dirs))
    {
+#ifndef WITH_MULTI_FSA_CHECKS
+      if (fsa_out_of_sync == YES)
+      {
+#endif
+         if (fd_check_fsa() == YES)
+         {
+            (void)check_fra_fd();
+            get_new_positions();
+            init_msg_buffer();
+            last_pos_lookup = INCORRECT;
+         }
+#ifndef WITH_MULTI_FSA_CHECKS
+      }
+#endif
+
       /* Dequeue in FRA. */
       fra[qb[qb_pos].pos].queued -= 1;
 
