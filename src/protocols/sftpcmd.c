@@ -4016,8 +4016,8 @@ retry_hardlink:
                    * So we must delete it and then retry.
                    */
                   if ((((ret_status == SSH_FX_FAILURE) && (scd.version < 5)) ||
-                       ((ret_status == SSH_FX_NO_SUCH_FILE) && (create_dir == YES) &&
-                        (is_with_path(to) == YES))) &&
+                       ((ret_status == SSH_FX_NO_SUCH_FILE) &&
+                        (create_dir == YES) && (is_with_path(to) == YES))) &&
                       (retries == 0))
                   {
                      if (ret_status == SSH_FX_NO_SUCH_FILE)
@@ -4036,7 +4036,7 @@ retry_hardlink:
                                 *tmp_cwd = scd.cwd;
 
                            *ptr = '\0';
-                           if (tmp_cwd == NULL)
+                           if ((tmp_cwd == NULL) || (to[0] == '/'))
                            {
                               p_to = to;
                            }
@@ -4084,8 +4084,10 @@ retry_hardlink:
                   {
                      /* Some error has occured. */
                      get_msg_str(&msg[9]);
-                     trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_hardlink", NULL,
-                               "%s", error_2_str(&msg[5]));
+                     trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                               "sftp_hardlink", NULL,
+                               "%s [retries=%d]",
+                               error_2_str(&msg[5]), retries);
                      status = ret_status;
                   }
                }
@@ -4242,8 +4244,8 @@ retry_symlink:
                    * So we must delete it and then retry.
                    */
                   if ((((ret_status == SSH_FX_FAILURE) && (scd.version < 5)) ||
-                       ((ret_status == SSH_FX_NO_SUCH_FILE) && (create_dir == YES) &&
-                        (is_with_path(to) == YES))) &&
+                       ((ret_status == SSH_FX_NO_SUCH_FILE) &&
+                        (create_dir == YES) && (is_with_path(to) == YES))) &&
                       (retries == 0))
                   {
                      if (ret_status == SSH_FX_NO_SUCH_FILE)
@@ -4262,7 +4264,7 @@ retry_symlink:
                                 *tmp_cwd = scd.cwd;
 
                            *ptr = '\0';
-                           if (tmp_cwd == NULL)
+                           if ((tmp_cwd == NULL) || (to[0] == '/'))
                            {
                               p_to = to;
                            }
@@ -4310,8 +4312,10 @@ retry_symlink:
                   {
                      /* Some error has occured. */
                      get_msg_str(&msg[9]);
-                     trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_symlink", NULL,
-                               "%s", error_2_str(&msg[5]));
+                     trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                               "sftp_symlink", NULL,
+                               "%s retries=%d]",
+                               error_2_str(&msg[5]), retries);
                      status = ret_status;
                   }
                }
