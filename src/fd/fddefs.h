@@ -481,6 +481,8 @@ struct job
                                          /* on remote site.              */
           char           **symlinks;     /* List of symlinks to create   */
                                          /* on remote site.              */
+          char           *from_symlink;  /* Optional from part for the   */
+                                         /* above symlinks.              */
           char           **restart_file;
                                          /* When a transmission fails    */
                                          /* while it was transmitting a  */

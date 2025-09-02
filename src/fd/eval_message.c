@@ -1250,6 +1250,54 @@ eval_message(char *message_name, struct job *p_db)
                        ptr++;
                     }
 
+                    /* --from= */
+                    if ((*ptr == '-') && (*(ptr + 1) == '-') &&
+                        (*(ptr + 2) == 'f') && (*(ptr + 3) == 'r') &&
+                        (*(ptr + 4) == 'o') && (*(ptr + 5) == 'm') &&
+                        (*(ptr + 6) == '='))
+                    {
+                       char end_char = ' ',
+                            *p_start;
+
+                       ptr += 7;
+                       if ((*ptr == '"') || (*ptr == '\''))
+                       {
+                          end_char = *ptr;
+                          ptr++;
+                       }
+                       p_start = ptr;
+                       while ((*ptr != end_char) && (*ptr != '\0'))
+                       {
+                          ptr++; length++;
+                       }
+                       if (length > 0)
+                       {
+                          length++; ptr++;
+                          if ((p_db->from_symlink = malloc(length)) == NULL)
+                          {
+                             system_log(WARN_SIGN, __FILE__, __LINE__,
+                                        "malloc() error : %s",
+                                        strerror(errno));
+                          }
+                          else
+                          {
+                             ptr = p_start;
+                             length = 0;
+                             while ((*ptr != end_char) && (*ptr != '\0'))
+                             {
+                                p_db->from_symlink[length] = *ptr;
+                                ptr++; length++;
+                             }
+                             p_db->from_symlink[length] = '\0';
+                             ptr++;
+                          }
+                       }
+                       while ((*ptr == ' ') || (*ptr == '\t'))
+                       {
+                          ptr++;
+                       }
+                    } /* --from= */
+
                     /*
                      * First determine the number of file names and the
                      * length of the longest file name, so we can allocate

@@ -1,6 +1,6 @@
 /*
  *  init_sf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -183,6 +183,7 @@ init_sf(int argc, char *argv[], char *file_path, int protocol)
    db.hardlinks = NULL;
    db.no_of_rsymlinks = 0;
    db.symlinks = NULL;
+   db.from_symlink = NULL;
 /* db.no_of_restart_files = 0; */
    db.restart_file = NULL;
    db.user_id = -1;

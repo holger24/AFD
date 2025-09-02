@@ -168,7 +168,8 @@ static off_t               local_file_size,
                            *p_file_size_buffer;
 
 /* Local function prototypes. */
-static void                sf_sftp_exit(void),
+static void                expand_link_name(char *, char *, char *, int),
+                           sf_sftp_exit(void),
                            sig_bus(int),
                            sig_segv(int),
                            sig_kill(int),
@@ -1944,17 +1945,21 @@ main(int argc, char *argv[])
 
          if (db.no_of_rhardlinks > 0)
          {
-            int k;
+            int  k;
+            char name[MAX_PATH_LENGTH + 1];
 
             for (k = 0; k < db.no_of_rhardlinks; k++)
             {
-               if ((status = sftp_hardlink(remote_filename, db.hardlinks[k],
+               expand_link_name(remote_filename, db.hardlinks[k], name,
+                                MAX_PATH_LENGTH);
+               if ((status = sftp_hardlink(remote_filename, name,
                                            (db.special_flag & CREATE_TARGET_DIR) ? YES : NO,
-                                           db.dir_mode, created_path)) != SUCCESS)
+                                           db.dir_mode,
+                                           created_path)) != SUCCESS)
                {
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                             "Failed to create a hardlink from %s to %s (%d)",
-                            remote_filename, db.hardlinks[k], status);
+                            remote_filename, name, status);
                   rm_dupcheck_crc(fullname, p_file_name_buffer,
                                   *p_file_size_buffer);
                   sftp_quit();
@@ -1966,7 +1971,7 @@ main(int argc, char *argv[])
                   {
                      trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
                                   "Created hardlink from `%s' to `%s'",
-                                  remote_filename, db.hardlinks[k]);
+                                  remote_filename, name);
                   }
                   if ((created_path != NULL) && (created_path[0] != '\0'))
                   {
@@ -1980,17 +1985,33 @@ main(int argc, char *argv[])
 
          if (db.no_of_rsymlinks > 0)
          {
-            int k;
+            int  k;
+            char expanded_from[MAX_PATH_LENGTH + 1],
+                 to_name[MAX_PATH_LENGTH + 1],
+                 *p_from;
+
+            if (db.from_symlink == NULL)
+            {
+               p_from = remote_filename;
+            }
+            else
+            {
+               expand_link_name(remote_filename, db.from_symlink,
+                                expanded_from, MAX_PATH_LENGTH);
+               p_from = expanded_from;
+            }
 
             for (k = 0; k < db.no_of_rsymlinks; k++)
             {
-               if ((status = sftp_symlink(remote_filename, db.symlinks[k],
+               expand_link_name(remote_filename, db.symlinks[k], to_name,
+                                MAX_PATH_LENGTH);
+               if ((status = sftp_symlink(p_from, to_name,
                                           (db.special_flag & CREATE_TARGET_DIR) ? YES : NO,
                                           db.dir_mode, created_path)) != SUCCESS)
                {
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                             "Failed to create a symlink from `%s' to `%s' (%d)",
-                            remote_filename, db.symlinks[k], status);
+                            p_from, to_name, status);
                   rm_dupcheck_crc(fullname, p_file_name_buffer,
                                   *p_file_size_buffer);
                   sftp_quit();
@@ -2002,7 +2023,7 @@ main(int argc, char *argv[])
                   {
                      trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
                                   "Created symlink from `%s' to `%s'",
-                                  remote_filename, db.symlinks[k]);
+                                  p_from, to_name);
                   }
                   if ((created_path != NULL) && (created_path[0] != '\0'))
                   {
@@ -2451,6 +2472,57 @@ try_again_unlink:
 
    exitflag = 0;
    exit(exit_status);
+}
+
+
+/*+++++++++++++++++++++++++ expand_link_name() ++++++++++++++++++++++++++*/
+static void
+expand_link_name(char *from, char *to, char *new_name, int max_new_name_length)
+{
+   int  length = 0;
+   char *p_from = from,
+        *p_new_name = new_name,
+        *ptr = to;
+
+   while ((*ptr != '\0') && (length < max_new_name_length))
+   {
+      if ((*ptr == '%') && (*(ptr + 1) == 's'))
+      {
+         char *p_end = from,
+              *p_dir_seperator = NULL;
+
+         ptr += 2;
+
+         /* Ensure we just insert the file name. */
+         while (*p_end != '\0')
+         {
+            if (*p_end == '/')
+            {
+               p_dir_seperator = p_end;
+            }
+            p_end++;
+         }
+         if (p_dir_seperator != NULL)
+         {
+            p_from = p_dir_seperator + 1;
+         }
+         while ((*p_from != '\0') && (length < max_new_name_length))
+         {
+            *p_new_name = *p_from;
+            p_new_name++; p_from++;
+            length++;
+         }
+      }
+      else
+      {
+         *p_new_name = *ptr;
+         ptr++; p_new_name++;
+         length++;
+      }
+   }
+   *p_new_name = '\0';
+
+   return;
 }
 
 

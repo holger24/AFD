@@ -1925,6 +1925,8 @@ section. Valid options can be taken from the following table:
 <tr>
    <td><a name="hardlink">hardlink &lt;newname_1&gt;[ &lt;newname_n&gt;] </a></td>
    <td>Creates a hardlink with name &lt;newname&gt; of each file distributed.
+      &lt;newname&gt; may contain a %s to insert the filename that was just
+      transmitted.
    </td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -1938,8 +1940,10 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
-   <td><a name="symlink">symlink &lt;newname_1&gt;[ &lt;newname_n&gt;] </a></td>
+   <td><a name="symlink">symlink [--from=&lt;from_name&gt;] &lt;newname_1&gt;[ &lt;newname_n&gt;] </a></td>
    <td>Creates a symlink with name &lt;newname&gt; of each file distributed.
+      &lt;newname&gt; and &lt;from_name&gt; may contain a %s to insert the
+      filename that was just transmitted.
    </td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -3528,7 +3532,7 @@ section. Valid options can be taken from the following table:
    <td width="90%"><address><small>
    Copyright &copy; 1997 - 2025 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 23.08.2025
+   Last updated: 02.09.2025
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
