@@ -1643,7 +1643,7 @@ sftp_set_file_time(char *filename, time_t mtime, time_t atime)
    else
    {
       msg[4] = SSH_FXP_SETSTAT;
-      if (scd.cwd == NULL)
+      if ((scd.cwd == NULL) || (filename[0] == '/'))
       {
          status = strlen(filename);
          set_xfer_str(&msg[4 + 1 + 4], filename, status);
@@ -1802,7 +1802,7 @@ retry_open_file:
    msg[4] = SSH_FXP_OPEN;
    scd.request_id++;
    set_xfer_uint(&msg[4 + 1], scd.request_id);
-   if (scd.cwd == NULL)
+   if ((scd.cwd == NULL) || (filename[0] == '/'))
    {
       status = strlen(filename);
       set_xfer_str(&msg[4 + 1 + 4], filename, status);
@@ -2188,7 +2188,7 @@ sftp_open_dir(char *dirname)
    msg[4] = SSH_FXP_OPENDIR;
    scd.request_id++;
    set_xfer_uint(&msg[4 + 1], scd.request_id);
-   if (scd.cwd == NULL)
+   if ((scd.cwd == NULL) || (dirname[0] == '/'))
    {
       if (dirname[0] == '\0')
       {
@@ -2518,7 +2518,7 @@ sftp_mkdir(char *directory, mode_t dir_mode)
    msg[4] = SSH_FXP_MKDIR;
    scd.request_id++;
    set_xfer_uint(&msg[4 + 1], scd.request_id);
-   if (scd.cwd == NULL)
+   if ((scd.cwd == NULL) || (directory[0] == '/'))
    {
       status = strlen(directory);
       set_xfer_str(&msg[4 + 1 + 4], directory, status);
@@ -2756,24 +2756,54 @@ retry_move:
    {
       char fullname[MAX_PATH_LENGTH];
 
-      from_length = snprintf(fullname, MAX_PATH_LENGTH, "%s/%s", scd.cwd, from);
-      set_xfer_str(&msg[pos], fullname, from_length);
-#ifdef WITH_TRACE
-      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      if (from[0] == '/')
       {
-         length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
-                            " from=%s", fullname);
-      }
-#endif
-      to_length = snprintf(fullname, MAX_PATH_LENGTH, "%s/%s", scd.cwd, to);
-      set_xfer_str(&msg[pos + 4 + from_length], fullname, to_length);
+         from_length = strlen(from);
+         set_xfer_str(&msg[pos], from, from_length);
 #ifdef WITH_TRACE
-      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
-      {
-         length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
-                            " to=%s", fullname);
-      }
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                               " from=%s", from);
+         }
 #endif
+      }
+      else
+      {
+         from_length = snprintf(fullname, MAX_PATH_LENGTH, "%s/%s", scd.cwd, from);
+         set_xfer_str(&msg[pos], fullname, from_length);
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                               " from=%s", fullname);
+         }
+#endif
+      }
+      if (to[0] == '/')
+      {
+         to_length = strlen(to);
+         set_xfer_str(&msg[pos + 4 + from_length], to, to_length);
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                               " to=%s", to);
+         }
+#endif
+      }
+      else
+      {
+         to_length = snprintf(fullname, MAX_PATH_LENGTH, "%s/%s", scd.cwd, to);
+         set_xfer_str(&msg[pos + 4 + from_length], fullname, to_length);
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                               " to=%s", fullname);
+         }
+#endif
+      }
    }
    pos += 4 + from_length + 4 + to_length;
    if (scd.version > 5)
@@ -3953,16 +3983,31 @@ retry_hardlink:
       {
          char fullname[MAX_PATH_LENGTH];
 
-         from_length = snprintf(fullname, MAX_PATH_LENGTH, "%s/%s",
-                                scd.cwd, from);
-         set_xfer_str(&msg[pos], fullname, from_length);
-#ifdef WITH_TRACE
-         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         if (from[0] == '/')
          {
-            length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
-                               " from=%s", fullname);
-         }
+            from_length = strlen(from);
+            set_xfer_str(&msg[pos], from, from_length);
+#ifdef WITH_TRACE
+            if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+            {
+               length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                                  " from=%s", from);
+            }
 #endif
+         }
+         else
+         {
+            from_length = snprintf(fullname, MAX_PATH_LENGTH, "%s/%s",
+                                   scd.cwd, from);
+            set_xfer_str(&msg[pos], fullname, from_length);
+#ifdef WITH_TRACE
+            if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+            {
+               length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                                  " from=%s", fullname);
+            }
+#endif
+         }
          if (to[0] == '/')
          {
             to_length = strlen(to);
@@ -4181,16 +4226,31 @@ retry_symlink:
       {
          char fullname[MAX_PATH_LENGTH];
 
-         from_length = snprintf(fullname, MAX_PATH_LENGTH, "%s/%s",
-                                scd.cwd, from);
-         set_xfer_str(&msg[pos], fullname, from_length);
-#ifdef WITH_TRACE
-         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         if ((from[0] == '/') || ((from[0] == '.') && (from[1] == '.')))
          {
-            length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
-                               " from=%s", fullname);
-         }
+            from_length = strlen(from);
+            set_xfer_str(&msg[pos], from, from_length);
+#ifdef WITH_TRACE
+            if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+            {
+               length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                                  " from=%s", from);
+            }
 #endif
+         }
+         else
+         {
+            from_length = snprintf(fullname, MAX_PATH_LENGTH, "%s/%s",
+                                   scd.cwd, from);
+            set_xfer_str(&msg[pos], fullname, from_length);
+#ifdef WITH_TRACE
+            if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+            {
+               length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                                  " from=%s", fullname);
+            }
+#endif
+         }
          if (to[0] == '/')
          {
             to_length = strlen(to);
@@ -4415,7 +4475,7 @@ sftp_chmod(char *filename, mode_t mode)
    else
    {
       msg[4] = SSH_FXP_SETSTAT;
-      if (scd.cwd == NULL)
+      if ((scd.cwd == NULL) || (filename[0] == '/'))
       {
          status = strlen(filename);
          set_xfer_str(&msg[4 + 1 + 4], filename, status);
