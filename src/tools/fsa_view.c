@@ -1,6 +1,6 @@
 /*
  *  fsa_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1478,7 +1478,8 @@ main(int argc, char *argv[])
                    (fsa[j].job_status[i].unique_name[3] == 5) ||
                    (fsa[j].job_status[i].unique_name[3] == 6))
                {
-                  (void)fprintf(stdout, "|<%d><%d><%d><%d><%d>",
+                  (void)fprintf(stdout,
+                                "Unique name          : <%d><%d><%d><%d><%d>\n",
                                 (int)fsa[j].job_status[i].unique_name[0],
                                 (int)fsa[j].job_status[i].unique_name[1],
                                 (int)fsa[j].job_status[i].unique_name[2],
