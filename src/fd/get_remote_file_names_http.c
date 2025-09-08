@@ -4001,7 +4001,10 @@ check_list(char   *file,
           (fra->ignore_file_time == 0))
       {
          *files_to_retrieve += 1;
-         *file_size_to_retrieve += file_size;
+         if (file_size != -1)
+         {
+            *file_size_to_retrieve += file_size;
+         }
          incremented = YES;
          no_of_listed_files++;
       }
@@ -4018,7 +4021,10 @@ check_list(char   *file,
               (fra->ignore_file_time > diff_time)))
          {
             *files_to_retrieve += 1;
-            *file_size_to_retrieve += file_size;
+            if (file_size != -1)
+            {
+               *file_size_to_retrieve += file_size;
+            }
             incremented = YES;
             no_of_listed_files++;
          }
@@ -4053,7 +4059,10 @@ check_list(char   *file,
          if (incremented == YES)
          {
             *files_to_retrieve -= 1;
-            *file_size_to_retrieve -= rl[no_of_listed_files - 1].size;
+            if (rl[no_of_listed_files - 1].size != -1)
+            {
+               *file_size_to_retrieve -= rl[no_of_listed_files - 1].size;
+            }
          }
          *more_files_in_list = YES;
       }
