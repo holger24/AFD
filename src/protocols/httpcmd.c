@@ -2893,15 +2893,38 @@ http_read(char *block, int blocksize)
             if (errno == ECONNRESET)
             {
                timeout_flag = CON_RESET;
+               trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_read", NULL,
+                         _("SSL_read() error %d"), status);
+               return(INCORRECT);
+            }
+            if (bytes_read == 0)
+            {
+               /*
+                * In case we read in a loop from a file and we do
+                * not know its end, it is not an error.
+                */
+               status = SSL_ERROR_NONE;
+            }
+            else
+            {
+               trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_read", NULL,
+                         _("SSL_read() error %d"), status);
+               return(INCORRECT);
             }
          }
          else if (status == SSL_ERROR_SSL)
               {
                  timeout_flag = CON_RESET;
+                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_read", NULL,
+                           _("SSL_read() error %d"), status);
+                 return(INCORRECT);
               }
-         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_read", NULL,
-                   _("SSL_read() error %d"), status);
-         return(INCORRECT);
+              else
+              {
+                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_read", NULL,
+                           _("SSL_read() error %d"), status);
+                 return(INCORRECT);
+              }
       }
 # ifdef WITH_TRACE
       trace_log(NULL, 0, BIN_R_TRACE, block, bytes_read, NULL);
@@ -2983,15 +3006,42 @@ http_read(char *block, int blocksize)
                        if (tmp_errno == ECONNRESET)
                        {
                           timeout_flag = CON_RESET;
+                          trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                    "http_read", NULL,
+                                    _("SSL_read() error %d"), status);
+                          return(INCORRECT);
+                       }
+                       if (bytes_read == 0)
+                       {
+                          /*
+                           * In case we read in a loop from a file and we do
+                           * not know its end, it is not an error.
+                           */
+                          status = SSL_ERROR_NONE;
+                       }
+                       else
+                       {
+                          trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                    "http_read", NULL,
+                                    _("SSL_read() error %d"), status);
+                          return(INCORRECT);
                        }
                     }
                     else if (status == SSL_ERROR_SSL)
                          {
                             timeout_flag = CON_RESET;
+                            trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                      "http_read", NULL,
+                                      _("SSL_read() error %d"), status);
+                            return(INCORRECT);
                          }
-                    trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_read", NULL,
-                              _("SSL_read() error %d"), status);
-                    return(INCORRECT);
+                         else
+                         {
+                            trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                      "http_read", NULL,
+                                      _("SSL_read() error %d"), status);
+                            return(INCORRECT);
+                         }
                  }
               }
 #endif

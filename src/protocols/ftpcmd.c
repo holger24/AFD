@@ -4928,11 +4928,45 @@ ftp_read(char *block, int blocksize)
    {
       if ((bytes_read = SSL_read(ssl_data, block, blocksize)) <= 0)
       {
-         (void)ssl_error_msg("SSL_read", ssl_con, NULL, bytes_read, msg_str);
-         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ftp_read", NULL,
-                   _("SSL_read() error"));
+         int status;
 
-         return(INCORRECT);
+         (void)ssl_error_msg("SSL_read", ssl_con, &status, bytes_read, msg_str);
+         if (status == SSL_ERROR_SYSCALL)
+         {
+            if (errno == ECONNRESET)
+            {
+               timeout_flag = CON_RESET;
+               trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ftp_read", NULL,
+                         ("SSL_read() error %d"), status);
+               return(INCORRECT);
+            }
+            if (bytes_read == 0)
+            {
+               /*
+                * In case we read in a loop from a file and we do
+                * not know its end, it is not an error.
+                */
+               status = SSL_ERROR_NONE;
+            }
+            else
+            {
+               trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ftp_read", NULL,
+                         _("SSL_read() error %d"), status);
+               return(INCORRECT);
+            }
+         }
+         else if (status == SSL_ERROR_SSL)
+              {
+                 timeout_flag = CON_RESET;
+                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ftp_read", NULL,
+                           _("SSL_read() error %d"), status);
+              }
+              else
+              {
+                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ftp_read", NULL,
+                           _("SSL_read() error %d"), status);
+                 return(INCORRECT);
+              }
       }
 # ifdef WITH_TRACE
       trace_log(NULL, 0, BIN_R_TRACE, block, bytes_read, NULL);
@@ -4982,11 +5016,49 @@ ftp_read(char *block, int blocksize)
               {
                  if ((bytes_read = SSL_read(ssl_data, block, blocksize)) <= 0)
                  {
-                    (void)ssl_error_msg("SSL_read", ssl_con, NULL,
+                    (void)ssl_error_msg("SSL_read", ssl_con, &status,
                                   bytes_read, msg_str);
-                    trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ftp_read", NULL,
-                              _("SSL_read() error %d"), status);
-                    return(INCORRECT);
+                    if (status == SSL_ERROR_SYSCALL)
+                    {
+                       if (errno == ECONNRESET)
+                       {
+                          timeout_flag = CON_RESET;
+                          trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                    "ftp_read", NULL,
+                                    _("SSL_read() error %d"), status);
+                          return(INCORRECT);
+                       }
+                       if (bytes_read == 0)
+                       {
+                          /*
+                           * In case we read in a loop from a file and we do
+                           * not know its end, it is not an error.
+                           */
+                          status = SSL_ERROR_NONE;
+                       }
+                       else
+                       {
+                          trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                    "ftp_read", NULL,
+                                    _("SSL_read() error %d"), status);
+                          return(INCORRECT);
+                       }
+                    }
+                    else if (status == SSL_ERROR_SSL)
+                         {
+                            timeout_flag = CON_RESET;
+                            trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                      "ftp_read", NULL,
+                                      _("SSL_read() error %d"), status);
+                            return(INCORRECT);
+                         }
+                         else
+                         {
+                            trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                      "ftp_read", NULL,
+                                      _("SSL_read() error %d"), status);
+                            return(INCORRECT);
+                         }
                  }
               }
 #endif
