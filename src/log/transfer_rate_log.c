@@ -1,6 +1,6 @@
 /*
  *  transfer_rate_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2017 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2017 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -378,7 +378,7 @@ main(int argc, char *argv[])
                }
                if (gotcha == NO)
                {
-                  for (j = 0; j < i; j++)
+                  for (j = 0; ((j < old_no_of_hosts) && (j < i)); j++)
                   {
                      if (new_pr[i].host_id == pr[j].host_id)
                      {
