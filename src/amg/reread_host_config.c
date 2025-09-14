@@ -1,7 +1,7 @@
 /*
  *  reread_host_config.c - Part of AFD, an automatic file distribution
  *                         program.
- *  Copyright (c) 1998 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -161,7 +161,7 @@ reread_host_config(time_t           *hc_old_time,
       char             *host_list_put_back = NULL,
                        *p_host_list_put_back;
 #endif
-      struct host_list *dummy_hl;
+      struct host_list *dummy_hl = NULL;
 
       if (old_no_of_hosts == NULL)
       {
@@ -195,6 +195,10 @@ reread_host_config(time_t           *hc_old_time,
       {
          *old_size = no_of_hosts * sizeof(struct host_list);
 
+         if (*old_hl != NULL)
+         {
+            free(*old_hl);
+         }
          if ((*old_hl = malloc(*old_size)) == NULL)
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -211,6 +215,7 @@ reread_host_config(time_t           *hc_old_time,
          system_log(DEBUG_SIGN, __FILE__, __LINE__,
                     "Hmm, no old HOST_CONFIG data!");
          *old_no_of_hosts = 0;
+         *old_hl = NULL;
       }
 
       /*
@@ -698,7 +703,7 @@ reread_host_config(time_t           *hc_old_time,
 
       (void)fsa_detach(YES);
 
-      if (old_hl != NULL)
+      if ((old_hl == &dummy_hl) && (old_hl != NULL))
       {
          free(*old_hl);
       }

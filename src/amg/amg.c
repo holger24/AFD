@@ -1,6 +1,6 @@
 /*
  *  amg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2024 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1636,6 +1636,10 @@ main(int argc, char *argv[])
                                                                     uc_reply_fp,
                                                                     ret_pid,
                                                                     old_hl);
+                                      if (old_hl != NULL)
+                                      {
+                                         free(old_hl);
+                                      }
                                       event_log(0L, EC_GLOB, ET_MAN, EA_REREAD_DIR_CONFIG,
                                                 "with %d warnings", dc_warn_counter);
                                       if ((old_using_groups == YES) &&
