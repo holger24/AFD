@@ -1,6 +1,6 @@
 /*
  *  eval_host_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -222,8 +222,13 @@ eval_host_config(int              *hosts_found,
       if ((host_counter % HOST_BUF_SIZE) == 0)
       {
          /* Calculate new size for host list. */
+#ifdef CHECK_HOST_REMOVED_BUT_STILL_IN_DIR_CONFIG
+         new_size = (((host_counter + 1) / HOST_BUF_SIZE) + 1) *
+                    HOST_BUF_SIZE * sizeof(struct host_list);
+#else
          new_size = ((host_counter / HOST_BUF_SIZE) + 1) *
                     HOST_BUF_SIZE * sizeof(struct host_list);
+#endif
 
          /* Now increase the space. */
          if ((*hl = realloc(*hl, new_size)) == NULL)

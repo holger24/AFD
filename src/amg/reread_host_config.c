@@ -69,8 +69,6 @@ DESCR__S_M3
  */
 DESCR__E_M3
 
-#define CHECK_HOST_REMOVED_BUT_STILL_IN_DIR_CONFIG 1
-
 #include <string.h>              /* strerror(), memset(), strcmp(),      */
                                  /* memcpy(), memmove()                  */
 #include <stdlib.h>              /* malloc(), free()                     */
@@ -271,7 +269,7 @@ reread_host_config(time_t           *hc_old_time,
                {
                   if (fsa[j].special_flag & HOST_IN_DIR_CONFIG)
                   {
-                     if (((new_no_of_hosts + 1) % HOST_BUF_SIZE) == 0)
+                     if ((new_no_of_hosts % HOST_BUF_SIZE) == 0)
                      {
                         size_t new_size;
 

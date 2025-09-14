@@ -600,8 +600,13 @@ main(int argc, char *argv[])
           */
          if (fsa_attach_passive(YES, AMG) == SUCCESS)
          {
+#ifdef CHECK_HOST_REMOVED_BUT_STILL_IN_DIR_CONFIG
+            size_t new_size = (((no_of_hosts + 1) / HOST_BUF_SIZE) + 1) *
+                              HOST_BUF_SIZE * sizeof(struct host_list);
+#else
             size_t new_size = ((no_of_hosts / HOST_BUF_SIZE) + 1) *
                               HOST_BUF_SIZE * sizeof(struct host_list);
+#endif
 
             if ((hl = realloc(hl, new_size)) == NULL)
             {

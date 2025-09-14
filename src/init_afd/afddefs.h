@@ -51,6 +51,16 @@
  */
 /* #define _WITH_EXTRA_CHECK 1 */
 
+/*
+ * It is possible to remove an entry from HOST_CONFIG even if the
+ * that alias is still in FSA. Setting below flag will guard against
+ * this by putting the host back into the HOST_CONFIG. Disadvantage
+ * of this is that one must now use two separate commands to remove
+ * an alias from AFD. First remove it from DIR_CONFIG and then
+ * from HOST_CONFIG.
+ */
+#define CHECK_HOST_REMOVED_BUT_STILL_IN_DIR_CONFIG 1
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 # include "ports.h"
