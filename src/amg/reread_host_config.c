@@ -292,13 +292,19 @@ reread_host_config(time_t           *hc_old_time,
                                 (new_no_of_hosts - i) * sizeof(struct host_list));
                         memcpy(&hl[i], (&(*old_hl)[i]), sizeof(struct host_list));
                      }
-                     else
-                     {
-                        /* Put it to the end. */
-                        memcpy(&hl[new_no_of_hosts], (&(*old_hl)[i]),
-                               sizeof(struct host_list));
-                        host_order_changed = YES;
-                     }
+                     else if (i == new_no_of_hosts)
+                          {
+                             /* Put it to the end. */
+                             memcpy(&hl[new_no_of_hosts], (&(*old_hl)[i]),
+                                    sizeof(struct host_list));
+                             host_order_changed = YES;
+                          }
+                          else
+                          {
+                             system_log(WARN_SIGN, __FILE__, __LINE__,
+                                        "This should not happen: i (%d) > new_no_of_hosts (%d)",
+                                        i, new_no_of_hosts);
+                          }
                      mark_list[i] = YES;
                      new_no_of_hosts++;
 
