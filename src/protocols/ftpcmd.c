@@ -1031,7 +1031,7 @@ ftp_connect(char *hostname, int port)
 
          length = strlen(msg_str);
          (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
-                        " %s", ssl_connection_details);
+                        "%s", ssl_connection_details);
       }
       else
       {
@@ -4496,8 +4496,31 @@ encrypt_data_connection(int fd)
    }
    else
    {
-      X509 *x509_ssl_con,
-           *x509_ssl_data;
+      X509             *x509_ssl_con,
+                       *x509_ssl_data;
+# ifdef WITH_TRACE
+      int              length;
+      const char       *ssl_version;
+      const SSL_CIPHER *ssl_cipher;
+
+      ssl_version = SSL_get_cipher_version(ssl_data);
+      length = strlen(msg_str);
+      if ((ssl_cipher = SSL_get_current_cipher(ssl_data)) != NULL)
+      {
+         int ssl_bits;
+
+         SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
+         (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+                        "  <%s, cipher %s, %d bits>",
+                        ssl_version, SSL_CIPHER_get_name(ssl_cipher),
+                        ssl_bits);
+      }
+      else
+      {
+         (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+                        "  <%s, cipher ?, ? bits>", ssl_version);
+      }
+# endif
 
       /* Get server certifcates for ctrl and data connection. */
       x509_ssl_con = SSL_get_peer_certificate(ssl_con);
