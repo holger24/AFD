@@ -1,7 +1,7 @@
 /*
  *  eval_dir_options.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 2000 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ DESCR__S_M3
  **        important dir
  **        time * * * * *
  **        timezone <zone name>
+ **        remove action mv <path>
  **        keep connected <value in seconds>
  **        create source dir[ <mode>]
  **        do not create source dir
@@ -116,6 +117,7 @@ DESCR__S_M3
  **   17.01.2024 H.Kiehl Extended 'store retrieve list' with 'not exact'.
  **   30.03.2024 H.Kiehl Added "get dir list[ href]" option.
  **   12.12.2024 H.Kiehl Added "retrieve zero size" option.
+ **   06.09.2025 H.Kiehl Added "remove action" option.
  **
  */
 DESCR__E_M3
@@ -194,6 +196,9 @@ extern struct dir_data *dd;
 #define URL_WITH_INDEX_FILE_NAME_FLAG    512
 #define GET_DIR_LIST_FLAG                1024
 #define DIR_ZERO_SIZE_FLAG               2048
+#ifdef NEW_FRA
+# define REMOVE_ACTION_FLAG               4096
+#endif
 
 
 /*########################## eval_dir_options() #########################*/
@@ -1339,6 +1344,61 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
                  ptr++;
               }
            }
+#ifdef NEW_FRA
+      else if (((used2 & REMOVE_ACTION_FLAG) == 0) &&
+               (strncmp(ptr, REMOVE_ACTION_ID, REMOVE_ACTION_ID_LENGTH) == 0))
+           {
+              int length = 0;
+
+              used2 |= REMOVE_ACTION_FLAG;
+              ptr += REMOVE_ACTION_ID_LENGTH;
+              while ((*ptr == ' ') || (*ptr == '\t'))
+              {
+                 ptr++;
+              }
+              while ((length < MAX_REMOVE_ACTION_LENGTH) && (*ptr != '\n') &&
+                     (*ptr != '\0'))
+              {
+                 dd[dir_pos].remove_action[length] = *ptr;
+                 ptr++; length++;
+              }
+              if ((length > 0) && (length != MAX_REMOVE_ACTION_LENGTH))
+              {
+                 dd[dir_pos].remove_action[length] = '\0';
+                 if ((dd[dir_pos].remove_action[0] == 'm') &&
+                     (dd[dir_pos].remove_action[1] == 'v') &&
+                     ((dd[dir_pos].remove_action[2] == ' ') ||
+                      (dd[dir_pos].remove_action[2] == '\t')) &&
+                     (dd[dir_pos].remove_action[3] != '\0'))
+                 {
+                    dd[dir_pos].remove = ACTION_MOVE;
+                 }
+                 else
+                 {
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__,
+                                  cmd_fp, NULL,
+                                  "Unknown directory option %s ==>%s<==",
+                                  REMOVE_ACTION_ID,
+                                  dd[dir_pos].remove_action);
+                    problems_found++;
+                    dd[dir_pos].remove_action[0] = '\0';
+                 }
+              }
+              else
+              {
+                 dd[dir_pos].remove_action[0] = '\0';
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "For directory option `%s' for directory `%s', the value is to long. May only be %d bytes long.",
+                               REMOVE_ACTION_ID, dd[dir_pos].dir_name,
+                               MAX_REMOVE_ACTION_LENGTH);
+                 problems_found++;
+              }
+              while ((*ptr != '\n') && (*ptr != '\0'))
+              {
+                 ptr++;
+              }
+           }
+#endif /* NEW_FRA */
       else if (((used2 & TIMEZONE_FLAG) == 0) &&
                (strncmp(ptr, TIMEZONE_ID, TIMEZONE_ID_LENGTH) == 0))
            {

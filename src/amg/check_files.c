@@ -639,7 +639,7 @@ check_files(struct directory_entry *p_de,
                      {
                         if ((fra[p_de->fra_pos].fsa_pos != -1) ||
                             (fra[p_de->fra_pos].stupid_mode == YES) ||
-                            (fra[p_de->fra_pos].remove == YES) ||
+                            (fra[p_de->fra_pos].remove != NO) ||
                             (check_list(p_de, p_dir->d_name, &stat_buf) > -1))
                         {
                            if ((fra[p_de->fra_pos].end_character == -1) ||
@@ -705,7 +705,7 @@ check_files(struct directory_entry *p_de,
                               {
                                  if ((fra[p_de->fra_pos].fsa_pos != -1) ||
                                      (fra[p_de->fra_pos].stupid_mode == YES) ||
-                                     (fra[p_de->fra_pos].remove == YES) ||
+                                     (fra[p_de->fra_pos].remove != NO) ||
                                      (check_list(p_de, p_dir->d_name, &stat_buf) > -1))
                                  {
                                     if ((fra[p_de->fra_pos].end_character == -1) ||
@@ -903,7 +903,7 @@ check_files(struct directory_entry *p_de,
             {
                if (fra[p_de->fra_pos].dir_flag & ALL_DISABLED)
                {
-                  if ((fra[p_de->fra_pos].remove == YES) ||
+                  if ((fra[p_de->fra_pos].remove != NO) ||
                       (fra[p_de->fra_pos].fsa_pos != -1))
                   {
                      int gotcha;
@@ -1128,7 +1128,7 @@ check_files(struct directory_entry *p_de,
 #endif
                      if ((fra[p_de->fra_pos].fsa_pos != -1) ||
                          (fra[p_de->fra_pos].stupid_mode == YES) ||
-                         (fra[p_de->fra_pos].remove == YES) ||
+                         (fra[p_de->fra_pos].remove != NO) ||
                          ((rl_pos = check_list(p_de, p_dir->d_name, &stat_buf)) > -1))
                      {
                         if ((fra[p_de->fra_pos].end_character == -1) ||
@@ -1248,7 +1248,7 @@ check_files(struct directory_entry *p_de,
                                           "check_files() [%s %d]: `%s' -> `%s'",
                                           caller, line, fullname, tmp_file_dir);
 #endif
-                           if ((fra[p_de->fra_pos].remove == YES) ||
+                           if ((fra[p_de->fra_pos].remove != NO) ||
                                (count_files == NO) ||  /* Paused directory. */
                                (fra[p_de->fra_pos].protocol != LOC))
                            {

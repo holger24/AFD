@@ -1382,7 +1382,8 @@ main(int argc, char *argv[])
                      }
                      else /* status == SUCCESS */
                      {
-                        int delete_failed = NO;
+                        int delete_failed = NO,
+                            ret;
 
                         if (fsa->debug > NORMAL_MODE)
                         {
@@ -1714,11 +1715,13 @@ main(int argc, char *argv[])
                            {
                               if (fra->stupid_mode != YES)
                               {
-                                 trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                 trans_log(WARN_SIGN, __FILE__, __LINE__,
+                                           NULL, msg_str,
                                            "Failed to delete remote file %s in %s (%d).",
                                            tmp_rl.file_name, fra->dir_alias,
                                            status);
                                  delete_failed = NEITHER;
+                                 ret = DELETE_REMOTE_ERROR;
                               }
                               else
                               {
@@ -1726,7 +1729,8 @@ main(int argc, char *argv[])
                                  /* already retrieved we must exit. */
                                  /* Otherwise we are in a constant  */
                                  /* loop fetching the same files!   */
-                                 trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                 trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                           NULL, msg_str,
                                            "Failed to delete remote file %s in %s (%d).",
                                            tmp_rl.file_name, fra->dir_alias,
                                            status);
@@ -1737,12 +1741,62 @@ main(int argc, char *argv[])
                            {
                               if (fsa->debug > NORMAL_MODE)
                               {
-                                 trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
+                                 trans_db_log(INFO_SIGN, __FILE__, __LINE__,
+                                              msg_str,
                                               "Deleted remote file %s.",
                                               tmp_rl.file_name);
                               }
                            }
                         }
+#ifdef NEW_FRA
+                        else if (fra->remove == ACTION_MOVE)
+                             {
+                                if ((status = ftp_move(tmp_rl.file_name,
+                                                       fra->remove_action + 3,
+                                                       fsa->protocol_options & FTP_FAST_MOVE,
+                                                       (str_mode[0] == '\0') ? NO : YES,
+                                                       str_mode,
+                                                       created_path)) != SUCCESS)
+                                {
+                                   if (fra->stupid_mode != YES)
+                                   {
+                                      trans_log(WARN_SIGN, __FILE__, __LINE__,
+                                                NULL, msg_str,
+                                                "Failed to move remote file `%s' to `%s' in %s (%d).",
+                                                tmp_rl.file_name,
+                                                fra->remove_action + 3,
+                                                fra->dir_alias, status);
+                                      delete_failed = NEITHER;
+                                   }
+                                   else
+                                   {
+                                      /* When we do not remember what we */
+                                      /* already retrieved we must exit. */
+                                      /* Otherwise we are in a constant  */
+                                      /* loop fetching the same files!   */
+                                      trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                                NULL, msg_str,
+                                                "Failed to move remote file `%s' to `%s' in %s (%d).",
+                                                tmp_rl.file_name,
+                                                fra->remove_action + 3,
+                                                fra->dir_alias, status);
+                                      ret = MOVE_REMOTE_ERROR;
+                                      delete_failed = YES;
+                                   }
+                                }
+                                else
+                                {
+                                   if (fsa->debug > NORMAL_MODE)
+                                   {
+                                      trans_db_log(INFO_SIGN, __FILE__, __LINE__,
+                                                   msg_str,
+                                                   "Moved remote file `%s' to `%s'",
+                                                   tmp_rl.file_name,
+                                                   fra->remove_action + 3);
+                                   }
+                                }
+                             }
+#endif /* NEW_FRA */
 
                         if (gsf_check_fsa((struct job *)&db) != NEITHER)
                         {
@@ -1997,7 +2051,7 @@ main(int argc, char *argv[])
                                         files_to_retrieve,
                                         file_size_to_retrieve,
                                         (struct job *)&db);
-                           exit(eval_timeout(DELETE_REMOTE_ERROR));
+                           exit(eval_timeout(ret));
                         }
                      } /* status != 550 */
 

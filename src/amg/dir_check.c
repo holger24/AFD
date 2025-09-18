@@ -1164,7 +1164,7 @@ main(int argc, char *argv[])
                              valid_events -= iwl[i].no_of_files;
                              if ((handle_dir(iwl[i].de_pos, NULL, NULL, NULL,
                                              &iwl[i], NULL) == YES) &&
-                                 ((fra[de[iwl[i].de_pos].fra_pos].remove == YES) ||
+                                 ((fra[de[iwl[i].de_pos].fra_pos].remove != NO) ||
                                   (fra[de[iwl[i].de_pos].fra_pos].stupid_mode != YES)))
                              {
                                 /* Ensure that this directory is not already */
@@ -1508,7 +1508,7 @@ main(int argc, char *argv[])
                                      NULL,
 # endif
                                      &pdf) == YES) &&
-                         ((fra[de[i].fra_pos].remove == YES) ||
+                         ((fra[de[i].fra_pos].remove != NO) ||
                           (fra[de[i].fra_pos].stupid_mode != YES)))
                      {
                         full_dir[fdc] = i;

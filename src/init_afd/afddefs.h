@@ -27,6 +27,7 @@
 #define DESCR__S_M3             /* Start for Subroutines Man Page.  */
 #define DESCR__E_M3             /* End for Subroutines Man Page.    */
 
+/* #define NEW_FRA */    /* Not finished. */
 /* #define NEW_PWB */    /* Nothing new yet! */
 
 #define WITH_TIMEZONE 1
@@ -1147,6 +1148,11 @@ typedef unsigned long       u_long_64;
 #define DO_NOT_PARALLELIZE_ID_LENGTH     (sizeof(DO_NOT_PARALLELIZE_ID) - 1)
 #define TIMEZONE_ID                      "timezone"
 #define TIMEZONE_ID_LENGTH               (sizeof(TIMEZONE_ID) - 1)
+#ifdef NEW_FRA
+# define ACTION_MOVE                      6
+# define REMOVE_ACTION_ID                 "remove action"
+# define REMOVE_ACTION_ID_LENGTH          (sizeof(REMOVE_ACTION_ID) - 1)
+#endif
 #define LS_DATA_FILENAME_ID              "ls data filename"
 #define LS_DATA_FILENAME_ID_LENGTH       (sizeof(LS_DATA_FILENAME_ID) - 1)
 #define LOCAL_REMOTE_DIR_ID              "local remote dir"
@@ -2391,6 +2397,9 @@ typedef unsigned long       u_long_64;
 #define LONG_LONG_NR                 2097152
 #define PID_T_NR                     4194304
 #define MAX_TIMEZONE_LENGTH_NR       8388608
+#ifdef NEW_FRA
+# define MAX_REMOVE_ACTION_LENGTH_NR 16777216
+#endif
 
 #define MAX_MSG_NAME_LENGTH_POS      0
 #define MAX_FILENAME_LENGTH_POS      1
@@ -2416,7 +2425,12 @@ typedef unsigned long       u_long_64;
 #define LONG_LONG_POS                21
 #define PID_T_POS                    22
 #define MAX_TIMEZONE_LENGTH_POS      23
-#define MAX_CHANGEABLE_VARS          1 + 24 /* First is used as flag*/
+#ifdef NEW_FRA
+# define MAX_CHANGEABLE_VARS          1 + 25 /* First is used as flag*/
+# define MAX_REMOVE_ACTION_LENGTH_POS 24
+#else
+# define MAX_CHANGEABLE_VARS          1 + 24 /* First is used as flag*/
+#endif
                                         /* which of the below values*/
                                         /* are set.                 */
                                         /* MAX_MSG_NAME_LENGTH      */
@@ -2442,6 +2456,9 @@ typedef unsigned long       u_long_64;
                                         /* SHORT                    */
                                         /* LONG_LONG                */
                                         /* MAX_TIMEZONE_LENGTH      */
+#ifdef NEW_FRA
+                                        /* MAX_REMOVE_ACTION_LENGTH */
+#endif
 
 /* Definitions for the different lock positions in the FSA. */
 #define LOCK_TFC                   3   /* Total file counter */
@@ -2969,11 +2986,19 @@ struct bd_time_entry
        };
 
 /* Structure holding all neccessary data for retrieving files. */
-#define CURRENT_FRA_VERSION      8
-#define MAX_FRA_TIME_ENTRIES     12
-#define MAX_FRA_TIME_ENTRIES_STR "MAX_FRA_TIME_ENTRIES"
-#define MAX_WAIT_FOR_LENGTH      64
-#define MAX_WAIT_FOR_LENGTH_STR  "MAX_WAIT_FOR_LENGTH"
+#ifdef NEW_FRA
+# define CURRENT_FRA_VERSION          9
+#else
+# define CURRENT_FRA_VERSION          8
+#endif
+#define MAX_FRA_TIME_ENTRIES         12
+#define MAX_FRA_TIME_ENTRIES_STR     "MAX_FRA_TIME_ENTRIES"
+#define MAX_WAIT_FOR_LENGTH          64
+#define MAX_WAIT_FOR_LENGTH_STR      "MAX_WAIT_FOR_LENGTH"
+#ifdef NEW_FRA
+# define MAX_REMOVE_ACTION_LENGTH     64
+# define MAX_REMOVE_ACTION_LENGTH_STR "MAX_REMOVE_ACTION_LENGTH"
+#endif
 struct fileretrieve_status
        {
           char          dir_alias[MAX_DIR_ALIAS_LENGTH + 1];
@@ -3003,6 +3028,13 @@ struct fileretrieve_status
                                             /* pattern before we take    */
                                             /* files from this directory.*/
           char          timezone[MAX_TIMEZONE_LENGTH + 1];
+#ifdef NEW_FRA
+          char          remove_action[MAX_REMOVE_ACTION_LENGTH];
+                                            /* Allows user to specify    */
+                                            /* another action then       */
+                                            /* delete when file was      */
+                                            /* retrieved.                */
+#endif
           struct bd_time_entry te[MAX_FRA_TIME_ENTRIES]; /* Time entry,  */
                                             /* when files are to be      */
                                             /* searched for.             */

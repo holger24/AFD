@@ -266,7 +266,7 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
             {
                if (fra[p_de->fra_pos].dir_flag & ALL_DISABLED)
                {
-                  if ((fra[p_de->fra_pos].remove == YES) ||
+                  if ((fra[p_de->fra_pos].remove != NO) ||
                       (fra[p_de->fra_pos].fsa_pos != -1))
                   {
                      int gotcha;
@@ -458,7 +458,7 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
 #endif
                      if ((fra[p_de->fra_pos].fsa_pos != -1) ||
                          (fra[p_de->fra_pos].stupid_mode == YES) ||
-                         (fra[p_de->fra_pos].remove == YES) ||
+                         (fra[p_de->fra_pos].remove != NO) ||
                          ((rl_pos = check_list(p_de,
                                                &p_iwl->file_name[current_fnl_pos],
                                                &stat_buf)) > -1))
@@ -581,7 +581,7 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                                           caller, line, fullname, tmp_file_dir);
 #endif
 
-                           if ((fra[p_de->fra_pos].remove == YES) ||
+                           if ((fra[p_de->fra_pos].remove != NO) ||
                                (fra[p_de->fra_pos].protocol != LOC))
                            {
                               if (p_de->flag & IN_SAME_FILESYSTEM)

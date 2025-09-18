@@ -434,6 +434,13 @@ struct dir_data
           char          timezone[MAX_TIMEZONE_LENGTH + 1];
                                             /* The name of the timezone  */
                                             /* is stored here when set.  */
+#ifdef NEW_FRA
+          char          remove_action[MAX_REMOVE_ACTION_LENGTH];
+                                            /* Allows user to specify    */
+                                            /* another action then       */
+                                            /* delete when file was      */
+                                            /* retrieved.                */
+#endif
           struct bd_time_entry te[MAX_FRA_TIME_ENTRIES];
           unsigned char no_of_time_entries;
           unsigned char remove;             /* Should the files be       */

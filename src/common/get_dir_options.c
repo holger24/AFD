@@ -1,6 +1,6 @@
 /*
  *  get_dir_options.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,6 +49,7 @@ DESCR__S_M3
  **   13.01.2024 H.Kiehl Extended 'store retrieve list' with 'once not exact'.
  **   17.01.2024 H.Kiehl Extended 'store retrieve list' with 'not exact'.
  **   02.04.2024 H.Kiehl Added 'get dir list' option.
+ **   06.09.2025 H.Kiehl Added 'remove action' option.
  **
  */
 DESCR__E_M3
@@ -959,6 +960,19 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                }
             } /* for (j = 0; j < fra[i].no_of_time_entries; j++) */
          }
+#ifdef NEW_FRA
+         if (fra[i].remove_action[0] != '\0')
+         {
+            (void)snprintf(d_o->aoptions[d_o->no_of_dir_options],
+                           MAX_OPTION_LENGTH,
+                           "%s %s", REMOVE_ACTION_ID, fra[i].remove_action);
+            d_o->no_of_dir_options++;
+            if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
+            {
+               goto done;
+            }
+         }
+#endif
 #ifdef WITH_DUP_CHECK
          if (fra[i].dup_check_flag != 0)
          {
