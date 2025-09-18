@@ -1,6 +1,6 @@
 /*
  *  sf_ftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2024 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -400,7 +400,6 @@ main(int argc, char *argv[])
 
    if (fsa->debug > NORMAL_MODE)
    {
-      msg_str[0] = '\0';
       trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
                    "Trying to do a %s connect to %s at port %d.",
                    db.mode_str, db.hostname, db.port);
