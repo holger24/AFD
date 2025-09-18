@@ -2717,6 +2717,12 @@ eval_message(char *message_name, struct job *p_db)
                     if (p_db->protocol & FTP_FLAG)
                     {
                        p_db->mode_flag = PASSIVE_MODE;
+
+                       /* passive */
+                       p_db->mode_str[0] = 'p'; p_db->mode_str[1] = 'a';
+                       p_db->mode_str[2] = 's'; p_db->mode_str[3] = 's';
+                       p_db->mode_str[4] = 'i'; p_db->mode_str[5] = 'v';
+                       p_db->mode_str[6] = 'e'; p_db->mode_str[7] = '\0';
                     }
                     while ((*ptr != '\n') && (*ptr != '\0'))
                     {
@@ -2735,6 +2741,12 @@ eval_message(char *message_name, struct job *p_db)
                     if (p_db->protocol & FTP_FLAG)
                     {
                        p_db->mode_flag = ACTIVE_MODE;
+
+                       /* active */
+                       p_db->mode_str[0] = 'a'; p_db->mode_str[1] = 'c';
+                       p_db->mode_str[2] = 't'; p_db->mode_str[3] = 'i';
+                       p_db->mode_str[4] = 'v'; p_db->mode_str[5] = 'e';
+                       p_db->mode_str[6] = '\0';
                     }
                     while ((*ptr != '\n') && (*ptr != '\0'))
                     {

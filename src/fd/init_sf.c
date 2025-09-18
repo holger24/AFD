@@ -299,10 +299,6 @@ init_sf(int argc, char *argv[], char *file_path, int protocol)
          db.mode_flag |= EXTENDED_MODE;
       }
    }
-   else
-   {
-      db.mode_str[0] = '\0';
-   }
    if (fsa->protocol_options & FTP_IGNORE_BIN)
    {
       db.transfer_mode = 'N';
