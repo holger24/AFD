@@ -1,6 +1,6 @@
 /*
  *  create_fra.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -423,7 +423,13 @@ create_fra(int no_of_dirs)
          (void)strcpy(fra[i].retrieve_work_dir, dd[i].retrieve_work_dir);
          (void)strcpy(fra[i].wait_for_filename, dd[i].wait_for_filename);
          (void)strcpy(fra[i].timezone, dd[i].timezone);
+#ifdef NEW_FRA
+         (void)strcpy(fra[i].remove_action, dd[i].remove_action);
+#endif
          fra[i].fsa_pos                = dd[i].fsa_pos;
+#ifdef NEW_FRA
+         fra[i].host_id                = dd[i].host_id;
+#endif
          fra[i].protocol               = dd[i].protocol;
          fra[i].priority               = dd[i].priority;
          fra[i].delete_files_flag      = dd[i].delete_files_flag;
@@ -588,7 +594,13 @@ create_fra(int no_of_dirs)
          (void)strcpy(fra[i].retrieve_work_dir, dd[i].retrieve_work_dir);
          (void)strcpy(fra[i].wait_for_filename, dd[i].wait_for_filename);
          (void)strcpy(fra[i].timezone, dd[i].timezone);
+#ifdef NEW_FRA
+         (void)strcpy(fra[i].remove_action, dd[i].remove_action);
+#endif
          fra[i].fsa_pos                = dd[i].fsa_pos;
+#ifdef NEW_FRA
+         fra[i].host_id                = dd[i].host_id;
+#endif
          fra[i].protocol               = dd[i].protocol;
          fra[i].priority               = dd[i].priority;
          fra[i].delete_files_flag      = dd[i].delete_files_flag;

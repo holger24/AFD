@@ -516,6 +516,10 @@ struct dir_data
                                             /* directory should have.    */
           char          priority;           /* Priority for this         */
                                             /* directory.                */
+#ifdef NEW_FRA
+          unsigned int  host_id;            /* CRC-32 checksum of        */
+                                            /* host_alias above.         */
+#endif
           unsigned int  protocol;           /* Transfer protocol that    */
                                             /* is being used.            */
           int           unknown_file_time;  /* After how many hours can  */

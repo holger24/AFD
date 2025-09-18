@@ -1,6 +1,6 @@
 /*
  *  eval_dir_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -2181,6 +2181,9 @@ check_dummy_line:
                      {
                         dd[no_of_local_dirs].fsa_pos = -1;
                         dd[no_of_local_dirs].host_alias[0] = '\0';
+#ifdef NEW_FRA
+                        dd[no_of_local_dirs].host_id = 0;
+#endif
                         STRNCPY(dd[no_of_local_dirs].url, dir->location,
                                 MAX_RECIPIENT_LENGTH);
                         if (dir->location_length >= MAX_RECIPIENT_LENGTH)
@@ -2198,6 +2201,9 @@ check_dummy_line:
                                                                                 RETRIEVE_FLAG);
                              (void)strcpy(dd[no_of_local_dirs].host_alias,
                                           hl[dd[no_of_local_dirs].fsa_pos].host_alias);
+#ifdef NEW_FRA
+                             dd[no_of_local_dirs].host_id = get_str_checksum(dd[no_of_local_dirs].host_alias);
+#endif
                              store_file_mask(dd[no_of_local_dirs].dir_alias,
                                              dir);
                           }
@@ -2208,6 +2214,9 @@ check_dummy_line:
                                         dir->type, dir->alias);
                              dd[no_of_local_dirs].fsa_pos = -1;
                              dd[no_of_local_dirs].host_alias[0] = '\0';
+#ifdef NEW_FRA
+                             dd[no_of_local_dirs].host_id = 0;
+#endif
                              STRNCPY(dd[no_of_local_dirs].url, dir->location,
                                      MAX_RECIPIENT_LENGTH);
                              if (dir->location_length >= MAX_RECIPIENT_LENGTH)

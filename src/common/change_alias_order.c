@@ -1,6 +1,6 @@
 /*
  *  change_alias_order.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -349,8 +349,13 @@ change_alias_order(char **p_host_names, int new_no_of_hosts)
 
                for (k = 0; k < no_of_dirs; k++)
                {
+#ifdef NEW_FRA
+                  if ((fra[k].host_alias[0] != '\0') &&
+                      (fra[k].host_id == fsa[position].host_id))
+#else
                   if ((fra[k].host_alias[0] != '\0') &&
                       (CHECK_STRCMP(fra[k].host_alias, fsa[position].host_alias) == 0))
+#endif
                   {
                      fra[k].fsa_pos = i;
                   }

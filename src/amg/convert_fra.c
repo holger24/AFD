@@ -792,6 +792,7 @@ struct fileretrieve_status_9
           char                   force_reread;
           char                   queued;
           char                   priority;
+          unsigned int           host_id;                            /* New */
           unsigned int           protocol;
           unsigned int           files_received;
           unsigned int           dir_options;
@@ -8158,7 +8159,16 @@ convert_fra(int           old_fra_fd,
            for (i = 0; i < old_no_of_dirs; i++)
            {
               (void)strcpy(new_fra[i].dir_alias, old_fra[i].dir_alias);
-              (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
+              if (old_fra[i].host_alias[0] == '\0')
+              {
+                 new_fra[i].host_alias[0] = '\0';
+                 new_fra[i].host_id = 0;
+              }
+              else
+              {
+                 (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
+                 new_fra[i].host_id = get_str_checksum(new_fra[i].host_alias);
+              }
               (void)strcpy(new_fra[i].url, old_fra[i].url);
               new_fra[i].ls_data_alias[0] = '\0';
               new_fra[i].retrieve_work_dir[0] = '\0';
@@ -8361,7 +8371,16 @@ convert_fra(int           old_fra_fd,
            for (i = 0; i < old_no_of_dirs; i++)
            {
               (void)strcpy(new_fra[i].dir_alias, old_fra[i].dir_alias);
-              (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
+              if (old_fra[i].host_alias[0] == '\0')
+              {
+                 new_fra[i].host_alias[0] = '\0';
+                 new_fra[i].host_id = 0;
+              }
+              else
+              {
+                 (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
+                 new_fra[i].host_id = get_str_checksum(new_fra[i].host_alias);
+              }
               (void)strcpy(new_fra[i].url, old_fra[i].url);
               new_fra[i].ls_data_alias[0] = '\0';
               new_fra[i].retrieve_work_dir[0] = '\0';
@@ -8564,7 +8583,16 @@ convert_fra(int           old_fra_fd,
            for (i = 0; i < old_no_of_dirs; i++)
            {
               (void)strcpy(new_fra[i].dir_alias, old_fra[i].dir_alias);
-              (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
+              if (old_fra[i].host_alias[0] == '\0')
+              {
+                 new_fra[i].host_alias[0] = '\0';
+                 new_fra[i].host_id = 0;
+              }
+              else
+              {
+                 (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
+                 new_fra[i].host_id = get_str_checksum(new_fra[i].host_alias);
+              }
               (void)strcpy(new_fra[i].url, old_fra[i].url);
               new_fra[i].ls_data_alias[0] = '\0';
               new_fra[i].retrieve_work_dir[0] = '\0';
@@ -8775,7 +8803,16 @@ convert_fra(int           old_fra_fd,
            for (i = 0; i < old_no_of_dirs; i++)
            {
               (void)strcpy(new_fra[i].dir_alias, old_fra[i].dir_alias);
-              (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
+              if (old_fra[i].host_alias[0] == '\0')
+              {
+                 new_fra[i].host_alias[0] = '\0';
+                 new_fra[i].host_id = 0;
+              }
+              else
+              {
+                 (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
+                 new_fra[i].host_id = get_str_checksum(new_fra[i].host_alias);
+              }
               (void)strcpy(new_fra[i].url, old_fra[i].url);
               new_fra[i].ls_data_alias[0] = '\0';
               new_fra[i].retrieve_work_dir[0] = '\0';
@@ -8987,7 +9024,16 @@ convert_fra(int           old_fra_fd,
            for (i = 0; i < old_no_of_dirs; i++)
            {
               (void)strcpy(new_fra[i].dir_alias, old_fra[i].dir_alias);
-              (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
+              if (old_fra[i].host_alias[0] == '\0')
+              {
+                 new_fra[i].host_alias[0] = '\0';
+                 new_fra[i].host_id = 0;
+              }
+              else
+              {
+                 (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
+                 new_fra[i].host_id = get_str_checksum(new_fra[i].host_alias);
+              }
               (void)strcpy(new_fra[i].url, old_fra[i].url);
               new_fra[i].ls_data_alias[0] = '\0';
               new_fra[i].retrieve_work_dir[0] = '\0';
@@ -9194,7 +9240,16 @@ convert_fra(int           old_fra_fd,
            for (i = 0; i < old_no_of_dirs; i++)
            {
               (void)strcpy(new_fra[i].dir_alias, old_fra[i].dir_alias);
-              (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
+              if (old_fra[i].host_alias[0] == '\0')
+              {
+                 new_fra[i].host_alias[0] = '\0';
+                 new_fra[i].host_id = 0;
+              }
+              else
+              {
+                 (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
+                 new_fra[i].host_id = get_str_checksum(new_fra[i].host_alias);
+              }
               (void)strcpy(new_fra[i].url, old_fra[i].url);
               new_fra[i].ls_data_alias[0] = '\0';
               new_fra[i].retrieve_work_dir[0] = '\0';
@@ -9402,7 +9457,16 @@ convert_fra(int           old_fra_fd,
            for (i = 0; i < old_no_of_dirs; i++)
            {
               (void)strcpy(new_fra[i].dir_alias, old_fra[i].dir_alias);
-              (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
+              if (old_fra[i].host_alias[0] == '\0')
+              {
+                 new_fra[i].host_alias[0] = '\0';
+                 new_fra[i].host_id = 0;
+              }
+              else
+              {
+                 (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
+                 new_fra[i].host_id = get_str_checksum(new_fra[i].host_alias);
+              }
               (void)strcpy(new_fra[i].url, old_fra[i].url);
               (void)strcpy(new_fra[i].ls_data_alias, old_fra[i].ls_data_alias);
               (void)strcpy(new_fra[i].retrieve_work_dir,
@@ -9611,7 +9675,16 @@ convert_fra(int           old_fra_fd,
            for (i = 0; i < old_no_of_dirs; i++)
            {
               (void)strcpy(new_fra[i].dir_alias, old_fra[i].dir_alias);
-              (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
+              if (old_fra[i].host_alias[0] == '\0')
+              {
+                 new_fra[i].host_alias[0] = '\0';
+                 new_fra[i].host_id = 0;
+              }
+              else
+              {
+                 (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
+                 new_fra[i].host_id = get_str_checksum(new_fra[i].host_alias);
+              }
               (void)strcpy(new_fra[i].url, old_fra[i].url);
               (void)strcpy(new_fra[i].ls_data_alias, old_fra[i].ls_data_alias);
               (void)strcpy(new_fra[i].retrieve_work_dir,
@@ -9819,7 +9892,16 @@ convert_fra(int           old_fra_fd,
            for (i = 0; i < old_no_of_dirs; i++)
            {
               (void)strcpy(new_fra[i].dir_alias, old_fra[i].dir_alias);
-              (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
+              if (old_fra[i].host_alias[0] == '\0')
+              {
+                 new_fra[i].host_alias[0] = '\0';
+                 new_fra[i].host_id = 0;
+              }
+              else
+              {
+                 (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
+                 new_fra[i].host_id = get_str_checksum(new_fra[i].host_alias);
+              }
               (void)strcpy(new_fra[i].url, old_fra[i].url);
               (void)strcpy(new_fra[i].ls_data_alias, old_fra[i].ls_data_alias);
               (void)strcpy(new_fra[i].retrieve_work_dir,

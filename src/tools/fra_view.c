@@ -272,6 +272,9 @@ main(int argc, char *argv[])
          (void)fprintf(stdout, "ls data alias        : %s\n", fra[i].ls_data_alias);
          (void)fprintf(stdout, "Retrieve work dir    : %s\n", fra[i].retrieve_work_dir);
          (void)fprintf(stdout, "Host alias           : %s\n", fra[i].host_alias);
+#ifdef NEW_FRA
+         (void)fprintf(stdout, "Host ID              : %x\n", fra[i].host_id);
+#endif
          (void)fprintf(stdout, "Wait for             : %s\n", fra[i].wait_for_filename);
          (void)fprintf(stdout, "FSA position         : %d\n", fra[i].fsa_pos);
          (void)fprintf(stdout, "Priority             : %c\n", fra[i].priority);
@@ -896,6 +899,13 @@ main(int argc, char *argv[])
             (void)fprintf(stdout, "End character        : %d\n",
                           fra[i].end_character);
          }
+#ifdef NEW_FRA
+         if (fra[i].remove_action[0] != '\0')
+         {
+            (void)fprintf(stdout, "Remove action        : %s\n",
+                          fra[i].remove_action);
+         }
+#endif
          if (fra[i].no_of_time_entries == 0)
          {
             (void)fprintf(stdout, "Time option          : NO\n");

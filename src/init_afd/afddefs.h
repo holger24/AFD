@@ -3109,6 +3109,10 @@ struct fileretrieve_status
                                             /* queue or not.             */
           char          priority;           /* Priority of this          */
                                             /* directory.                */
+#ifdef NEW_FRA
+          unsigned int  host_id;            /* CRC-32 checksum of        */
+                                            /* host_alias above.         */
+#endif
           unsigned int  protocol;           /* Transfer protocol that    */
                                             /* is being used.            */
           unsigned int  files_received;     /* No. of files received so  */
