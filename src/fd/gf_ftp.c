@@ -361,8 +361,8 @@ main(int argc, char *argv[])
    if ((status != SUCCESS) && (status != 230))
    {
       trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                "FTP connection to %s at port %d failed (%d). [%s]",
-                db.hostname, db.port, status, fra->dir_alias);
+                "FTP %s connection to %s at port %d failed (%d). [%s]",
+                db.mode_str, db.hostname, db.port, status, fra->dir_alias);
       exit(eval_timeout(CONNECT_ERROR));
    }
    else
@@ -372,11 +372,13 @@ main(int argc, char *argv[])
          if (status == 230)
          {
             trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
-                         "Connected. No user and password required, logged in.");
+                         "Connected (%s). No user and password required, logged in.",
+                         db.mode_str);
          }
          else
          {
-            trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str, "Connected.");
+            trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
+                         "Connected (%s).", db.mode_str);
          }
       }
    }
