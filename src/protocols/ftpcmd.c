@@ -3201,9 +3201,28 @@ ftp_list(int mode, int type, ...)
          {
             if (timeout_flag != CON_RESET)
             {
-               if (SSL_shutdown(ssl_data) == 0)
+               int ret = SSL_shutdown(ssl_data);
+
+               while (ret == 0)
                {
-                  (void)SSL_shutdown(ssl_data);
+                  /*
+                   * On some servers the subsequent SSL_shutdown()
+                   * can hang forever. So guard this with an alarm().
+                   */
+                  if (sigsetjmp(env_alrm, 1) != 0)
+                  {
+                     trans_log(WARN_SIGN, __FILE__, __LINE__,
+                               "ftp_close_data", NULL,
+                               _("Second SSL_shutdown() timeout (%lds)"),
+                               transfer_timeout);
+                     timeout_flag = ON;
+                     (void)close(data_fd);
+                     data_fd = -1;
+                     return(INCORRECT);
+                  }
+                  (void)alarm(transfer_timeout);
+                  ret = SSL_shutdown(ssl_data);
+                  (void)alarm(0);
                }
             }
             SSL_free(ssl_data);
@@ -4593,9 +4612,28 @@ ftp_close_data(void)
       {
          if (timeout_flag != CON_RESET)
          {
-            if (SSL_shutdown(ssl_data) == 0)
+            int ret = SSL_shutdown(ssl_data);
+
+            while (ret == 0)
             {
-               (void)SSL_shutdown(ssl_data);
+               /*
+                * On some servers the subsequent SSL_shutdown()
+                * can hang forever. So guard this with an alarm().
+                */
+               if (sigsetjmp(env_alrm, 1) != 0)
+               {
+                  trans_log(WARN_SIGN, __FILE__, __LINE__,
+                            "ftp_close_data", NULL,
+                            _("Second SSL_shutdown() timeout (%lds)"),
+                            transfer_timeout);
+                  timeout_flag = ON;
+                  (void)close(data_fd);
+                  data_fd = -1;
+                  return(INCORRECT);
+               }
+               (void)alarm(transfer_timeout);
+               ret = SSL_shutdown(ssl_data);
+               (void)alarm(0);
             }
          }
          SSL_free(ssl_data);
@@ -5127,9 +5165,28 @@ ftp_quit(void)
          {
             if (timeout_flag != CON_RESET)
             {
-               if (SSL_shutdown(ssl_data) == 0)
+               int ret = SSL_shutdown(ssl_data);
+
+               while (ret == 0)
                {
-                  (void)SSL_shutdown(ssl_data);
+                  /*
+                   * On some servers the subsequent SSL_shutdown()
+                   * can hang forever. So guard this with an alarm().
+                   */
+                  if (sigsetjmp(env_alrm, 1) != 0)
+                  {
+                     trans_log(WARN_SIGN, __FILE__, __LINE__,
+                               "ftp_close_data", NULL,
+                               _("Second SSL_shutdown() timeout (%lds)"),
+                               transfer_timeout);
+                     timeout_flag = ON;
+                     (void)close(data_fd);
+                     data_fd = -1;
+                     return(INCORRECT);
+                  }
+                  (void)alarm(transfer_timeout);
+                  ret = SSL_shutdown(ssl_data);
+                  (void)alarm(0);
                }
             }
             SSL_free(ssl_data);
