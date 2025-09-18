@@ -289,7 +289,7 @@
 --enable-compile_afd_mon_only        - This will compile the AFD monitor only.
 --enable-onetime_support             - Enables support for onetime jobs.
 --enable-afd_mon                     - If set this will also compile all
-                                       programms to monitor other AFD´s too.
+                                       programs to monitor other AFD´s too.
                                        [Default: disabled]
 --enable-compiler-debug              - Turns on debugging to debug AFD.
                                        [Default: disabled]
@@ -309,6 +309,12 @@
                                        executables) and -fstack-protector
                                        (check for buffer overflows).
                                        [Default: disabled]
+--enable-compiler-no-common          - On gcc this will compile with
+                                       -fno-common. Do not treat global
+                                       variable in C as common variables
+                                       and will allow to instrument them
+                                       with libasan, see below
+                                       --enable-compiler-address-sanitizer
 --enable-compiler-address-sanitizer  - On gcc this will turn on the address
                                        sanitizer. Notice this will increase
                                        memory usage considerably.

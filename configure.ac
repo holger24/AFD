@@ -662,6 +662,15 @@ AC_ARG_ENABLE(compiler_security,
      *) AC_MSG_ERROR(bad value ${enableval} for --enable-compiler-security) ;;
    esac],[compiler_security=false])
 
+dnl **** check if user wants to compile with -fno-common
+AC_ARG_ENABLE(compiler_no_common,
+   [  --enable-compiler-no-common Enable compiler -fno-common],
+   [case "$enableval" in
+     yes) compiler_no_common=true ;;
+     no)  compiler_no_common=false;;
+     *) AC_MSG_ERROR(bad value ${enableval} for --enable-compiler-no-common) ;;
+   esac],[compiler_no_common=false])
+
 dnl **** check if user wants to compile with address sanitizer
 AC_ARG_ENABLE(compiler_address_sanitizer,
    [  --enable-compiler-address-sanitizer Enable compiler address sanitizer],
@@ -1088,6 +1097,14 @@ then
    fi
 fi
 
+if test "${compiler_no_common}" = "true"
+then
+   if test "x${GCC}" = "xyes"
+   then
+      AX_CHECK_COMPILE_FLAG("-fno-common", [SANITIZER_FLAG="${SANITIZER_FLAG} -fno-common"], [SANITIZER_FLAG="${SANITIZER_FLAG}"])
+   fi
+fi
+
 if test "${compiler_address_sanitizer}" = "true"
 then
    if test "x${GCC}" = "xyes"
@@ -1145,7 +1162,7 @@ if test "${compiler_security}" = "true"
 then
    CFLAGS="$CFLAGS $SECURITY_FLAG"
 fi
-if test "${compiler_address_sanitizer}" = "true"
+if test "${compiler_address_sanitizer}" = "true" || test "${compiler_no_common}" = "true"
 then
    CFLAGS="$CFLAGS $SANITIZER_FLAG"
 fi
