@@ -376,6 +376,9 @@ ftp_connect(char *hostname, int port)
 #ifdef WITH_IP_DB
       int                     ip_from_db = NO;
 #endif
+#if defined (WITH_TRACE) && defined (WITH_SSL)
+      char                    ssl_connection_details[512];
+#endif
 #if defined (HAVE_GETADDRINFO) && defined (HAVE_GAI_STRERROR)
       char                    str_port[MAX_INT_LENGTH];
       struct addrinfo         hints,
@@ -919,24 +922,22 @@ ftp_connect(char *hostname, int port)
          {
 # ifdef WITH_TRACE
             const char       *ssl_version;
-            int              length;
             const SSL_CIPHER *ssl_cipher;
 
             ssl_version = SSL_get_cipher_version(ssl_con);
-            length = strlen(msg_str);
             if ((ssl_cipher = SSL_get_current_cipher(ssl_con)) != NULL)
             {
                int ssl_bits;
 
                SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
-               (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+               (void)snprintf(ssl_connection_details, 512,
                               "  <%s, cipher %s, %d bits>",
                               ssl_version, SSL_CIPHER_get_name(ssl_cipher),
                               ssl_bits);
             }
             else
             {
-               (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+               (void)snprintf(ssl_connection_details, 512,
                               "  <%s, cipher ?, ? bits>", ssl_version);
             }
 # endif
@@ -1023,6 +1024,20 @@ ftp_connect(char *hostname, int port)
          (void)close(control_fd);
          return(INCORRECT);
       }
+#if defined (WITH_TRACE) && defined (WITH_SSL)
+      if (msg_str[0] != '\0')
+      {
+         int length;
+
+         length = strlen(msg_str);
+         (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+                        " %s", ssl_connection_details);
+      }
+      else
+      {
+         (void)strcpy(msg_str, ssl_connection_details);
+      }
+#endif
       if ((reply != 220) && (reply != 120))
       {
          if (reply != 230)
