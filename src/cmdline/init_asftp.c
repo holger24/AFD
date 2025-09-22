@@ -1,6 +1,6 @@
 /*
  *  init_asftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2015-2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -97,7 +97,7 @@ init_asftp(int argc, char *argv[], struct data *p_db)
 
    /* First initialize all values with default values. */
    p_db->file_size_offset   = -1;       /* No appending. */
-   p_db->blocksize          = DEFAULT_TRANSFER_BLOCKSIZE;
+   p_db->blocksize          = DEFAULT_SFTP_TRANSFER_BLOCKSIZE;
    p_db->remote_dir[0]      = '\0';
    p_db->hostname[0]        = '\0';
    p_db->lock               = DOT;
@@ -617,7 +617,7 @@ usage(void)
                      _("  -a                                 - Append file.\n"));
    }
    (void)fprintf(stderr, _("  -b <block size>                    - Transfer block size in byte. Default %d\n\
-                                       byte.\n"), DEFAULT_TRANSFER_BLOCKSIZE);
+                                       byte.\n"), DEFAULT_SFTP_TRANSFER_BLOCKSIZE);
    (void)fprintf(stderr, _("  -c <config file>                   - Configuration file holding user name,\n\
                                        password and target directory in URL\n\
                                        format.\n"));
