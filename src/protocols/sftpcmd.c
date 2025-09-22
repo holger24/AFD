@@ -2964,6 +2964,10 @@ sftp_write(char *block, int size)
                         scd.file_handle_length, scd.file_offset, size,
                         __FILE__, __LINE__, YES);
    }
+   if (scd.debug == FULL_TRACE_MODE)
+   {
+      trace_log(NULL, 0, BIN_W_TRACE, block, size, NULL);
+   }
 #endif
    if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.file_handle_length +
                                  8 + 4 + size), __LINE__)) == SUCCESS)
