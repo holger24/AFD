@@ -34,7 +34,7 @@ DESCR__S_M3
  **   int ftp_chmod(char *filename, char *mode)
  **   int ftp_close_data(void)
  **   int ftp_connect(char *hostname, int port, int ssl, int strict,
- **                   int legacy_renegotiation)
+ **                   int legacy_renegotiation, char debug)
  **   int ftp_auth_data(void)
  **   int ftp_ssl_auth(int strict, int legacy_renegotiation)
  **   int ftp_ssl_init(char type)
@@ -335,17 +335,21 @@ static void                    sig_handler(int);
 
 /*########################## ftp_connect() ##############################*/
 int
+ftp_connect(char *hostname,
+            int  port,
 #ifdef WITH_SSL
-ftp_connect(char *hostname, int port, int ssl, int strict, int legacy_renegotiation)
-#else
-ftp_connect(char *hostname, int port)
+            int  ssl,
+            int  strict,
+            int  legacy_renegotiation,
 #endif
+            char debug)
 {
    if (simulation_mode == YES)
    {
       if ((control_fd = open("/dev/null", O_RDWR)) == -1)
       {
-         trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_connect", "Simulated ftp_connect()",
+         trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                   "ftp_connect", "Simulated ftp_connect()",
                    _("Failed to open() /dev/null : %s"), strerror(errno));
          return(INCORRECT);
       }
@@ -376,11 +380,9 @@ ftp_connect(char *hostname, int port)
 #ifdef WITH_IP_DB
       int                     ip_from_db = NO;
 #endif
-#if defined (WITH_TRACE) && defined (WITH_SSL)
-      char                    ssl_connection_details[512];
-#endif
 #if defined (HAVE_GETADDRINFO) && defined (HAVE_GAI_STRERROR)
-      char                    str_port[MAX_INT_LENGTH];
+      char                    str_port[MAX_INT_LENGTH],
+                              tmp_msg_str[MAX_RET_MSG_LENGTH];
       struct addrinfo         hints,
                               *result = NULL,
                               *rp;
@@ -921,23 +923,25 @@ ftp_connect(char *hostname, int port)
          else
          {
 # ifdef WITH_TRACE
+            int              length;
             const char       *ssl_version;
             const SSL_CIPHER *ssl_cipher;
 
             ssl_version = SSL_get_cipher_version(ssl_con);
+            length = strlen(msg_str);
             if ((ssl_cipher = SSL_get_current_cipher(ssl_con)) != NULL)
             {
                int ssl_bits;
 
                SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
-               (void)snprintf(ssl_connection_details, 512,
+               (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
                               "  <%s, cipher %s, %d bits>",
                               ssl_version, SSL_CIPHER_get_name(ssl_cipher),
                               ssl_bits);
             }
             else
             {
-               (void)snprintf(ssl_connection_details, 512,
+               (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
                               "  <%s, cipher ?, ? bits>", ssl_version);
             }
 # endif
@@ -1019,25 +1023,19 @@ ftp_connect(char *hostname, int port)
       }
 #endif /* WITH_SSL */
 
+      /* Read any possible welcome message. */
+      (void)strcpy(tmp_msg_str, msg_str);
       if ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0)
       {
          (void)close(control_fd);
          return(INCORRECT);
       }
-#if defined (WITH_TRACE) && defined (WITH_SSL)
-      if (msg_str[0] != '\0')
+      if ((debug > DEBUG_MODE) && (msg_str[0] != '\0'))
       {
-         int length;
-
-         length = strlen(msg_str);
-         (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
-                        "%s", ssl_connection_details);
+         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ftp_connect", msg_str,
+                   "Additional FTP server information received.");
       }
-      else
-      {
-         (void)strcpy(msg_str, ssl_connection_details);
-      }
-#endif
+      (void)strcpy(msg_str, tmp_msg_str);
       if ((reply != 220) && (reply != 120))
       {
          if (reply != 230)
@@ -1049,6 +1047,7 @@ ftp_connect(char *hostname, int port)
    }
    fcd.ftp_options = 0;
    fcd.data_port = 0;
+   fcd.debug = debug;
 #ifdef WITH_SSL
    (void)memcpy(connected_hostname, hostname, MAX_REAL_HOSTNAME_LENGTH);
 #endif
@@ -1213,6 +1212,29 @@ ftp_ssl_auth(int strict, int legacy_renegotiation)
             }
             else
             {
+# ifdef WITH_TRACE
+               int              length;
+               const char       *ssl_version;
+               const SSL_CIPHER *ssl_cipher;
+
+               ssl_version = SSL_get_cipher_version(ssl_con);
+               length = strlen(msg_str);
+               if ((ssl_cipher = SSL_get_current_cipher(ssl_con)) != NULL)
+               {
+                  int ssl_bits;
+
+                  SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
+                  (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+                                 "  <%s, cipher %s, %d bits>",
+                                 ssl_version, SSL_CIPHER_get_name(ssl_cipher),
+                                 ssl_bits);
+               }
+               else
+               {
+                  (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+                                 "  <%s, cipher ?, ? bits>", ssl_version);
+               }
+# endif
                reply = SUCCESS;
             }
          }

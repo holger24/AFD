@@ -1,6 +1,6 @@
 /*
  *  ftpdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -80,6 +80,7 @@ struct ftp_connect_data
        {
           unsigned int   ftp_options;
           unsigned short data_port;
+          char           debug;
        };
 
 /* Function prototypes. */
@@ -93,13 +94,13 @@ extern int  ftp_account(char *),
             ftp_chmod(char *, char *),
             ftp_close_data(void),
 #ifdef WITH_SSL
-            ftp_connect(char *, int, int, int, int),
+            ftp_connect(char *, int, int, int, int, char),
             ftp_auth_data(void),
             ftp_ssl_auth(int, int),
             ftp_ssl_init(char),
             ftp_ssl_disable_ctrl_encrytion(void),
 #else
-            ftp_connect(char *, int),
+            ftp_connect(char *, int, char),
 #endif
             ftp_data(char *, off_t, int, int, int, int, char *, char *),
             ftp_data_port(void),

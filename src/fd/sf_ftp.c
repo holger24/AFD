@@ -427,16 +427,17 @@ main(int argc, char *argv[])
    {
       status = ftp_connect(db.hostname, db.port, YES,
                            (fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO,
-                           (fsa->protocol_options & TLS_LEGACY_RENEGOTIATION) ? YES : NO);
+                           (fsa->protocol_options & TLS_LEGACY_RENEGOTIATION) ? YES : NO,
+                           fsa->debug);
       implicit_ssl_connect = YES;
    }
    else
    {
-      status = ftp_connect(db.hostname, db.port, NO, NO, NO);
+      status = ftp_connect(db.hostname, db.port, NO, NO, NO, fsa->debug);
       implicit_ssl_connect = NO;
    }
 #else
-   status = ftp_connect(db.hostname, db.port);
+   status = ftp_connect(db.hostname, db.port, fsa->debug);
 #endif
 #ifdef WITH_IP_DB
    if (get_and_reset_store_ip() == DONE)
@@ -598,16 +599,18 @@ main(int argc, char *argv[])
                   {
                      status = ftp_connect(db.hostname, db.port, YES,
                                           (fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO,
-                                          (fsa->protocol_options & TLS_LEGACY_RENEGOTIATION) ? YES : NO);
+                                          (fsa->protocol_options & TLS_LEGACY_RENEGOTIATION) ? YES : NO,
+                                          fsa->debug);
                      implicit_ssl_connect = YES;
                   }
                   else
                   {
-                     status = ftp_connect(db.hostname, db.port, NO, NO, NO);
+                     status = ftp_connect(db.hostname, db.port, NO, NO, NO,
+                                          fsa->debug);
                      implicit_ssl_connect = NO;
                   }
 #else
-                  status = ftp_connect(db.hostname, db.port);
+                  status = ftp_connect(db.hostname, db.port, fsa->debug);
 #endif
                   if ((status != SUCCESS) && (status != 230))
                   {

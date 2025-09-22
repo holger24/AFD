@@ -1,6 +1,6 @@
 /*
  *  aftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -231,14 +231,14 @@ main(int argc, char *argv[])
        (db.implicit_ftps == YES))
    {
       status = ftp_connect(db.hostname, db.port, YES, db.strict,
-                           db.legacy_renegotiation);
+                           db.legacy_renegotiation, db.verbose);
    }
    else
    {
-      status = ftp_connect(db.hostname, db.port, NO, NO, NO);
+      status = ftp_connect(db.hostname, db.port, NO, NO, NO, db.verbose);
    }
 #else
-   status = ftp_connect(db.hostname, db.port);
+   status = ftp_connect(db.hostname, db.port, db.verbose);
 #endif
    if ((status != SUCCESS) && (status != 230))
    {
