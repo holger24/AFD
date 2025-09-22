@@ -40,6 +40,7 @@ DESCR__S_M3
  **
  ** HISTORY
  **   04.05.2015 H.Kiehl    Created
+ **   19.09.2025 H.Kiehl    Added option -vv and -vvv.
  **
  */
 DESCR__E_M3
@@ -505,7 +506,26 @@ init_asftp(int argc, char *argv[], struct data *p_db)
             break;
 
          case 'v' : /* Verbose mode. */
-            p_db->verbose = YES;
+            if (*(argv[0] + 2) == '\0')
+            {
+               p_db->verbose = DEBUG_MODE;
+            }
+            else if ((*(argv[0] + 2) == 'v') && (*(argv[0] + 3) == '\0'))
+                 {
+                    p_db->verbose = TRACE_MODE;
+                 }
+            else if ((*(argv[0] + 2) == 'v') && (*(argv[0] + 3) == 'v') &&
+                     (*(argv[0] + 4) == '\0'))
+                 {
+                    p_db->verbose = FULL_TRACE_MODE;
+                 }
+                 else
+                 {
+                    (void)fprintf(stderr,
+                                  _("ERROR   : Unknown parameter <%s>. (%s %d)\n"),
+                                  argv[0], __FILE__, __LINE__);
+                    correct = NO;
+                 }
             break;
 
          case '?' : /* Help. */
@@ -664,6 +684,10 @@ usage(void)
    (void)fprintf(stderr, _("  -t <timout>                        - SFTP timeout in seconds. Default %lds.\n"), DEFAULT_TRANSFER_TIMEOUT);
    (void)fprintf(stderr, _("  -v                                 - Verbose. Shows all SFTP commands and\n\
                                        the reply from the remote server.\n"));
+   (void)fprintf(stderr, _("  -vv                                - Trace. As above but with more\n\
+                                       information.\n"));
+   (void)fprintf(stderr, _("  -vvv                               - Full trace. As above but shows\n\
+                                       content of file.\n"));
    (void)fprintf(stderr, _("  -?                                 - Display this help and exit.\n"));
    (void)fprintf(stderr, _("  The following values are returned on exit:\n"));
    (void)fprintf(stderr, _("      %2d - File transmitted successfully.\n"), TRANSFER_SUCCESS);

@@ -1,5 +1,5 @@
 ## Makemodule.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2024 Holger Kiehl
+## Copyright (C) 2001 - 2025 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -69,11 +69,13 @@ bin_aftp_SOURCES       = src/cmdline/aftp.c\
                          src/cmdline/eval_files.c\
                          src/cmdline/get_remote_file_names_ftp_cmd.c\
                          src/cmdline/init_aftp.c\
+                         src/cmdline/trace_log.c\
                          src/cmdline/trans_log.c
 bin_aftp_LDADD         = @EXTRA_SOCKET_LIBS@\
-                         lib/libprotocols.a\
+                         lib/libtraceprotocols.a\
                          lib/libafd.a\
                          @AFD_SSL_LIBS@
+bin_aftp_CFLAGS        = -DWITH_TRACE
 bin_ahtml_list_SOURCES = src/cmdline/ahtml_list.c\
                          src/cmdline/eval_html_dir_list.c\
                          src/cmdline/get_html_content.c\
@@ -86,11 +88,13 @@ bin_asftp_SOURCES      = src/cmdline/asftp.c\
                          src/cmdline/eval_files.c\
                          src/cmdline/get_remote_file_names_sftp_cmd.c\
                          src/cmdline/init_asftp.c\
+                         src/cmdline/trace_log.c\
                          src/cmdline/trans_log.c
 bin_asftp_LDADD        = @EXTRA_SOCKET_LIBS@\
-                         lib/libprotocols.a\
+                         lib/libtraceprotocols.a\
                          lib/libafd.a\
                          @AFD_UTIL_LIB@
+bin_asftp_CFLAGS       = -DWITH_TRACE
 bin_asmtp_SOURCES      = src/cmdline/asmtp.c\
                          src/cmdline/eval_files.c\
                          src/cmdline/init_asmtp.c\

@@ -1,6 +1,6 @@
 /*
  *  init_aftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -56,6 +56,7 @@ DESCR__S_M3
  **   05.03.2008 H.Kiehl    Added option -o.
  **   06.03.2020 H.Kiehl    Added option -I.
  **   02.09.2022 H.Kiehl    Added option -y.
+ **   19.09.2025 H.Kiehl    Added option -vv and -vvv.
  **
  */
 DESCR__E_M3
@@ -607,7 +608,26 @@ init_aftp(int argc, char *argv[], struct data *p_db)
             break;
 
          case 'v' : /* Verbose mode. */
-            p_db->verbose = YES;
+            if (*(argv[0] + 2) == '\0')
+            {
+               p_db->verbose = YES;
+            }
+            else if ((*(argv[0] + 2) == 'v') && (*(argv[0] + 3) == '\0'))
+                 {
+                    p_db->verbose = TRACE_MODE;
+                 }
+            else if ((*(argv[0] + 2) == 'v') && (*(argv[0] + 3) == 'v') &&
+                     (*(argv[0] + 4) == '\0'))
+                 {
+                    p_db->verbose = FULL_TRACE_MODE;
+                 }
+                 else
+                 {
+                    (void)fprintf(stderr,
+                                  _("ERROR   : Unknown parameter <%s>. (%s %d)\n"),
+                                  argv[0], __FILE__, __LINE__);
+                    correct = NO;
+                 }
             break;
 
          case 'x' : /* Use passive mode instead of active mode. */
@@ -859,6 +879,10 @@ usage(void)
    (void)fprintf(stderr, _("  -t <timout>                        - FTP timeout in seconds. Default %lds.\n"), DEFAULT_TRANSFER_TIMEOUT);
    (void)fprintf(stderr, _("  -v                                 - Verbose. Shows all FTP commands and\n\
                                        the reply from the remote server.\n"));
+   (void)fprintf(stderr, _("  -vv                                - Trace. As above but with more\n\
+                                       information.\n"));
+   (void)fprintf(stderr, _("  -vvv                               - Full trace. As above but shows\n\
+                                       content of file.\n"));
    (void)fprintf(stderr, _("  -x                                 - Use passive mode instead of active\n\
                                        mode when doing the data connection.\n"));
    (void)fprintf(stderr, _("  -X                                 - Use extended mode active or passive\n\

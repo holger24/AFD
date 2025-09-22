@@ -1,6 +1,6 @@
 /*
  *  cmdline.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,6 +40,18 @@
 # define ERROR_SIGN                 "<E>"
 # define FATAL_SIGN                 "<F>"           /* donated by Paul M. */
 # define DEBUG_SIGN                 "<D>"
+
+/* Definitions for tracing. */
+# define BIN_R_TRACE              1
+# define BIN_CMD_R_TRACE          2
+# define R_TRACE                  3
+# define BIN_W_TRACE              4
+# define BIN_CMD_W_TRACE          5
+# define W_TRACE                  6
+# define C_TRACE                  7
+# define LIST_R_TRACE             8
+# define CRLF_R_TRACE             9
+# define CRLF_C_TRACE             10
 
 /* Some default definitions. */
 # define DEFAULT_TRANSFER_TIMEOUT   120L

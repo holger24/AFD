@@ -93,6 +93,10 @@ int                  *no_of_listed_files,
                      sigpipe_flag,
                      simulation_mode = NO,
                      sys_log_fd = STDERR_FILENO,
+                     trans_db_log_fd = STDERR_FILENO,
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                     trans_db_log_readfd = STDERR_FILENO,
+#endif
                      transfer_log_fd = STDERR_FILENO,
                      timeout_flag;
 #ifdef WITH_IP_DB
