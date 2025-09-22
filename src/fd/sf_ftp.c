@@ -1175,7 +1175,7 @@ main(int argc, char *argv[])
             }
             else
             {
-               if (fsa->debug == YES)
+               if (fsa->debug > NORMAL_MODE)
                {
                   trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
                                "Deleted `%s'.", p_del_file_name);
