@@ -246,8 +246,7 @@ static void                add_afd_to_list(int),
 int
 main(int argc, char *argv[])
 {
-   time_t end;
-   char   work_dir[MAX_PATH_LENGTH];
+   char work_dir[MAX_PATH_LENGTH];
 
    /* Evaluate input arguments. */
    CHECK_FOR_VERSION(argc, argv);
@@ -816,10 +815,6 @@ main(int argc, char *argv[])
          break;
       }
    }
-   if (verbose)
-   {
-      end = time(NULL);
-   }
 
    if (header_line != NULL)
    {
@@ -837,9 +832,9 @@ main(int argc, char *argv[])
    if (verbose)
    {
 #if SIZEOF_TIME_T == 4
-      (void)printf("Search time = %ld\n", (pri_time_t)(end - start));
+      (void)printf("Search time = %ld\n", (pri_time_t)(time(NULL) - start));
 #else
-      (void)printf("Search time = %lld\n", (pri_time_t)(end - start));
+      (void)printf("Search time = %lld\n", (pri_time_t)(time(NULL) - start));
 #endif
    }
 
