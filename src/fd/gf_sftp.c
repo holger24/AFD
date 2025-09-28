@@ -483,6 +483,14 @@ main(int argc, char *argv[])
                   (void)strcpy(db.user_home_dir, msg_str);
                }
             }
+            else
+            {
+               if (fsa->debug > NORMAL_MODE)
+               {
+                  trans_db_log(WARN_SIGN, __FILE__, __LINE__, msg_str,
+                               "Get current working directory failed.");
+               }
+            }
          }
          else
          {
@@ -1345,7 +1353,8 @@ main(int argc, char *argv[])
                                                           blocksize - buffer_offset)) == INCORRECT) ||
                                      (status == -EPIPE))
                                  {
-                                    trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                    trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                              NULL, msg_str,
                                               "Failed to read from remote file `%s' in %s (%d)",
                                               tmp_rl.file_name, fra->dir_alias,
                                               status);
@@ -1376,9 +1385,11 @@ main(int argc, char *argv[])
                                  {
                                     if (write(fd, buffer, status) != status)
                                     {
-                                       trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                       trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                                 NULL, NULL,
                                                  "Failed to write() to file `%s' : %s",
-                                                 local_tmp_file, strerror(errno));
+                                                 local_tmp_file,
+                                                 strerror(errno));
                                        sftp_quit();
                                        reset_values(files_retrieved,
                                                     file_size_retrieved,
@@ -1423,7 +1434,8 @@ main(int argc, char *argv[])
                                        {
                                           if ((end_transfer_time_file - start_transfer_time_file) > transfer_timeout)
                                           {
-                                             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                             trans_log(INFO_SIGN, __FILE__, __LINE__,
+                                                       NULL, NULL,
 #if SIZEOF_TIME_T == 4
                                                        "Transfer timeout reached for `%s' in %s after %ld seconds.",
 #else
@@ -1444,7 +1456,8 @@ main(int argc, char *argv[])
                                           * Looks as if this host is no longer in our
                                           * database. Lets exit.
                                           */
-                                         trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                         trans_log(INFO_SIGN, __FILE__, __LINE__,
+                                                   NULL, NULL,
                                                    "Database changed, exiting.");
                                          (void)sftp_close_file();
                                          (void)sftp_quit();
@@ -1542,7 +1555,8 @@ main(int argc, char *argv[])
                            }
                            if (utime(local_tmp_file, &old_time) == -1)
                            {
-                              trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                              trans_log(WARN_SIGN, __FILE__, __LINE__,
+                                        NULL, NULL,
                                         "Failed to set time of file %s : %s",
                                         local_tmp_file, strerror(errno));
                            }
@@ -1587,7 +1601,8 @@ main(int argc, char *argv[])
                            {
                               if (fra->stupid_mode != YES)
                               {
-                                 trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                 trans_log(WARN_SIGN, __FILE__, __LINE__,
+                                           NULL, msg_str,
                                            "Failed to delete remote file `%s' in %s (%d).",
                                            tmp_rl.file_name, fra->dir_alias,
                                            status);
@@ -1599,7 +1614,8 @@ main(int argc, char *argv[])
                                  /* already retrieved we must exit. */
                                  /* Otherwise we are in a constant  */
                                  /* loop fetching the same files!   */
-                                 trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                 trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                           NULL, msg_str,
                                            "Failed to delete remote file `%s' in %s (%d).",
                                            tmp_rl.file_name, fra->dir_alias,
                                            status);
@@ -1645,7 +1661,8 @@ main(int argc, char *argv[])
                                     }
                                     if (fra->stupid_mode != YES)
                                     {
-                                       trans_log(sign, __FILE__, __LINE__, NULL, msg_str,
+                                       trans_log(sign, __FILE__, __LINE__,
+                                                 NULL, msg_str,
                                                  "Failed to move remote file `%s' to `%s' in %s (%d).",
                                                  tmp_rl.file_name,
                                                  fra->remove_action + 3,
@@ -1658,7 +1675,8 @@ main(int argc, char *argv[])
                                        /* already retrieved we must exit. */
                                        /* Otherwise we are in a constant  */
                                        /* loop fetching the same files!   */
-                                       trans_log(sign, __FILE__, __LINE__, NULL, msg_str,
+                                       trans_log(sign, __FILE__, __LINE__,
+                                                 NULL, msg_str,
                                                  "Failed to move remote file `%s' to `%s' in %s (%d).",
                                                  tmp_rl.file_name,
                                                  fra->remove_action + 3,
@@ -1671,13 +1689,15 @@ main(int argc, char *argv[])
                                  {
                                     if (fsa->debug > NORMAL_MODE)
                                     {
-                                       trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                       trans_db_log(INFO_SIGN, __FILE__,
+                                                    __LINE__, NULL,
                                                     "Renamed remote file `%s' to `%s'",
                                                     tmp_rl.file_name,
                                                     fra->remove_action + 3);
                                        if ((created_path != NULL) && (created_path[0] != '\0'))
                                        {
-                                          trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                          trans_log(INFO_SIGN, __FILE__,
+                                                    __LINE__, NULL, NULL,
                                                     "Created directory `%s'.", created_path);
                                           created_path[0] = '\0';
                                        }
@@ -1711,7 +1731,8 @@ main(int argc, char *argv[])
                               {
                                  tmp_val = 0;
                               }
-                              trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                              trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                        NULL, NULL,
                                         "Total file counter less then zero. Correcting to %d.",
                                         tmp_val);
                               fsa->total_file_counter = tmp_val;
@@ -1729,7 +1750,8 @@ main(int argc, char *argv[])
                                */
                               if ((bytes_done + offset) != tmp_rl.size)
                               {
-                                 trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                 trans_log(INFO_SIGN, __FILE__, __LINE__,
+                                           NULL, NULL,
 #if SIZEOF_OFF_T == 4
                                            "File size of file %s in %s changed from %ld to %ld when it was retrieved.",
 #else
@@ -1754,7 +1776,8 @@ main(int argc, char *argv[])
                                  }
                                  fsa->total_file_size = new_size;
                                  file_size_to_retrieve_shown = new_size;
-                                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                 trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                           NULL, NULL,
 #if SIZEOF_OFF_T == 4
                                            "Total file size overflowed. Correcting to %ld.",
 #else
@@ -1765,7 +1788,8 @@ main(int argc, char *argv[])
                               else if ((fsa->total_file_counter == 0) &&
                                        (fsa->total_file_size > 0))
                                    {
-                                      trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                      trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                                NULL, NULL,
 #if SIZEOF_OFF_T == 4
                                                 "fc is zero but fs is not zero (%ld). Correcting.",
 #else
@@ -1805,7 +1829,8 @@ main(int argc, char *argv[])
                            if ((tmp_rl.size != -1) &&
                                ((bytes_done + offset) != tmp_rl.size))
                            {
-                              trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                              trans_log(INFO_SIGN, __FILE__, __LINE__,
+                                        NULL, NULL,
 #if SIZEOF_OFF_T == 4
                                         "File size of file %s in %s changed from %ld to %ld when it was retrieved.",
 #else

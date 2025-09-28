@@ -1510,7 +1510,7 @@ main(int argc, char *argv[])
                   if ((status = sftp_write(buffer,
                                            header_length)) != SUCCESS)
                   {
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                "Failed to write WMO header to remote file `%s'",
                                initial_filename);
                      rm_dupcheck_crc(fullname, p_file_name_buffer,
@@ -1560,7 +1560,7 @@ main(int argc, char *argv[])
                      if ((status = sftp_write(buffer, bytes_buffered)) != SUCCESS)
 #endif
                      {
-                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                   "Failed to write %d bytes to remote file `%s'",
                                   bytes_buffered, initial_filename);
                         rm_dupcheck_crc(fullname, p_file_name_buffer,
@@ -1681,7 +1681,7 @@ main(int argc, char *argv[])
                   buffer[3] = 3;  /* ETX */
                   if ((status = sftp_write(buffer, 4)) != SUCCESS)
                   {
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                "Failed to write <CR><CR><LF><ETX> to remote file `%s'",
                                initial_filename);
                      rm_dupcheck_crc(fullname, p_file_name_buffer,

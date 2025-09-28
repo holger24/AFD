@@ -679,7 +679,7 @@ do_scan(int   *files_to_retrieve,
          sftp_quit();
          exit(LIST_ERROR);
       }
-      if (sftp_close_dir() == INCORRECT)
+      if (sftp_close_dir() != SUCCESS)
       {
          trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                    "Failed to close remote directory.");

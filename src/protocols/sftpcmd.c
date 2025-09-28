@@ -1154,11 +1154,19 @@ sftp_pwd(void)
          {
             if (msg[0] == SSH_FXP_STATUS)
             {
-               /* Some error has occured. */
-               get_msg_str(&msg[9]);
-               trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_pwd", NULL,
-                         "%s", error_2_str(&msg[5]));
-               status = get_xfer_uint(&msg[5]);
+               if ((status = get_xfer_uint(&msg[5])) == SSH_FX_FAILURE)
+               {
+                  (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                 "Destination pwd() : Failure SSH_FXP_REALPATH");
+                  status = INCORRECT;
+               }
+               else
+               {
+                  /* Some error has occured. */
+                  get_msg_str(&msg[9]);
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_pwd", NULL,
+                            "%s", error_2_str(&msg[5]));
+               }
             }
             else
             {
@@ -1313,8 +1321,10 @@ retry_cd:
          {
             if (msg[0] == SSH_FXP_STATUS)
             {
+               unsigned int ret_status;
+
                if ((create_dir == YES) && (retries == 0) &&
-                   (get_xfer_uint(&msg[5]) == SSH_FX_NO_SUCH_FILE))
+                   ((ret_status = get_xfer_uint(&msg[5])) == SSH_FX_NO_SUCH_FILE))
                {
                   if ((status = sftp_create_dir(directory, dir_mode,
                                                 created_path)) == SUCCESS)
@@ -1325,11 +1335,20 @@ retry_cd:
                }
                else
                {
-                  /* Some error has occured. */
-                  get_msg_str(&msg[9]);
-                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_cd", NULL,
-                            "%s", error_2_str(&msg[5]));
-                  status = INCORRECT;
+                  if (ret_status == SSH_FX_FAILURE)
+                  {
+                     (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                    "Destination cd() : Failure SSH_FXP_REALPATH");
+                     status = INCORRECT;
+                  }
+                  else
+                  {
+                     /* Some error has occured. */
+                     get_msg_str(&msg[9]);
+                     trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_cd", NULL,
+                               "%s", error_2_str(&msg[5]));
+                     status = ret_status;
+                  }
                }
             }
             else
@@ -1538,12 +1557,28 @@ sftp_stat(char *filename, struct stat *p_stat_buf)
          }
          else if (msg[0] == SSH_FXP_STATUS)
               {
-                 /* Some error has occured. */
-                 get_msg_str(&msg[9]);
-                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_stat", NULL,
-                           "%s [cwd=%s filename=%s]", error_2_str(&msg[5]),
-                           (scd.cwd == NULL) ? "" : scd.cwd, filename);
-                 status = get_xfer_uint(&msg[5]);
+                 if ((status = get_xfer_uint(&msg[5])) == SSH_FX_FAILURE)
+                 {
+                    if (filename == NULL)
+                    {
+                       (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                      "Destination fstat() : Failure SSH_FXP_FSTAT");
+                    }
+                    else
+                    {
+                       (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                      "Destination stat() : Failure SSH_FXP_STAT");
+                    }
+                    status = INCORRECT;
+                 }
+                 else
+                 {
+                    /* Some error has occured. */
+                    get_msg_str(&msg[9]);
+                    trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_stat", NULL,
+                              "%s [cwd=%s filename=%s]", error_2_str(&msg[5]),
+                              (scd.cwd == NULL) ? "" : scd.cwd, filename);
+                 }
               }
               else
               {
@@ -1729,14 +1764,30 @@ sftp_set_file_time(char *filename, time_t mtime, time_t atime)
       {
          if (msg[0] == SSH_FXP_STATUS)
          {
-            if (get_xfer_uint(&msg[5]) != SSH_FX_OK)
+            if ((status = get_xfer_uint(&msg[5])) != SSH_FX_OK)
             {
-               /* Some error has occured. */
-               get_msg_str(&msg[9]);
-               trans_log(DEBUG_SIGN, __FILE__, __LINE__,
-                         "sftp_set_file_time", NULL,
-                         "%s", error_2_str(&msg[5]));
-               status = get_xfer_uint(&msg[5]);
+               if (status == SSH_FX_FAILURE)
+               {
+                  if (filename == NULL)
+                  {
+                     (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                    "Destination futimens() : Failure SSH_FXP_FSETSTAT");
+                  }
+                  else
+                  {
+                     (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                    "Destination utimensat() : Failure SSH_FXP_SETSTAT");
+                  }
+                  status = INCORRECT;
+               }
+               else
+               {
+                  /* Some error has occured. */
+                  get_msg_str(&msg[9]);
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                            "sftp_set_file_time", NULL,
+                            "%s", error_2_str(&msg[5]));
+               }
             }
          }
          else
@@ -2093,10 +2144,28 @@ retry_open_file:
                        }
                        else
                        {
-                          trans_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                    "sftp_open_file", NULL,
-                                    _("Hmm, something wrong here bailing out."));
-                          msg_str[0] = '\0';
+                          if (ret_status == SSH_FX_FAILURE)
+                          {
+                             if ((scd.cwd == NULL) || (filename[0] == '/'))
+                             {
+                                (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                               "Destination open(\"%s\") : Failure SSH_FXP_OPEN",
+                                               filename);
+                             }
+                             else
+                             {
+                                (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                               "Destination open(\"%s/%s\") : Failure SSH_FXP_OPEN",
+                                               scd.cwd, filename);
+                             }
+                          }
+                          else
+                          {
+                             trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                       "sftp_open_file", NULL,
+                                       _("Hmm, something wrong here bailing out."));
+                             msg_str[0] = '\0';
+                          }
                           status = INCORRECT;
                        }
                     }
@@ -2104,7 +2173,7 @@ retry_open_file:
                     {
                        /* Some error has occured. */
                        get_msg_str(&msg[9]);
-                       trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                       trans_log(ERROR_SIGN, __FILE__, __LINE__,
                                  "sftp_open_file", NULL,
                                  "%s [retries=%d]",
                                  error_2_str(&msg[5]), retries);
@@ -2275,11 +2344,51 @@ sftp_open_dir(char *dirname)
          }
          else if (msg[0] == SSH_FXP_STATUS)
               {
-                 /* Some error has occured. */
-                 get_msg_str(&msg[9]);
-                 trans_log(DEBUG_SIGN, __FILE__, __LINE__,
-                           "sftp_open_dir", NULL, "%s", error_2_str(&msg[5]));
-                 status = get_xfer_uint(&msg[5]);
+                 unsigned int ret_status;
+
+                 ret_status = get_xfer_uint(&msg[5]);
+                 if (ret_status == SSH_FX_FAILURE)
+                 {
+                    if ((scd.cwd == NULL) || (dirname[0] == '/'))
+                    {
+                       if (dirname[0] == '\0')
+                       {
+                          (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                         "Destination opendir(\".\") : Failure SSH_FXP_OPENDIR");
+                       }
+                       else
+                       {
+                          (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                         "Destination opendir(\"%s\") : Failure SSH_FXP_OPENDIR",
+                                         dirname);
+                       }
+                    }
+                    else
+                    {
+                       if (dirname[0] == '\0')
+                       {
+                          (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                         "Destination opendir(\"%s\") : Failure SSH_FXP_OPENDIR",
+                                         scd.cwd);
+                       }
+                       else
+                       {
+                          (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                         "Destination opendir(\"%s/%s\") : Failure SSH_FXP_OPENDIR",
+                                         scd.cwd, dirname);
+                       }
+                    }
+                    status = INCORRECT;
+                 }
+                 else
+                 {
+                    /* Some error has occured. */
+                    get_msg_str(&msg[9]);
+                    trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                              "sftp_open_dir", NULL, "%s",
+                              error_2_str(&msg[5]));
+                    status = ret_status;
+                 }
               }
               else
               {
@@ -2344,14 +2453,26 @@ sftp_close_file(void)
          {
             if (msg[0] == SSH_FXP_STATUS)
             {
-               if (get_xfer_uint(&msg[5]) != SSH_FX_OK)
+               unsigned int ret_status;
+
+               ret_status = get_xfer_uint(&msg[5]);
+               if (ret_status != SSH_FX_OK)
                {
-                  /* Some error has occured. */
-                  get_msg_str(&msg[9]);
-                  trans_log(DEBUG_SIGN, __FILE__, __LINE__,
-                            "sftp_close_file", NULL,
-                            "%s", error_2_str(&msg[5]));
-                  status = get_xfer_uint(&msg[5]);
+                  if (ret_status == SSH_FX_FAILURE)
+                  {
+                     (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                    "Destination close() : Failure SSH_FXP_CLOSE");
+                     status = INCORRECT;
+                  }
+                  else
+                  {
+                     /* Some error has occured. */
+                     get_msg_str(&msg[9]);
+                     trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                               "sftp_close_file", NULL,
+                               "%s", error_2_str(&msg[5]));
+                     status = ret_status;
+                  }
                }
             }
             else
@@ -2444,13 +2565,26 @@ sftp_close_dir(void)
       {
          if (msg[0] == SSH_FXP_STATUS)
          {
-            if (get_xfer_uint(&msg[5]) != SSH_FX_OK)
+            unsigned int ret_status;
+
+            ret_status = get_xfer_uint(&msg[5]);
+            if (ret_status != SSH_FX_OK)
             {
-               /* Some error has occured. */
-               get_msg_str(&msg[9]);
-               trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_close_dir", NULL,
-                         "%s", error_2_str(&msg[5]));
-               status = INCORRECT;
+               if (ret_status == SSH_FX_FAILURE)
+               {
+                  (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                 "Destination closedir() : Failure SSH_FXP_CLOSE");
+                  status = INCORRECT;
+               }
+               else
+               {
+                  /* Some error has occured. */
+                  get_msg_str(&msg[9]);
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                            "sftp_close_dir", NULL,
+                            "%s", error_2_str(&msg[5]));
+                  status = ret_status;
+               }
             }
          }
          else
@@ -2651,10 +2785,19 @@ sftp_mkdir(char *directory, mode_t dir_mode)
                }
                if (ret_status != SSH_FX_OK)
                {
-                  get_msg_str(&msg[9]);
-                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_mkdir", NULL,
-                            "%s", error_2_str(&msg[5]));
-                  status = ret_status;
+                  if (ret_status == SSH_FX_FAILURE)
+                  {
+                     (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                    "Destination mkdir() : Failure SSH_FXP_MKDIR");
+                     status = INCORRECT;
+                  }
+                  else
+                  {
+                     get_msg_str(&msg[9]);
+                     trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_mkdir", NULL,
+                               "%s", error_2_str(&msg[5]));
+                     status = ret_status;
+                  }
                }
             }
          }
@@ -2893,21 +3036,40 @@ retry_move:
                   }
                   else
                   {
-                     /* Assuming file already exists, so delete it and retry. */
-                     if ((status = sftp_dele(to)) == SUCCESS)
+                     if (ret_status == SSH_FX_FAILURE)
                      {
-                        retries++;
-                        goto retry_move;
+                        (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                       "Destination rename() : Failure SSH_FXP_RENAME");
+                        status = INCORRECT;
+                     }
+                     else
+                     {
+                        /* Assuming file already exists, so delete it and retry. */
+                        if ((status = sftp_dele(to)) == SUCCESS)
+                        {
+                           retries++;
+                           goto retry_move;
+                        }
                      }
                   }
                }
                else
                {
-                  /* Some error has occured. */
-                  get_msg_str(&msg[9]);
-                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_move", NULL,
-                            "%s", error_2_str(&msg[5]));
-                  status = ret_status;
+                  if (ret_status == SSH_FX_FAILURE)
+                  {
+                     (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                    "Destination rename() : Failure SSH_FXP_RENAME");
+                     status = INCORRECT;
+                  }
+                  else
+                  {
+                     /* Some error has occured. */
+                     get_msg_str(&msg[9]);
+                     trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                               "sftp_move", NULL,
+                               "%s", error_2_str(&msg[5]));
+                     status = ret_status;
+                  }
                }
             }
          }
@@ -2981,21 +3143,36 @@ sftp_write(char *block, int size)
       }
       else
       {
-         if ((status = get_write_reply(scd.request_id, __LINE__)) == SUCCESS)
+         if (((status = get_write_reply(scd.request_id, __LINE__)) == SUCCESS) ||
+             (status == INCORRECT))
          {
             if (msg[0] == SSH_FXP_STATUS)
             {
-               if (get_xfer_uint(&msg[5]) != SSH_FX_OK)
+               unsigned int ret_status;
+
+               if ((ret_status = get_xfer_uint(&msg[5])) != SSH_FX_OK)
                {
-                  /* Some error has occured. */
-                  get_msg_str(&msg[9]);
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_write", NULL,
-                            "%s", error_2_str(&msg[5]));
-                  status = INCORRECT;
+                  if (ret_status == SSH_FX_FAILURE)
+                  {
+                     (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                    "Destination write() : Failure SSH_FXP_WRITE");
+                     status = INCORRECT;
+                  }
+                  else
+                  {
+                     /* Some error has occured. */
+                     get_msg_str(&msg[9]);
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_write", NULL,
+                               "%s", error_2_str(&msg[5]));
+                     status = ret_status;
+                  }
                }
                else
                {
-                  scd.file_offset += size;
+                  if (status == SUCCESS)
+                  {
+                     scd.file_offset += size;
+                  }
                }
             }
             else
@@ -3012,6 +3189,18 @@ sftp_write(char *block, int size)
               {
                  scd.file_offset += size;
                  status = SUCCESS;
+              }
+              else
+              {
+#ifdef WITH_TRACE
+                 if ((scd.debug == TRACE_MODE) ||
+                     (scd.debug == FULL_TRACE_MODE))
+                 {
+                    trace_log(__FILE__, __LINE__, C_TRACE, NULL, 0,
+                              "sftp_write(): get_write_reply() returned %d",
+                              status);
+                 }
+#endif
               }
       }
    }
@@ -3092,16 +3281,24 @@ sftp_read(char *block, int size)
          }
          else if (msg[0] == SSH_FXP_STATUS)
               {
-                 if (get_xfer_uint(&msg[5]) == SSH_FX_EOF)
+                 if ((status = get_xfer_uint(&msg[5])) == SSH_FX_EOF)
                  {
                     status = SFTP_EOF;
                  }
                  else
                  {
-                    /* Some error has occured. */
-                    get_msg_str(&msg[9]);
-                    trans_log(DEBUG_SIGN, __FILE__, __LINE__,
-                              "sftp_read", NULL, "%s", error_2_str(&msg[5]));
+                    if (status == SSH_FX_FAILURE)
+                    {
+                       (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                      "Destination read() : Failure SSH_FXP_READ");
+                    }
+                    else
+                    {
+                       /* Some error has occured. */
+                       get_msg_str(&msg[9]);
+                       trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                 "sftp_read", NULL, "%s", error_2_str(&msg[5]));
+                    }
                     status = INCORRECT;
                  }
               }
@@ -3604,18 +3801,26 @@ sftp_readdir(char *name, struct stat *p_stat_buf)
             {
                if (msg[0] == SSH_FXP_STATUS)
                {
-                  if (get_xfer_uint(&msg[5]) == SSH_FX_EOF)
+                  if ((status = get_xfer_uint(&msg[5])) == SSH_FX_EOF)
                   {
                      status = SSH_FX_EOF;
                   }
                   else
                   {
-                     /* Some error has occured. */
-                     get_msg_str(&msg[9]);
-                     trans_log(DEBUG_SIGN, __FILE__, __LINE__,
-                               "sftp_readdir", NULL,
-                               "%s", error_2_str(&msg[5]));
-                     status = get_xfer_uint(&msg[5]);
+                     if (status == SSH_FX_FAILURE)
+                     {
+                        (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                       "Destination readdir() : Failure SSH_FXP_READDIR");
+                        status = INCORRECT;
+                     }
+                     else
+                     {
+                        /* Some error has occured. */
+                        get_msg_str(&msg[9]);
+                        trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                  "sftp_readdir", NULL,
+                                  "%s", error_2_str(&msg[5]));
+                     }
                   }
                }
                else
@@ -3779,19 +3984,30 @@ sftp_flush(void)
 #endif
       for (i = 0; i < scd.pending_write_counter; i++)
       {
-         if ((status = get_write_reply(scd.pending_write_id[i], __LINE__)) == SUCCESS)
+         if (((status = get_write_reply(scd.pending_write_id[i], __LINE__)) == SUCCESS) ||
+             (status == INCORRECT))
          {
             if (msg[0] == SSH_FXP_STATUS)
             {
-               if (get_xfer_uint(&msg[5]) != SSH_FX_OK)
+               if ((status = get_xfer_uint(&msg[5])) != SSH_FX_OK)
                {
-                  /* Some error has occured. */
-                  get_msg_str(&msg[9]);
-                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_flush", NULL,
-                            "%s", error_2_str(&msg[5]));
+                  if (status == SSH_FX_FAILURE)
+                  {
+                     (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                    "Destination write() : Failure SSH_FXP_WRITE");
+                     status = INCORRECT;
+                  }
+                  else
+                  {
+                     /* Some error has occured. */
+                     get_msg_str(&msg[9]);
+                     trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                               "sftp_flush", NULL,
+                               "%s", error_2_str(&msg[5]));
+                  }
                   scd.pending_write_counter = 0;
 
-                  return(INCORRECT);
+                  return(status);
                }
             }
             else
@@ -3893,13 +4109,21 @@ sftp_dele(char *filename)
       {
          if (msg[0] == SSH_FXP_STATUS)
          {
-            if (get_xfer_uint(&msg[5]) != SSH_FX_OK)
+            if ((status = get_xfer_uint(&msg[5])) != SSH_FX_OK)
             {
-               /* Some error has occured. */
-               get_msg_str(&msg[9]);
-               trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_dele", NULL,
-                         "%s", error_2_str(&msg[5]));
-               status = get_xfer_uint(&msg[5]);
+               if (status == SSH_FX_FAILURE)
+               {
+                  (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                 "Destination delete_file() : Failure SSH_FXP_REMOVE");
+                  status = INCORRECT;
+               }
+               else
+               {
+                  /* Some error has occured. */
+                  get_msg_str(&msg[9]);
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_dele", NULL,
+                            "%s", error_2_str(&msg[5]));
+               }
             }
          }
          else
@@ -4528,13 +4752,29 @@ sftp_chmod(char *filename, mode_t mode)
       {
          if (msg[0] == SSH_FXP_STATUS)
          {
-            if (get_xfer_uint(&msg[5]) != SSH_FX_OK)
+            if ((status = get_xfer_uint(&msg[5])) != SSH_FX_OK)
             {
-               /* Some error has occured. */
-               get_msg_str(&msg[9]);
-               trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_chmod", NULL,
-                         "%s", error_2_str(&msg[5]));
-               status = get_xfer_uint(&msg[5]);
+               if (status == SSH_FX_FAILURE)
+               {
+                  if (filename == NULL)
+                  {
+                     (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                    "Destination chmod() : Failure SSH_FXP_FSETSTAT");
+                  }
+                  else
+                  {
+                     (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                                    "Destination chmod() : Failure SSH_FXP_SETSTAT");
+                  }
+                  status = INCORRECT;
+               }
+               else
+               {
+                  /* Some error has occured. */
+                  get_msg_str(&msg[9]);
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_chmod", NULL,
+                            "%s", error_2_str(&msg[5]));
+               }
             }
          }
          else
