@@ -1,6 +1,6 @@
 /*
  *  set_pw.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -60,17 +60,16 @@ DESCR__E_M1
 #include "version.h"
 
 /* Global variables. */
-unsigned int         *current_jid_list;
-int                  no_of_current_jobs,
-                     sys_log_fd = STDERR_FILENO;
-char                 *p_work_dir = NULL;
-const char           *sys_log_name = SYSTEM_LOG_FIFO;
-struct termios       buf,
-                     set;
+unsigned int   *current_jid_list;
+int            no_of_current_jobs,
+               sys_log_fd = STDERR_FILENO;
+char           *p_work_dir = NULL;
+const char     *sys_log_name = SYSTEM_LOG_FIFO;
+struct termios buf;
 
 /* Local function prototypes. */
-static void          sig_handler(int),
-                     usage(char *);
+static void    sig_handler(int),
+               usage(char *);
 
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ main() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
@@ -770,6 +769,7 @@ main(int argc, char *argv[])
                      pas_char;
       FILE           *input;
       void           (*sig)(int);
+      struct termios set;
 
       if ((input = fopen("/dev/tty", "w+")) == NULL)
       {
