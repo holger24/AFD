@@ -206,7 +206,7 @@ main(int argc, char *argv[])
          max_blocksize = sftp_max_write_length();
       }
 
-      if (db.verbose == YES)
+      if (db.verbose >= YES)
       {
          sftp_features();
          trans_log(INFO_SIGN, NULL, 0, NULL, msg_str,
@@ -294,7 +294,7 @@ main(int argc, char *argv[])
       }
       else
       {
-         if (db.verbose == YES)
+         if (db.verbose >= YES)
          {
             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                       _("Changed directory to %s"), db.remote_dir);
@@ -416,7 +416,7 @@ main(int argc, char *argv[])
             {
                off_t bytes_done;
 
-               if (db.verbose == YES)
+               if (db.verbose >= YES)
                {
                   trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                             _("Opened data connection for file %s."),
@@ -441,7 +441,7 @@ main(int argc, char *argv[])
                }
                else
                {
-                  if (db.verbose == YES)
+                  if (db.verbose >= YES)
                   {
                      trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                                _("Opened local file %s."), local_file);
@@ -454,7 +454,7 @@ main(int argc, char *argv[])
                                            db.blocksize)) == INCORRECT) ||
                       (status == -EPIPE))
                   {
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                _("Failed to read from remote file %s (%d)"),
                                rl[i].file_name, status);
                      sftp_quit();
@@ -488,7 +488,7 @@ main(int argc, char *argv[])
                }
                else
                {
-                  if (db.verbose == YES)
+                  if (db.verbose >= YES)
                   {
                      trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                _("Closed data connection for file %s."),
@@ -504,7 +504,7 @@ main(int argc, char *argv[])
                }
                else
                {
-                  if (db.verbose == YES)
+                  if (db.verbose >= YES)
                   {
                      trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                                _("Closed local file %s."), local_file);
@@ -521,7 +521,7 @@ main(int argc, char *argv[])
                   }
                   else
                   {
-                     if (db.verbose == YES)
+                     if (db.verbose >= YES)
                      {
                         trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                   _("Deleted remote file %s."), rl[i].file_name);
@@ -651,7 +651,7 @@ main(int argc, char *argv[])
             if ((fd = open(db.filename[files_send], O_RDONLY)) == -1)
 #endif
             {
-               if (db.verbose == YES)
+               if (db.verbose >= YES)
                {
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                             _("Failed to open() local file %s : %s"),
@@ -670,7 +670,7 @@ main(int argc, char *argv[])
             if (fstat(fd, &stat_buf) == -1)
 #endif
             {
-               if (db.verbose == YES)
+               if (db.verbose >= YES)
                {
                   trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                             _("Failed to access local file %s"),
@@ -688,7 +688,7 @@ main(int argc, char *argv[])
                if (!S_ISREG(stat_buf.st_mode))
 #endif
                {
-                  if (db.verbose == YES)
+                  if (db.verbose >= YES)
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                _("Local file %s is not a regular file."),
@@ -706,7 +706,7 @@ main(int argc, char *argv[])
 #else
             local_file_size = stat_buf.st_size;
 #endif
-            if (db.verbose == YES)
+            if (db.verbose >= YES)
             {
                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                          _("Open local file %s"), db.filename[files_send]);
@@ -736,7 +736,7 @@ main(int argc, char *argv[])
                else
                {
                   append_offset = rdir_stat_buf.st_size;
-                  if (db.verbose == YES)
+                  if (db.verbose >= YES)
                   {
                      trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
 #if SIZEOF_OFF_T == 4
@@ -758,7 +758,7 @@ main(int argc, char *argv[])
                         trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
                                   _("Failed to seek() in %s (Ignoring append): %s"),
                                   final_filename, strerror(errno));
-                        if (db.verbose == YES)
+                        if (db.verbose >= YES)
                         {
                            trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
                                      _("Failed to seek() in %s (Ignoring append): %s"),
@@ -768,7 +768,7 @@ main(int argc, char *argv[])
                      else
                      {
                         append_count++;
-                        if (db.verbose == YES)
+                        if (db.verbose >= YES)
                         {
                            trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                                      _("Appending file %s."), final_filename);
@@ -799,7 +799,7 @@ main(int argc, char *argv[])
          }
          else
          {
-            if (db.verbose == YES)
+            if (db.verbose >= YES)
             {
                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                          _("Open remote file %s"), initial_filename);
@@ -827,7 +827,7 @@ main(int argc, char *argv[])
             {
                if ((bytes_buffered = read(fd, buffer, db.blocksize - buffer_offset)) < 0)
                {
-                  if (db.verbose == YES)
+                  if (db.verbose >= YES)
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                _("Could not read local file `%s' [%d] : %s"),
@@ -845,7 +845,7 @@ main(int argc, char *argv[])
                                            bytes_buffered)) != SUCCESS)
                   {
                      WHAT_DONE("send", file_size_done, no_of_files_done);
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
 #if SIZEOF_OFF_T == 4
                                _("Failed to write %d bytes to remote file %s after writing %ld bytes."),
 #else
@@ -1000,7 +1000,7 @@ main(int argc, char *argv[])
          }
          else
          {
-            if (db.verbose == YES)
+            if (db.verbose >= YES)
             {
                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                          _("Closed remote file %s"), initial_filename);
@@ -1020,7 +1020,7 @@ main(int argc, char *argv[])
                   timeout_flag = OFF;
                }
             }
-            else if (db.verbose == YES)
+            else if (db.verbose >= YES)
                  {
                     trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                               _("Changed mode of remote file `%s' to %s"),
@@ -1029,7 +1029,7 @@ main(int argc, char *argv[])
 
          }
 
-         if (db.verbose == YES)
+         if (db.verbose >= YES)
          {
             struct stat rdir_stat_buf;
 
@@ -1076,7 +1076,7 @@ main(int argc, char *argv[])
             }
             else
             {
-               if (db.verbose == YES)
+               if (db.verbose >= YES)
                {
                   trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                             _("Renamed remote file %s to %s"),
@@ -1116,7 +1116,7 @@ main(int argc, char *argv[])
             }
             else
             {
-               if (db.verbose == YES)
+               if (db.verbose >= YES)
                {
                   trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                             _("Removed orginal file %s"),
@@ -1157,7 +1157,7 @@ main(int argc, char *argv[])
 
    /* Logout again. */
    sftp_quit();
-   if (db.verbose == YES)
+   if (db.verbose >= YES)
    {
       trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str, _("Logged out."));
    }
