@@ -1,6 +1,6 @@
 /*
  *  sf_smtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -535,7 +535,7 @@ main(int argc, char *argv[])
    timeout_flag = OFF;
 #endif
    if ((status = smtp_connect(db.smtp_server, db.port,
-                              db.sndbuf_size)) != SUCCESS)
+                              db.sndbuf_size, fsa->debug)) != SUCCESS)
    {
       trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                 "SMTP connection to <%s> at port %d failed (%d).",

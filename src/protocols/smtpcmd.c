@@ -25,7 +25,7 @@ DESCR__S_M3
  **   smtpcmd - commands to send data via SMTP
  **
  ** SYNOPSIS
- **   int smtp_connect(char *hostname, int port, int sockbuf_size)
+ **   int smtp_connect(char *hostname, int port, int sockbuf_size, char debug)
  **   int smtp_auth(char *user, char *passwd)
  **   int smtp_helo(char *host_name)
  **   int smtp_ehlo(char *host_name)
@@ -115,6 +115,7 @@ DESCR__S_M3
  **   11.09.2014 H.Kiehl Added simulation mode.
  **   10.10.2014 H.Kiehl Added SMARTTLS support.
  **   22.08.2017 H.Kiehl Added function smtp_write_subject().
+ **   24.09.2025 H.Kiehl Added debug parameter to smtp_connect().
  **
  */
 DESCR__E_M3
@@ -142,60 +143,64 @@ DESCR__E_M3
 #include "commondefs.h"
 
 #ifdef WITH_SSL
-SSL                                    *ssl_con = NULL;
+SSL                             *ssl_con = NULL;
 #endif
 
 /* External global variables. */
-extern int                             simulation_mode,
-                                       timeout_flag;
-extern unsigned int                    special_flag;
-extern char                            msg_str[],
-                                       tr_hostname[];
+extern int                      simulation_mode,
+                                timeout_flag;
+extern unsigned int             special_flag;
+extern char                     msg_str[],
+                                tr_hostname[];
 #ifdef LINUX
-extern char                            *h_errlist[]; /* for gethostbyname() */
-extern int                             h_nerr;       /* for gethostbyname() */
+extern char                     *h_errlist[]; /* for gethostbyname() */
+extern int                      h_nerr;       /* for gethostbyname() */
 #endif
-extern long                            transfer_timeout;
+extern long                     transfer_timeout;
 
 /* Local global variables. */
-static int                             smtp_fd;
+static int                      smtp_fd;
 #ifdef WITH_SSL
-static char                            connected_hostname[MAX_REAL_HOSTNAME_LENGTH];
+static char                     connected_hostname[MAX_REAL_HOSTNAME_LENGTH];
 #endif
-static struct timeval                  timeout;
-static struct smtp_server_capabilities ssc;
+static struct timeval           timeout;
+static struct smtp_connect_data scd;
 
 /* Local function prototypes. */
-static int                             get_ehlo_reply(int, int),
-                                       get_reply(int, int),
-                                       read_msg(int);
+static int                      get_ehlo_reply(int, int),
+                                get_reply(int, int),
+                                read_msg(int);
 
 
 /*########################## smtp_connect() #############################*/
 int
-smtp_connect(char *hostname, int port, int sockbuf_size)
+smtp_connect(char *hostname, int port, int sockbuf_size, char debug)
 {
    if (simulation_mode == YES)
    {
       if ((smtp_fd = open("/dev/null", O_RDWR)) == -1)
       {
-         trans_log(ERROR_SIGN, __FILE__, __LINE__, "smtp_connect", "Simulated smtp_connect()",
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, "smtp_connect",
+                   "Simulated smtp_connect()",
                    _("Failed to open() /dev/null : %s"), strerror(errno));
          return(INCORRECT);
       }
       else
       {
 #ifdef WITH_TRACE
-         int length;
-
-         length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
-                           _("Simulated SMTP connect to %s (port=%d)"),
-                           hostname, port);
-         if (length > MAX_RET_MSG_LENGTH)
+         if (debug >= TRACE_MODE)
          {
-            length = MAX_RET_MSG_LENGTH;
+            int length;
+
+            length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                              _("Simulated SMTP connect to %s (port=%d)"),
+                              hostname, port);
+            if (length > MAX_RET_MSG_LENGTH)
+            {
+               length = MAX_RET_MSG_LENGTH;
+            }
+            trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
          }
-         trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
 #else
          (void)snprintf(msg_str, MAX_RET_MSG_LENGTH,
                         _("Simulated SMTP connect to %s (port=%d)"),
@@ -243,13 +248,16 @@ smtp_connect(char *hostname, int port, int sockbuf_size)
                                   rp->ai_protocol)) == -1)
          {
 # ifdef WITH_TRACE
-            length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
-                              _("socket() error : %s"), strerror(errno));
-            if (length > MAX_RET_MSG_LENGTH)
+            if (debug >= TRACE_MODE)
             {
-               length = MAX_RET_MSG_LENGTH;
+               length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                 _("socket() error : %s"), strerror(errno));
+               if (length > MAX_RET_MSG_LENGTH)
+               {
+                  length = MAX_RET_MSG_LENGTH;
+               }
+               trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
             }
-            trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
 # endif
             continue;
          }
@@ -294,13 +302,16 @@ smtp_connect(char *hostname, int port, int sockbuf_size)
             if (errno)
             {
 # ifdef WITH_TRACE
-               length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
-                                 _("connect() error : %s"), strerror(errno));
-               if (length > MAX_RET_MSG_LENGTH)
+               if (debug >= TRACE_MODE)
                {
-                  length = MAX_RET_MSG_LENGTH;
+                  length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                    _("connect() error : %s"), strerror(errno));
+                  if (length > MAX_RET_MSG_LENGTH)
+                  {
+                     length = MAX_RET_MSG_LENGTH;
+                  }
+                  trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
                }
-               trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
 # endif
             }
             (void)close(smtp_fd);
@@ -353,13 +364,15 @@ smtp_connect(char *hostname, int port, int sockbuf_size)
 #  ifdef LINUX
                if ((h_errno > 0) && (h_errno < h_nerr))
                {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "smtp_connect", NULL,
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                            "smtp_connect", NULL,
                             _("Failed to gethostbyname() %s : %s"),
                             hostname, h_errlist[h_errno]);
                }
                else
                {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "smtp_connect", NULL,
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                            "smtp_connect", NULL,
                             _("Failed to gethostbyname() %s (h_errno = %d) : %s"),
                             hostname, h_errno, strerror(errno));
                }
@@ -412,7 +425,8 @@ smtp_connect(char *hostname, int port, int sockbuf_size)
                         sizeof(reply)) < 0)
          {
             trans_log(WARN_SIGN, __FILE__, __LINE__, "smtp_connect", NULL,
-                      _("setsockopt() SO_KEEPALIVE error : %s"), strerror(errno));
+                      _("setsockopt() SO_KEEPALIVE error : %s"),
+                      strerror(errno));
          }
 #  ifdef TCP_KEEPALIVE
          reply = timeout_flag;
@@ -420,14 +434,16 @@ smtp_connect(char *hostname, int port, int sockbuf_size)
                         sizeof(reply)) < 0)
          {
             trans_log(WARN_SIGN, __FILE__, __LINE__, "smtp_connect", NULL,
-                      _("setsockopt() TCP_KEEPALIVE error : %s"), strerror(errno));
+                      _("setsockopt() TCP_KEEPALIVE error : %s"),
+                      strerror(errno));
          }
 #  endif
          timeout_flag = OFF;
       }
 # endif
 
-      if (connect_with_timeout(smtp_fd, (struct sockaddr *) &sin, sizeof(sin)) < 0)
+      if (connect_with_timeout(smtp_fd, (struct sockaddr *) &sin,
+                               sizeof(sin)) < 0)
       {
          if (errno)
          {
@@ -464,13 +480,16 @@ smtp_connect(char *hostname, int port, int sockbuf_size)
       }
 #endif
 #ifdef WITH_TRACE
-      length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
-                        _("Connected to %s at port %d"), hostname, port);
-      if (length > MAX_RET_MSG_LENGTH)
+      if (debug >= TRACE_MODE)
       {
-         length = MAX_RET_MSG_LENGTH;
+         length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                           _("Connected to %s at port %d"), hostname, port);
+         if (length > MAX_RET_MSG_LENGTH)
+         {
+            length = MAX_RET_MSG_LENGTH;
+         }
+         trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
       }
-      trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
 #endif
 
       if ((reply = get_reply(220, __LINE__)) < 0)
@@ -484,6 +503,7 @@ smtp_connect(char *hostname, int port, int sockbuf_size)
          return(reply);
       }
    }
+   scd.debug = debug;
 #ifdef WITH_SSL
    (void)memcpy(connected_hostname, hostname, MAX_REAL_HOSTNAME_LENGTH);
 #endif
@@ -541,7 +561,7 @@ smtp_smarttls(int strict, int legacy_renegotiation)
 {
    int reply;
 
-   if (ssc.starttls == YES)
+   if (scd.starttls == YES)
    {
       if ((reply = command(smtp_fd, "STARTTLS")) == SUCCESS)
       {
@@ -552,7 +572,7 @@ smtp_smarttls(int strict, int legacy_renegotiation)
                if (simulation_mode == YES)
                {
                   reply = SUCCESS;
-                  ssc.ssl_enabled = YES;
+                  scd.ssl_enabled = YES;
                }
                else
                {
@@ -561,7 +581,7 @@ smtp_smarttls(int strict, int legacy_renegotiation)
                                            strict,
                                            legacy_renegotiation)) == SUCCESS)
                   {
-                     ssc.ssl_enabled = YES;
+                     scd.ssl_enabled = YES;
                   }
                }
             }
@@ -587,7 +607,7 @@ smtp_auth(unsigned char auth_type, char *user, char *passwd)
 
    if (auth_type == SMTP_AUTH_LOGIN)
    {
-      if (ssc.auth_login == YES)
+      if (scd.auth_login == YES)
       {
          auth_type_str[0] = 'L';
          auth_type_str[1] = 'O';
@@ -604,7 +624,7 @@ smtp_auth(unsigned char auth_type, char *user, char *passwd)
    }
    else if (auth_type == SMTP_AUTH_PLAIN)
         {
-           if (ssc.auth_plain == YES)
+           if (scd.auth_plain == YES)
            {
               auth_type_str[0] = 'P';
               auth_type_str[1] = 'L';
@@ -642,7 +662,7 @@ smtp_auth(unsigned char auth_type, char *user, char *passwd)
                  userpasswd_b64[MAX_USER_NAME_LENGTH + MAX_USER_NAME_LENGTH];
 
             dst_ptr = userpasswd_b64;
-            if (ssc.auth_login == YES)
+            if (scd.auth_login == YES)
             {
                length = strlen(user);
                src_ptr = user;
@@ -695,7 +715,7 @@ smtp_auth(unsigned char auth_type, char *user, char *passwd)
                {
                   if (reply == 334)
                   {
-                     if (ssc.auth_login == YES)
+                     if (scd.auth_login == YES)
                      {
                         dst_ptr = userpasswd_b64;
                         length = strlen(passwd);
@@ -1048,7 +1068,10 @@ smtp_write(char *block, char *buffer, size_t size)
            }
 #endif
 #ifdef WITH_TRACE
-           trace_log(NULL, 0, BIN_W_TRACE, ptr, size, NULL);
+           if (scd.debug >= TRACE_MODE)
+           {
+              trace_log(NULL, 0, BIN_W_TRACE, ptr, size, NULL);
+           }
 #endif
         }
    else if (status < 0)
@@ -1218,7 +1241,10 @@ smtp_write_iso8859(char *block, char *buffer, int size)
            }
 #endif
 #ifdef WITH_TRACE
-           trace_log(NULL, 0, BIN_W_TRACE, (char *)ptr, size, NULL);
+           if (scd.debug >= TRACE_MODE)
+           {
+              trace_log(NULL, 0, BIN_W_TRACE, (char *)ptr, size, NULL);
+           }
 #endif
         }
         else if (status < 0)
@@ -1355,10 +1381,10 @@ get_reply(int reply, int line)
 static int
 get_ehlo_reply(int reply, int line)
 {
-   ssc.auth_login = NO;
-   ssc.auth_plain = NO;
-   ssc.starttls = NO;
-   ssc.ssl_enabled = NO;
+   scd.auth_login = NO;
+   scd.auth_plain = NO;
+   scd.starttls = NO;
+   scd.ssl_enabled = NO;
    if (simulation_mode == YES)
    {
       return(reply);
@@ -1399,7 +1425,7 @@ get_ehlo_reply(int reply, int line)
                         ((*(ptr + 5) == ' ') || (*(ptr + 5) == '\0')))
                     {
                        ptr += 5;
-                       ssc.auth_login = YES;
+                       scd.auth_login = YES;
                     }
                          /* PLAIN */
                     else if (((*ptr == 'P') || (*ptr == 'p')) &&
@@ -1410,7 +1436,7 @@ get_ehlo_reply(int reply, int line)
                              ((*(ptr + 5) == ' ') || (*(ptr + 5) == '\0')))
                          {
                             ptr += 5;
-                            ssc.auth_plain = YES;
+                            scd.auth_plain = YES;
                          }
                          else
                          {
@@ -1439,7 +1465,7 @@ get_ehlo_reply(int reply, int line)
                        ((msg_str[11] == 'S') || (msg_str[11] == 'h')) &&
                        (msg_str[12] == '\0'))
                    {
-                      ssc.starttls = YES;
+                      scd.starttls = YES;
                    }
            }
    }
@@ -1516,7 +1542,8 @@ try_again_read_msg:
                           {
                              timeout_flag = CON_RESET;
                           }
-                          trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
+                          trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                    "read_msg", NULL,
                                     _("read() error (after reading %d bytes) [%d] : %s"),
                                     bytes_buffered, line, strerror(errno));
                           bytes_read = 0;
@@ -1533,7 +1560,8 @@ try_again_read_msg:
                     {
                        if (bytes_read == 0)
                        {
-                          trans_log(ERROR_SIGN,  __FILE__, __LINE__, "read_msg", NULL,
+                          trans_log(ERROR_SIGN,  __FILE__, __LINE__,
+                                    "read_msg", NULL,
                                     _("Remote hang up. [%d]"), line);
                           timeout_flag = NEITHER;
                        }
@@ -1564,7 +1592,7 @@ try_again_read_msg:
                           {
                              SSL_free(ssl_con);
                              ssl_con = NULL;
-                             ssc.ssl_enabled = NO;
+                             scd.ssl_enabled = NO;
                              timeout_flag = OFF;
                              goto try_again_read_msg;
                           }
@@ -1575,8 +1603,11 @@ try_again_read_msg:
                  }
 #endif
 #ifdef WITH_TRACE
-                 trace_log(NULL, 0, R_TRACE,
-                           &msg_str[bytes_buffered], bytes_read, NULL);
+                 if (scd.debug >= TRACE_MODE)
+                 {
+                    trace_log(NULL, 0, R_TRACE,
+                              &msg_str[bytes_buffered], bytes_read, NULL);
+                 }
 #endif
                  read_ptr = &msg_str[bytes_buffered];
                  bytes_buffered += bytes_read;

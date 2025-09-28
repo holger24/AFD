@@ -1,6 +1,6 @@
 /*
  *  asmtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -90,6 +90,10 @@ int                  line_length = 0,  /* encode_base64()                */
                      *no_of_listed_files,
                      simulation_mode = NO,
                      sys_log_fd = STDERR_FILENO,
+                     trans_db_log_fd = STDERR_FILENO,
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                     trans_db_log_readfd = STDERR_FILENO,
+#endif
                      transfer_log_fd = STDERR_FILENO,
                      timeout_flag,
                      sigpipe_flag;
@@ -192,7 +196,7 @@ main(int argc, char *argv[])
 
    /* Connect to remote SMTP-server. */
    if ((status = smtp_connect(db.smtp_server, db.port,
-                              db.sndbuf_size)) != SUCCESS)
+                              db.sndbuf_size, db.verbose)) != SUCCESS)
    {
       trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                 _("SMTP connection to <%s> at port %d failed (%d)."),
@@ -201,7 +205,7 @@ main(int argc, char *argv[])
    }
    else
    {
-      if (db.verbose == YES)
+      if (db.verbose >= YES)
       {
          trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                    _("Connected to <%s> at port %d."), db.smtp_server, db.port);
@@ -228,7 +232,7 @@ main(int argc, char *argv[])
       }
       else
       {
-         if (db.verbose == YES)
+         if (db.verbose >= YES)
          {
             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                       _("Send HELO."));
@@ -237,7 +241,7 @@ main(int argc, char *argv[])
    }
    else if (status == SUCCESS)
         {
-           if (db.verbose == YES)
+           if (db.verbose >= YES)
            {
               trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                         _("Send EHLO."));
@@ -256,7 +260,7 @@ main(int argc, char *argv[])
    /* Try negotiate SMARTTLS. */
    if ((status = smtp_smarttls(db.strict, db.legacy_renegotiation)) == SUCCESS)
    {
-      if (db.verbose == YES)
+      if (db.verbose >= YES)
       {
          trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                    "SSL/TSL connection to server `%s' succesful.",
@@ -280,7 +284,7 @@ main(int argc, char *argv[])
          }
          else
          {
-            if (db.verbose == YES)
+            if (db.verbose >= YES)
             {
                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                          _("Send HELO."));
@@ -289,7 +293,7 @@ main(int argc, char *argv[])
       }
       else if (status == SUCCESS)
            {
-              if (db.verbose == YES)
+              if (db.verbose >= YES)
               {
                  trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                            _("Send EHLO again."));
@@ -306,7 +310,7 @@ main(int argc, char *argv[])
    }
    else if (status == NEITHER)
         {
-           if (db.verbose == YES)
+           if (db.verbose >= YES)
            {
               trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                         "Server `%s' not supporting SSL/TSL connection.",
@@ -388,7 +392,7 @@ main(int argc, char *argv[])
       }
       else
       {
-         if (db.verbose == YES)
+         if (db.verbose >= YES)
          {
             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                       _("Entered local user name %s."), local_user);
@@ -406,7 +410,7 @@ main(int argc, char *argv[])
       }
       else
       {
-         if (db.verbose == YES)
+         if (db.verbose >= YES)
          {
             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                       _("Remote address %s accepted by SMTP-server."),
@@ -429,7 +433,7 @@ main(int argc, char *argv[])
       }                   
       else
       {   
-         if (db.verbose == YES)
+         if (db.verbose >= YES)
          {                           
             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                       _("Set DATA mode."));
@@ -558,7 +562,7 @@ main(int argc, char *argv[])
       }
       else
       {
-         if (db.verbose == YES)
+         if (db.verbose >= YES)
          {
             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                       _("Closing DATA mode."));
@@ -601,7 +605,7 @@ main(int argc, char *argv[])
          }
          else
          {
-            if (db.verbose == YES)
+            if (db.verbose >= YES)
             {
                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                          _("Entered local user name %s."), local_user);
@@ -619,7 +623,7 @@ main(int argc, char *argv[])
          }
          else
          {
-            if (db.verbose == YES)
+            if (db.verbose >= YES)
             {
                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                          _("Remote address %s accepted by SMTP-server."),
@@ -642,7 +646,7 @@ main(int argc, char *argv[])
          }                   
          else
          {   
-            if (db.verbose == YES)
+            if (db.verbose >= YES)
             {                           
                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                          _("Set DATA mode."));
@@ -652,7 +656,7 @@ main(int argc, char *argv[])
          /* Open local file. */
          if ((fd = open(db.filename[files_send], O_RDONLY)) < 0)
          {
-            if (db.verbose == YES)
+            if (db.verbose >= YES)
             {
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                          _("Failed to open() local file %s"),
@@ -670,7 +674,7 @@ main(int argc, char *argv[])
             }
             else
             {
-               if (db.verbose == YES)
+               if (db.verbose >= YES)
                {
                   trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                             _("Closing DATA mode."));
@@ -685,7 +689,7 @@ main(int argc, char *argv[])
          if (fstat(fd, &stat_buf) == -1)
 #endif
          {
-            if (db.verbose == YES)
+            if (db.verbose >= YES)
             {
                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                          _("Failed to access local file `%s'"),
@@ -704,7 +708,7 @@ main(int argc, char *argv[])
             if (!S_ISREG(stat_buf.st_mode))
 #endif
             {
-               if (db.verbose == YES)
+               if (db.verbose >= YES)
                {
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                             _("Local file `%s' is not a regular file."),
@@ -722,7 +726,7 @@ main(int argc, char *argv[])
                }
                else
                {
-                  if (db.verbose == YES)
+                  if (db.verbose >= YES)
                   {
                      trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                _("Closing DATA mode."));
@@ -737,7 +741,7 @@ main(int argc, char *argv[])
 #else
          local_file_size = stat_buf.st_size;
 #endif
-         if (db.verbose == YES)
+         if (db.verbose >= YES)
          {
             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                       _("Open local file `%s'"), db.filename[files_send]);
@@ -1122,7 +1126,7 @@ main(int argc, char *argv[])
          }
          else
          {
-            if (db.verbose == YES)
+            if (db.verbose >= YES)
             {
                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                          _("Closing DATA mode."));
@@ -1157,7 +1161,7 @@ main(int argc, char *argv[])
    }
    else
    {
-      if (db.verbose == YES)
+      if (db.verbose >= YES)
       {
          trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                    _("Logged out."));

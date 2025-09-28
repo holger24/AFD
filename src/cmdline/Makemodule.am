@@ -98,11 +98,13 @@ bin_asftp_CFLAGS       = -DWITH_TRACE
 bin_asmtp_SOURCES      = src/cmdline/asmtp.c\
                          src/cmdline/eval_files.c\
                          src/cmdline/init_asmtp.c\
+                         src/cmdline/trace_log.c\
                          src/cmdline/trans_log.c
 bin_asmtp_LDADD        = @EXTRA_SOCKET_LIBS@\
                          lib/libprotocols.a\
                          lib/libafd.a\
                          @AFD_SSL_LIBS@
+bin_asmtp_CFLAGS       = -DWITH_TRACE
 bin_awmo_SOURCES       = src/cmdline/awmo.c\
                          src/cmdline/eval_files.c\
                          src/cmdline/init_awmo.c\

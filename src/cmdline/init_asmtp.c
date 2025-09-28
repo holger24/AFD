@@ -1,6 +1,6 @@
 /*
  *  init_asmtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2000 - 2025 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -42,6 +42,7 @@ DESCR__S_M3
  ** HISTORY
  **   20.11.2000 H.Kiehl Created
  **   04.08.2002 H.Kiehl Added To:, From: and Reply-To headers.
+ **   29.09.2025 H.Kiehl Added option -vv and -vvv.
  **
  */
 DESCR__E_M3
@@ -444,7 +445,26 @@ init_asmtp(int argc, char *argv[], struct data *p_db)
             break;
 
          case 'v' : /* Verbose mode. */
-            p_db->verbose = YES;
+            if (*(argv[0] + 2) == '\0')
+            {
+               p_db->verbose = YES;
+            }
+            else if ((*(argv[0] + 2) == 'v') && (*(argv[0] + 3) == '\0'))
+                 {
+                    p_db->verbose = TRACE_MODE;
+                 }
+            else if ((*(argv[0] + 2) == 'v') && (*(argv[0] + 3) == 'v') &&
+                     (*(argv[0] + 4) == '\0'))
+                 {
+                    p_db->verbose = FULL_TRACE_MODE;
+                 }
+                 else
+                 {
+                    (void)fprintf(stderr,
+                                  _("ERROR   : Unknown parameter <%s>. (%s %d)\n"),
+                                  argv[0], __FILE__, __LINE__);
+                    correct = NO;
+                 }
             break;
 
          case 'y' : /* Filename is user. */
@@ -554,6 +574,10 @@ usage(void)
    (void)fprintf(stderr, _("  -u <user>                  - The user who should get the mail.\n"));
    (void)fprintf(stderr, _("  -v                         - Verbose. Shows all SMTP commands and\n"));
    (void)fprintf(stderr, _("                               the reply from the SMTP server.\n"));
+   (void)fprintf(stderr, _("  -vv                        - Trace. As above but with more\n\
+                               information.\n"));
+   (void)fprintf(stderr, _("  -vvv                       - Full trace. As above but shows\n\
+                               content of file.\n"));
 #ifdef WITH_SSL
    (void)fprintf(stderr, _("  -x                         - Use TLS legacy renegotiation.\n"));
 #endif
