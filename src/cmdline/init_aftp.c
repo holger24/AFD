@@ -57,6 +57,7 @@ DESCR__S_M3
  **   06.03.2020 H.Kiehl    Added option -I.
  **   02.09.2022 H.Kiehl    Added option -y.
  **   19.09.2025 H.Kiehl    Added option -vv and -vvv.
+ **   28.09.2025 H.Kiehl    Added option -U.
  **
  */
 DESCR__E_M3
@@ -64,29 +65,34 @@ DESCR__E_M3
 #include <stdio.h>                 /* stderr, fprintf()                  */
 #include <stdlib.h>                /* exit(), atoi()                     */
 #include <string.h>                /* strcpy(), strerror(), strcmp()     */
+#include <signal.h>
+#include <termios.h>
 #include <ctype.h>                 /* isdigit()                          */
 #include <errno.h>
 #include "cmdline.h"
 #include "ftpdefs.h"
 
 /* Global variables. */
-extern int  no_of_host,
-            sys_log_fd,
-            fsa_id;
-extern char *p_work_dir;
+extern int            no_of_host,
+                      sys_log_fd,
+                      fsa_id;
+extern char           *p_work_dir;
 
 /* Local global variables. */
-static char name[30];
+static char           name[30];
+static struct termios buf;
 
 /* Local function prototypes. */
-static void usage(void);
+static void           sig_handler(int),
+                      usage(void);
 
 
 /*############################ init_aftp() ##############################*/
 int
 init_aftp(int argc, char *argv[], struct data *p_db)
 {
-   int  correct = YES,                /* Was input/syntax correct?      */
+   int  ask_for_password = NO,
+        correct = YES,                /* Was input/syntax correct?      */
         set_extended_mode = NO;
    char *ptr;
 
@@ -529,6 +535,22 @@ init_aftp(int argc, char *argv[], struct data *p_db)
             }
             break;
 
+         case 'U' : /* User name and enter password via keyboard. */
+            if ((argc == 1) || (*(argv + 1)[0] == '-'))
+            {
+               (void)fprintf(stderr,
+                             _("ERROR   : No user specified for option -U.\n"));
+               correct = NO;
+            }
+            else
+            {
+               argv++;
+               (void)my_strncpy(p_db->user, argv[0], MAX_USER_NAME_LENGTH);
+               argc--;
+               ask_for_password = YES;
+            }
+            break;
+
          case 'r' : /* Remove file that was transmitted. */
             p_db->remove = YES;
             break;
@@ -777,6 +799,85 @@ init_aftp(int argc, char *argv[], struct data *p_db)
       usage();
       exit(SYNTAX_ERROR);
    }
+   else if (ask_for_password == YES)
+        {
+           int            echo_disabled,
+                          i,
+                          pas_char;
+           FILE           *input;
+           void           (*sig)(int);
+           struct termios set;
+
+           (void)fprintf(stdout, "Enter password: ");
+           (void)fflush(stdout);
+           if ((input = fopen("/dev/tty", "w+")) == NULL)
+           {
+              input = stdin;
+           }
+           if ((sig = signal(SIGINT, sig_handler)) == SIG_ERR)
+           {
+              (void)fprintf(stderr, "ERROR   : signal() error : %s (%s %d)\n",
+                            strerror(errno), __FILE__, __LINE__);
+              exit(INCORRECT);
+           }
+
+           if (tcgetattr(fileno(stdin), &buf) < 0)
+           {
+              (void)fprintf(stderr,
+                            "ERROR   : tcgetattr() error : %s (%s %d)\n",
+                            strerror(errno), __FILE__, __LINE__);
+              exit(INCORRECT);
+           }
+           set = buf;
+
+           if (set.c_lflag & ECHO)
+           {
+              set.c_lflag &= ~ECHO;
+
+              if (tcsetattr(fileno(stdin), TCSAFLUSH, &set) < 0)
+              {
+                 (void)fprintf(stderr,
+                               "ERROR   : tcsetattr() error : %s (%s %d)\n",
+                               strerror(errno), __FILE__, __LINE__);
+                 exit(INCORRECT);
+              }
+              echo_disabled = YES;
+           }
+           else
+           {
+              echo_disabled = NO;
+           }
+           i = 0;
+           while (((pas_char = fgetc(input)) != '\n') && (pas_char != EOF) &&
+                  (i < (MAX_USER_NAME_LENGTH - 3)))
+           {
+              p_db->password[i] = pas_char;
+              i++;
+           }
+           p_db->password[i] = '\0';
+           if (echo_disabled == YES)
+           {
+              if (tcsetattr(fileno(stdin), TCSANOW, &buf) < 0)
+              {
+                 (void)fprintf(stderr,
+                               "ERROR   : tcsetattr() error : %s (%s %d)\n",
+                               strerror(errno), __FILE__, __LINE__);
+                 exit(INCORRECT);
+              }
+           }
+           if (signal(SIGINT, sig) == SIG_ERR)
+           {
+              (void)fprintf(stderr, "ERROR   : signal() error : %s (%s %d)\n",
+                            strerror(errno), __FILE__, __LINE__);
+              exit(INCORRECT);
+           }
+           if (fclose(input) == EOF)
+           {
+              (void)fprintf(stderr, "WARNING : fclose() error : %s (%s %d)\n",
+                            strerror(errno), __FILE__, __LINE__);
+           }
+           (void)fprintf(stdout, "\n");
+        }
 
    return(SUCCESS);
 }
@@ -859,6 +960,8 @@ usage(void)
                                        details on syntax.\n"));
    (void)fprintf(stderr, _("  -u <user> <password>               - Remote user name and password. If not\n\
                                        supplied, it will login as %s.\n"), DEFAULT_AFD_USER);
+   (void)fprintf(stderr, _("  -U <user>                          - Remote user name and password is read\n\
+                                       from keyboard.\n"));
    if (name[0] == 'r')
    {
       (void)fprintf(stderr, _("  -R <buffer size>                   - Socket receive buffer size\n\
@@ -921,4 +1024,19 @@ usage(void)
    (void)fprintf(stderr, _("      %2d - Syntax wrong.\n"), SYNTAX_ERROR);
 
    return;
+}
+
+
+/*---------------------------- sig_handler() ----------------------------*/
+static void
+sig_handler(int signo)
+{
+   if (tcsetattr(fileno(stdin), TCSANOW, &buf) < 0)
+   {
+      (void)fprintf(stderr, "ERROR   : tcsetattr() error : %s (%s %d)\n",
+                    strerror(errno), __FILE__, __LINE__);
+   }
+   (void)fprintf(stdout, "\n");
+
+   exit(INCORRECT);
 }
