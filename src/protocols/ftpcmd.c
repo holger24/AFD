@@ -356,16 +356,19 @@ ftp_connect(char *hostname,
       else
       {
 #ifdef WITH_TRACE
-         int length;
-
-         length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
-                           _("Simulated FTP connect to %s (port=%d)"),
-                           hostname, port);
-         if (length > MAX_RET_MSG_LENGTH)
+         if (debug >= TRACE_MODE)
          {
-            length = MAX_RET_MSG_LENGTH;
+            int length;
+
+            length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                              _("Simulated FTP connect to %s (port=%d)"),
+                              hostname, port);
+            if (length > MAX_RET_MSG_LENGTH)
+            {
+               length = MAX_RET_MSG_LENGTH;
+            }
+            trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
          }
-         trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
 #else
          (void)snprintf(msg_str, MAX_RET_MSG_LENGTH,
                         _("Simulated FTP connect to %s (port=%d)"),
@@ -440,13 +443,16 @@ ftp_connect(char *hostname,
                                   rp->ai_protocol)) == -1)
          {
 # ifdef WITH_TRACE
-            length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
-                              _("socket() error : %s"), strerror(errno));
-            if (length > MAX_RET_MSG_LENGTH)
+            if (debug >= TRACE_MODE)
             {
-               length = MAX_RET_MSG_LENGTH;
+               length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                 _("socket() error : %s"), strerror(errno));
+               if (length > MAX_RET_MSG_LENGTH)
+               {
+                  length = MAX_RET_MSG_LENGTH;
+               }
+               trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
             }
-            trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
 # endif
             continue;
          }
@@ -482,13 +488,16 @@ ftp_connect(char *hostname,
             if (errno != 0)
             {
 # ifdef WITH_TRACE
-               length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
-                                 _("connect() error : %s"), strerror(errno));
-               if (length > MAX_RET_MSG_LENGTH)
+               if (debug >= TRACE_MODE)
                {
-                  length = MAX_RET_MSG_LENGTH;
+                  length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                    _("connect() error : %s"), strerror(errno));
+                  if (length > MAX_RET_MSG_LENGTH)
+                  {
+                     length = MAX_RET_MSG_LENGTH;
+                  }
+                  trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
                }
-               trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
 # endif
             }
             (void)close(control_fd);
@@ -753,13 +762,16 @@ ftp_connect(char *hostname,
 # endif
 #endif
 #ifdef WITH_TRACE
-      length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
-                        _("Connected to %s at port %d"), hostname, port);
-      if (length > MAX_RET_MSG_LENGTH)
+      if (debug >= TRACE_MODE)
       {
-         length = MAX_RET_MSG_LENGTH;
+         length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                           _("Connected to %s at port %d"), hostname, port);
+         if (length > MAX_RET_MSG_LENGTH)
+         {
+            length = MAX_RET_MSG_LENGTH;
+         }
+         trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
       }
-      trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
 #endif
 
       length = sizeof(ctrl);
@@ -923,26 +935,29 @@ ftp_connect(char *hostname,
          else
          {
 # ifdef WITH_TRACE
-            int              length;
-            const char       *ssl_version;
-            const SSL_CIPHER *ssl_cipher;
-
-            ssl_version = SSL_get_cipher_version(ssl_con);
-            length = strlen(msg_str);
-            if ((ssl_cipher = SSL_get_current_cipher(ssl_con)) != NULL)
+            if (fcd.debug >= TRACE_MODE)
             {
-               int ssl_bits;
+               int              length;
+               const char       *ssl_version;
+               const SSL_CIPHER *ssl_cipher;
 
-               SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
-               (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
-                              "  <%s, cipher %s, %d bits>",
-                              ssl_version, SSL_CIPHER_get_name(ssl_cipher),
-                              ssl_bits);
-            }
-            else
-            {
-               (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
-                              "  <%s, cipher ?, ? bits>", ssl_version);
+               ssl_version = SSL_get_cipher_version(ssl_con);
+               length = strlen(msg_str);
+               if ((ssl_cipher = SSL_get_current_cipher(ssl_con)) != NULL)
+               {
+                  int ssl_bits;
+
+                  SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
+                  (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+                                 "  <%s, cipher %s, %d bits>",
+                                 ssl_version, SSL_CIPHER_get_name(ssl_cipher),
+                                 ssl_bits);
+               }
+               else
+               {
+                  (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+                                 "  <%s, cipher ?, ? bits>", ssl_version);
+               }
             }
 # endif
             if (strict == YES)
@@ -967,14 +982,16 @@ ftp_connect(char *hostname,
                {
                   char *issuer = NULL;
 # ifdef WITH_TRACE
-                  char *subject;
+                  if (debug >= TRACE_MODE)
+                  {
+                     char *subject;
 
-                  issuer = rfc2253_formatted(X509_get_issuer_name(cert));
-                  subject = rfc2253_formatted(X509_get_subject_name(cert));
-                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ftp_connect", NULL,
-                            "<CERT subject: %s issuer: %s>", subject, issuer);
-                  free(subject);
-
+                     issuer = rfc2253_formatted(X509_get_issuer_name(cert));
+                     subject = rfc2253_formatted(X509_get_subject_name(cert));
+                     trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ftp_connect", NULL,
+                               "<CERT subject: %s issuer: %s>", subject, issuer);
+                     free(subject);
+                  }
 # endif
                   if ((reply = SSL_get_verify_result(ssl_con)) != X509_V_OK)
                   {
@@ -1213,26 +1230,31 @@ ftp_ssl_auth(int strict, int legacy_renegotiation)
             else
             {
 # ifdef WITH_TRACE
-               int              length;
-               const char       *ssl_version;
-               const SSL_CIPHER *ssl_cipher;
-
-               ssl_version = SSL_get_cipher_version(ssl_con);
-               length = strlen(msg_str);
-               if ((ssl_cipher = SSL_get_current_cipher(ssl_con)) != NULL)
+               if (fcd.debug >= TRACE_MODE)
                {
-                  int ssl_bits;
+                  int              length;
+                  const char       *ssl_version;
+                  const SSL_CIPHER *ssl_cipher;
 
-                  SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
-                  (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
-                                 "  <%s, cipher %s, %d bits>",
-                                 ssl_version, SSL_CIPHER_get_name(ssl_cipher),
-                                 ssl_bits);
-               }
-               else
-               {
-                  (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
-                                 "  <%s, cipher ?, ? bits>", ssl_version);
+                  ssl_version = SSL_get_cipher_version(ssl_con);
+                  length = strlen(msg_str);
+                  if ((ssl_cipher = SSL_get_current_cipher(ssl_con)) != NULL)
+                  {
+                     int ssl_bits;
+
+                     SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
+                     (void)snprintf(&msg_str[length],
+                                    MAX_RET_MSG_LENGTH - length,
+                                    "  <%s, cipher %s, %d bits>",
+                                    ssl_version, SSL_CIPHER_get_name(ssl_cipher),
+                                    ssl_bits);
+                  }
+                  else
+                  {
+                     (void)snprintf(&msg_str[length],
+                                    MAX_RET_MSG_LENGTH - length,
+                                    "  <%s, cipher ?, ? bits>", ssl_version);
+                  }
                }
 # endif
                reply = SUCCESS;
@@ -2187,7 +2209,11 @@ ftp_keepalive(void)
               }
 #endif
 #ifdef WITH_TRACE
-              trace_log(NULL, 0, W_TRACE, NULL, 0, "Telnet Interrupt IAC,IP");
+              if (fcd.debug >= TRACE_MODE)
+              {
+                 trace_log(NULL, 0, W_TRACE, NULL, 0,
+                           "Telnet Interrupt IAC,IP");
+              }
 #endif
            }
       else if (reply < 0)
@@ -2231,7 +2257,10 @@ ftp_keepalive(void)
                  return(errno);
               }
 #ifdef WITH_TRACE
-              trace_log(NULL, 0, W_TRACE, NULL, 0, "send MSG_OOB IAC, DM");
+              if (fcd.debug >= TRACE_MODE)
+              {
+                 trace_log(NULL, 0, W_TRACE, NULL, 0, "send MSG_OOB IAC, DM");
+              }
 #endif
            }
       else if (reply < 0)
@@ -4521,26 +4550,29 @@ encrypt_data_connection(int fd)
       X509             *x509_ssl_con,
                        *x509_ssl_data;
 # ifdef WITH_TRACE
-      int              length;
-      const char       *ssl_version;
-      const SSL_CIPHER *ssl_cipher;
-
-      ssl_version = SSL_get_cipher_version(ssl_data);
-      length = strlen(msg_str);
-      if ((ssl_cipher = SSL_get_current_cipher(ssl_data)) != NULL)
+      if (fcd.debug >= TRACE_MODE)
       {
-         int ssl_bits;
+         int              length;
+         const char       *ssl_version;
+         const SSL_CIPHER *ssl_cipher;
 
-         SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
-         (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
-                        "  <%s, cipher %s, %d bits>",
-                        ssl_version, SSL_CIPHER_get_name(ssl_cipher),
-                        ssl_bits);
-      }
-      else
-      {
-         (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
-                        "  <%s, cipher ?, ? bits>", ssl_version);
+         ssl_version = SSL_get_cipher_version(ssl_data);
+         length = strlen(msg_str);
+         if ((ssl_cipher = SSL_get_current_cipher(ssl_data)) != NULL)
+         {
+            int ssl_bits;
+
+            SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
+            (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+                           "  <%s, cipher %s, %d bits>",
+                           ssl_version, SSL_CIPHER_get_name(ssl_cipher),
+                           ssl_bits);
+         }
+         else
+         {
+            (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+                           "  <%s, cipher ?, ? bits>", ssl_version);
+         }
       }
 # endif
 
@@ -4831,7 +4863,10 @@ ftp_write(char *block, char *buffer, int size)
            }
 #endif
 #ifdef WITH_TRACE
-           trace_log(NULL, 0, BIN_W_TRACE, ptr, size, NULL);
+           if (fcd.debug >= TRACE_MODE)
+           {
+              trace_log(NULL, 0, BIN_W_TRACE, ptr, size, NULL);
+           }
 #endif
         }
    else if (status < 0)
@@ -5067,7 +5102,10 @@ ftp_read(char *block, int blocksize)
               }
       }
 # ifdef WITH_TRACE
-      trace_log(NULL, 0, BIN_R_TRACE, block, bytes_read, NULL);
+      if (fcd.debug >= TRACE_MODE)
+      {
+         trace_log(NULL, 0, BIN_R_TRACE, block, bytes_read, NULL);
+      }
 # endif
    }
    else
@@ -5161,7 +5199,10 @@ ftp_read(char *block, int blocksize)
               }
 #endif
 #ifdef WITH_TRACE
-              trace_log(NULL, 0, BIN_R_TRACE, block, bytes_read, NULL);
+              if (fcd.debug >= TRACE_MODE)
+              {
+                 trace_log(NULL, 0, BIN_R_TRACE, block, bytes_read, NULL);
+              }
 #endif
            }
       else if (status < 0)
@@ -5522,7 +5563,10 @@ get_stat_reply(int reply, int type, ...)
               }
 #endif
 #ifdef WITH_TRACE
-              trace_log(NULL, 0, LIST_R_TRACE, tmp_buffer, bytes_read, NULL);
+              if (fcd.debug >= TRACE_MODE)
+              {
+                 trace_log(NULL, 0, LIST_R_TRACE, tmp_buffer, bytes_read, NULL);
+              }
 #endif
               if ((msg_str[0] == '\0') &&
                   (isdigit((int)tmp_buffer[0]) != 0) &&
@@ -5813,8 +5857,11 @@ read_data_line(int read_fd, char *line)
                  }
 #endif
 #ifdef WITH_TRACE
-                 trace_log(NULL, 0, BIN_R_TRACE,
-                           &line[bytes_buffered], bytes_read, NULL);
+                 if (fcd.debug >= TRACE_MODE)
+                 {
+                    trace_log(NULL, 0, BIN_R_TRACE,
+                              &line[bytes_buffered], bytes_read, NULL);
+                 }
 #endif
                  read_ptr = &line[bytes_buffered];
                  bytes_buffered += bytes_read;
@@ -5940,7 +5987,10 @@ read_data_to_buffer(int read_fd, char ***buffer)
               }
 #endif
 #ifdef WITH_TRACE
-              trace_log(NULL, 0, LIST_R_TRACE, tmp_buffer, bytes_read, NULL);
+              if (fcd.debug >= TRACE_MODE)
+              {
+                 trace_log(NULL, 0, LIST_R_TRACE, tmp_buffer, bytes_read, NULL);
+              }
 #endif
               if (**buffer == NULL)
               {
@@ -6108,8 +6158,11 @@ try_again_read_msg:
                  }
 #endif
 #ifdef WITH_TRACE
-                 trace_log(NULL, 0, R_TRACE,
-                           &msg_str[bytes_buffered], bytes_read, NULL);
+                 if (fcd.debug >= TRACE_MODE)
+                 {
+                    trace_log(NULL, 0, R_TRACE,
+                              &msg_str[bytes_buffered], bytes_read, NULL);
+                 }
 #endif
                  read_ptr = &msg_str[bytes_buffered];
                  bytes_buffered += bytes_read;
