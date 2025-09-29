@@ -1,6 +1,6 @@
 /*
  *  xsend_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@ DESCR__S_M1
  ** HISTORY
  **   24.01.2005 H.Kiehl Created
  **   12.08.2006 H.Kiehl Added extended active/passive mode option.
+ **   29.09.2025 H.Kiehl Add trace and full trace mode.
  **
  */
 DESCR__E_M1
@@ -155,6 +156,7 @@ main(int argc, char *argv[])
    Widget          button_w,
                    buttonbox_w,
                    criteriabox_w,
+                   debug_option_menu_w,
                    main_form_w,
                    optionbox_w,
                    pane_w,
@@ -389,32 +391,39 @@ main(int argc, char *argv[])
    argcount++;
    button_w = XtCreateManagedWidget("FTP", xmPushButtonWidgetClass,
                                     pane_w, args, argcount);
-   XtAddCallback(button_w, XmNactivateCallback, protocol_toggled, (XtPointer)FTP);
+   XtAddCallback(button_w, XmNactivateCallback, protocol_toggled,
+                 (XtPointer)FTP);
    button_w = XtCreateManagedWidget("SFTP", xmPushButtonWidgetClass,
                                     pane_w, args, argcount);
-   XtAddCallback(button_w, XmNactivateCallback, protocol_toggled, (XtPointer)SFTP);
+   XtAddCallback(button_w, XmNactivateCallback, protocol_toggled,
+                 (XtPointer)SFTP);
 #ifdef _WHEN_DONE
    button_w = XtCreateManagedWidget("FILE", xmPushButtonWidgetClass,
                                     pane_w, args, argcount);
-   XtAddCallback(button_w, XmNactivateCallback, protocol_toggled, (XtPointer)LOC);
+   XtAddCallback(button_w, XmNactivateCallback, protocol_toggled,
+                 (XtPointer)LOC);
    button_w = XtCreateManagedWidget("EXEC", xmPushButtonWidgetClass,
                                     pane_w, args, argcount);
-   XtAddCallback(button_w, XmNactivateCallback, protocol_toggled, (XtPointer)EXEC);
+   XtAddCallback(button_w, XmNactivateCallback, protocol_toggled,
+                 (XtPointer)EXEC);
 #endif
    button_w = XtCreateManagedWidget("MAILTO", xmPushButtonWidgetClass,
                                     pane_w, args, argcount);
-   XtAddCallback(button_w, XmNactivateCallback, protocol_toggled, (XtPointer)SMTP);
+   XtAddCallback(button_w, XmNactivateCallback, protocol_toggled,
+                 (XtPointer)SMTP);
 #ifdef _WHEN_DONE
 # ifdef _WITH_SCP_SUPPORT
    button_w = XtCreateManagedWidget("SCP", xmPushButtonWidgetClass,
                                     pane_w, args, argcount);
-   XtAddCallback(button_w, XmNactivateCallback, protocol_toggled, (XtPointer)SCP);
+   XtAddCallback(button_w, XmNactivateCallback, protocol_toggled,
+                 (XtPointer)SCP);
 # endif
 #endif /* _WHEN_DONE */
 #ifdef _WITH_WMO_SUPPORT
    button_w = XtCreateManagedWidget("WMO", xmPushButtonWidgetClass,
                                     pane_w, args, argcount);
-   XtAddCallback(button_w, XmNactivateCallback, protocol_toggled, (XtPointer)WMO);
+   XtAddCallback(button_w, XmNactivateCallback, protocol_toggled,
+                 (XtPointer)WMO);
 #endif
 
    /* User. */
@@ -853,25 +862,55 @@ main(int argc, char *argv[])
                         XmNrightAttachment, XmATTACH_FORM,
                         NULL);
 
-   buttonbox_w = XtVaCreateWidget("debug_togglebox",
-                        xmRowColumnWidgetClass, optionbox_w,
-                        XmNorientation,         XmHORIZONTAL,
-                        XmNpacking,             XmPACK_TIGHT,
-                        XmNnumColumns,          1,
-                        XmNtopAttachment,       XmATTACH_FORM,
-                        XmNleftAttachment,      XmATTACH_FORM,
-                        XmNbottomAttachment,    XmATTACH_FORM,
-                        XmNresizable,           False,
-                        NULL);
-   button_w = XtVaCreateManagedWidget("Debug",
-                        xmToggleButtonGadgetClass, buttonbox_w,
-                        XmNfontList,               fontlist,
-                        XmNset,                    False,
-                        NULL);
-   XtAddCallback(button_w, XmNvalueChangedCallback,
-                 (XtCallbackProc)debug_toggle, NULL);
-   db->debug = NO;
-   XtManageChild(buttonbox_w);
+
+   argcount = 0;
+   XtSetArg(args[argcount], XmNfontList,         fontlist);
+   argcount++;
+   pane_w = XmCreatePulldownMenu(optionbox_w, "pane", args, argcount);
+
+   label = XmStringCreateLocalized("Debug");
+   argcount = 0;
+   XtSetArg(args[argcount], XmNsubMenuId,        pane_w);
+   argcount++;
+   XtSetArg(args[argcount], XmNlabelString,      label);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNbottomAttachment, XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNbottomOffset,     -2);
+   argcount++;
+   debug_option_menu_w = XmCreateOptionMenu(optionbox_w, "debug_delection",
+                                            args, argcount);
+   XtManageChild(debug_option_menu_w);
+   XmStringFree(label);
+
+   argcount = 0;
+   XtSetArg(args[argcount], XmNfontList,         fontlist);
+   argcount++;
+   XtSetValues(XmOptionLabelGadget(debug_option_menu_w), args, argcount);
+
+   /* Add all possible debug mode buttons. */
+   argcount = 0;
+   XtSetArg(args[argcount], XmNfontList, fontlist);
+   argcount++;
+   button_w = XtCreateManagedWidget("None", xmPushButtonWidgetClass,
+                                    pane_w, args, argcount);
+   XtAddCallback(button_w, XmNactivateCallback, set_debug_mode,
+                 (XtPointer)NORMAL_MODE);
+   button_w = XtCreateManagedWidget("Debug", xmPushButtonWidgetClass,
+                                    pane_w, args, argcount);
+   XtAddCallback(button_w, XmNactivateCallback, set_debug_mode,
+                 (XtPointer)DEBUG_MODE);
+   button_w = XtCreateManagedWidget("Trace", xmPushButtonWidgetClass,
+                                    pane_w, args, argcount);
+   XtAddCallback(button_w, XmNactivateCallback, set_debug_mode,
+                 (XtPointer)TRACE_MODE);
+   button_w = XtCreateManagedWidget("Full Trace", xmPushButtonWidgetClass,
+                                    pane_w, args, argcount);
+   XtAddCallback(button_w, XmNactivateCallback, set_debug_mode,
+                 (XtPointer)FULL_TRACE_MODE);
+   db->debug = NORMAL_MODE; /* Default to "None", no debug. */
 
    /*---------------------------------------------------------------*/
    /*                      Vertical Separator                       */
@@ -885,7 +924,7 @@ main(int argc, char *argv[])
    argcount++;
    XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_WIDGET);
    argcount++;
-   XtSetArg(args[argcount], XmNleftWidget,       buttonbox_w);
+   XtSetArg(args[argcount], XmNleftWidget,       debug_option_menu_w);
    argcount++;
    separator_w = XmCreateSeparator(optionbox_w, "separator", args, argcount);
    XtManageChild(separator_w);

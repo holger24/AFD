@@ -1,6 +1,6 @@
 /*
  *  xsend_file.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -147,7 +147,6 @@ struct send_data
 extern void close_button(Widget, XtPointer, XtPointer),
             create_attach_toggle(Widget, XtPointer, XtPointer),
             create_url_file(void),
-            debug_toggle(Widget, XtPointer, XtPointer),
             enter_passwd(Widget, XtPointer, XtPointer),
             active_passive_radio(Widget, XtPointer, XtPointer),
             lock_radio(Widget, XtPointer, XtPointer),
@@ -156,6 +155,7 @@ extern void close_button(Widget, XtPointer, XtPointer),
             protocol_toggled(Widget, XtPointer, XtPointer),
             send_button(Widget, XtPointer, XtPointer),
             send_file(void),
-            send_save_input(Widget, XtPointer, XtPointer);
+            send_save_input(Widget, XtPointer, XtPointer),
+            set_debug_mode(Widget, XtPointer, XtPointer);
 
 #endif /* __xsend_file_h */

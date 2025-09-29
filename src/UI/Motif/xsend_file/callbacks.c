@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ DESCR__S_M3
  ** HISTORY
  **   24.01.2005 H.Kiehl Created
  **   11.02.2014 A.Maul  Properly set and unset active, passive mode.
+ **   29.09.2025 H.Kiehl Add trace and full trace mode.
  **
  */
 DESCR__E_M3
@@ -194,23 +195,6 @@ extended_toggle(Widget w, XtPointer client_data, XtPointer call_data)
    else
    {
       db->mode_flag |= EXTENDED_MODE;
-   }
-
-   return;
-}
-
-
-/*########################### debug_toggle() ############################*/
-void
-debug_toggle(Widget w, XtPointer client_data, XtPointer call_data)
-{
-   if (db->debug == NO)
-   {
-      db->debug = YES;
-   }
-   else
-   {
-      db->debug = NO;
    }
 
    return;
@@ -864,6 +848,35 @@ protocol_toggled(Widget w, XtPointer client_data, XtPointer call_data)
 }
 
 
+/*########################### set_debug_mode() ##########################*/
+void
+set_debug_mode(Widget w, XtPointer client_data, XtPointer call_data)
+{
+#if SIZEOF_LONG == 4
+   db->debug = (int)client_data;
+#else
+   union uintlong
+         {
+            unsigned int ival[2];
+            long         lval;
+         } uil;
+   int   byte_order = 1;
+
+   uil.lval = (long)client_data;
+   if (*(char *)&byte_order == 1)
+   {
+      db->debug = uil.ival[0];
+   }
+   else
+   {
+      db->debug = uil.ival[1];
+   }
+#endif
+
+   return;
+}
+
+
 /*########################## send_save_input() ##########################*/
 void
 send_save_input(Widget w, XtPointer client_data, XtPointer call_data)
@@ -1057,14 +1070,15 @@ enter_passwd(Widget w, XtPointer client_data, XtPointer call_data)
    }
 #endif
 
-   new = XtMalloc(cbs->text->length + 1);
    if (db->password)
    {
+      new = XtMalloc(strlen(db->password) + 2);
       (void)strcpy(new, db->password);
       XtFree(db->password);
    }
    else
    {
+      new = XtMalloc(cbs->text->length + 1);
       new[0] = '\0';
    }
    db->password = new;

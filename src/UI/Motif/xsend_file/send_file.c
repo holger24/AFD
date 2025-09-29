@@ -1,6 +1,6 @@
 /*
  *  send_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ DESCR__S_M3
  ** HISTORY
  **   05.12.1999 H.Kiehl Created
  **   31.01.2005 H.Kiehl Adapted from xexec_cmd().
+ **   29.09.2025 H.Kiehl Add trace and full trace mode.
  **
  */
 DESCR__E_M3
@@ -166,9 +167,28 @@ send_file(void)
    {
       length += sprintf(&cmd[length], " -s \"%s\"", db->subject);
    }
-   if (db->debug == YES)
+   if ((db->protocol == FTP) || (db->protocol == SFTP) ||
+       (db->protocol == SMTP))
    {
-      length += sprintf(&cmd[length], " -v");
+      if (db->debug == DEBUG_MODE)
+      {
+         length += sprintf(&cmd[length], " -v");
+      }
+      else if (db->debug == TRACE_MODE)
+           {
+              length += sprintf(&cmd[length], " -vv");
+           }
+      else if (db->debug == FULL_TRACE_MODE)
+           {
+              length += sprintf(&cmd[length], " -vvv");
+           }
+   }
+   else
+   {
+      if (db->debug > NORMAL_MODE)
+      {
+         length += sprintf(&cmd[length], " -v");
+      }
    }
 #if SIZEOF_TIME_T == 4
    (void)sprintf(&cmd[length], " -t %ld -f %s",
