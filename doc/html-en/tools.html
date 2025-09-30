@@ -700,19 +700,25 @@ user interaction, so it can be used from any shell scripts or programs such as
      -m &lt;A | I | D&gt;                     - FTP transfer mode, ASCII, binary or DOS.
                                           Default is binary.
      -o &lt;mode&gt;                          - Changes the permission of each file
-                                                distributed.
+                                          distributed.
      -p &lt;port number&gt;                   - Remote port number of FTP-server.
      -P &lt;proxy procedure&gt;               - Use the given proxy procedure to
                                           login. See documentation for more
                                           details on syntax.
      -u &lt;user&gt; &lt;password&gt;               - Remote user name and password. If not
                                           supplied, it will login as anonymous.
+     -U &lt;user&gt;                          - Remote user name and password is read
+                                          from keyboard.
      -r                                 - Remove transmitted file.
      -S &lt;buffer size&gt;                   - Socket send buffer size
                                           (in bytes).
      -t &lt;timout&gt;                        - FTP timeout in seconds. Default 120s.
      -v                                 - Verbose. Shows all FTP commands and
                                           the reply from the remote server.
+     -vv                                - Trace. As above but with more
+                                          information.
+     -vvv                               - Full trace. As above but shows
+                                          content of file.
      -x                                 - Use passive mode instead of active
                                           mode when doing the data connection.
      -X                                 - Use extended mode active or passive
@@ -726,7 +732,7 @@ user interaction, so it can be used from any shell scripts or programs such as
      The following values are returned on exit:
           0 - File transmitted successfully.
           1 - Failed to connect.
-          9 - SSL/TLS authentification error.
+          9 - SSL/TLS authentication error.
           2 - User name wrong.
           3 - Wrong password.
           4 - Failed to set ascii/binary mode.
@@ -778,12 +784,18 @@ is as follows:
                                           distributed.
      -p &lt;port number&gt;                   - Remote port number of SFTP-server.
      -u &lt;user&gt; &lt;password&gt;               - Remote user name and password.
+     -U &lt;user&gt;                          - Remote user and password is read
+                                          from keyboard.
      -r                                 - Remove transmitted file.
      -S &lt;buffer size&gt;                   - Socket send buffer size
                                           (in bytes).
      -t &lt;timout&gt;                        - SFTP timeout in seconds. Default 120s.
      -v                                 - Verbose. Shows all SFTP commands and
                                           the reply from the remote server.
+     -vv                                - Trace. As above but with more
+                                          information.
+     -vvv                               - Full trace. As above but shows
+                                          content of file.
      -?                                 - Display this help and exit.
      The following values are returned on exit:
           0 - File transmitted successfully.
@@ -841,6 +853,9 @@ user interaction, so it can be used from any shell scripts or programs such as
      -u &lt;user&gt;                  - The user who should get the mail.
      -v                         - Verbose. Shows all SMTP commands and
                                   the reply from the SMTP server.
+     -vv                        - Trace. As above but with more information.
+     -vvv                       - Full trace. As above but shows
+                                  content of file.
      -x                         - Use TLS legacy renegotiation.
      -y                         - File name is user.
      -Y                         - Use strict SSL/TLS verification.
@@ -960,9 +975,9 @@ SYNTAX: ahtml_list [options] [URL|file]
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 2001 - 2024 by H.Kiehl<br>
+   Copyright &copy; 2001 - 2025 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 02.04.2024
+   Last updated: 30.09.2025
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
