@@ -124,7 +124,7 @@
 #define GOT_KILLED_STR           "Process was killed"
 #ifdef WITH_SSL
 # define AUTH_ERROR              9
-# define AUTH_ERROR_STR          "TLS/SSL authentification failed"
+# define AUTH_ERROR_STR          "TLS/SSL authentication failed"
 #endif
 #define OPEN_REMOTE_ERROR        10
 #define OPEN_REMOTE_ERROR_STR    "Failed to open remote file"
@@ -528,8 +528,8 @@ struct job
                                          /* FTP_FLAG, SMTP_FLAG,         */
                                          /* LOC_FLAG, WMO_FLAG, etc.     */
 #ifdef WITH_SSL
-          char           tls_auth;       /* TLS/SSL authentification.    */
-                                         /*  NO   - NO authentification. */
+          char           tls_auth;       /* TLS/SSL authentication.      */
+                                         /*  NO   - NO authentication.   */
                                          /*  YES  - Only control         */
                                          /*         connection.          */
                                          /*  BOTH - Control and data     */

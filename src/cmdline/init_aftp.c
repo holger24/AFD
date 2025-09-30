@@ -665,15 +665,15 @@ init_aftp(int argc, char *argv[], struct data *p_db)
             p_db->legacy_renegotiation = YES;
             break;
 
-         case 'Y' : /* TLS/SSL strict authentification. */
+         case 'Y' : /* TLS/SSL strict authentication. */
             p_db->strict = YES;
             break;
 
-         case 'z' : /* SSL/TLS authentification for control connection only. */
+         case 'z' : /* SSL/TLS authentication for control connection only. */
             p_db->tls_auth = YES;
             break;
 
-         case 'Z' : /* SSL/TLS authentification for control and data connection. */
+         case 'Z' : /* SSL/TLS authentication for control and data connection. */
             p_db->tls_auth = BOTH;
             break;
 #endif
@@ -1002,7 +1002,7 @@ usage(void)
    (void)fprintf(stderr, _("      %2d - File transmitted successfully.\n"), TRANSFER_SUCCESS);
    (void)fprintf(stderr, _("      %2d - Failed to connect.\n"), CONNECT_ERROR);
 #ifdef WITH_SSL
-   (void)fprintf(stderr, _("      %2d - SSL/TLS authentification error.\n"), AUTH_ERROR);
+   (void)fprintf(stderr, _("      %2d - SSL/TLS authentication error.\n"), AUTH_ERROR);
 #endif
    (void)fprintf(stderr, _("      %2d - User name wrong.\n"), USER_ERROR);
    (void)fprintf(stderr, _("      %2d - Wrong password.\n"), PASSWORD_ERROR);

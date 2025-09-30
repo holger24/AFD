@@ -66,9 +66,9 @@ DESCR__S_M1
  **                                       mode.
  **     -y                              - Use TLS legacy renegotiation.
  **     -Y                              - Use strict SSL/TLS verification.
- **     -z                              - With SSL/TLS authentification for
+ **     -z                              - With SSL/TLS authentication for
  **                                       control connection.
- **     -Z                              - With SSL/TLS authentification for
+ **     -Z                              - With SSL/TLS authentication for
  **                                       control and data connection.
  **     -?                              - Usage.
  **
