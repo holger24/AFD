@@ -109,6 +109,11 @@ extern struct send_data *db;
 void
 close_button(Widget w, XtPointer client_data, XtPointer call_data)
 {
+   if (db->password)
+   {
+      XtFree(db->password);
+      db->password = NULL;
+   }
    exit(SUCCESS);
 }
 
@@ -1070,7 +1075,7 @@ enter_passwd(Widget w, XtPointer client_data, XtPointer call_data)
    }
 #endif
 
-   if (db->password)
+   if ((db->password) && (cbs->text->length == 1))
    {
       new = XtMalloc(strlen(db->password) + 2);
       (void)strcpy(new, db->password);
@@ -1078,7 +1083,15 @@ enter_passwd(Widget w, XtPointer client_data, XtPointer call_data)
    }
    else
    {
-      new = XtMalloc(cbs->text->length + 1);
+      if (db->password)
+      {
+         new = XtRealloc(db->password,
+                         strlen(db->password) + cbs->text->length + 1);
+      }
+      else
+      {
+         new = XtMalloc(cbs->text->length + 1);
+      }
       new[0] = '\0';
    }
    db->password = new;
