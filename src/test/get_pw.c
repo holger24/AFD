@@ -12,10 +12,10 @@ const char *sys_log_name = SYSTEM_LOG_FIFO;
 int
 main(int argc, char *argv[])
 {
-   int           ret;
-   char          password[MAX_USER_NAME_LENGTH],
-                 *p_uh_name,
-                 work_dir[MAX_PATH_LENGTH];
+   int  ret;
+   char password[MAX_USER_NAME_LENGTH + 1],
+        *p_uh_name,
+        work_dir[MAX_PATH_LENGTH];
 
    if (get_afd_path(&argc, argv, work_dir) < 0)
    {
