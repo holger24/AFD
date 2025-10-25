@@ -1839,6 +1839,7 @@ system_log(DEBUG_SIGN, NULL, 0,
                       * a new one.
                       */
                      if (((fsa[fsa_pos].protocol_options & DISABLE_BURSTING) == 0) &&
+                         (connection[qb[qb_pos].connect_pos].job_no != -1) &&
                          (fsa[fsa_pos].job_status[connection[qb[qb_pos].connect_pos].job_no].unique_name[2] == 4) &&
                          (fsa[fsa_pos].job_status[connection[qb[qb_pos].connect_pos].job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] == 1))
                      {
