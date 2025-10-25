@@ -1,6 +1,6 @@
 /*
  *  init_afd_worker.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2017 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2017 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -87,8 +87,8 @@ off_t                      fra_size,
                            fsa_size;
 #endif
 char                       *p_work_dir;
-struct filetransfer_status *fsa;
-struct fileretrieve_status *fra;
+struct filetransfer_status *fsa = NULL;
+struct fileretrieve_status *fra = NULL;
 struct afd_status          *p_afd_status;
 const char                 *sys_log_name = SYSTEM_LOG_FIFO;
 
@@ -240,8 +240,11 @@ main(int argc, char *argv[])
                             ACTION_DIR_CHECK_INTERVAL) +
                            ACTION_DIR_CHECK_INTERVAL;
 #ifdef WITH_IP_DB
-   ip_db_reset_time = ((now / IP_DB_RESET_CHECK_INTERVAL) *
-                       IP_DB_RESET_CHECK_INTERVAL) + IP_DB_RESET_CHECK_INTERVAL;
+   if (fsa != NULL)
+   {
+      ip_db_reset_time = ((now / IP_DB_RESET_CHECK_INTERVAL) *
+                          IP_DB_RESET_CHECK_INTERVAL) + IP_DB_RESET_CHECK_INTERVAL;
+   }
 #endif
    last_action_success_dir_time = 0L;
 
@@ -361,7 +364,7 @@ main(int argc, char *argv[])
       }
 
 #ifdef WITH_IP_DB
-      if (now > ip_db_reset_time)
+      if ((fsa != NULL) && (now > ip_db_reset_time))
       {
          int  j,
               no_of_ip_hl;
@@ -369,6 +372,7 @@ main(int argc, char *argv[])
               *p_ip_hl;
 
          no_of_ip_hl = get_current_ip_hl(&ip_hl, NULL);
+         (void)check_fsa(NO, AFD_WORKER);
          for (i = 0; i < no_of_hosts; i++)
          {
             if (fsa[i].real_hostname[0][0] != GROUP_IDENTIFIER)
@@ -383,7 +387,8 @@ main(int argc, char *argv[])
                         size_t move_size;
 
                         move_size = (no_of_ip_hl - 1 - j) * MAX_REAL_HOSTNAME_LENGTH;
-                        (void)memmove(p_ip_hl, p_ip_hl + MAX_REAL_HOSTNAME_LENGTH,
+                        (void)memmove(p_ip_hl,
+                                      p_ip_hl + MAX_REAL_HOSTNAME_LENGTH,
                                       move_size);
                      }
                      no_of_ip_hl--;
@@ -515,7 +520,8 @@ main(int argc, char *argv[])
                      host_counter++;
                   }
                   fsa[i].active_transfers = active_transfers;
-                  for (k = 0; k < MAX_NO_PARALLEL_JOBS; k++)
+                  for (k = 0; ((k < fsa[i].allowed_transfers) &&
+                               (k < MAX_NO_PARALLEL_JOBS)); k++)
                   {
                      fsa[i].job_status[k].bytes_send = bytes_send[k];
                   }
