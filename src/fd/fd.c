@@ -1341,38 +1341,38 @@ system_log(DEBUG_SIGN, NULL, 0,
             {
                if (fra[retrieve_list[i]].queued > 0)
                {
-                  int gotcha,
-                      j, k,
+                  int k,
+                      queued = 0,
                       tmp_queued = fra[retrieve_list[i]].queued;
 
-                  for (j = 0; j < tmp_queued; j++)
+                  for (k = 0; k < *no_msg_queued; k++)
                   {
-                     gotcha = NO;
-                     for (k = 0; k < *no_msg_queued; k++)
+                     if ((qb[k].special_flag & FETCH_JOB) &&
+                         (qb[k].pos == retrieve_list[i]) &&
+                         (fra[retrieve_list[i]].dir_id == (unsigned int)strtoul(qb[k].msg_name, (char **)NULL, 16)))
                      {
-                        if ((qb[k].special_flag & FETCH_JOB) &&
-                            (qb[k].pos == retrieve_list[i]) &&
-                            (fra[retrieve_list[i]].dir_id == (unsigned int)strtoul(qb[k].msg_name, (char **)NULL, 16)))
-                        {
-                           gotcha = YES;
-                           break;
-                        }
+                        queued++;
                      }
-                     if (gotcha == NO)
+                  }
+                  if (queued != tmp_queued)
+                  {
+                     int faulty_entries;
+
+                     if (queued < tmp_queued)
                      {
-                        incorrect_entries++;
-                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                   "Queued variable for FRA position %d (%s) is %d. But there is no job in queue! Decremeting queue counter by one. @%x",
-                                   retrieve_list[i],
-                                   fra[retrieve_list[i]].dir_alias,
-                                   (int)fra[retrieve_list[i]].queued,
-                                   fra[retrieve_list[i]].dir_id);
-                        fra[retrieve_list[i]].queued -= 1;
-                        if (fra[retrieve_list[i]].queued < 0)
-                        {
-                           fra[retrieve_list[i]].queued = 0;
-                        }
+                        faulty_entries = tmp_queued - queued;
                      }
+                     else
+                     {
+                        faulty_entries = queued - tmp_queued;
+                     }
+                     incorrect_entries += faulty_entries;
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                "Queued variable for FRA position %d (%s) is %d but there are %d job(s) in queue! @%x",
+                                retrieve_list[i],
+                                fra[retrieve_list[i]].dir_alias, tmp_queued,
+                                queued, fra[retrieve_list[i]].dir_id);
+                     fra[retrieve_list[i]].queued = queued;
                   }
                }
             }
