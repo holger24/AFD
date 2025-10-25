@@ -94,6 +94,7 @@ get_error_str(int error_code)
       case WRITE_LOCAL_ERROR : return(WRITE_LOCAL_ERROR_STR);              /* 36 */
       case STAT_TARGET_ERROR : return(STAT_TARGET_ERROR_STR);              /* 37 */
       case FILE_SIZE_MATCH_ERROR : return(FILE_SIZE_MATCH_ERROR_STR);      /* 38 */
+      case LINK_REMOTE_ERROR : return(LINK_REMOTE_ERROR_STR);              /* 39 */
       case OPEN_FILE_DIR_ERROR : return(OPEN_FILE_DIR_ERROR_STR);          /* 40 */
       case NO_MESSAGE_FILE : return(NO_MESSAGE_FILE_STR);                  /* 41 */
       case STAT_REMOTE_ERROR : return(STAT_REMOTE_ERROR_STR);              /* 42 */

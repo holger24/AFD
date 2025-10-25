@@ -189,6 +189,8 @@
 #define FILE_SIZE_MATCH_ERROR    38     /* Local + remote size do not    */
                                         /* match.                        */
 #define FILE_SIZE_MATCH_ERROR_STR "Local+remote size do not match"
+#define LINK_REMOTE_ERROR        39     /* SFTP sym- or hardlink error.  */
+#define LINK_REMOTE_ERROR_STR    "link error"
 #define OPEN_FILE_DIR_ERROR      40     /* File directory does not exist */
 #define OPEN_FILE_DIR_ERROR_STR  "Local file directory does not exist"
 #define NO_MESSAGE_FILE          41     /* The message file does not     */
@@ -229,6 +231,7 @@
 #define SET_BLOCKSIZE_ERROR      65
 #define SET_BLOCKSIZE_ERROR_STR  "Set blocksize error"
 /* NOTE: MAX_ERROR_STR_LENGTH    35 is defined in afddefs.h! */
+/*       New entries must be added to common/get_error_str.c */
 
 #ifdef _WITH_WMO_SUPPORT
 # define NEGATIV_ACKNOWLEDGE     -10

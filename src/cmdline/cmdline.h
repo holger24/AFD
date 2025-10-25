@@ -88,6 +88,7 @@
 # define OPEN_LOCAL_ERROR           30
 # define READ_LOCAL_ERROR           31
 # define ALLOC_ERROR                35
+# define LINK_REMOTE_ERROR          39
 # define SYNTAX_ERROR               60
 # define SET_BLOCKSIZE_ERROR        65
 

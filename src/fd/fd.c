@@ -4650,6 +4650,7 @@ zombie_check(struct connection *p_con,
                case STAT_REMOTE_ERROR     : /* Failed to stat() remote file/dir. */
                case WRITE_REMOTE_ERROR    : /* */
                case MOVE_REMOTE_ERROR     : /* */
+               case LINK_REMOTE_ERROR     : /* SFTP sym- or hardlink error. */
                case OPEN_REMOTE_ERROR     : /* Failed to open remote file. */
                case DELETE_REMOTE_ERROR   : /* Failed to delete remote file. */
                case LIST_ERROR            : /* Sending the LIST command failed. */

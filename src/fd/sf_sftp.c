@@ -1891,6 +1891,46 @@ main(int argc, char *argv[])
              (db.special_flag & UNIQUE_LOCKING) ||
              (db.trans_rename_rule[0] != '\0') || (db.name2dir_char != '\0'))
          {
+            if (db.no_of_rhardlinks > 0)
+            {
+               int  k;
+               char name[MAX_PATH_LENGTH + 1];
+
+               for (k = 0; k < db.no_of_rhardlinks; k++)
+               {
+                  expand_link_name(remote_filename, db.hardlinks[k], name,
+                                   MAX_PATH_LENGTH);
+                  if ((status = sftp_hardlink(initial_filename, name,
+                                              (db.special_flag & CREATE_TARGET_DIR) ? YES : NO,
+                                              db.dir_mode,
+                                              created_path)) != SUCCESS)
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                               "Failed to create a hardlink from %s to %s (%d)",
+                               initial_filename, name, status);
+                     rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                     *p_file_size_buffer);
+                     sftp_quit();
+                     exit(eval_timeout(LINK_REMOTE_ERROR));
+                  }
+                  else
+                  {
+                     if (fsa->debug > NORMAL_MODE)
+                     {
+                        trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                     "Created hardlink from `%s' to `%s'",
+                                     initial_filename, name);
+                     }
+                     if ((created_path != NULL) && (created_path[0] != '\0'))
+                     {
+                        trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                  "Created directory `%s'.", created_path);
+                        created_path[0] = '\0';
+                     }
+                  }
+               }
+            }
+
             if ((status = sftp_move(initial_filename,
                                     remote_filename,
                                     (db.special_flag & CREATE_TARGET_DIR) ? YES : NO,
@@ -1942,42 +1982,44 @@ main(int argc, char *argv[])
                *ptr = '\0';
             }
          }
-
-         if (db.no_of_rhardlinks > 0)
+         else
          {
-            int  k;
-            char name[MAX_PATH_LENGTH + 1];
-
-            for (k = 0; k < db.no_of_rhardlinks; k++)
+            if (db.no_of_rhardlinks > 0)
             {
-               expand_link_name(remote_filename, db.hardlinks[k], name,
-                                MAX_PATH_LENGTH);
-               if ((status = sftp_hardlink(remote_filename, name,
-                                           (db.special_flag & CREATE_TARGET_DIR) ? YES : NO,
-                                           db.dir_mode,
-                                           created_path)) != SUCCESS)
+               int  k;
+               char name[MAX_PATH_LENGTH + 1];
+
+               for (k = 0; k < db.no_of_rhardlinks; k++)
                {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                            "Failed to create a hardlink from %s to %s (%d)",
-                            remote_filename, name, status);
-                  rm_dupcheck_crc(fullname, p_file_name_buffer,
-                                  *p_file_size_buffer);
-                  sftp_quit();
-                  exit(eval_timeout(SYNTAX_ERROR));
-               }
-               else
-               {
-                  if (fsa->debug > NORMAL_MODE)
+                  expand_link_name(initial_filename, db.hardlinks[k], name,
+                                   MAX_PATH_LENGTH);
+                  if ((status = sftp_hardlink(initial_filename, name,
+                                              (db.special_flag & CREATE_TARGET_DIR) ? YES : NO,
+                                              db.dir_mode,
+                                              created_path)) != SUCCESS)
                   {
-                     trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                  "Created hardlink from `%s' to `%s'",
-                                  remote_filename, name);
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                               "Failed to create a hardlink from %s to %s (%d)",
+                               initial_filename, name, status);
+                     rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                     *p_file_size_buffer);
+                     sftp_quit();
+                     exit(eval_timeout(LINK_REMOTE_ERROR));
                   }
-                  if ((created_path != NULL) && (created_path[0] != '\0'))
+                  else
                   {
-                     trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-                               "Created directory `%s'.", created_path);
-                     created_path[0] = '\0';
+                     if (fsa->debug > NORMAL_MODE)
+                     {
+                        trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                     "Created hardlink from `%s' to `%s'",
+                                     remote_filename, name);
+                     }
+                     if ((created_path != NULL) && (created_path[0] != '\0'))
+                     {
+                        trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                  "Created directory `%s'.", created_path);
+                        created_path[0] = '\0';
+                     }
                   }
                }
             }
@@ -1990,20 +2032,39 @@ main(int argc, char *argv[])
                  to_name[MAX_PATH_LENGTH + 1],
                  *p_from;
 
-            if (db.from_symlink == NULL)
+            if ((db.lock == DOT) || (db.lock == POSTFIX) ||
+                (db.lock == DOT_VMS) || (db.special_flag & SEQUENCE_LOCKING) ||
+                (db.special_flag & UNIQUE_LOCKING) ||
+                (db.trans_rename_rule[0] != '\0') || (db.name2dir_char != '\0'))
             {
-               p_from = remote_filename;
+               if (db.from_symlink == NULL)
+               {
+                  p_from = remote_filename;
+               }
+               else
+               {
+                  expand_link_name(remote_filename, db.from_symlink,
+                                   expanded_from, MAX_PATH_LENGTH);
+                  p_from = expanded_from;
+               }
             }
             else
             {
-               expand_link_name(remote_filename, db.from_symlink,
-                                expanded_from, MAX_PATH_LENGTH);
-               p_from = expanded_from;
+               if (db.from_symlink == NULL)
+               {
+                  p_from = initial_filename;
+               }
+               else
+               {
+                  expand_link_name(initial_filename, db.from_symlink,
+                                   expanded_from, MAX_PATH_LENGTH);
+                  p_from = expanded_from;
+               }
             }
 
             for (k = 0; k < db.no_of_rsymlinks; k++)
             {
-               expand_link_name(remote_filename, db.symlinks[k], to_name,
+               expand_link_name(p_from, db.symlinks[k], to_name,
                                 MAX_PATH_LENGTH);
                if ((status = sftp_symlink(p_from, to_name,
                                           (db.special_flag & CREATE_TARGET_DIR) ? YES : NO,
@@ -2015,7 +2076,7 @@ main(int argc, char *argv[])
                   rm_dupcheck_crc(fullname, p_file_name_buffer,
                                   *p_file_size_buffer);
                   sftp_quit();
-                  exit(eval_timeout(SYNTAX_ERROR));
+                  exit(eval_timeout(LINK_REMOTE_ERROR));
                }
                else
                {
@@ -2479,12 +2540,38 @@ try_again_unlink:
 static void
 expand_link_name(char *from, char *to, char *new_name, int max_new_name_length)
 {
-   int  length = 0;
+   int  dir_length,
+        length = 0;
    char *p_from = from,
         *p_new_name = new_name,
         *ptr = to;
 
-   while ((*ptr != '\0') && (length < max_new_name_length))
+   if (fsa->protocol_options & FTP_FAST_CD)
+   {
+      dir_length = strlen(db.target_dir);
+      if (dir_length < max_new_name_length)
+      {
+         (void)memcpy(p_new_name, db.target_dir, dir_length);
+         p_new_name += dir_length;
+         if ((dir_length > 0) && (*(p_new_name - 1) != '/'))
+         {
+            *p_new_name = '/';
+            p_new_name++; dir_length++;
+         }
+      }
+      else
+      {
+         trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                   "expand_link_name(): dir_length (%d) >= max_new_name_length (%d)",
+                   dir_length, max_new_name_length);
+         dir_length = 0;
+      }
+   }
+   else
+   {
+      dir_length = 0;
+   }
+   while ((*ptr != '\0') && ((dir_length + length) < max_new_name_length))
    {
       if ((*ptr == '%') && (*(ptr + 1) == 's'))
       {
@@ -2506,7 +2593,8 @@ expand_link_name(char *from, char *to, char *new_name, int max_new_name_length)
          {
             p_from = p_dir_seperator + 1;
          }
-         while ((*p_from != '\0') && (length < max_new_name_length))
+         while ((*p_from != '\0') &&
+                ((dir_length + length) < max_new_name_length))
          {
             *p_new_name = *p_from;
             p_new_name++; p_from++;
@@ -2520,7 +2608,17 @@ expand_link_name(char *from, char *to, char *new_name, int max_new_name_length)
          length++;
       }
    }
-   *p_new_name = '\0';
+   if ((dir_length + length) >= max_new_name_length)
+   {
+      trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                "expand_link_name(): dir_length (%d) + length (%d) >= max_new_name_length (%d)",
+                dir_length, length, max_new_name_length);
+      *(p_new_name - 1) = '\0';
+   }
+   else
+   {
+      *p_new_name = '\0';
+   }
 
    return;
 }
