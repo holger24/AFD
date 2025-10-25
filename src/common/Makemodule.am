@@ -1,5 +1,5 @@
 ## Makemodule.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2021 Holger Kiehl
+## Copyright (C) 2001 - 2025 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -152,6 +152,7 @@ EXTRA_DIST           += $(EXTRA_MAPPER)\
                         $(EXTRA_MAINTAINER_LOG_COMMON)\
                         $(EXTRA_HANDLE_EXTRA_WORK_DIRS)\
                         $(EXTRA_LINUX_SPECIAL)\
+                        src/common/handle_jis.c\
                         src/common/pmatch_old.c
 
 noinst_LIBRARIES     += lib/libafd.a
@@ -225,7 +226,6 @@ lib_libafd_a_SOURCES  = src/common/attach_afd_status.c\
                         $(HANDLE_EXTRA_WORK_DIRS)\
                         $(HANDLE_IP)\
                         src/common/handle_jid.c\
-                        src/common/handle_jis.c\
                         src/common/handle_xor_crypt.c\
                         src/common/inform_fd_about_fsa_change.c\
                         $(DUPCHECK_COMMON)\
