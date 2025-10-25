@@ -238,7 +238,7 @@ get_pw(char *uh_name, char *password, int url_conform)
                                       if (password[k] == '%')
                                       {
                                          digit = 0;
-                                         }
+                                      }
                                       else if (digit != -1)
                                            {
                                               str_hex[digit] = password[k];
