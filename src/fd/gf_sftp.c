@@ -907,7 +907,8 @@ main(int argc, char *argv[])
                      {
                         if (status == SSH_FX_NO_SUCH_FILE)
                         {
-                           trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                           trans_log(WARN_SIGN, __FILE__, __LINE__,
+                                     NULL, msg_str,
                                      "Failed to open remote file `%s' in %s (%d).",
                                      tmp_rl.file_name, fra->dir_alias, status);
 
@@ -952,7 +953,8 @@ main(int argc, char *argv[])
                                  {
                                     tmp_val = 0;
                                  }
-                                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                 trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                           NULL, NULL,
                                            "Total file counter less then zero. Correcting to %d.",
                                            tmp_val);
                                  fsa->total_file_counter = tmp_val;
@@ -976,7 +978,8 @@ main(int argc, char *argv[])
                                     }
                                     fsa->total_file_size = new_size;
                                     file_size_to_retrieve_shown = new_size;
-                                    trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                    trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                              NULL, NULL,
 #if SIZEOF_OFF_T == 4
                                               "Total file size overflowed. Correcting to %ld.",
 #else
@@ -987,7 +990,8 @@ main(int argc, char *argv[])
                                  else if ((fsa->total_file_counter == 0) &&
                                           (fsa->total_file_size > 0))
                                       {
-                                         trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                         trans_log(DEBUG_SIGN, __FILE__,
+                                                   __LINE__, NULL, NULL,
 #if SIZEOF_OFF_T == 4
                                                    "fc is zero but fs is not zero (%ld). Correcting.",
 #else
@@ -1016,7 +1020,8 @@ main(int argc, char *argv[])
                                     * Looks as if this host is no longer in our
                                     * database. Lets exit.
                                     */
-                                   trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                   trans_log(INFO_SIGN, __FILE__, __LINE__,
+                                             NULL, NULL,
                                              "Database changed, exiting.");
                                    (void)sftp_quit();
                                    reset_values(files_retrieved,
@@ -1030,15 +1035,42 @@ main(int argc, char *argv[])
                         }
                         else
                         {
-                           trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                                     "Failed to open remote file `%s' in %s (%d).",
-                                     tmp_rl.file_name, fra->dir_alias, status);
-                           sftp_quit();
-                           reset_values(files_retrieved, file_size_retrieved,
-                                        files_to_retrieve,
-                                        file_size_to_retrieve,
-                                        (struct job *)&db);
-                           exit(eval_timeout(OPEN_REMOTE_ERROR));
+                           if (status == SSH_FX_PERMISSION_DENIED)
+                           {
+                              /*
+                               * When there is just one file with wrong
+                               * permission, lets not exit. Just try
+                               * to continue. Maybe we do find a file we
+                               * can read.
+                               */
+                              trans_log(WARN_SIGN, __FILE__, __LINE__, NULL,
+                                        msg_str,
+                                        "Failed to open remote file `%s' in %s (%d).",
+                                        tmp_rl.file_name, fra->dir_alias,
+                                        status);
+
+                              tmp_rl.assigned = 0;
+                              if (gsf_check_fsa((struct job *)&db) != NEITHER)
+                              {
+                                 fsa->job_status[(int)db.job_no].file_name_in_use[0] = '\0';
+                                 fsa->job_status[(int)db.job_no].file_size_in_use = 0;
+                                 fsa->job_status[(int)db.job_no].file_size_in_use_done = 0;
+                              }
+                           }
+                           else
+                           {
+                              trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
+                                        msg_str,
+                                        "Failed to open remote file `%s' in %s (%d).",
+                                        tmp_rl.file_name, fra->dir_alias,
+                                        status);
+                              sftp_quit();
+                              reset_values(files_retrieved, file_size_retrieved,
+                                           files_to_retrieve,
+                                           file_size_to_retrieve,
+                                           (struct job *)&db);
+                              exit(eval_timeout(OPEN_REMOTE_ERROR));
+                           }
                         }
                      }
                      else /* status == SUCCESS */
@@ -1090,7 +1122,8 @@ main(int argc, char *argv[])
                               append_count++;
                               if (fsa->debug > NORMAL_MODE)
                               {
-                                 trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                 trans_db_log(INFO_SIGN, __FILE__, __LINE__,
+                                              NULL,
 #if SIZEOF_OFF_T == 4
                                               "Appending local file %s [offset=%ld].",
 #else
@@ -1104,8 +1137,8 @@ main(int argc, char *argv[])
                            {
                               if (fsa->debug > NORMAL_MODE)
                               {
-                                 trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                              "Opened local file `%s'.",
+                                 trans_db_log(INFO_SIGN, __FILE__, __LINE__,
+                                              NULL, "Opened local file `%s'.",
                                               local_tmp_file);
                               }
                            }
@@ -1130,8 +1163,8 @@ main(int argc, char *argv[])
                                  * Looks as if this host is no longer in our
                                  * database. Lets exit.
                                  */
-                                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                          "Database changed, exiting.");
+                                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                          NULL, "Database changed, exiting.");
                                 (void)sftp_close_file();
                                 (void)sftp_quit();
                                 (void)close(fd);
@@ -1285,7 +1318,8 @@ main(int argc, char *argv[])
                                           {
                                              if ((end_transfer_time_file - start_transfer_time_file) > transfer_timeout)
                                              {
-                                                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                                trans_log(INFO_SIGN, __FILE__,
+                                                          __LINE__, NULL, NULL,
 #if SIZEOF_TIME_T == 4
                                                           "Transfer timeout reached for `%s' in %s after %ld seconds.",
 #else
@@ -1314,7 +1348,8 @@ main(int argc, char *argv[])
                                              * Looks as if this host is no longer in our
                                              * database. Lets exit.
                                              */
-                                            trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                            trans_log(INFO_SIGN, __FILE__,
+                                                      __LINE__, NULL, NULL,
                                                       "Database changed, exiting.");
                                             reset_values(files_retrieved,
                                                          file_size_retrieved,
@@ -1434,8 +1469,8 @@ main(int argc, char *argv[])
                                        {
                                           if ((end_transfer_time_file - start_transfer_time_file) > transfer_timeout)
                                           {
-                                             trans_log(INFO_SIGN, __FILE__, __LINE__,
-                                                       NULL, NULL,
+                                             trans_log(INFO_SIGN, __FILE__,
+                                                       __LINE__, NULL, NULL,
 #if SIZEOF_TIME_T == 4
                                                        "Transfer timeout reached for `%s' in %s after %ld seconds.",
 #else
@@ -1456,8 +1491,8 @@ main(int argc, char *argv[])
                                           * Looks as if this host is no longer in our
                                           * database. Lets exit.
                                           */
-                                         trans_log(INFO_SIGN, __FILE__, __LINE__,
-                                                   NULL, NULL,
+                                         trans_log(INFO_SIGN, __FILE__,
+                                                   __LINE__, NULL, NULL,
                                                    "Database changed, exiting.");
                                          (void)sftp_close_file();
                                          (void)sftp_quit();
@@ -1482,7 +1517,8 @@ main(int argc, char *argv[])
                         /* Close remote file. */
                         if ((status = sftp_close_file()) != SUCCESS)
                         {
-                           trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                           trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
+                                     msg_str,
                                      "Failed to close remote file `%s' in %s (%d).",
                                      tmp_rl.file_name, fra->dir_alias, status);
                            sftp_quit();
@@ -1522,7 +1558,8 @@ main(int argc, char *argv[])
                               {
                                  if (timeout_flag == PIPE_CLOSED)
                                  {
-                                    trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                    trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                              NULL, msg_str,
                                              "Failed to stat() remote file %s (%d)",
                                              tmp_rl.file_name, status);
                                     sftp_quit();
@@ -1534,7 +1571,8 @@ main(int argc, char *argv[])
                                  }
                                  else
                                  {
-                                    trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                    trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                              NULL, msg_str,
                                               "Failed to stat() file `%s' (%d).",
                                               tmp_rl.file_name, status);
                                     if (timeout_flag == ON)
@@ -1627,7 +1665,8 @@ main(int argc, char *argv[])
                            {
                               if (fsa->debug > NORMAL_MODE)
                               {
-                                 trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
+                                 trans_db_log(INFO_SIGN, __FILE__, __LINE__,
+                                              msg_str,
                                               "Deleted remote file `%s'.",
                                               tmp_rl.file_name);
                               }
