@@ -71,6 +71,7 @@ extern char         file_name[],
                     **search_dir,
                     **search_recipient,
                     search_file_size_str[],
+                    search_transport_time_str[],
                     summary_str[],
                     total_summary_str[];
 extern int          items_selected,
@@ -79,7 +80,10 @@ extern int          items_selected,
                     no_of_search_file_names,
                     no_of_search_hosts,
                     no_of_search_jobids,
-                    sum_line_length;
+                    sum_line_length,
+                    view_archived_only,
+                    view_output_only,
+                    view_received_only;
 extern unsigned int *search_dirid,
                     *search_jobid;
 extern XT_PTR_TYPE  device_type,
@@ -503,6 +507,25 @@ write_header(int fd, char *sum_sep_line)
    {
       length += snprintf(&buffer[length], 1024 - length, "\tJob ID        :\n");
    }
+
+   length += snprintf(&buffer[length], 1024 - length, "\tTrans time    : %s\n",
+                      search_transport_time_str);
+
+   if (view_archived_only == YES)
+   {
+      length += snprintf(&buffer[length], 1024 - length,
+                         "\tOutput set    : Only archived\n");
+   }
+   else if (view_received_only == YES)
+        {
+           length += snprintf(&buffer[length], 1024 - length,
+                              "\tOutput set    : Received only\n");
+        }
+   else if (view_output_only == YES)
+        {
+           length += snprintf(&buffer[length], 1024 - length,
+                              "\tOutput set    : Output only\n");
+        }
 
    tmp_length = length;
 #ifdef _WITH_FTP_SUPPORT
