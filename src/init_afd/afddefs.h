@@ -246,7 +246,7 @@ typedef unsigned long       u_long_64;
  * The default number of parallel jobs per host.
  */
 #ifndef DEFAULT_NO_PARALLEL_JOBS
-# define DEFAULT_NO_PARALLEL_JOBS 3
+# define DEFAULT_NO_PARALLEL_JOBS 6
 #endif
 /*
  * The maximum length of the host name (alias) that is displayed by
@@ -1627,12 +1627,8 @@ typedef unsigned long       u_long_64;
 #define MAX_EVENT_REASON_LENGTH      2048   /* The maximum length of the    */
                                             /* event reason.                */
 #ifndef MAX_NO_PARALLEL_JOBS
-# ifdef AFDBENCH_CONFIG
-#  define MAX_NO_PARALLEL_JOBS       12
-# else
-#  define MAX_NO_PARALLEL_JOBS       9      /* Maximum number of parallel   */
+# define MAX_NO_PARALLEL_JOBS        24     /* Maximum number of parallel   */
                                             /* jobs per host alias.         */
-# endif
 #endif
 #define MAX_NO_PARALLEL_JOBS_STR     "MAX_NO_PARALLEL_JOBS"
 #define MAX_FILENAME_LENGTH          256    /* Maximum length of a filename.*/

@@ -1,6 +1,6 @@
 /*
  *  afdsetup.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -336,20 +336,15 @@
 /*-----------------------------------------------------------------------*
  * MAX_NO_OF_DIR_CHECKS - Maximum number of times that the process
  *                        dir_check may fork itself.
- *                        DEFAULT: 20
+ *                        DEFAULT: 30
  * MAX_PROCESS_PER_DIR  - The maximum number of times that the process
  *                        dir_check may fork itself per directory. This
  *                        number must be less then or equal to
  *                        MAX_NO_OF_DIR_CHECKS!
- *                        DEFAULT: 10
+ *                        DEFAULT: 15
  *-----------------------------------------------------------------------*/
-#ifdef AFDBENCH_CONFIG
-# define MAX_NO_OF_DIR_CHECKS 30
-# define MAX_PROCESS_PER_DIR  15
-#else
-# define MAX_NO_OF_DIR_CHECKS 20
-# define MAX_PROCESS_PER_DIR  10
-#endif
+#define MAX_NO_OF_DIR_CHECKS 30
+#define MAX_PROCESS_PER_DIR  15
 
 /*-----------------------------------------------------------------------*
  * When no archive time is specified in the DIR_CONFIG file this is it's
@@ -421,13 +416,13 @@
  * output:
  *
  * MAX_DEFAULT_CONNECTIONS      - default when no value is set in
- *                                AFD_CONFIG file (default 200).
+ *                                AFD_CONFIG file (default 300).
  * MAX_CONFIGURABLE_CONNECTIONS - the maximum configurable value in
  *                                AFD_CONFIG file (default 4096). If
  *                                a higher value is specified it will
  *                                default to MAX_DEFAULT_CONNECTIONS.
  *-----------------------------------------------------------------------*/
-#define MAX_DEFAULT_CONNECTIONS      200
+#define MAX_DEFAULT_CONNECTIONS      300
 #define MAX_CONFIGURABLE_CONNECTIONS 4096
 
 /*-----------------------------------------------------------------------*
