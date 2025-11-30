@@ -1,6 +1,6 @@
 /*
  *  print_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -390,8 +390,8 @@ write_header(int fd, char *sum_sep_line)
    else
    {
       length += snprintf(&buffer[length], 1024 - length,
-                         "\n\tFile name     :\n\tFile size     : %s\n",
-                         search_file_size_str);
+                         "\n\tFile name     : %s\n\tFile size     : %s\n",
+                         search_file_name[0], search_file_size_str);
    }
    if (length >= 1024)
    {
