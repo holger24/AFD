@@ -4178,7 +4178,7 @@ check_zombie_queue(time_t now, int qb_pos)
 {
    int faulty = NO;
 
-   if (qb_pos != -1)
+   if ((qb_pos != -1) && (connection[qb[qb_pos].connect_pos].pid > 0))
    {
       if ((faulty = zombie_check(&connection[qb[qb_pos].connect_pos], now,
                                  &qb_pos, WNOHANG)) == NO)
@@ -4294,7 +4294,15 @@ check_zombie_queue(time_t now, int qb_pos)
          if (zwl[i] < max_connections)
          {
             remove_from_zombie_queue = NO;
-            qb_pos_pid(connection[zwl[i]].pid, &tmp_qb_pos);
+            if (connection[zwl[i]].pid > 0)
+            {
+               qb_pos_pid(connection[zwl[i]].pid, &tmp_qb_pos);
+            }
+            else
+            {
+               /* Maybe configuration was updated. */
+               tmp_qb_pos = -1;
+            }
             if (tmp_qb_pos != -1)
             {
                if ((faulty = zombie_check(&connection[zwl[i]], now,
@@ -4395,7 +4403,7 @@ check_zombie_queue(time_t now, int qb_pos)
 /*+++++++++++++++++++++++++++++ zombie_check() +++++++++++++++++++++++++*/
 /*
  * Description : Checks if any process is finished (zombie), if this
- *               is the case it is killed with waitpid().
+ *               is the case it is removed with waitpid().
  */
 static int
 zombie_check(struct connection *p_con,
@@ -4403,21 +4411,22 @@ zombie_check(struct connection *p_con,
              int               *qb_pos,
              int               options)
 {
-   if (p_con->pid > 0)
-   {
-      int           faulty = YES,
-                    status;
-      pid_t         ret;
+   int           faulty = YES,
+                 status;
+   pid_t         ret;
 #ifdef HAVE_WAIT4
-      struct rusage ru;
+   struct rusage ru;
 #endif
 
-      /* Wait for process to terminate. */
+   /* Wait for process to terminate. */
 #ifdef HAVE_WAIT4
-      if ((ret = wait4(p_con->pid, &status, options, &ru)) == p_con->pid)
+   if ((ret = wait4(p_con->pid, &status, options, &ru)) == p_con->pid)
 #else
-      if ((ret = waitpid(p_con->pid, &status, options)) == p_con->pid)
+   if ((ret = waitpid(p_con->pid, &status, options)) == p_con->pid)
 #endif
+   {
+      if ((p_con->fsa_pos != -1) && (p_con->fsa_pos < no_of_hosts) &&
+          (p_con->job_no != -1))
       {
          if (WIFEXITED(status))
          {
@@ -4912,95 +4921,91 @@ zombie_check(struct connection *p_con,
                    * at all any files to be send. If NOT and the auto
                    * pause queue flag is set, we might get a deadlock.
                    */
-                  if (p_con->fsa_pos != -1)
+                  if ((fsa[p_con->fsa_pos].total_file_counter == 0) &&
+                      (fsa[p_con->fsa_pos].total_file_size == 0) &&
+                      (fsa[p_con->fsa_pos].host_status & AUTO_PAUSE_QUEUE_STAT))
                   {
-                     if ((fsa[p_con->fsa_pos].total_file_counter == 0) &&
-                         (fsa[p_con->fsa_pos].total_file_size == 0) &&
-                         (fsa[p_con->fsa_pos].host_status & AUTO_PAUSE_QUEUE_STAT))
+                     off_t lock_offset;
+                     char  sign[LOG_SIGN_LENGTH];
+
+                     lock_offset = AFD_WORD_OFFSET +
+                                   (p_con->fsa_pos * sizeof(struct filetransfer_status));
+
+                     if (fsa[p_con->fsa_pos].error_counter > 0)
                      {
-                        off_t lock_offset;
-                        char  sign[LOG_SIGN_LENGTH];
-
-                        lock_offset = AFD_WORD_OFFSET +
-                                      (p_con->fsa_pos * sizeof(struct filetransfer_status));
-
-                        if (fsa[p_con->fsa_pos].error_counter > 0)
+                        int i;
+#ifdef LOCK_DEBUG
+                        lock_region_w(fsa_fd, lock_offset + LOCK_EC,
+                                      __FILE__, __LINE__);
+#else
+                        lock_region_w(fsa_fd, lock_offset + LOCK_EC);
+#endif
+                        fsa[p_con->fsa_pos].error_counter = 0;
+                        fsa[p_con->fsa_pos].error_history[0] = 0;
+                        fsa[p_con->fsa_pos].error_history[1] = 0;
+                        for (i = 0; i < fsa[p_con->fsa_pos].allowed_transfers; i++)
                         {
-                           int i;
-#ifdef LOCK_DEBUG
-                           lock_region_w(fsa_fd, lock_offset + LOCK_EC,
-                                         __FILE__, __LINE__);
-#else
-                           lock_region_w(fsa_fd, lock_offset + LOCK_EC);
-#endif
-                           fsa[p_con->fsa_pos].error_counter = 0;
-                           fsa[p_con->fsa_pos].error_history[0] = 0;
-                           fsa[p_con->fsa_pos].error_history[1] = 0;
-                           for (i = 0; i < fsa[p_con->fsa_pos].allowed_transfers; i++)
+                           if (fsa[p_con->fsa_pos].job_status[i].connect_status == NOT_WORKING)
                            {
-                              if (fsa[p_con->fsa_pos].job_status[i].connect_status == NOT_WORKING)
-                              {
-                                 fsa[p_con->fsa_pos].job_status[i].connect_status = DISCONNECT;
-                              }
+                              fsa[p_con->fsa_pos].job_status[i].connect_status = DISCONNECT;
                            }
-#ifdef LOCK_DEBUG
-                           unlock_region(fsa_fd, lock_offset + LOCK_EC,
-                                         __FILE__, __LINE__);
-#else
-                           unlock_region(fsa_fd, lock_offset + LOCK_EC);
-#endif
                         }
 #ifdef LOCK_DEBUG
-                        lock_region_w(fsa_fd, lock_offset + LOCK_HS, __FILE__, __LINE__);
+                        unlock_region(fsa_fd, lock_offset + LOCK_EC,
+                                      __FILE__, __LINE__);
 #else
-                        lock_region_w(fsa_fd, lock_offset + LOCK_HS);
+                        unlock_region(fsa_fd, lock_offset + LOCK_EC);
 #endif
-                        fsa[p_con->fsa_pos].host_status &= ~AUTO_PAUSE_QUEUE_STAT;
-                        if (fsa[p_con->fsa_pos].last_connection > fsa[p_con->fsa_pos].first_error_time)
-                        {
-                           if (now > fsa[p_con->fsa_pos].end_event_handle)
-                           {
-                              fsa[p_con->fsa_pos].host_status &= ~EVENT_STATUS_FLAGS;
-                              if (fsa[p_con->fsa_pos].end_event_handle > 0L)
-                              {
-                                 fsa[p_con->fsa_pos].end_event_handle = 0L;
-                              }
-                              if (fsa[p_con->fsa_pos].start_event_handle > 0L)
-                              {
-                                 fsa[p_con->fsa_pos].start_event_handle = 0L;
-                              }
-                           }
-                           else
-                           {
-                              fsa[p_con->fsa_pos].host_status &= ~EVENT_STATUS_STATIC_FLAGS;
-                           }
-                           error_action(fsa[p_con->fsa_pos].host_alias, "stop",
-                                        HOST_ERROR_ACTION,
-                                        transfer_log_fd);
-                           event_log(0L, EC_HOST, ET_EXT, EA_ERROR_END, "%s",
-                                     fsa[p_con->fsa_pos].host_alias);
-                        }
+                     }
 #ifdef LOCK_DEBUG
-                        unlock_region(fsa_fd, lock_offset + LOCK_HS, __FILE__, __LINE__);
+                     lock_region_w(fsa_fd, lock_offset + LOCK_HS, __FILE__, __LINE__);
 #else
-                        unlock_region(fsa_fd, lock_offset + LOCK_HS);
+                     lock_region_w(fsa_fd, lock_offset + LOCK_HS);
 #endif
-                        if ((fsa[p_con->fsa_pos].host_status & HOST_ERROR_OFFLINE_STATIC) ||
-                            (fsa[p_con->fsa_pos].host_status & HOST_ERROR_OFFLINE) ||
-                            (fsa[p_con->fsa_pos].host_status & HOST_ERROR_OFFLINE_T))
+                     fsa[p_con->fsa_pos].host_status &= ~AUTO_PAUSE_QUEUE_STAT;
+                     if (fsa[p_con->fsa_pos].last_connection > fsa[p_con->fsa_pos].first_error_time)
+                     {
+                        if (now > fsa[p_con->fsa_pos].end_event_handle)
                         {
-                           (void)memcpy(sign, OFFLINE_SIGN, LOG_SIGN_LENGTH);
+                           fsa[p_con->fsa_pos].host_status &= ~EVENT_STATUS_FLAGS;
+                           if (fsa[p_con->fsa_pos].end_event_handle > 0L)
+                           {
+                              fsa[p_con->fsa_pos].end_event_handle = 0L;
+                           }
+                           if (fsa[p_con->fsa_pos].start_event_handle > 0L)
+                           {
+                              fsa[p_con->fsa_pos].start_event_handle = 0L;
+                           }
                         }
                         else
                         {
-                           (void)memcpy(sign, INFO_SIGN, LOG_SIGN_LENGTH);
+                           fsa[p_con->fsa_pos].host_status &= ~EVENT_STATUS_STATIC_FLAGS;
                         }
-                        system_log(sign, __FILE__, __LINE__,
-                                   "Starting input queue for %s that was stopped by init_afd.",
-                                    fsa[p_con->fsa_pos].host_alias);
-                        event_log(0L, EC_HOST, ET_AUTO, EA_START_QUEUE, "%s",
+                        error_action(fsa[p_con->fsa_pos].host_alias, "stop",
+                                     HOST_ERROR_ACTION, transfer_log_fd);
+                        event_log(0L, EC_HOST, ET_EXT, EA_ERROR_END, "%s",
                                   fsa[p_con->fsa_pos].host_alias);
                      }
+#ifdef LOCK_DEBUG
+                     unlock_region(fsa_fd, lock_offset + LOCK_HS, __FILE__, __LINE__);
+#else
+                     unlock_region(fsa_fd, lock_offset + LOCK_HS);
+#endif
+                     if ((fsa[p_con->fsa_pos].host_status & HOST_ERROR_OFFLINE_STATIC) ||
+                         (fsa[p_con->fsa_pos].host_status & HOST_ERROR_OFFLINE) ||
+                         (fsa[p_con->fsa_pos].host_status & HOST_ERROR_OFFLINE_T))
+                     {
+                        (void)memcpy(sign, OFFLINE_SIGN, LOG_SIGN_LENGTH);
+                     }
+                     else
+                     {
+                        (void)memcpy(sign, INFO_SIGN, LOG_SIGN_LENGTH);
+                     }
+                     system_log(sign, __FILE__, __LINE__,
+                                "Starting input queue for %s that was stopped by init_afd.",
+                                 fsa[p_con->fsa_pos].host_alias);
+                     event_log(0L, EC_HOST, ET_AUTO, EA_START_QUEUE, "%s",
+                               fsa[p_con->fsa_pos].host_alias);
                   }
                   remove_connection(p_con, NEITHER, now);
                   return(NO);
@@ -5158,57 +5163,276 @@ zombie_check(struct connection *p_con,
                            p_con->job_no + '0', WSTOPSIG(status),
                            (pri_pid_t)p_con->pid, __FILE__, __LINE__);
               }
-
-         remove_connection(p_con, faulty, now);
-
-         /*
-          * Even if we did fail to send a file, lets set the transfer
-          * time. Otherwise jobs will get deleted to early together
-          * with their current files if no transfer was successful
-          * and we did a reread DIR_CONFIG.
-          */
-         if ((qb[*qb_pos].special_flag & FETCH_JOB) == 0)
-         {
-            mdb[qb[*qb_pos].pos].last_transfer_time = now;
-         }
-      } /* if (waitpid(p_con->pid, &status, 0) == p_con->pid) */
-      else
+      }
+      else /* Something is wrong. Let us at least try to remove the zombie. */
       {
-         if (ret == -1)
+         system_log(WARN_SIGN, __FILE__, __LINE__,
+                    "Incorrect values (fsa_pos=%d no_of_hosts=%d job_no=%d) in connection structure. Unable to properly reset values in FSA.",
+                    p_con->fsa_pos, no_of_hosts, (int)p_con->job_no);
+
+         if (WIFEXITED(status))
          {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-#if SIZEOF_PID_T == 4
-                       "waitpid() error [%d] : %s",
-#else
-                       "waitpid() error [%lld] : %s",
+            int exit_status;
+
+            qb[*qb_pos].retries++;
+            switch (exit_status = WEXITSTATUS(status))
+            {
+               case STILL_FILES_TO_SEND   :
+               case TRANSFER_SUCCESS      : /* Ordinary end of process. */
+                  if (exit_status == STILL_FILES_TO_SEND)
+                  {
+                     faulty = NONE;
+                  }
+                  else
+                  {
+                     faulty = NO;
+                  }
+                  exit_status = TRANSFER_SUCCESS;
+                  break;
+
+               case JID_NUMBER_ERROR      : /* Hmm, failed to determine JID */
+                                            /* number, lets assume the      */
+                                            /* queue entry is corrupted.    */
+
+                  if ((remove_error_jobs_not_in_queue == YES) &&
+                      (mdb[qb[*qb_pos].pos].in_current_fsa != YES) &&
+                      (p_con->fra_pos == -1))
+                  {
+                     faulty = YES;
+                  }
+                  else
+                  {
+                     /* Note: We have to trust the queue here to get the    */
+                     /*       correct connect position in struct connection.*/
+                     /*       How else do we know which values are to be    */
+                     /*       reset in the connect structure!? :-((((       */
+                     faulty = NO;
+                  }
+                  break;
+
+               case OPEN_FILE_DIR_ERROR   : /* File directory does not exist. */
+               case NOOP_ERROR            : /* Some error occured in noop phase. */
+                  faulty = NO;
+                  break;
+
+               case SYNTAX_ERROR          : /* Syntax for sf_xxx/gf_xxx wrong. */
+               case NO_MESSAGE_FILE       : /* The message file has disappeared. */
+                                            /* Remove the job, or else we        */
+                                            /* will always fall for this one     */
+                                            /* again.                            */
+               case MAIL_ERROR            : /* Failed to send mail to remote host. */
+               case TIMEOUT_ERROR         : /* Timeout arrived. */
+               case CONNECTION_RESET_ERROR: /* Connection reset by peer. */
+               case PIPE_CLOSED_ERROR     : /* Pipe closed. */
+               case CONNECT_ERROR         : /* Failed to connect to remote host. */
+               case CONNECTION_REFUSED_ERROR: /* Connection refused. */
+               case REMOTE_USER_ERROR     : /* Failed to send mail address. */
+               case USER_ERROR            : /* User name wrong. */
+               case PASSWORD_ERROR        : /* Password wrong. */
+               case CHDIR_ERROR           : /* Change remote directory. */
+               case CLOSE_REMOTE_ERROR    : /* Close remote file. */
+               case MKDIR_ERROR           : /* */
+               case MOVE_ERROR            : /* Move file locally. */
+               case STAT_TARGET_ERROR     : /* Failed to access target dir. */
+               case STAT_REMOTE_ERROR     : /* Failed to stat() remote file/dir. */
+               case WRITE_REMOTE_ERROR    : /* */
+               case MOVE_REMOTE_ERROR     : /* */
+               case LINK_REMOTE_ERROR     : /* SFTP sym- or hardlink error. */
+               case OPEN_REMOTE_ERROR     : /* Failed to open remote file. */
+               case DELETE_REMOTE_ERROR   : /* Failed to delete remote file. */
+               case LIST_ERROR            : /* Sending the LIST command failed. */
+               case EXEC_ERROR            : /* Failed to execute command for */
+                                            /* scheme exec.                  */
+#ifdef WITH_SSL
+               case AUTH_ERROR            : /* SSL/TLS authentication error. */
 #endif
-                       (pri_pid_t)p_con->pid, strerror(errno));
-            if (errno == ECHILD)
+               case TYPE_ERROR            : /* Setting transfer type failed. */
+               case DATA_ERROR            : /* Failed to send data command. */
+               case READ_LOCAL_ERROR      : /* */
+               case WRITE_LOCAL_ERROR     : /* */
+               case READ_REMOTE_ERROR     : /* */
+               case SIZE_ERROR            : /* */
+               case DATE_ERROR            : /* */
+               case OPEN_LOCAL_ERROR      : /* */
+               case WRITE_LOCK_ERROR      : /* */
+               case CHOWN_ERROR           : /* sf_loc function check_create_path. */
+#ifdef _WITH_WMO_SUPPORT
+               case CHECK_REPLY_ERROR     : /* Did not get a correct reply. */
+#endif
+               case REMOVE_LOCKFILE_ERROR : /* */
+               case QUIT_ERROR            : /* Failed to disconnect. */
+               case RENAME_ERROR          : /* Rename file locally. */
+               case SELECT_ERROR          : /* Selecting on sf_xxx command fifo. */
+#ifdef _WITH_WMO_SUPPORT
+               case SIG_PIPE_ERROR        : /* When sf_wmo receives a SIGPIPE. */
+#endif
+#ifdef _WITH_MAP_SUPPORT
+               case MAP_FUNCTION_ERROR    : /* MAP function call has failed. */
+#endif
+               case FILE_SIZE_MATCH_ERROR : /* Local and remote file size do */
+                                            /* not match.                    */
+               case STAT_ERROR            : /* */
+               case LOCK_REGION_ERROR     : /* */
+               case UNLOCK_REGION_ERROR   : /* */
+               case ALLOC_ERROR           : /* */
+                  break;
+
+               case GOT_KILLED : /* Process has been killed, most properly */
+                                 /* by this process.                       */
+                  faulty = NONE;
+                  break;
+
+               case NO_FILES_TO_SEND : /* There are no files to send. Most */
+                                       /* properly the files have been     */
+                                       /* deleted due to age.              */
+                  remove_connection(p_con, NEITHER, now);
+                  return(NO);
+
+               default                    : /* Unknown error. */
+                  break;
+            }
+
+#ifdef HAVE_WAIT4
+            p_afd_status->fd_child_utime.tv_usec += ru.ru_utime.tv_usec;
+            if (p_afd_status->fd_child_utime.tv_usec > 1000000L)
+            {
+               p_afd_status->fd_child_utime.tv_sec++;
+               p_afd_status->fd_child_utime.tv_usec -= 1000000L;
+            }
+            p_afd_status->fd_child_utime.tv_sec += ru.ru_utime.tv_sec;
+
+            /* System CPU time. */
+            p_afd_status->fd_child_stime.tv_usec += ru.ru_stime.tv_usec;
+            if (p_afd_status->fd_child_stime.tv_usec > 1000000L)
+            {
+               p_afd_status->fd_child_stime.tv_sec++;
+               p_afd_status->fd_child_stime.tv_usec -= 1000000L;
+            }
+            p_afd_status->fd_child_stime.tv_sec += ru.ru_stime.tv_sec;
+#endif
+
+            /*
+             * When auto_toggle is active and we have just tried
+             * the original host, lets not slow things done by
+             * making this appear as an error. The second host
+             * might be perfectly okay, lets continue sending
+             * files as quickly as possible. So when temp_toggle
+             * is ON, it may NEVER be faulty.
+             */
+            if ((p_con->temp_toggle == ON) && (faulty == YES))
             {
                faulty = NONE;
-               remove_connection(p_con, NONE, now);
             }
          }
-         else
-         {
-#if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
-            maintainer_log(DEBUG_SIGN, NULL, 0,
-# if SIZEOF_PID_T == 4
-                           "got nothing: pid=%d msg_name=%s ret=%d",
-# else
-                           "got nothing: pid=%lld msg_name=%s ret=%lld",
-# endif
-                           (pri_pid_t)p_con->pid, p_con->msg_name,
-                           (pri_pid_t)ret);
+         else if (WIFSIGNALED(status))
+              {
+                 int  signum;
+                 char tr_hostname[MAX_HOSTNAME_LENGTH + 2];
+
+                 /* Abnormal termination. */
+#ifndef WITH_MULTI_FSA_CHECKS
+                 if (fsa_out_of_sync == YES)
+                 {
 #endif
-            faulty = NEITHER;
+                    if (fd_check_fsa() == YES)
+                    {
+                       (void)check_fra_fd();
+                       get_new_positions();
+                       init_msg_buffer();
+                       last_pos_lookup = INCORRECT;
+                    }
+#ifndef WITH_MULTI_FSA_CHECKS
+                 }
+#endif
+                 (void)my_strncpy(tr_hostname, "Unknown",
+                                  MAX_HOSTNAME_LENGTH + 2);
+                 signum = WTERMSIG(status);
+                 if (signum == SIGUSR1)
+                 {
+                    (void)rec(transfer_log_fd, DEBUG_SIGN,
+#if SIZEOF_PID_T == 4
+                              "%-*s[X]: Abnormal termination (by signal %d) of transfer job (%d). (%s %d)\n",
+#else
+                              "%-*s[X]: Abnormal termination (by signal %d) of transfer job (%lld). (%s %d)\n",
+#endif
+                              MAX_HOSTNAME_LENGTH, tr_hostname, signum,
+                              (pri_pid_t)p_con->pid, __FILE__, __LINE__);
+                 }
+                 else
+                 {
+                    (void)rec(transfer_log_fd, WARN_SIGN,
+#if SIZEOF_PID_T == 4
+                              "%-*s[X]: Abnormal termination (by signal %d) of transfer job (%d). (%s %d)\n",
+#else
+                              "%-*s[X]: Abnormal termination (by signal %d) of transfer job (%lld). (%s %d)\n",
+#endif
+                              MAX_HOSTNAME_LENGTH, tr_hostname, signum,
+                              (pri_pid_t)p_con->pid, __FILE__, __LINE__);
+                 }
+              }
+         else if (WIFSTOPPED(status))
+              {
+                 char tr_hostname[MAX_HOSTNAME_LENGTH + 2];
+
+                 (void)my_strncpy(tr_hostname, "Unknown",
+                                  MAX_HOSTNAME_LENGTH + 2);
+                 (void)rec(transfer_log_fd, WARN_SIGN,
+#if SIZEOF_PID_T == 4
+                           "%-*s[X]: Process stopped by signal %d for transfer job (%d). (%s %d)\n",
+#else
+                           "%-*s[X]: Process stopped by signal %d for transfer job (%lld). (%s %d)\n",
+#endif
+                           MAX_HOSTNAME_LENGTH, tr_hostname, WSTOPSIG(status),
+                           (pri_pid_t)p_con->pid, __FILE__, __LINE__);
+              }
+      }
+      remove_connection(p_con, faulty, now);
+
+      /*
+       * Even if we did fail to send a file, lets set the transfer
+       * time. Otherwise jobs will get deleted to early together
+       * with their current files if no transfer was successful
+       * and we did a reread DIR_CONFIG.
+       */
+      if ((qb[*qb_pos].special_flag & FETCH_JOB) == 0)
+      {
+         mdb[qb[*qb_pos].pos].last_transfer_time = now;
+      }
+   } /* if (waitpid(p_con->pid, &status, 0) == p_con->pid) */
+   else
+   {
+      if (ret == -1)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+#if SIZEOF_PID_T == 4
+                    "waitpid() error [%d] : %s",
+#else
+                    "waitpid() error [%lld] : %s",
+#endif
+                    (pri_pid_t)p_con->pid, strerror(errno));
+         if (errno == ECHILD)
+         {
+            faulty = NONE;
+            remove_connection(p_con, NONE, now);
          }
       }
-
-      return(faulty);
+      else
+      {
+#if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
+         maintainer_log(DEBUG_SIGN, NULL, 0,
+# if SIZEOF_PID_T == 4
+                        "got nothing: pid=%d msg_name=%s ret=%d",
+# else
+                        "got nothing: pid=%lld msg_name=%s ret=%lld",
+# endif
+                        (pri_pid_t)p_con->pid, p_con->msg_name,
+                        (pri_pid_t)ret);
+#endif
+         faulty = NEITHER;
+      }
    }
 
-   return(NO);
+   return(faulty);
 }
 
 

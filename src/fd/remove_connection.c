@@ -1,6 +1,6 @@
 /*
  *  remove_connection.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -285,11 +285,20 @@ remove_connection(struct connection *p_con, int faulty, time_t now)
       {
          calc_trl_per_process(p_con->fsa_pos);
       }
-      fsa[p_con->fsa_pos].job_status[p_con->job_no].proc_id = -1;
+      if ((p_con->job_no > -1) && (p_con->job_no < MAX_NO_PARALLEL_JOBS))
+      {
+         fsa[p_con->fsa_pos].job_status[p_con->job_no].proc_id = -1;
 #ifdef _WITH_BURST_2
-      fsa[p_con->fsa_pos].job_status[p_con->job_no].unique_name[0] = '\0';
-      fsa[p_con->fsa_pos].job_status[p_con->job_no].job_id = NO_ID;
+         fsa[p_con->fsa_pos].job_status[p_con->job_no].unique_name[0] = '\0';
+         fsa[p_con->fsa_pos].job_status[p_con->job_no].job_id = NO_ID;
 #endif
+      }
+      else
+      {
+         system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                    "remove_connection(): p_con->job_no is %d! (p_con->fsa_pos=%d)",
+                    (int)p_con->job_no, p_con->fsa_pos);
+      }
    }
 
    /* Decrease the number of active transfers. */
@@ -314,6 +323,7 @@ remove_connection(struct connection *p_con, int faulty, time_t now)
    p_con->fra_pos = -1;
    p_con->msg_name[0] = '\0';
    p_con->pid = 0;
+   p_con->temp_toggle = OFF;
 
    return;
 }
