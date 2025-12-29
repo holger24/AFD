@@ -531,6 +531,7 @@ AC_ARG_ENABLE(efence,
    [ac_cv_efence="$enableval"],
    [ac_cv_efence="no"])
 
+dnl This is unused. Keep it to be compatible old build scripts.
 AC_ARG_ENABLE(systemd,
    [  --enable-systemd                enable systemd support],
    [ac_cv_systemd="$enableval"],
@@ -1170,23 +1171,27 @@ then
    CFLAGS="$CFLAGS -pg"
 fi
 
-dnl Check if we should do an automatic test if systemd exist
-if test "${ac_cv_systemd}" = "yes"
+PKG_PROG_PKG_CONFIG()
+dnl Check if systemd unit dir is supplied if not try get it via pkg config
+AC_ARG_WITH([systemdsystemunitdir],
+            [AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files])],,
+            [with_systemdsystemunitdir=auto])
+AS_IF([test "x$with_systemdsystemunitdir" = "xyes" -o "x$with_systemdsystemunitdir" = "xauto"],
+      [def_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)
+       AS_IF([test "x$def_systemdsystemunitdir" = "x"],
+             [AS_IF([test "x$with_systemdsystemunitdir" = "xyes"],
+                    [AC_MSG_ERROR([systemd support requested but pkg-config unable to query systemd package])])
+              with_systemdsystemunitdir=no],
+             [with_systemdsystemunitdir="$def_systemdsystemunitdir"])])
+AS_IF([test "x$with_systemdsystemunitdir" != "xno"],
+      [AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])])
+
+if test "x$with_systemdsystemunitdir" != "xno"
 then
-   if test -d /run/systemd/system
-   then
-      use_systemd="yes"
-   else
-      use_systemd="no"
-   fi
-else
-   use_systemd="no"
-fi
-AC_MSG_CHECKING([whether we build with systemd support])
-if test "${use_systemd}" = "yes"
-then
+   AC_MSG_CHECKING([whether we build with systemd support])
    PKG_CHECK_MODULES([LIBSYSTEMD], [libsystemd],
                      [AC_DEFINE([WITH_SYSTEMD], [], [Building with systemd support])
+                      use_systemd="yes"
                       AC_MSG_RESULT(Building with systemd support)],
                      [AC_MSG_RESULT(Building without systemd support)
                      use_systemd="no"])
@@ -1204,8 +1209,16 @@ then
       else
          BUILD_REQUIRES="`echo $BUILD_REQUIRES`, systemd-devel"
       fi
+
       WITH_SYSTMD=1
       AM_CONDITIONAL(WITH_SYSTEMD, true)
+
+      dnl Check if we can write to systemd unit dir
+      if test -w $with_systemdsystemunitdir; then
+         AM_CONDITIONAL(UNIT_DIR_WRITEABLE, true)
+      else
+         AM_CONDITIONAL(UNIT_DIR_WRITEABLE, false)
+      fi
    else
       case "$DISTRO" in
          debian)
