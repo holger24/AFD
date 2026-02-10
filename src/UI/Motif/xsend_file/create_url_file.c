@@ -1,6 +1,6 @@
 /*
  *  create_url_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ DESCR__S_M3
  **   29.01.2005 H.Kiehl Created
  **   11.07.2024 H.Kiehl Check if user and/or password have special
  **                      URL characters. If that is the case mask them.
+ **   26.01.2026 H.Kiehl If protocol is SMTP do not mask user name.
  **
  */
 DESCR__E_M3
@@ -144,25 +145,33 @@ create_url_file(void)
               exit(INCORRECT);
            }
 
-      rptr = db->user;
-      wptr = &buffer[length];
-      while (*rptr != '\0')
+      if (db->protocol == SMTP)
       {
-         if ((*rptr == '@') || (*rptr == ':') || (*rptr == '/') ||
-             (*rptr == ';'))
-         {
-            *wptr = '\\';
-            *(wptr + 1) = *rptr;
-            wptr += 2; length += 2;
-         }
-         else
-         {
-            *wptr = *rptr;
-            wptr++; length++;
-         }
-         rptr++;
+         length += sprintf(&buffer[length], "%s", db->user);
+         wptr = &buffer[length];
       }
-      *wptr = '\0';
+      else
+      {
+         rptr = db->user;
+         wptr = &buffer[length];
+         while (*rptr != '\0')
+         {
+            if ((*rptr == '@') || (*rptr == ':') || (*rptr == '/') ||
+                (*rptr == ';'))
+            {
+               *wptr = '\\';
+               *(wptr + 1) = *rptr;
+               wptr += 2; length += 2;
+            }
+            else
+            {
+               *wptr = *rptr;
+               wptr++; length++;
+            }
+            rptr++;
+         }
+         *wptr = '\0';
+      }
       if (db->protocol != SMTP)
       {
          if ((db->password != NULL) && (db->password[0] != '\0'))
