@@ -1,6 +1,6 @@
 /*
  *  gf_sftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1049,6 +1049,9 @@ main(int argc, char *argv[])
                                         tmp_rl.file_name, fra->dir_alias,
                                         status);
 
+                              /* Mark it retrieved so we do not always */
+                              /* fall over it again.                   */
+                              tmp_rl.retrieved = YES;
                               tmp_rl.assigned = 0;
                               if (gsf_check_fsa((struct job *)&db) != NEITHER)
                               {
