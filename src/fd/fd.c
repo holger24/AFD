@@ -1830,99 +1830,113 @@ system_log(DEBUG_SIGN, NULL, 0,
                      {
                         fsa_pos = mdb[qb[qb_pos].pos].fsa_pos;
                      }
-
-                     /*
-                      * Check third byte in unique_name. If this is
-                      * NOT set to zero the process sf_xxx has given up
-                      * waiting for FD to give it a new job, ie. the
-                      * process no longer exists and we need to start
-                      * a new one.
-                      */
-                     if (((fsa[fsa_pos].protocol_options & DISABLE_BURSTING) == 0) &&
-                         (connection[qb[qb_pos].connect_pos].job_no != -1) &&
-                         (fsa[fsa_pos].job_status[connection[qb[qb_pos].connect_pos].job_no].unique_name[2] == 4) &&
-                         (fsa[fsa_pos].job_status[connection[qb[qb_pos].connect_pos].job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] == 1))
+                     if ((fsa_pos < 0) || (fsa_pos >= no_of_hosts))
                      {
-                        start_new_process = NO;
-# if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
-                        maintainer_log(DEBUG_SIGN, NULL, 0,
-#  if SIZEOF_PID_T == 4
-                                       "Want's more data! pid=%d bytes_done=%d n=%d no_msg_queued=%d",
-#  else
-                                       "Want's more data! pid=%lld bytes_done=%d n=%d no_msg_queued=%d",
-#  endif
-                                       (pri_pid_t)pid, bytes_done, n,
-                                       *no_msg_queued);
+                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
+# if SIZEOF_PID_T == 4
+                                   "Hmmm, fsa_pos is %d! (pid=%d bytes_done=%d n=%d no_msg_queued=%d no_of_hosts=%d)",
+# else
+                                   "Hmmm, fsa_pos is %d! (pid=%lld bytes_done=%d n=%d no_msg_queued=%d no_of_hosts=%d)",
 # endif
+                                   fsa_pos, (pri_pid_t)pid, bytes_done,
+                                   n, *no_msg_queued, no_of_hosts);
+                        start_new_process = NEITHER;
                      }
                      else
                      {
-                        start_new_process = YES;
-                        if (qb[qb_pos].special_flag & FETCH_JOB)
+                        /*
+                         * Check third byte in unique_name. If this is
+                         * NOT set to zero the process sf_xxx has given up
+                         * waiting for FD to give it a new job, ie. the
+                         * process no longer exists and we need to start
+                         * a new one.
+                         */
+                        if (((fsa[fsa_pos].protocol_options & DISABLE_BURSTING) == 0) &&
+                            (connection[qb[qb_pos].connect_pos].job_no != -1) &&
+                            (fsa[fsa_pos].job_status[connection[qb[qb_pos].connect_pos].job_no].unique_name[2] == 4) &&
+                            (fsa[fsa_pos].job_status[connection[qb[qb_pos].connect_pos].job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] == 1))
                         {
-                           /*
-                            * Since it is a retrieve job, it want's us
-                            * to start a helper job.
-                            */
-                           if ((stop_flag == 0) &&
-                               (p_afd_status->no_of_transfers < max_connections)  &&
-                               (fsa[fra[qb[qb_pos].pos].fsa_pos].active_transfers < fsa[fra[qb[qb_pos].pos].fsa_pos].allowed_transfers) &&
-                               ((fra[qb[qb_pos].pos].dir_flag & DIR_DISABLED) == 0) &&
-                               ((fsa[fra[qb[qb_pos].pos].fsa_pos].special_flag & HOST_DISABLED) == 0) &&
-                               ((fsa[fra[qb[qb_pos].pos].fsa_pos].host_status & STOP_TRANSFER_STAT) == 0) &&
-                               (fsa[fra[qb[qb_pos].pos].fsa_pos].error_counter == 0))
+                           start_new_process = NO;
+# if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
+                           maintainer_log(DEBUG_SIGN, NULL, 0,
+#  if SIZEOF_PID_T == 4
+                                          "Want's more data! pid=%d bytes_done=%d n=%d no_msg_queued=%d",
+#  else
+                                          "Want's more data! pid=%lld bytes_done=%d n=%d no_msg_queued=%d",
+#  endif
+                                          (pri_pid_t)pid, bytes_done, n,
+                                          *no_msg_queued);
+# endif
+                        }
+                        else
+                        {
+                           start_new_process = YES;
+                           if (qb[qb_pos].special_flag & FETCH_JOB)
                            {
-                              int new_qb_pos = *no_msg_queued;
+                              /*
+                               * Since it is a retrieve job, it want's us
+                               * to start a helper job.
+                               */
+                              if ((stop_flag == 0) &&
+                                  (p_afd_status->no_of_transfers < max_connections)  &&
+                                  (fsa[fra[qb[qb_pos].pos].fsa_pos].active_transfers < fsa[fra[qb[qb_pos].pos].fsa_pos].allowed_transfers) &&
+                                  ((fra[qb[qb_pos].pos].dir_flag & DIR_DISABLED) == 0) &&
+                                  ((fsa[fra[qb[qb_pos].pos].fsa_pos].special_flag & HOST_DISABLED) == 0) &&
+                                  ((fsa[fra[qb[qb_pos].pos].fsa_pos].host_status & STOP_TRANSFER_STAT) == 0) &&
+                                  (fsa[fra[qb[qb_pos].pos].fsa_pos].error_counter == 0))
+                              {
+                                 int new_qb_pos = *no_msg_queued;
 
-                              /* Put data in queue. */
-                              check_queue_space();
-                              (void)snprintf(qb[new_qb_pos].msg_name,
-                                             MAX_INT_HEX_LENGTH,
-                                             "%x", fra[qb[qb_pos].pos].dir_id);
-                              qb[new_qb_pos].msg_number = (double)now * 10000.0 * 200.0;
-                              qb[new_qb_pos].creation_time = now;
-                              qb[new_qb_pos].pos = qb[qb_pos].pos;
-                              qb[new_qb_pos].connect_pos = -1;
-                              qb[new_qb_pos].retries = 0;
-                              qb[new_qb_pos].special_flag = FETCH_JOB | HELPER_JOB;
-                              qb[new_qb_pos].files_to_send = 0;
-                              qb[new_qb_pos].file_size_to_send = 0;
-                              (*no_msg_queued)++;
-                              CHECK_INCREMENT_JOB_QUEUED(fra[qb[qb_pos].pos].fsa_pos);
-                              fra[qb[qb_pos].pos].queued += 1;
+                                 /* Put data in queue. */
+                                 check_queue_space();
+                                 (void)snprintf(qb[new_qb_pos].msg_name,
+                                                MAX_INT_HEX_LENGTH,
+                                                "%x", fra[qb[qb_pos].pos].dir_id);
+                                 qb[new_qb_pos].msg_number = (double)now * 10000.0 * 200.0;
+                                 qb[new_qb_pos].creation_time = now;
+                                 qb[new_qb_pos].pos = qb[qb_pos].pos;
+                                 qb[new_qb_pos].connect_pos = -1;
+                                 qb[new_qb_pos].retries = 0;
+                                 qb[new_qb_pos].special_flag = FETCH_JOB | HELPER_JOB;
+                                 qb[new_qb_pos].files_to_send = 0;
+                                 qb[new_qb_pos].file_size_to_send = 0;
+                                 (*no_msg_queued)++;
+                                 CHECK_INCREMENT_JOB_QUEUED(fra[qb[qb_pos].pos].fsa_pos);
+                                 fra[qb[qb_pos].pos].queued += 1;
 
 # ifdef START_PROCESS_DEBUG
-                              (void)start_process(fra[qb[qb_pos].pos].fsa_pos,
-                                                  new_qb_pos, now, NO, __LINE__);
+                                 (void)start_process(fra[qb[qb_pos].pos].fsa_pos,
+                                                     new_qb_pos, now, NO, __LINE__);
 # else
-                              (void)start_process(fra[qb[qb_pos].pos].fsa_pos,
-                                                  new_qb_pos, now, NO);
+                                 (void)start_process(fra[qb[qb_pos].pos].fsa_pos,
+                                                     new_qb_pos, now, NO);
 # endif
-                              /*
-                               * Note, if start_process() returns PENDING,
-                               * we must we must remove it because it was
-                               * planned as a helper job.
-                               */
-                              if ((qb[new_qb_pos].pid == PENDING) ||
-                                  (qb[new_qb_pos].pid == REMOVED))
-                              {
-                                 /* We did not start a process, lets remove */
-                                 /* this job from the queue again.          */
-                                 ABS_REDUCE(fra[qb[qb_pos].pos].fsa_pos);
-                                 fra[qb[qb_pos].pos].queued -= 1;
-                                 (*no_msg_queued)--;
+                                 /*
+                                  * Note, if start_process() returns PENDING,
+                                  * we must we must remove it because it was
+                                  * planned as a helper job.
+                                  */
+                                 if ((qb[new_qb_pos].pid == PENDING) ||
+                                     (qb[new_qb_pos].pid == REMOVED))
+                                 {
+                                    /* We did not start a process, lets remove */
+                                    /* this job from the queue again.          */
+                                    ABS_REDUCE(fra[qb[qb_pos].pos].fsa_pos);
+                                    fra[qb[qb_pos].pos].queued -= 1;
+                                    (*no_msg_queued)--;
+                                 }
                               }
+                              else if ((max_connections_reached == NO) &&
+                                       (p_afd_status->no_of_transfers >= max_connections))
+                                   {
+                                      system_log(INFO_SIGN, __FILE__, __LINE__,
+                                                 "**NOTE** Unable to start a new process for distributing data, since the number of current active transfers is %d and AFD may only start %d. Please consider raising %s in AFD_CONFIG.",
+                                                 p_afd_status->no_of_transfers,
+                                                 max_connections,
+                                                 MAX_CONNECTIONS_DEF);
+                                      max_connections_reached = YES;
+                                   }
                            }
-                           else if ((max_connections_reached == NO) &&
-                                    (p_afd_status->no_of_transfers >= max_connections))
-                                {
-                                   system_log(INFO_SIGN, __FILE__, __LINE__,
-                                              "**NOTE** Unable to start a new process for distributing data, since the number of current active transfers is %d and AFD may only start %d. Please consider raising %s in AFD_CONFIG.",
-                                              p_afd_status->no_of_transfers,
-                                              max_connections,
-                                              MAX_CONNECTIONS_DEF);
-                                   max_connections_reached = YES;
-                                }
                         }
                      }
                   }
