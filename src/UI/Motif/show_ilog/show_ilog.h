@@ -1,6 +1,6 @@
 /*
  *  show_ilog.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ struct item_list
           int   no_of_items;
           off_t *line_offset;  /* Array that contains the offset to the */
                                /* file name of that item.               */
-          int   *offset;       /* Array that contains the offset to the */
+          off_t *offset;       /* Array that contains the offset to the */
                                /* dir ID of that item.                  */
        };
 

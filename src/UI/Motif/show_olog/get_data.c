@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -180,16 +180,14 @@ static void   check_log_updates(Widget),
         {                                                         \
            if ((item_counter == 0) || (item_counter > prev_item_counter)) \
            {                                                      \
-              int new_int_size,                                   \
-                  new_char_size,                                  \
+              int new_char_size,                                  \
                   new_off_t_size;                                 \
                                                                   \
               new_char_size = item_counter + LINES_BUFFERED + 1;  \
-              new_int_size = new_char_size * sizeof(int);         \
               new_off_t_size = new_char_size * sizeof(off_t);     \
               prev_item_counter = item_counter;                   \
                                                                   \
-              if (((il[file_no].offset = realloc(il[file_no].offset, new_int_size)) == NULL) ||            \
+              if (((il[file_no].offset = realloc(il[file_no].offset, new_off_t_size)) == NULL) ||            \
                   ((il[file_no].line_offset = realloc(il[file_no].line_offset, new_off_t_size)) == NULL) ||\
                   ((il[file_no].archived = realloc(il[file_no].archived, new_char_size)) == NULL))         \
               {                                                   \
@@ -314,7 +312,7 @@ static void   check_log_updates(Widget),
                  ptr++;\
               }\
            }\
-           il[file_no].offset[item_counter] = (int)(ptr - p_start_log_file + offset);\
+           il[file_no].offset[item_counter] = (off_t)(ptr - p_start_log_file + offset);\
            if ((no_of_search_dirs > 0) || (no_of_search_dirids > 0) ||\
                (no_of_search_jobids > 0) ||\
                ((current_search_host != -1) &&\
@@ -599,7 +597,7 @@ static void   check_log_updates(Widget),
                  ptr++;\
               }\
            }\
-           il[file_no].offset[item_counter] = (int)(ptr - p_start_log_file + offset);\
+           il[file_no].offset[item_counter] = (off_t)(ptr - p_start_log_file + offset);\
            if ((no_of_search_dirs > 0) || (no_of_search_dirids > 0) ||\
                (no_of_search_jobids > 0) ||\
                ((current_search_host != -1) &&\
@@ -3018,7 +3016,7 @@ no_criteria(register char *ptr,
             }
          }
 
-         il[file_no].offset[item_counter] = (int)(ptr - p_start_log_file + offset);
+         il[file_no].offset[item_counter] = (off_t)(ptr - p_start_log_file + offset);
 
          if ((no_of_search_dirs > 0) || (no_of_search_dirids > 0) ||
              (no_of_search_jobids > 0) ||
@@ -6741,7 +6739,7 @@ recipient_only(register char *ptr,
             }
          }
 
-         il[file_no].offset[item_counter] = (int)(ptr - p_start_log_file + offset);
+         il[file_no].offset[item_counter] = (off_t)(ptr - p_start_log_file + offset);
 
          if ((no_of_search_dirs > 0) || (no_of_search_dirids > 0) ||
              (no_of_search_jobids > 0) ||

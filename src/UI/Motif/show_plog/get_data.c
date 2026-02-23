@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2016 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2016 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -178,17 +178,14 @@ static int    check_all_new_file_names(char *),
         {                                                         \
            if ((item_counter == 0) || (item_counter > prev_item_counter)) \
            {                                                      \
-              int new_int_size,                                   \
-                  new_char_size,                                  \
+              int new_char_size,                                  \
                   new_off_t_size;                                 \
                                                                   \
               new_char_size = item_counter + LINES_BUFFERED + 1;  \
-              new_int_size = new_char_size * sizeof(int);         \
               new_off_t_size = new_char_size * sizeof(off_t);     \
               prev_item_counter = item_counter;                   \
                                                                   \
-              if (((il[file_no].offset = realloc(il[file_no].offset, new_int_size)) == NULL) ||          \
-                  ((il[file_no].line_offset = realloc(il[file_no].line_offset, new_off_t_size)) == NULL))\
+              if ((il[file_no].line_offset = realloc(il[file_no].line_offset, new_off_t_size)) == NULL)\
               {                                                   \
                  (void)xrec(FATAL_DIALOG, "realloc() error : %s (%s %d)",\
                             strerror(errno), __FILE__, __LINE__); \
@@ -335,7 +332,6 @@ get_data(void)
          il[i].fp = NULL;
          il[i].no_of_items = 0;
          il[i].line_offset = NULL;
-         il[i].offset = NULL;
       }
    }
    else
@@ -356,11 +352,6 @@ get_data(void)
          {
             free(il[i].line_offset);
             il[i].line_offset = NULL;
-         }
-         if (il[i].offset != NULL)
-         {
-            free(il[i].offset);
-            il[i].offset = NULL;
          }
       }
    }

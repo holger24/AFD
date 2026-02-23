@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -158,14 +158,14 @@ static void             display_data(int, time_t, time_t),
         {                                                        \
            if (((loops + 1) * LINES_BUFFERED - item_counter) <= LINES_BUFFERED)\
            {                                                     \
-              int new_int_size,                                  \
+              int new_off_t_size,                                \
                   new_char_size;                                 \
                                                                  \
               new_char_size = (loops + 1) * LINES_BUFFERED;      \
-              new_int_size = new_char_size * sizeof(int);        \
+              new_off_t_size = new_char_size * sizeof(off_t);    \
                                                                  \
-              if (((il[file_no].offset = realloc(il[file_no].offset, new_int_size)) == NULL) ||        \
-                  ((il[file_no].line_offset = realloc(il[file_no].line_offset, new_int_size)) == NULL))\
+              if (((il[file_no].offset = realloc(il[file_no].offset, new_off_t_size)) == NULL) ||        \
+                  ((il[file_no].line_offset = realloc(il[file_no].line_offset, new_off_t_size)) == NULL))\
               {                                                  \
                  (void)xrec(FATAL_DIALOG, "realloc() error : %s (%s %d)",\
                             strerror(errno), __FILE__, __LINE__);\
@@ -204,7 +204,7 @@ static void             display_data(int, time_t, time_t),
            char job_id_str[MAX_INT_HEX_LENGTH + 1];        \
                                                            \
            ptr++;                                          \
-           il[file_no].offset[item_counter] = (int)(ptr - p_start_log_file);\
+           il[file_no].offset[item_counter] = (off_t)(ptr - p_start_log_file);\
                                                            \
            while ((*ptr != '\n') && (*ptr != SEPARATOR_CHAR) &&\
                   (count < MAX_INT_HEX_LENGTH))            \
@@ -456,7 +456,7 @@ static void             display_data(int, time_t, time_t),
                   {                                                    \
                      if (search_file_name[iii][0] != '!')              \
                      {                                                 \
-                        il[file_no].line_offset[item_counter] = (int)(ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset - p_start_log_file);\
+                        il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset - p_start_log_file);\
                         INSERT_TIME_REASON((reason_pos));              \
                         j = 0;                                         \
                         while ((*(ptr + j) != SEPARATOR_CHAR) && (j < file_name_length))\
@@ -1250,7 +1250,7 @@ no_criteria(register char *ptr,
          INSERT_TIME_REASON(id.delete_reason_no);
 #endif
 
-         il[file_no].line_offset[item_counter] = (int)(ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset - p_start_log_file);
+         il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset - p_start_log_file);
          ptr += log_date_length + 1 + max_hostname_length + 3 + id.offset;
          j = 0;
          while ((*(ptr + j) != SEPARATOR_CHAR) && (j < file_name_length))
@@ -1298,7 +1298,7 @@ no_criteria(register char *ptr,
             char job_id_str[MAX_INT_HEX_LENGTH + 1];
 
             ptr++;
-            il[file_no].offset[item_counter] = (int)(ptr - p_start_log_file);
+            il[file_no].offset[item_counter] = (off_t)(ptr - p_start_log_file);
 
             while ((*ptr != '\n') && (*ptr != SEPARATOR_CHAR) &&
                    (count < MAX_INT_HEX_LENGTH))
@@ -1547,7 +1547,7 @@ file_name_only(register char *ptr,
             {
                if (search_file_name[iii][0] != '!')
                {
-                  il[file_no].line_offset[item_counter] = (int)(ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset - p_start_log_file);
+                  il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset - p_start_log_file);
                   INSERT_TIME_REASON(id.delete_reason_no);
                   j = 0;
                   while ((*(ptr + j) != SEPARATOR_CHAR) && (j < file_name_length))
@@ -1709,7 +1709,7 @@ file_size_only(register char *ptr,
          FILE_SIZE_ONLY(id.delete_reason_no);
 
          ptr = ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset;
-         il[file_no].line_offset[item_counter] = (int)(ptr - p_start_log_file);
+         il[file_no].line_offset[item_counter] = (off_t)(ptr - p_start_log_file);
          time_when_transmitted = (time_t)str2timet(ptr_start_line, NULL, 16);
          if (first_date_found == -1)
          {
@@ -1885,7 +1885,7 @@ file_name_and_size(register char *ptr,
             IGNORE_ENTRY();
          }
 
-         il[file_no].line_offset[item_counter] = (int)(ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset - p_start_log_file);
+         il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset - p_start_log_file);
 
          /* If necessary, ignore rest of file name. */
          while (*ptr != SEPARATOR_CHAR)
@@ -2090,7 +2090,7 @@ recipient_only(register char *ptr,
             IGNORE_ENTRY();
          }
 
-         il[file_no].line_offset[item_counter] = (int)(ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset - p_start_log_file);
+         il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset - p_start_log_file);
          ptr += log_date_length + 1 + max_hostname_length + 3 + id.offset;
          j = 0;
          while ((*(ptr + j) != SEPARATOR_CHAR) && (j < file_name_length))
@@ -2360,7 +2360,7 @@ file_size_and_recipient(register char *ptr,
          FILE_SIZE_AND_RECIPIENT(id.delete_reason_no);
 
          ptr = ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset;
-         il[file_no].line_offset[item_counter] = (int)(ptr - p_start_log_file);
+         il[file_no].line_offset[item_counter] = (off_t)(ptr - p_start_log_file);
          time_when_transmitted = (time_t)str2timet(ptr_start_line, NULL, 16);
          if (first_date_found == -1)
          {
@@ -2545,7 +2545,7 @@ file_name_size_recipient(register char *ptr,
             }
          }
 
-         il[file_no].line_offset[item_counter] = (int)(ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset - p_start_log_file);
+         il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset - p_start_log_file);
 
          /* If necessary, ignore rest of file name. */
          while (*ptr != SEPARATOR_CHAR)
