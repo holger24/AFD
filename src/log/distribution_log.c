@@ -1,6 +1,6 @@
 /*
  *  distribution_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2026 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -539,10 +539,24 @@ main(int argc, char *argv[])
                        }
                        else
                        {
-                          (void)memcpy(filename,
-                                       (fifo_buffer + offset_type + sizeof(char) + sizeof(char) + sizeof(char) + (*jobs_queued * sizeof(char))),
-                                       *filename_length);
-                          filename[*filename_length] = '\0';
+                          /* Ensure that filename_length is not to long. */
+                          if (*filename_length <= MAX_FILENAME_LENGTH)
+                          {
+                             (void)memcpy(filename,
+                                          (fifo_buffer + offset_type + sizeof(char) + sizeof(char) + sizeof(char) + (*jobs_queued * sizeof(char))),
+                                          *filename_length);
+                             filename[*filename_length] = '\0';
+                          }
+                          else
+                          {
+                             system_log(WARN_SIGN, __FILE__, __LINE__,
+                                        "Filename length %u is larger then %d. Reading garbage from fifo?",
+                                        *filename_length, MAX_FILENAME_LENGTH);
+                             (void)memcpy(filename,
+                                          (fifo_buffer + offset_type + sizeof(char) + sizeof(char) + sizeof(char) + (*jobs_queued * sizeof(char))),
+                                          MAX_FILENAME_LENGTH);
+                             filename[MAX_FILENAME_LENGTH] = '\0';
+                          }
                           if ((*(fifo_buffer + offset_type + sizeof(char)) == 1) ||
                               (lines_buffered >= MAX_SEGMENTED_LINES_BUFFERED))
                           {
