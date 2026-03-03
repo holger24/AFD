@@ -1,6 +1,6 @@
 /*
  *  gf_exec.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013 - 2025 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2013 - 2026 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -691,7 +691,7 @@ gf_exec_exit(void)
 
       WHAT_DONE_BUFFER(length, buffer, "retrieved",
                        fsa->job_status[(int)db.job_no].file_size_done,
-                       fsa->job_status[(int)db.job_no].no_of_files_done);
+                       fsa->job_status[(int)db.job_no].no_of_files_done, 0, 0);
       trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s @%x",
                 buffer, db.id.dir);
       reset_fsa((struct job *)&db, exitflag, 0, 0);

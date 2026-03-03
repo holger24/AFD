@@ -1,6 +1,6 @@
 /*
  *  check_burst_sf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -87,6 +87,8 @@ DESCR__E_M3
 /* External global variables. */
 extern int                        no_of_hosts,
                                   *p_no_of_hosts,
+                                  no_of_files_hardlinked,
+                                  no_of_files_softlinked,
                                   prev_no_of_files_done;
 extern unsigned int               burst_2_counter;
 extern u_off_t                    prev_file_size_done;
@@ -302,9 +304,12 @@ check_burst_sf(char         *file_path,
                     }
                diff_file_size_done = fsa->job_status[(int)db.job_no].file_size_done - prev_file_size_done;
                WHAT_DONE_BUFFER(length, msg_str, how,
-                                diff_file_size_done, diff_no_of_files_done);
+                                diff_file_size_done, diff_no_of_files_done,
+                                no_of_files_hardlinked, no_of_files_softlinked);
                prev_no_of_files_done = fsa->job_status[(int)db.job_no].no_of_files_done;
                prev_file_size_done = fsa->job_status[(int)db.job_no].file_size_done;
+               no_of_files_hardlinked = 0;
+               no_of_files_softlinked = 0;
                if (total_append_count != NULL)
                {
                   if (*total_append_count == 1)

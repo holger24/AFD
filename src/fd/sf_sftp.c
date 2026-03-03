@@ -1,6 +1,6 @@
 /*
  *  sf_sftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -104,6 +104,8 @@ int                        counter_fd = -1,
                            fsa_fd = -1,
                            fsa_id,
                            fsa_pos_save = NO,
+                           no_of_files_hardlinked = 0,
+                           no_of_files_softlinked = 0,
                            prev_no_of_files_done = 0,
                            simulation_mode = NO,
                            sys_log_fd = STDERR_FILENO,
@@ -1927,6 +1929,7 @@ main(int argc, char *argv[])
                                   "Created directory `%s'.", created_path);
                         created_path[0] = '\0';
                      }
+                     no_of_files_hardlinked++;
                   }
                }
             }
@@ -2020,6 +2023,7 @@ main(int argc, char *argv[])
                                   "Created directory `%s'.", created_path);
                         created_path[0] = '\0';
                      }
+                     no_of_files_hardlinked++;
                   }
                }
             }
@@ -2092,6 +2096,7 @@ main(int argc, char *argv[])
                                "Created directory `%s'.", created_path);
                      created_path[0] = '\0';
                   }
+                  no_of_files_softlinked++;
                }
             }
          }
@@ -2661,7 +2666,9 @@ sf_sftp_exit(void)
 #endif
 
          WHAT_DONE_BUFFER(length, buffer, "send",
-                          diff_file_size_done, diff_no_of_files_done);
+                          diff_file_size_done, diff_no_of_files_done,
+                          no_of_files_hardlinked,
+                          no_of_files_softlinked);
 #ifdef _WITH_BURST_2
          if (total_append_count == 1)
          {

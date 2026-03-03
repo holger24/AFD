@@ -1,6 +1,6 @@
 /*
  *  sf_scp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -104,6 +104,8 @@ int                        counter_fd = -1,     /* NOT USED. */
                            fsa_fd = -1,
                            fsa_id,
                            fsa_pos_save = NO,
+                           no_of_files_hardlinked = 0, /* Not used. */
+                           no_of_files_softlinked = 0, /* Not used. */
                            prev_no_of_files_done = 0,
                            simulation_mode = NO,
                            sys_log_fd = STDERR_FILENO,
@@ -1196,7 +1198,7 @@ sf_scp_exit(void)
 #endif
 
          WHAT_DONE_BUFFER(length, buffer, "send",
-                          diff_file_size_done, diff_no_of_files_done);
+                          diff_file_size_done, diff_no_of_files_done, 0, 0);
 #ifdef _WITH_BURST_2
          if (burst_2_counter == 1)
          {

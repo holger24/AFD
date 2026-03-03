@@ -1,6 +1,6 @@
 /*
  *  gf_http.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -2067,7 +2067,8 @@ main(int argc, char *argv[])
                   diff_file_size_done = fsa->job_status[(int)db.job_no].file_size_done -
                                         prev_file_size_done;
                   WHAT_DONE_BUFFER(length, buffer, "retrieved",
-                                   diff_file_size_done, diff_no_of_files_done);
+                                   diff_file_size_done,
+                                   diff_no_of_files_done, 0, 0);
 
 #ifdef _WITH_BURST_2
                   if (append_count == 1)
@@ -2463,7 +2464,7 @@ gf_http_exit(void)
 #endif
 
          WHAT_DONE_BUFFER(length, buffer, "retrieved", diff_file_size_done,
-                          diff_no_of_files_done);
+                          diff_no_of_files_done, 0, 0);
 #ifdef _WITH_BURST_2
          if (append_count == 1)
          {

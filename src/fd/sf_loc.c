@@ -1,6 +1,6 @@
 /*
  *  sf_loc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2025 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2026 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -130,6 +130,8 @@ int                        counter_fd = -1,
                            fsa_fd = -1,
                            fsa_id,
                            fsa_pos_save = NO,
+                           no_of_files_hardlinked = 0, /* Not used. */
+                           no_of_files_softlinked = 0, /* Not used. */
                            prev_no_of_files_done = 0,
                            move_flag,
                            rl_fd = -1,
@@ -2334,17 +2336,18 @@ sf_loc_exit(void)
          if ((move_flag & FILES_MOVED) && ((move_flag & FILES_COPIED) == 0))
          {
             WHAT_DONE_BUFFER(length, buffer, "moved",
-                              diff_file_size_done, diff_no_of_files_done);
+                              diff_file_size_done, diff_no_of_files_done, 0, 0);
          }
          else if (((move_flag & FILES_MOVED) == 0) && (move_flag & FILES_COPIED))
               {
-                 WHAT_DONE_BUFFER(length, buffer, "copied",
-                                   diff_file_size_done, diff_no_of_files_done);
+                 WHAT_DONE_BUFFER(length, buffer, "copied", diff_file_size_done,
+                                  diff_no_of_files_done, 0, 0);
               }
               else
               {
                  WHAT_DONE_BUFFER(length, buffer, "copied/moved",
-                                   diff_file_size_done, diff_no_of_files_done);
+                                   diff_file_size_done,
+                                   diff_no_of_files_done, 0, 0);
               }
 #ifdef _WITH_BURST_2
          /* Write " [BURST]" */
