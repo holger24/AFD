@@ -436,9 +436,12 @@ main(int argc, char *argv[])
          }
          else if (blocksize > max_blocksize)
               {
-                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
-                           "Decreasing block size from %d to %d",
-                           blocksize, max_blocksize);
+                 if ((blocksize + DEFAULT_ADD_SFTP_HEADER_LENGTH) > max_blocksize)
+                 {
+                    trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                              "Decreasing block size from %d to %d",
+                              blocksize, max_blocksize);
+                 }
                  blocksize = max_blocksize;
               }
       }
