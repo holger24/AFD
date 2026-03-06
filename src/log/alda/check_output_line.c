@@ -1,6 +1,6 @@
 /*
  *  check_output_line.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -431,6 +431,10 @@ check_output_line(char         *line,
                                     }
                                     if (((show_output_type & SHOW_NORMAL_DELIVERED) &&
                                          (olog.output_type == OT_NORMAL_DELIVERED))
+                                        || ((show_output_type & SHOW_SOFTLINK_DELIVERED) &&
+                                         (olog.output_type == OT_SOFTLINK_DELIVERED))
+                                        || ((show_output_type & SHOW_HARDLINK_DELIVERED) &&
+                                         (olog.output_type == OT_HARDLINK_DELIVERED))
 # if defined(_WITH_DE_MAIL_SUPPORT) && !defined(_CONFIRMATION_LOG)
                                         || ((show_output_type & SHOW_CONF_OF_DISPATCH) &&
                                             (olog.output_type == OT_CONF_OF_DISPATCH))

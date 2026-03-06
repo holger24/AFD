@@ -1,6 +1,6 @@
 /*
  *  aldadefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -240,6 +240,8 @@
 # define SHOW_CONF_OF_RECEIPT               8
 # define SHOW_CONF_OF_RETRIEVE              16
 # define SHOW_CONF_TIMEUP                   32
+# define SHOW_SOFTLINK_DELIVERED            64
+# define SHOW_HARDLINK_DELIVERED            128
 # define DEFAULT_OUTPUT_OUTPUT_FORMAT       "%Otd %OtX - %OTd %OTX (%ODX)|%-6OP|%2dOp|%-8OH|%-14Oh|%9xOJ|%4xOU|%4xOL|%11OSB|%11dOe|%-30Of|%-30OF|%OA"
 # define RESET_OLOG()                             \
          {                                        \

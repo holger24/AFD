@@ -1,6 +1,6 @@
 /*
  *  eval_input_alda.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -579,7 +579,7 @@ eval_input_alda(int *argc, char *argv[])
 
                         case 'O' : /* Output log delivered. */
                            search_log_type |= SEARCH_OUTPUT_LOG;
-                           show_output_type |= SHOW_NORMAL_DELIVERED;
+                           show_output_type |= SHOW_NORMAL_DELIVERED | SHOW_SOFTLINK_DELIVERED | SHOW_HARDLINK_DELIVERED;
                            break;
 #endif
 #ifdef _DELETE_LOG

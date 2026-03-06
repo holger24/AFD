@@ -2536,7 +2536,9 @@ no_criteria(register char *ptr,
          {
 #ifdef ACTIVATE_THIS_AFTER_VERSION_14
             if ((*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_DELIVERED)) ||
-                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)))
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)) ||
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED)) ||
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED)))
             {
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
@@ -2603,7 +2605,9 @@ no_criteria(register char *ptr,
             if (*(ptr + log_date_length + 1 + max_hostname_length + 4) == ' ')
             {
                if ((*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_DELIVERED)) ||
-                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)))
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)) ||
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED)) ||
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED)))
                {
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
@@ -3360,7 +3364,9 @@ file_name_only(register char *ptr,
          {
 #ifdef ACTIVATE_THIS_AFTER_VERSION_14
             if ((*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_DELIVERED)) ||
-                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)))
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)) ||
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED)) ||
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED)))
             {
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
@@ -3427,7 +3433,9 @@ file_name_only(register char *ptr,
             if (*(ptr + log_date_length + 1 + max_hostname_length + 4) == ' ')
             {
                if ((*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_DELIVERED)) ||
-                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)))
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)) ||
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED)) ||
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED)))
                {
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
@@ -4482,7 +4490,9 @@ file_size_only(register char *ptr,
          {
 #ifdef ACTIVATE_THIS_AFTER_VERSION_14
             if ((*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_DELIVERED)) ||
-                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)))
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)) ||
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED)) ||
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED)))
             {
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
@@ -4549,7 +4559,9 @@ file_size_only(register char *ptr,
             if (*(ptr + log_date_length + 1 + max_hostname_length + 4) == ' ')
             {
                if ((*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_DELIVERED)) ||
-                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)))
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)) ||
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED)) ||
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED)))
                {
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
@@ -5000,7 +5012,9 @@ file_name_and_size(register char *ptr,
          {
 #ifdef ACTIVATE_THIS_AFTER_VERSION_14
             if ((*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_DELIVERED)) ||
-                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)))
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)) ||
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED)) ||
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED)))
             {
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
@@ -5067,7 +5081,9 @@ file_name_and_size(register char *ptr,
             if (*(ptr + log_date_length + 1 + max_hostname_length + 4) == ' ')
             {
                if ((*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_DELIVERED)) ||
-                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)))
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)) ||
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED)) ||
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED)))
                {
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
@@ -6003,7 +6019,9 @@ recipient_only(register char *ptr,
          {
 #ifdef ACTIVATE_THIS_AFTER_VERSION_14
             if ((*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_DELIVERED)) ||
-                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)))
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)) ||
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED)) ||
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED)))
             {
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
@@ -6070,7 +6088,9 @@ recipient_only(register char *ptr,
             if (*(ptr + log_date_length + 1 + max_hostname_length + 4) == ' ')
             {
                if ((*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_DELIVERED)) ||
-                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)))
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)) ||
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED)) ||
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED)))
                {
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
@@ -7079,7 +7099,9 @@ file_name_and_recipient(register char *ptr,
          {
 #ifdef ACTIVATE_THIS_AFTER_VERSION_14
             if ((*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_DELIVERED)) ||
-                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)))
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)) ||
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED)) ||
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED)))
             {
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
@@ -7146,7 +7168,9 @@ file_name_and_recipient(register char *ptr,
             if (*(ptr + log_date_length + 1 + max_hostname_length + 4) == ' ')
             {
                if ((*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_DELIVERED)) ||
-                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)))
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)) ||
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED)) ||
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED)))
                {
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
@@ -7542,7 +7566,9 @@ file_size_and_recipient(register char *ptr,
          {
 #ifdef ACTIVATE_THIS_AFTER_VERSION_14
             if ((*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_DELIVERED)) ||
-                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)))
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)) ||
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED)) ||
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED)))
             {
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
@@ -7609,7 +7635,9 @@ file_size_and_recipient(register char *ptr,
             if (*(ptr + log_date_length + 1 + max_hostname_length + 4) == ' ')
             {
                if ((*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_DELIVERED)) ||
-                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)))
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)) ||
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED)) ||
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED)))
                {
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
@@ -8055,7 +8083,9 @@ file_name_size_recipient(register char *ptr,
          {
 #ifdef ACTIVATE_THIS_AFTER_VERSION_14
             if ((*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_DELIVERED)) ||
-                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)))
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)) ||
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED)) ||
+                (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED)))
             {
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
@@ -8122,7 +8152,9 @@ file_name_size_recipient(register char *ptr,
             if (*(ptr + log_date_length + 1 + max_hostname_length + 4) == ' ')
             {
                if ((*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_DELIVERED)) ||
-                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)))
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED)) ||
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED)) ||
+                   (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED)))
                {
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))

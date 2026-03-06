@@ -1,6 +1,6 @@
 /*
  *  alda.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ unsigned int               end_alias_counter,
                            search_unique_number = 0,
                            search_log_type = SEARCH_ALL_LOGS,
 #ifdef _OUTPUT_LOG
-                           show_output_type = SHOW_NORMAL_DELIVERED,
+                           show_output_type = SHOW_NORMAL_DELIVERED | SHOW_SOFTLINK_DELIVERED | SHOW_HARDLINK_DELIVERED,
 #endif
                            start_alias_counter,
                            *start_id,
@@ -1598,7 +1598,9 @@ search_afd(char *search_afd)
                                            p_prev_split_job_counter)) == GOT_DATA)
                {
                   if ((olog.output_type == OT_NORMAL_DELIVERED) ||
-                      (olog.output_type == OT_NORMAL_RECEIVED))
+                      (olog.output_type == OT_NORMAL_RECEIVED) ||
+                      (olog.output_type == OT_SOFTLINK_DELIVERED) ||
+                      (olog.output_type == OT_HARDLINK_DELIVERED))
                   {
                      if ((protocols & olog.protocol) &&
                          (check_host_alias(olog.alias_name, olog.real_hostname,

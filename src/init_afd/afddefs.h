@@ -445,6 +445,8 @@ typedef unsigned long       u_long_64;
 #  define OT_CONF_OF_RETRIEVE      12
 #  define OT_CONF_TIMEUP           13
 # endif
+# define OT_SOFTLINK_DELIVERED     14
+# define OT_HARDLINK_DELIVERED     15
 #endif
 
 #ifdef _DELETE_LOG
