@@ -1549,7 +1549,8 @@ main(int argc, char *argv[])
 #ifdef _SIMULATE_SLOW_TRANSFER
                   (void)sleep(_SIMULATE_SLOW_TRANSFER);
 #endif
-                  if ((bytes_buffered = read(fd, buffer, blocksize - buffer_offset)) < 0)
+                  if ((bytes_buffered = read(fd, buffer,
+                                             blocksize - buffer_offset)) < 0)
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                "Could not read() local file `%s' [%d] : %s",
@@ -1613,7 +1614,8 @@ main(int argc, char *argv[])
                                               (pri_time_t)(end_transfer_time_file - start_transfer_time_file));
                                     sftp_quit();
                                     exitflag = 0;
-                                    rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                    rm_dupcheck_crc(fullname,
+                                                    p_file_name_buffer,
                                                     *p_file_size_buffer);
                                     exit(STILL_FILES_TO_SEND);
                                  }
@@ -1944,7 +1946,8 @@ main(int argc, char *argv[])
                            RT_ARRAY(hardlink_name, db.no_of_rhardlinks,
                                     MAX_PATH_LENGTH + 1, char);
                         }
-                        (void)strcpy(hardlink_name[no_of_files_hardlinked], name);
+                        (void)strcpy(hardlink_name[no_of_files_hardlinked],
+                                     name);
                      }
 #endif
                      no_of_files_hardlinked++;
@@ -1952,8 +1955,7 @@ main(int argc, char *argv[])
                }
             }
 
-            if ((status = sftp_move(initial_filename,
-                                    remote_filename,
+            if ((status = sftp_move(initial_filename, remote_filename,
                                     (db.special_flag & CREATE_TARGET_DIR) ? YES : NO,
                                     db.dir_mode, created_path)) != SUCCESS)
             {
@@ -2193,7 +2195,7 @@ main(int argc, char *argv[])
             {
                output_log_ptrs(&ol_retries,
                                &ol_job_number,
-                               &ol_data,              /* Pointer to buffer.      */
+                               &ol_data,              /* Pointer to buffer. */
                                &ol_file_name,
                                &ol_file_name_length,
                                &ol_archive_name_length,
@@ -2862,7 +2864,7 @@ expand_link_name(char *from, char *to, char *new_name, int max_new_name_length)
       if ((*ptr == '%') && (*(ptr + 1) == 's'))
       {
          char *p_end = from,
-              *p_dir_seperator = NULL;
+              *p_dir_separator = NULL;
 
          ptr += 2;
 
@@ -2871,13 +2873,13 @@ expand_link_name(char *from, char *to, char *new_name, int max_new_name_length)
          {
             if (*p_end == '/')
             {
-               p_dir_seperator = p_end;
+               p_dir_separator = p_end;
             }
             p_end++;
          }
-         if (p_dir_seperator != NULL)
+         if (p_dir_separator != NULL)
          {
-            p_from = p_dir_seperator + 1;
+            p_from = p_dir_separator + 1;
          }
          while ((*p_from != '\0') &&
                 ((dir_length + length) < max_new_name_length))
@@ -2948,8 +2950,7 @@ sf_sftp_exit(void)
 
          WHAT_DONE_BUFFER(length, buffer, "send",
                           diff_file_size_done, diff_no_of_files_done,
-                          no_of_files_hardlinked,
-                          no_of_files_softlinked);
+                          no_of_files_hardlinked, no_of_files_softlinked);
 #ifdef _WITH_BURST_2
          if (total_append_count == 1)
          {
