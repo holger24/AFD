@@ -4454,7 +4454,7 @@ struct old_int_retrieve_list
                         else\
                         {\
                            (length) = snprintf((buffer), (length), "%llu bytes %s in %d file(s) + %d hardlinks + %d softlinks.",\
-                                    (file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked), (no_of_files_hardlinked));\
+                                    (file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked), (no_of_files_softlinked));\
                         }\
                 }\
         }
