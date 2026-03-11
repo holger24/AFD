@@ -1,6 +1,6 @@
 /*
  *  link_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -558,12 +558,25 @@ try_copy_file:
                      new_size = ((files_linked / FILE_NAME_STEP_SIZE) + 1) * FILE_NAME_STEP_SIZE * MAX_FILENAME_LENGTH;
 
                      /* Increase the space for the file name buffer. */
-                     if ((file_name_buffer = realloc(file_name_buffer, new_size)) == NULL)
+                     if (file_name_buffer == NULL)
                      {
-                        system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                   "Could not realloc() memory : %s",
-                                   strerror(errno));
-                        exit(INCORRECT);
+                        if ((file_name_buffer = malloc(new_size)) == NULL)
+                        {
+                           system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                      "Could not malloc() memory : %s",
+                                      strerror(errno));
+                           exit(INCORRECT);
+                        }
+                     }
+                     else
+                     {
+                        if ((file_name_buffer = realloc(file_name_buffer, new_size)) == NULL)
+                        {
+                           system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                      "Could not realloc() memory : %s",
+                                      strerror(errno));
+                           exit(INCORRECT);
+                        }
                      }
 
                      /* Calculate new size of file size buffer. */
