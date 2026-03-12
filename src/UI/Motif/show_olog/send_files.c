@@ -1,6 +1,6 @@
 /*
  *  send_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -159,7 +159,7 @@ send_files(int no_selected, int *select_list)
       /* Check if the file is in fact archived. */
       if (rl[i].pos > -1)
       {
-         if (il[rl[i].file_no].archived[rl[i].pos] == 1)
+         if (il[rl[i].file_no].add_data[rl[i].pos] & FILE_ARCHIVED)
          {
             if ((perm.send_limit > 0) &&
                 ((user_limit + to_do) >= perm.send_limit))

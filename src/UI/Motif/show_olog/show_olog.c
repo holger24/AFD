@@ -1,6 +1,6 @@
 /*
  *  show_olog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,6 +49,7 @@ DESCR__S_M1
  **   04.04.2007 H.Kiehl Added button to view data.
  **   26.09.2015 H.Kiehl Added Job ID and hide protocols behind a button.
  **   28.03.2022 H.Kiehl Added option to view output only.
+ **   08.03.2026 H.Kiehl Added option to view soft- or hardlinks only.
  **
  */
 DESCR__E_M1
@@ -97,7 +98,6 @@ Display                    *display;
 XtAppContext               app;
 Widget                     appshell,
                            close_button_w,
-                           con_toggle_w,
                            cont_togglebox_w,
                            directory_w,
                            end_time_w,
@@ -106,12 +106,9 @@ Widget                     appshell,
                            job_id_w,
                            headingbox_w,
                            listbox_w,
-                           oa_toggle_w,
-                           oo_toggle_w,
                            print_button_w,
                            recipient_w,
                            resend_button_w,
-                           ro_toggle_w,
                            scrollbar_w,
                            select_all_button_w,
                            selectionbox_w,
@@ -149,11 +146,13 @@ int                        acd_counter = 0,
                            sum_line_length,
                            sys_log_fd = STDERR_FILENO,
 #ifdef _WITH_DE_MAIL_SUPPORT
-                           view_confirmation = NO,
+                           view_confirmation = YES,
 #endif
                            view_archived_only = NO,
-                           view_output_only = NO,
-                           view_received_only = NO,
+                           view_hardlink = YES,
+                           view_output = YES,
+                           view_received = YES,
+                           view_softlink = YES,
                            view_mode;
 unsigned int               all_list_items = 0,
                            *search_dirid = NULL,
@@ -885,12 +884,12 @@ main(int argc, char *argv[])
                                 XmNresizable,        False,
                                 NULL);
 
-   oa_toggle_w = XtVaCreateManagedWidget("Only archived",
+   toggle_w = XtVaCreateManagedWidget("Only archived",
                                 xmToggleButtonGadgetClass, xx_togglebox_w,
                                 XmNfontList,               fontlist,
                                 XmNset,                    False,
                                 NULL);
-   XtAddCallback(oa_toggle_w, XmNvalueChangedCallback,
+   XtAddCallback(toggle_w, XmNvalueChangedCallback,
                  (XtCallbackProc)only_archived_toggle, NULL);
    XtManageChild(xx_togglebox_w);
 
@@ -922,12 +921,12 @@ main(int argc, char *argv[])
                                 XmNresizable,        False,
                                 NULL);
 
-   ro_toggle_w = XtVaCreateManagedWidget("Received only",
+   toggle_w = XtVaCreateManagedWidget("Received",
                                 xmToggleButtonGadgetClass, xx_togglebox_w,
                                 XmNfontList,               fontlist,
-                                XmNset,                    False,
+                                XmNset,                    True,
                                 NULL);
-   XtAddCallback(ro_toggle_w, XmNvalueChangedCallback,
+   XtAddCallback(toggle_w, XmNvalueChangedCallback,
                  (XtCallbackProc)received_only_toggle, NULL);
    XtManageChild(xx_togglebox_w);
 
@@ -959,13 +958,87 @@ main(int argc, char *argv[])
                                 XmNresizable,        False,
                                 NULL);
 
-   oo_toggle_w = XtVaCreateManagedWidget("Output only",
+   toggle_w = XtVaCreateManagedWidget("Output",
                                 xmToggleButtonGadgetClass, xx_togglebox_w,
                                 XmNfontList,               fontlist,
-                                XmNset,                    False,
+                                XmNset,                    True,
                                 NULL);
-   XtAddCallback(oo_toggle_w, XmNvalueChangedCallback,
+   XtAddCallback(toggle_w, XmNvalueChangedCallback,
                  (XtCallbackProc)output_only_toggle, NULL);
+   XtManageChild(xx_togglebox_w);
+
+   /* Vertical Separator */
+   argcount = 0;
+   XtSetArg(args[argcount], XmNorientation,      XmVERTICAL);
+   argcount++;
+   XtSetArg(args[argcount], XmNtopAttachment,    XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNbottomAttachment, XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_WIDGET);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftWidget,       xx_togglebox_w);
+   argcount++;
+   separator_w = XmCreateSeparator(selectionbox_w, "separator", args, argcount);
+   XtManageChild(separator_w);
+
+   /* Softlinks only toggle box */
+   xx_togglebox_w = XtVaCreateWidget("so_togglebox",
+                                xmRowColumnWidgetClass, selectionbox_w,
+                                XmNorientation,      XmHORIZONTAL,
+                                XmNpacking,          XmPACK_TIGHT,
+                                XmNnumColumns,       1,
+                                XmNtopAttachment,    XmATTACH_FORM,
+                                XmNleftAttachment,   XmATTACH_WIDGET,
+                                XmNleftWidget,       separator_w,
+                                XmNbottomAttachment, XmATTACH_FORM,
+                                XmNresizable,        False,
+                                NULL);
+
+   toggle_w = XtVaCreateManagedWidget("Symlink",
+                                xmToggleButtonGadgetClass, xx_togglebox_w,
+                                XmNfontList,               fontlist,
+                                XmNset,                    True,
+                                NULL);
+   XtAddCallback(toggle_w, XmNvalueChangedCallback,
+                 (XtCallbackProc)softlink_only_toggle, NULL);
+   XtManageChild(xx_togglebox_w);
+
+   /* Vertical Separator */
+   argcount = 0;
+   XtSetArg(args[argcount], XmNorientation,      XmVERTICAL);
+   argcount++;
+   XtSetArg(args[argcount], XmNtopAttachment,    XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNbottomAttachment, XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_WIDGET);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftWidget,       xx_togglebox_w);
+   argcount++;
+   separator_w = XmCreateSeparator(selectionbox_w, "separator", args, argcount);
+   XtManageChild(separator_w);
+
+   /* Hardlinks only toggle box */
+   xx_togglebox_w = XtVaCreateWidget("ho_togglebox",
+                                xmRowColumnWidgetClass, selectionbox_w,
+                                XmNorientation,      XmHORIZONTAL,
+                                XmNpacking,          XmPACK_TIGHT,
+                                XmNnumColumns,       1,
+                                XmNtopAttachment,    XmATTACH_FORM,
+                                XmNleftAttachment,   XmATTACH_WIDGET,
+                                XmNleftWidget,       separator_w,
+                                XmNbottomAttachment, XmATTACH_FORM,
+                                XmNresizable,        False,
+                                NULL);
+
+   toggle_w = XtVaCreateManagedWidget("Hardlink",
+                                xmToggleButtonGadgetClass, xx_togglebox_w,
+                                XmNfontList,               fontlist,
+                                XmNset,                    True,
+                                NULL);
+   XtAddCallback(toggle_w, XmNvalueChangedCallback,
+                 (XtCallbackProc)hardlink_only_toggle, NULL);
    XtManageChild(xx_togglebox_w);
 
    /* Vertical Separator */
@@ -997,12 +1070,12 @@ main(int argc, char *argv[])
                                 XmNresizable,        False,
                                 NULL);
 
-   con_toggle_w = XtVaCreateManagedWidget("Confirmation",
+   toggle_w = XtVaCreateManagedWidget("Confirmation",
                                 xmToggleButtonGadgetClass, xx_togglebox_w,
                                 XmNfontList,               fontlist,
                                 XmNset,                    False,
                                 NULL);
-   XtAddCallback(con_toggle_w, XmNvalueChangedCallback,
+   XtAddCallback(toggle_w, XmNvalueChangedCallback,
                  (XtCallbackProc)confirmation_toggle, NULL);
    XtManageChild(xx_togglebox_w);
 

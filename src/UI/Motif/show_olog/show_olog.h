@@ -141,6 +141,9 @@
                                         /* in log file.                  */
 
 /* Structure that holds offset (to job ID) to each item in list. */
+#define FILE_ARCHIVED 1
+#define LINK_SOFT     2
+#define LINK_HARD     4
 struct item_list
        {
           FILE  *fp;
@@ -149,7 +152,10 @@ struct item_list
                               /* file name of that item.               */
           off_t *offset;      /* Array that contains the offset to the */
                               /* job ID of that item.                  */
-          char  *archived;    /* Was this file archived?               */
+          char  *add_data;    /* Additional data like:                 */
+                              /*   1  file archived                    */
+                              /*   2  soft link                        */
+                              /*   4  hard link                        */
        };
 
 /* Structure to hold the data for a single entry in the AMG history file. */
@@ -209,6 +215,7 @@ struct info_data
           char               mail_id[MAX_MAIL_ID_LENGTH + 1];
           char               priority;
           char               is_receive_job;
+          char               is_link_job;
           struct dir_options d_o;
           struct db_entry    *dbe;
        };
@@ -309,6 +316,7 @@ extern void calculate_summary(char *, time_t, time_t, unsigned int,
             get_info(int),
             get_info_free(void),
             get_data(void),
+            hardlink_only_toggle(Widget, XtPointer, XtPointer),
             info_click(Widget, XtPointer, XEvent *),
             item_selection(Widget, XtPointer, XtPointer),
             only_archived_toggle(Widget, XtPointer, XtPointer),
@@ -327,6 +335,7 @@ extern void calculate_summary(char *, time_t, time_t, unsigned int,
             select_all_button(Widget, XtPointer, XtPointer),
             select_protocol(Widget, XtPointer, XtPointer),
             set_view_mode(Widget, XtPointer, XtPointer),
+            softlink_only_toggle(Widget, XtPointer, XtPointer),
             view_button(Widget, XtPointer, XtPointer),
             view_files(int, int *);
 extern int  get_sum_data(int, time_t *, double *, double *);

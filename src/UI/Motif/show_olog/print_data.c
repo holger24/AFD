@@ -1,6 +1,6 @@
 /*
  *  print_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@ DESCR__S_M3
  **   18.03.2000 H.Kiehl Modified to make it more generic.
  **   10.04.2004 H.Kiehl Added TLS/SSL support.
  **   31.01.2006 H.Kiehl Added SFTP support.
+ **   08.03.2026 H.Kiehl Added option to view soft- or hardlinks only.
  **
  */
 DESCR__E_M3
@@ -82,8 +83,10 @@ extern int          items_selected,
                     no_of_search_jobids,
                     sum_line_length,
                     view_archived_only,
-                    view_output_only,
-                    view_received_only;
+                    view_hardlink,
+                    view_output,
+                    view_received,
+                    view_softlink;
 extern unsigned int *search_dirid,
                     *search_jobid;
 extern XT_PTR_TYPE  device_type,
@@ -357,9 +360,18 @@ write_header(int fd, char *sum_sep_line)
    }
    else
    {
-      length += snprintf(&buffer[length], 1024 - length,
-                         "\n\tFile name     : %s\n\tFile size     : %s\n",
-                         search_file_name[0], search_file_size_str);
+      if (no_of_search_file_names == 0)
+      {
+         length += snprintf(&buffer[length], 1024 - length,
+                            "\n\tFile name     : \n\tFile size     : %s\n",
+                            search_file_size_str);
+      }
+      else
+      {
+         length += snprintf(&buffer[length], 1024 - length,
+                            "\n\tFile name     : %s\n\tFile size     : %s\n",
+                            search_file_name[0], search_file_size_str);
+      }
    }
    if (length >= 1024)
    {
@@ -511,21 +523,86 @@ write_header(int fd, char *sum_sep_line)
    length += snprintf(&buffer[length], 1024 - length, "\tTrans time    : %s\n",
                       search_transport_time_str);
 
+   tmp_length = length;
    if (view_archived_only == YES)
    {
       length += snprintf(&buffer[length], 1024 - length,
-                         "\tOutput set    : Only archived\n");
+                         "\tOutput set    : Only archived");
+      if (length >= 1024)
+      {
+         length = 1024;
+         goto write_data;
+      }
    }
-   else if (view_received_only == YES)
-        {
-           length += snprintf(&buffer[length], 1024 - length,
-                              "\tOutput set    : Received only\n");
-        }
-   else if (view_output_only == YES)
-        {
-           length += snprintf(&buffer[length], 1024 - length,
-                              "\tOutput set    : Output only\n");
-        }
+   if (view_received == YES)
+   {
+      if (length == tmp_length)
+      {
+         length += snprintf(&buffer[length], 1024 - length,
+                            "\tOutput set    : Received");
+      }
+      else
+      {
+         length += snprintf(&buffer[length], 1024 - length, ", Received");
+      }
+      if (length >= 1024)
+      {
+         length = 1024;
+         goto write_data;
+      }
+   }
+   if (view_output == YES)
+   {
+      if (length == tmp_length)
+      {
+         length += snprintf(&buffer[length], 1024 - length,
+                            "\tOutput set    : Output");
+      }
+      else
+      {
+         length += snprintf(&buffer[length], 1024 - length, ", Output");
+      }
+      if (length >= 1024)
+      {
+         length = 1024;
+         goto write_data;
+      }
+   }
+   if (view_softlink == YES)
+   {
+      if (length == tmp_length)
+      {
+         length += snprintf(&buffer[length], 1024 - length,
+                            "\tOutput set    : Symlink");
+      }
+      else
+      {
+         length += snprintf(&buffer[length], 1024 - length, ", Symlink");
+      }
+      if (length >= 1024)
+      {
+         length = 1024;
+         goto write_data;
+      }
+   }
+   if (view_hardlink == YES)
+   {
+      if (length == tmp_length)
+      {
+         length += snprintf(&buffer[length], 1024 - length,
+                            "\tOutput set    : Hardlink");
+      }
+      else
+      {
+         length += snprintf(&buffer[length], 1024 - length, ", Hardlink");
+      }
+      if (length >= 1024)
+      {
+         length = 1024;
+         goto write_data;
+      }
+   }
+   length += snprintf(&buffer[length], 1024 - length, "\n");
 
    tmp_length = length;
 #ifdef _WITH_FTP_SUPPORT

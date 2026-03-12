@@ -1,6 +1,6 @@
 /*
  *  get_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2026 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -703,6 +703,7 @@ get_all(int item)
            buffer[MAX_FILENAME_LENGTH + MAX_PATH_LENGTH],
            str_hex_number[23 + 1];
 
+      id.is_link_job = il[file_no].add_data[pos];
       if (fseek(il[file_no].fp, (long)il[file_no].line_offset[pos], SEEK_SET) == -1)
       {
          (void)xrec(FATAL_DIALOG, "fseek() error : %s (%s %d)\n",

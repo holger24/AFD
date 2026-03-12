@@ -1,6 +1,6 @@
 /*
  *  format_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -162,7 +162,18 @@ format_send_info(char **text)
    max_y++;
    if (id.remote_file_name[0] != '\0')
    {
-      count = sprintf(*text + length, "Remote name: ");
+      if (id.is_link_job & LINK_SOFT)
+      {
+         count = sprintf(*text + length, "Soft link  : ");
+      }
+      else if (id.is_link_job & LINK_HARD)
+           {
+              count = sprintf(*text + length, "Hard link  : ");
+           }
+           else
+           {
+              count = sprintf(*text + length, "Remote name: ");
+           }
       i = 0;
       while (id.remote_file_name[i] != '\0')
       {

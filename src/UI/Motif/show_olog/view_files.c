@@ -1,6 +1,6 @@
 /*
  *  view_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -146,7 +146,7 @@ view_files(int no_selected, int *select_list)
       /* Check if the file is in fact archived. */
       if (vl[i].pos > -1)
       {
-         if (il[vl[i].file_no].archived[vl[i].pos] == 1)
+         if (il[vl[i].file_no].add_data[vl[i].pos] & FILE_ARCHIVED)
          {
             vl[i].status = FILE_PENDING;
             to_do++;

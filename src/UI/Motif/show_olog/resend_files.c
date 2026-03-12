@@ -1,6 +1,6 @@
 /*
  *  resend_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -232,11 +232,12 @@ resend_files(int no_selected, int *select_list)
       {
 #ifdef WITH_RESEND_DEBUG
          (void)fprintf(stdout, "select=%d no_selected=%d archived=%d job_id=%x file_no=%d pos=%d status=%d (%s %d)\n",
-                       i, no_selected, il[rl[i].file_no].archived[rl[i].pos],
+                       i, no_selected,
+                       (il[rl[i].file_no].add_data[rl[i].pos] & FILE_ARCHIVED),
                        rl[i].job_id, rl[i].file_no, rl[i].pos, (int)rl[i].status,
                        __FILE__, __LINE__);
 #endif
-         if (il[rl[i].file_no].archived[rl[i].pos] == 1)
+         if (il[rl[i].file_no].add_data[rl[i].pos] & FILE_ARCHIVED)
          {
             /*
              * Read the job ID from the output log file.

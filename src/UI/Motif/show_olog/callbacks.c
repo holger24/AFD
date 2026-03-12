@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2026 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -28,6 +28,7 @@ DESCR__S_M3
  ** SYNOPSIS
  **   void confirmation_toggle(Widget w, XtPointer client_data, XtPointer call_data)
  **   void continues_toggle(Widget w, XtPointer client_data, XtPointer call_data)
+ **   void hardlink_only_toggle(Widget w, XtPointer client_data, XtPointer call_data)
  **   void only_archived_toggle(Widget w, XtPointer client_data, XtPointer call_data)
  **   void output_only_toggle(Widget w, XtPointer client_data, XtPointer call_data)
  **   void received_only_toggle(Widget w, XtPointer client_data, XtPointer call_data)
@@ -44,6 +45,7 @@ DESCR__S_M3
  **   void scrollbar_moved(Widget w, XtPointer client_data, XtPointer call_data)
  **   void set_sensitive(void)
  **   void set_view_mode(Widget w, XtPointer client_data, XtPointer call_data)
+ **   void softlink_only_toggle(Widget w, XtPointer client_data, XtPointer call_data)
  **   void view_button(Widget w, XtPointer client_data, XtPointer call_data)
  **
  ** DESCRIPTION
@@ -94,6 +96,7 @@ DESCR__S_M3
  **                      height.
  **   04.04.2007 H.Kiehl Added button to view data.
  **   28.03.2022 H.Kiehl Added option to view output only.
+ **   08.03.2026 H.Kiehl Added option to view soft- or hardlinks only.
  **
  */
 DESCR__E_M3
@@ -113,9 +116,6 @@ DESCR__E_M3
 /* External global variables. */
 extern Display                    *display;
 extern Widget                     appshell,
-#ifdef _WITH_DE_MAIL_SUPPORT
-                                  con_toggle_w,
-#endif
                                   cont_togglebox_w,
                                   directory_w,
                                   end_time_w,
@@ -124,12 +124,9 @@ extern Widget                     appshell,
                                   headingbox_w,
                                   job_id_w,
                                   listbox_w,
-                                  oa_toggle_w,
-                                  oo_toggle_w,
                                   print_button_w,
                                   recipient_w,
                                   resend_button_w,
-                                  ro_toggle_w,
                                   scrollbar_w,
                                   select_all_button_w,
                                   selectionbox_w,
@@ -158,8 +155,10 @@ extern int                        continues_toggle_set,
                                   view_confirmation,
 #endif
                                   view_archived_only,
-                                  view_output_only,
-                                  view_received_only,
+                                  view_hardlink,
+                                  view_output,
+                                  view_received,
+                                  view_softlink,
                                   view_mode;
 extern unsigned int               all_list_items,
                                   *search_dirid,
@@ -235,20 +234,10 @@ only_archived_toggle(Widget w, XtPointer client_data, XtPointer call_data)
    if (view_archived_only == NO)
    {
       view_archived_only = YES;
-      XtSetSensitive(ro_toggle_w, False);
-      XtSetSensitive(oo_toggle_w, False);
-#ifdef _WITH_DE_MAIL_SUPPORT
-      XtSetSensitive(con_toggle_w, False);
-#endif
    }
    else
    {
       view_archived_only = NO;
-      XtSetSensitive(ro_toggle_w, True);
-      XtSetSensitive(oo_toggle_w, True);
-#ifdef _WITH_DE_MAIL_SUPPORT
-      XtSetSensitive(con_toggle_w, True);
-#endif
    }
    return;
 }
@@ -258,23 +247,13 @@ only_archived_toggle(Widget w, XtPointer client_data, XtPointer call_data)
 void
 received_only_toggle(Widget w, XtPointer client_data, XtPointer call_data)
 {
-   if (view_received_only == NO)
+   if (view_received == NO)
    {
-      view_received_only = YES;
-      XtSetSensitive(oa_toggle_w, False);
-      XtSetSensitive(oo_toggle_w, False);
-#ifdef _WITH_DE_MAIL_SUPPORT
-      XtSetSensitive(con_toggle_w, False);
-#endif
+      view_received = YES;
    }
    else
    {
-      view_received_only = NO;
-      XtSetSensitive(oa_toggle_w, True);
-      XtSetSensitive(oo_toggle_w, True);
-#ifdef _WITH_DE_MAIL_SUPPORT
-      XtSetSensitive(con_toggle_w, True);
-#endif
+      view_received = NO;
    }
    return;
 }
@@ -284,23 +263,45 @@ received_only_toggle(Widget w, XtPointer client_data, XtPointer call_data)
 void
 output_only_toggle(Widget w, XtPointer client_data, XtPointer call_data)
 {
-   if (view_output_only == NO)
+   if (view_output == NO)
    {
-      view_output_only = YES;
-      XtSetSensitive(oa_toggle_w, False);
-      XtSetSensitive(ro_toggle_w, False);
-#ifdef _WITH_DE_MAIL_SUPPORT
-      XtSetSensitive(con_toggle_w, False);
-#endif
+      view_output = YES;
    }
    else
    {
-      view_output_only = NO;
-      XtSetSensitive(oa_toggle_w, True);
-      XtSetSensitive(ro_toggle_w, True);
-#ifdef _WITH_DE_MAIL_SUPPORT
-      XtSetSensitive(con_toggle_w, True);
-#endif
+      view_output = NO;
+   }
+   return;
+}
+
+
+/*######################## softlink_only_toggle() #######################*/
+void
+softlink_only_toggle(Widget w, XtPointer client_data, XtPointer call_data)
+{
+   if (view_softlink == NO)
+   {
+      view_softlink = YES;
+   }
+   else
+   {
+      view_softlink = NO;
+   }
+   return;
+}
+
+
+/*######################## hardlink_only_toggle() #######################*/
+void
+hardlink_only_toggle(Widget w, XtPointer client_data, XtPointer call_data)
+{
+   if (view_hardlink == NO)
+   {
+      view_hardlink = YES;
+   }
+   else
+   {
+      view_hardlink = NO;
    }
    return;
 }
@@ -604,6 +605,7 @@ info_click(Widget w, XtPointer client_data, XEvent *event)
 #endif
          id.soptions = NULL;
          id.archive_dir[0] = '\0';
+         id.is_link_job = 0;
 
          /* Get the information. */
          get_info(pos);

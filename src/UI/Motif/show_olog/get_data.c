@@ -113,8 +113,10 @@ extern int              continues_toggle_set,
                         view_confirmation,
 #endif
                         view_archived_only,
-                        view_output_only,
-                        view_received_only;
+                        view_hardlink,
+                        view_output,
+                        view_received,
+                        view_softlink;
 extern unsigned int     all_list_items,
                         *search_dirid,
                         *search_jobid;
@@ -187,9 +189,9 @@ static void   check_log_updates(Widget),
               new_off_t_size = new_char_size * sizeof(off_t);     \
               prev_item_counter = item_counter;                   \
                                                                   \
-              if (((il[file_no].offset = realloc(il[file_no].offset, new_off_t_size)) == NULL) ||            \
+              if (((il[file_no].offset = realloc(il[file_no].offset, new_off_t_size)) == NULL) ||\
                   ((il[file_no].line_offset = realloc(il[file_no].line_offset, new_off_t_size)) == NULL) ||\
-                  ((il[file_no].archived = realloc(il[file_no].archived, new_char_size)) == NULL))         \
+                  ((il[file_no].add_data = realloc(il[file_no].add_data, new_char_size)) == NULL))\
               {                                                   \
                  (void)xrec(FATAL_DIALOG, "realloc() error : %s (%s %d)",\
                             strerror(errno), __FILE__, __LINE__); \
@@ -504,7 +506,7 @@ static void   check_log_updates(Widget),
                  ptr++;\
               }\
               *p_archive_flag = archive_status;\
-              il[file_no].archived[item_counter] = 1;\
+              il[file_no].add_data[item_counter] |= FILE_ARCHIVED;\
            }\
            else\
            {\
@@ -789,7 +791,7 @@ static void   check_log_updates(Widget),
                  ptr++;\
               }\
               *p_archive_flag = archive_status;\
-              il[file_no].archived[item_counter] = 1;\
+              il[file_no].add_data[item_counter] |= FILE_ARCHIVED;\
            }\
            else\
            {\
@@ -1483,7 +1485,9 @@ get_data(void)
 
 #ifdef DEBUG_PARAMETERS
    (void)fprintf(stderr,
-                 "view_output_only=%s view_received_only=%s view_archived_only=%s\n",
+                 "view_hardlink_only=%s view_softlink_only=%s view_output_only=%s view_received_only=%s view_archived_only=%s\n",
+                 (view_hardlink_only == YES) ? "YES" : "NO",
+                 (view_softlink_only == YES) ? "YES" : "NO",
                  (view_output_only == YES) ? "YES" : "NO",
                  (view_received_only == YES) ? "YES" : "NO",
                  (view_archived_only == YES) ? "YES" : "NO");
@@ -1589,7 +1593,7 @@ get_data(void)
          il[i].no_of_items = 0;
          il[i].line_offset = NULL;
          il[i].offset = NULL;
-         il[i].archived = NULL;
+         il[i].add_data = NULL;
       }
    }
    else
@@ -1616,10 +1620,10 @@ get_data(void)
             free(il[i].offset);
             il[i].offset = NULL;
          }
-         if (il[i].archived != NULL)
+         if (il[i].add_data != NULL)
          {
-            free(il[i].archived);
-            il[i].archived = NULL;
+            free(il[i].add_data);
+            il[i].add_data = NULL;
          }
       }
    }
@@ -2543,20 +2547,40 @@ no_criteria(register char *ptr,
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                {
-                  if ((view_archived_only == YES) || (view_output_only == YES))
+                  if (view_received != YES)
                   {
                      IGNORE_ENTRY();
                   }
                   id.is_receive_job = YES;
+                  il[file_no].add_data[item_counter] = 0;
                }
-               else
-               {
-                  if (view_received_only == YES)
-                  {
-                     IGNORE_ENTRY();
-                  }
-                  id.is_receive_job = NO;
-               }
+               else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
+                    {
+                       if (view_softlink != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = LINK_SOFT;
+                    }
+               else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
+                    {
+                       if (view_hardlink != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = LINK_HARD;
+                    }
+                    else /* OT_NORMAL_DELIVERED */
+                    {
+                       if (view_output != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = 0;
+                    }
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -2592,6 +2616,7 @@ no_criteria(register char *ptr,
                        }
                   type_offset = 5;
                   id.is_receive_job = NO;
+                  il[file_no].add_data[item_counter] = 0;
                }
                else
                {
@@ -2612,21 +2637,40 @@ no_criteria(register char *ptr,
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                   {
-                     if ((view_archived_only == YES) ||
-                         (view_output_only == YES))
+                     if (view_received != YES)
                      {
                         IGNORE_ENTRY();
                      }
                      id.is_receive_job = YES;
+                     il[file_no].add_data[item_counter] = 0;
                   }
-                  else
-                  {
-                     if (view_received_only == YES)
-                     {
-                        IGNORE_ENTRY();
-                     }
-                     id.is_receive_job = NO;
-                  }
+                  else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
+                       {
+                          if (view_softlink != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = LINK_SOFT;
+                       }
+                  else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
+                       {
+                          if (view_hardlink != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = LINK_HARD;
+                       }
+                       else /* OT_NORMAL_DELIVERED */
+                       {
+                          if (view_output != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = 0;
+                       }
 # ifdef _WITH_DE_MAIL_SUPPORT
                   confirmation_sign = 0;
 # endif
@@ -2662,6 +2706,7 @@ no_criteria(register char *ptr,
                           }
                      type_offset = 5;
                      id.is_receive_job = NO;
+                     il[file_no].add_data[item_counter] = 0;
                   }
                   else
                   {
@@ -2676,6 +2721,7 @@ no_criteria(register char *ptr,
             {
                type_offset = 3;
                id.is_receive_job = NO;
+               il[file_no].add_data[item_counter] = 0;
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -2686,6 +2732,7 @@ no_criteria(register char *ptr,
          {
             type_offset = 1;
             id.is_receive_job = NO;
+            il[file_no].add_data[item_counter] = 0;
 #ifdef _WITH_DE_MAIL_SUPPORT
             confirmation_sign = 0;
 #endif
@@ -3217,7 +3264,7 @@ no_criteria(register char *ptr,
                ptr++;
             }
             *p_archive_flag = archive_status;
-            il[file_no].archived[item_counter] = 1;
+            il[file_no].add_data[item_counter] |= FILE_ARCHIVED;
          }
          else
          {
@@ -3371,20 +3418,40 @@ file_name_only(register char *ptr,
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                {
-                  if ((view_archived_only == YES) || (view_output_only == YES))
+                  if (view_received != YES)
                   {
                      IGNORE_ENTRY();
                   }
                   id.is_receive_job = YES;
+                  il[file_no].add_data[item_counter] = 0;
                }
-               else
-               {
-                  if (view_received_only == YES)
-                  {
-                     IGNORE_ENTRY();
-                  }
-                  id.is_receive_job = NO;
-               }
+               else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
+                    {
+                       if (view_softlink != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = LINK_SOFT;
+                    }
+               else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
+                    {
+                       if (view_hardlink != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = LINK_HARD;
+                    }
+                    else /* OT_NORMAL_DELIVERED */
+                    {
+                       if if (view_output != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = 0;
+                    }
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -3420,6 +3487,7 @@ file_name_only(register char *ptr,
                        }
                   type_offset = 5;
                   id.is_receive_job = NO;
+                  il[file_no].add_data[item_counter] = 0;
                }
                else
                {
@@ -3440,21 +3508,40 @@ file_name_only(register char *ptr,
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                   {
-                     if ((view_archived_only == YES) ||
-                         (view_output_only == YES))
+                     if (view_received != YES)
                      {
                         IGNORE_ENTRY();
                      }
                      id.is_receive_job = YES;
+                     il[file_no].add_data[item_counter] = 0;
                   }
-                  else
-                  {
-                     if (view_received_only == YES)
-                     {
-                        IGNORE_ENTRY();
-                     }
-                     id.is_receive_job = NO;
-                  }
+                  else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
+                       {
+                          if (view_softlink != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = LINK_SOFT;
+                       }
+                  else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
+                       {
+                          if (view_hardlink != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = LINK_HARD;
+                       }
+                       else /* OT_NORMAL_DELIVERED */
+                       {
+                          if (view_output != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = 0;
+                       }
 # ifdef _WITH_DE_MAIL_SUPPORT
                   confirmation_sign = 0;
 # endif
@@ -3490,6 +3577,7 @@ file_name_only(register char *ptr,
                           }
                      type_offset = 5;
                      id.is_receive_job = NO;
+                     il[file_no].add_data[item_counter] = 0;
                   }
                   else
                   {
@@ -3504,6 +3592,7 @@ file_name_only(register char *ptr,
             {
                type_offset = 3;
                id.is_receive_job = NO;
+               il[file_no].add_data[item_counter] = 0;
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -3514,6 +3603,7 @@ file_name_only(register char *ptr,
          {
             type_offset = 1;
             id.is_receive_job = NO;
+            il[file_no].add_data[item_counter] = 0;
 #ifdef _WITH_DE_MAIL_SUPPORT
             confirmation_sign = 0;
 #endif
@@ -4497,20 +4587,40 @@ file_size_only(register char *ptr,
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                {
-                  if ((view_archived_only == YES) || (view_output_only == YES))
+                  if (view_received != YES)
                   {
                      IGNORE_ENTRY();
                   }
                   id.is_receive_job = YES;
+                  il[file_no].add_data[item_counter] = 0;
                }
-               else
-               {
-                  if (view_received_only == YES)
-                  {
-                     IGNORE_ENTRY();
-                  }
-                  id.is_receive_job = NO;
-               }
+               else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
+                    {
+                       if (view_softlink != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = LINK_SOFT;
+                    }
+               else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
+                    {
+                       if (view_hardlink != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = LINK_HARD;
+                    }
+                    else /* OT_NORMAL_DELIVERED */
+                    {
+                       if (view_output != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = 0;
+                    }
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -4546,6 +4656,7 @@ file_size_only(register char *ptr,
                        }
                   type_offset = 5;
                   id.is_receive_job = NO;
+                  il[file_no].add_data[item_counter] = 0;
                }
                else
                {
@@ -4566,21 +4677,40 @@ file_size_only(register char *ptr,
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                   {
-                     if ((view_archived_only == YES) ||
-                         (view_output_only == YES))
+                     if (view_received != YES)
                      {
                         IGNORE_ENTRY();
                      }
                      id.is_receive_job = YES;
+                     il[file_no].add_data[item_counter] = 0;
                   }
-                  else
-                  {
-                     if (view_received_only == YES)
-                     {
-                        IGNORE_ENTRY();
-                     }
-                     id.is_receive_job = NO;
-                  }
+                  else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
+                       {
+                          if (view_softlink != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = LINK_SOFT;
+                       }
+                  else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
+                       {
+                          if (view_hardlink != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = LINK_HARD;
+                       }
+                       else /* OT_NORMAL_DELIVERED */
+                       {
+                          if (view_output != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = 0;
+                       }
 # ifdef _WITH_DE_MAIL_SUPPORT
                   confirmation_sign = 0;
 # endif
@@ -4616,6 +4746,7 @@ file_size_only(register char *ptr,
                           }
                      type_offset = 5;
                      id.is_receive_job = NO;
+                     il[file_no].add_data[item_counter] = 0;
                   }
                   else
                   {
@@ -4630,6 +4761,7 @@ file_size_only(register char *ptr,
             {
                type_offset = 3;
                id.is_receive_job = NO;
+               il[file_no].add_data[item_counter] = 0;
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -4640,6 +4772,7 @@ file_size_only(register char *ptr,
          {
             type_offset = 1;
             id.is_receive_job = NO;
+            il[file_no].add_data[item_counter] = 0;
 #ifdef _WITH_DE_MAIL_SUPPORT
             confirmation_sign = 0;
 #endif
@@ -5019,20 +5152,40 @@ file_name_and_size(register char *ptr,
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                {
-                  if ((view_archived_only == YES) || (view_output_only == YES))
+                  if (view_received != YES)
                   {
                      IGNORE_ENTRY();
                   }
                   id.is_receive_job = YES;
+                  il[file_no].add_data[item_counter] = 0;
                }
-               else
-               {
-                  if (view_received_only == YES)
-                  {
-                     IGNORE_ENTRY();
-                  }
-                  id.is_receive_job = NO;
-               }
+               else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
+                    {
+                       if (view_softlink != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = LINK_SOFT;
+                    }
+               else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
+                    {
+                       if (view_hardlink != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = LINK_HARD;
+                    }
+                    else /* OT_NORMAL_DELIVERED */
+                    {
+                       if (view_output != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = 0;
+                    }
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -5068,6 +5221,7 @@ file_name_and_size(register char *ptr,
                        }
                   type_offset = 5;
                   id.is_receive_job = NO;
+                  il[file_no].add_data[item_counter] = 0;
                }
                else
                {
@@ -5088,21 +5242,40 @@ file_name_and_size(register char *ptr,
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                   {
-                     if ((view_archived_only == YES) ||
-                         (view_output_only == YES))
+                     if (view_received != YES)
                      {
                         IGNORE_ENTRY();
                      }
                      id.is_receive_job = YES;
+                     il[file_no].add_data[item_counter] = 0;
                   }
-                  else
-                  {
-                     if (view_received_only == YES)
-                     {
-                        IGNORE_ENTRY();
-                     }
-                     id.is_receive_job = NO;
-                  }
+                  else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
+                       {
+                          if (view_softlink != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = LINK_SOFT;
+                       }
+                  else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
+                       {
+                          if (view_hardlink != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = LINK_HARD;
+                       }
+                       else /* OT_NORMAL_DELIVERED */
+                       {
+                          if (view_output != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = 0;
+                       }
 # ifdef _WITH_DE_MAIL_SUPPORT
                   confirmation_sign = 0;
 # endif
@@ -5138,6 +5311,7 @@ file_name_and_size(register char *ptr,
                           }
                      type_offset = 5;
                      id.is_receive_job = NO;
+                     il[file_no].add_data[item_counter] = 0;
                   }
                   else
                   {
@@ -5152,6 +5326,7 @@ file_name_and_size(register char *ptr,
             {
                type_offset = 3;
                id.is_receive_job = NO;
+               il[file_no].add_data[item_counter] = 0;
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -5162,6 +5337,7 @@ file_name_and_size(register char *ptr,
          {
             type_offset = 1;
             id.is_receive_job = NO;
+            il[file_no].add_data[item_counter] = 0;
 #ifdef _WITH_DE_MAIL_SUPPORT
             confirmation_sign = 0;
 #endif
@@ -6026,20 +6202,40 @@ recipient_only(register char *ptr,
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                {
-                  if ((view_archived_only == YES) || (view_output_only == YES))
+                  if (view_received != YES)
                   {
                      IGNORE_ENTRY();
                   }
                   id.is_receive_job = YES;
+                  il[file_no].add_data[item_counter] = 0;
                }
-               else
-               {
-                  if (view_received_only == YES)
-                  {
-                     IGNORE_ENTRY();
-                  }
-                  id.is_receive_job = NO;
-               }
+               else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
+                    {
+                       if (view_softlink != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = LINK_SOFT;
+                    }
+               else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
+                    {
+                       if (view_hardlink != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = LINK_HARD;
+                    }
+                    else /* OT_NORMAL_DELIVERED */
+                    {
+                       if (view_output != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = 0;
+                    }
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -6075,6 +6271,7 @@ recipient_only(register char *ptr,
                        }
                   type_offset = 5;
                   id.is_receive_job = NO;
+                  il[file_no].add_data[item_counter] = 0;
                }
                else
                {
@@ -6095,21 +6292,40 @@ recipient_only(register char *ptr,
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                   {
-                     if ((view_archived_only == YES) ||
-                         (view_output_only == YES))
+                     if (view_received != YES)
                      {
                         IGNORE_ENTRY();
                      }
                      id.is_receive_job = YES;
+                     il[file_no].add_data[item_counter] = 0;
                   }
-                  else
-                  {
-                     if (view_received_only == YES)
-                     {
-                        IGNORE_ENTRY();
-                     }
-                     id.is_receive_job = NO;
-                  }
+                  else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
+                       {
+                          if (view_softlink != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = LINK_SOFT;
+                       }
+                  else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
+                       {
+                          if (view_hardlink != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = LINK_HARD;
+                       }
+                       else /* OT_NORMAL_DELIVERED */
+                       {
+                          if (view_output != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = 0;
+                       }
 # ifdef _WITH_DE_MAIL_SUPPORT
                   confirmation_sign = 0;
 # endif
@@ -6145,6 +6361,7 @@ recipient_only(register char *ptr,
                           }
                      type_offset = 5;
                      id.is_receive_job = NO;
+                     il[file_no].add_data[item_counter] = 0;
                   }
                   else
                   {
@@ -6159,6 +6376,7 @@ recipient_only(register char *ptr,
             {
                type_offset = 3;
                id.is_receive_job = NO;
+               il[file_no].add_data[item_counter] = 0;
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -6169,6 +6387,7 @@ recipient_only(register char *ptr,
          {
             type_offset = 1;
             id.is_receive_job = NO;
+            il[file_no].add_data[item_counter] = 0;
 #ifdef _WITH_DE_MAIL_SUPPORT
             confirmation_sign = 0;
 #endif
@@ -6956,7 +7175,7 @@ recipient_only(register char *ptr,
                ptr++;
             }
             *p_archive_flag = archive_status;
-            il[file_no].archived[item_counter] = 1;
+            il[file_no].add_data[item_counter] |= FILE_ARCHIVED;
          }
          else
          {
@@ -7106,20 +7325,40 @@ file_name_and_recipient(register char *ptr,
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                {
-                  if ((view_archived_only == YES) || (view_output_only == YES))
+                  if (view_received != YES)
                   {
                      IGNORE_ENTRY();
                   }
                   id.is_receive_job = YES;
+                  il[file_no].add_data[item_counter] = 0;
                }
-               else
-               {
-                  if (view_received_only == YES)
-                  {
-                     IGNORE_ENTRY();
-                  }
-                  id.is_receive_job = NO;
-               }
+               else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
+                    {
+                       if (view_softlink != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = LINK_SOFT;
+                    }
+               else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
+                    {
+                       if (view_hardlink != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = LINK_HARD;
+                    }
+                    else /* OT_NORMAL_DELIVERED */
+                    {
+                       if (view_output != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = 0;
+                    }
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -7155,6 +7394,7 @@ file_name_and_recipient(register char *ptr,
                        }
                   type_offset = 5;
                   id.is_receive_job = NO;
+                  il[file_no].add_data[item_counter] = 0;
                }
                else
                {
@@ -7175,21 +7415,40 @@ file_name_and_recipient(register char *ptr,
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                   {
-                     if ((view_archived_only == YES) ||
-                         (view_output_only == YES))
+                     if (view_received != YES)
                      {
                         IGNORE_ENTRY();
                      }
                      id.is_receive_job = YES;
+                     il[file_no].add_data[item_counter] = 0;
                   }
-                  else
-                  {
-                     if (view_received_only == YES)
-                     {
-                        IGNORE_ENTRY();
-                     }
-                     id.is_receive_job = NO;
-                  }
+                  else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
+                       {
+                          if (view_softlink != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = LINK_SOFT;
+                       }
+                  else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
+                       {
+                          if (view_hardlink != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = LINK_HARD;
+                       }
+                       else /* OT_NORMAL_DELIVERED */
+                       {
+                          if (view_output != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = 0;
+                       }
 # ifdef _WITH_DE_MAIL_SUPPORT
                   confirmation_sign = 0;
 # endif
@@ -7225,6 +7484,7 @@ file_name_and_recipient(register char *ptr,
                           }
                      type_offset = 5;
                      id.is_receive_job = NO;
+                     il[file_no].add_data[item_counter] = 0;
                   }
                   else
                   {
@@ -7239,6 +7499,7 @@ file_name_and_recipient(register char *ptr,
             {
                type_offset = 3;
                id.is_receive_job = NO;
+               il[file_no].add_data[item_counter] = 0;
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -7249,6 +7510,7 @@ file_name_and_recipient(register char *ptr,
          {
             type_offset = 1;
             id.is_receive_job = NO;
+            il[file_no].add_data[item_counter] = 0;
 #ifdef _WITH_DE_MAIL_SUPPORT
             confirmation_sign = 0;
 #endif
@@ -7573,20 +7835,40 @@ file_size_and_recipient(register char *ptr,
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                {
-                  if ((view_archived_only == YES) || (view_output_only == YES))
+                  if (view_received != YES)
                   {
                      IGNORE_ENTRY();
                   }
                   id.is_receive_job = YES;
+                  il[file_no].add_data[item_counter] = 0;
                }
-               else
-               {
-                  if (view_received_only == YES)
-                  {
-                     IGNORE_ENTRY();
-                  }
-                  id.is_receive_job = NO;
-               }
+               else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
+                    {
+                       if (view_softlink != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = LINK_SOFT;
+                    }
+               else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
+                    {
+                       if (view_hardlink != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = LINK_HARD;
+                    }
+                    else /* OT_NORMAL_DELIVERED */
+                    {
+                       if (view_output != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = 0;
+                    }
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -7622,6 +7904,7 @@ file_size_and_recipient(register char *ptr,
                        }
                   type_offset = 5;
                   id.is_receive_job = NO;
+                  il[file_no].add_data[item_counter] = 0;
                }
                else
                {
@@ -7642,21 +7925,40 @@ file_size_and_recipient(register char *ptr,
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                   {
-                     if ((view_archived_only == YES) ||
-                         (view_output_only == YES))
+                     if (view_received != YES)
                      {
                         IGNORE_ENTRY();
                      }
                      id.is_receive_job = YES;
+                     il[file_no].add_data[item_counter] = 0;
                   }
-                  else
-                  {
-                     if (view_received_only == YES)
-                     {
-                        IGNORE_ENTRY();
-                     }
-                     id.is_receive_job = NO;
-                  }
+                  else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
+                       {
+                          if (view_softlink != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = LINK_SOFT;
+                       }
+                  else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
+                       {
+                          if (view_hardlink != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = LINK_HARD;
+                       }
+                       else /* OT_NORMAL_DELIVERED */
+                       {
+                          if (view_output != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = 0;
+                       }
 # ifdef _WITH_DE_MAIL_SUPPORT
                   confirmation_sign = 0;
 # endif
@@ -7692,6 +7994,7 @@ file_size_and_recipient(register char *ptr,
                           }
                      type_offset = 5;
                      id.is_receive_job = NO;
+                     il[file_no].add_data[item_counter] = 0;
                   }
                   else
                   {
@@ -7706,6 +8009,7 @@ file_size_and_recipient(register char *ptr,
             {
                type_offset = 3;
                id.is_receive_job = NO;
+               il[file_no].add_data[item_counter] = 0;
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -7716,6 +8020,7 @@ file_size_and_recipient(register char *ptr,
          {
             type_offset = 1;
             id.is_receive_job = NO;
+            il[file_no].add_data[item_counter] = 0;
 #ifdef _WITH_DE_MAIL_SUPPORT
             confirmation_sign = 0;
 #endif
@@ -8090,20 +8395,40 @@ file_name_size_recipient(register char *ptr,
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                {
-                  if ((view_archived_only == YES) || (view_output_only == YES))
+                  if (view_received != YES)
                   {
                      IGNORE_ENTRY();
                   }
                   id.is_receive_job = YES;
+                  il[file_no].add_data[item_counter] = 0;
                }
-               else
-               {
-                  if (view_received_only == YES)
-                  {
-                     IGNORE_ENTRY();
-                  }
-                  id.is_receive_job = NO;
-               }
+               else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
+                    {
+                       if (view_softlink != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = LINK_SOFT;
+                    }
+               else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
+                    {
+                       if (view_hardlink != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = LINK_HARD;
+                    }
+                    else /* OT_NORMAL_DELIVERED */
+                    {
+                       if (view_output != YES)
+                       {
+                          IGNORE_ENTRY();
+                       }
+                       id.is_receive_job = NO;
+                       il[file_no].add_data[item_counter] = 0;
+                    }
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -8139,6 +8464,7 @@ file_name_size_recipient(register char *ptr,
                        }
                   type_offset = 5;
                   id.is_receive_job = NO;
+                  il[file_no].add_data[item_counter] = 0;
                }
                else
                {
@@ -8159,21 +8485,40 @@ file_name_size_recipient(register char *ptr,
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                   {
-                     if ((view_archived_only == YES) ||
-                         (view_output_only == YES))
+                     if (view_received != YES)
                      {
                         IGNORE_ENTRY();
                      }
                      id.is_receive_job = YES;
+                     il[file_no].add_data[item_counter] = 0;
                   }
-                  else
-                  {
-                     if (view_received_only == YES)
-                     {
-                        IGNORE_ENTRY();
-                     }
-                     id.is_receive_job = NO;
-                  }
+                  else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
+                       {
+                          if (view_softlink != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = LINK_SOFT;
+                       }
+                  else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
+                       {
+                          if (view_hardlink != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = LINK_HARD;
+                       }
+                       else /* OT_NORMAL_DELIVERED */
+                       {
+                          if (view_output != YES)
+                          {
+                             IGNORE_ENTRY();
+                          }
+                          id.is_receive_job = NO;
+                          il[file_no].add_data[item_counter] = 0;
+                       }
 # ifdef _WITH_DE_MAIL_SUPPORT
                   confirmation_sign = 0;
 # endif
@@ -8209,6 +8554,7 @@ file_name_size_recipient(register char *ptr,
                           }
                      type_offset = 5;
                      id.is_receive_job = NO;
+                     il[file_no].add_data[item_counter] = 0;
                   }
                   else
                   {
@@ -8223,6 +8569,7 @@ file_name_size_recipient(register char *ptr,
             {
                type_offset = 3;
                id.is_receive_job = NO;
+               il[file_no].add_data[item_counter] = 0;
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -8233,6 +8580,7 @@ file_name_size_recipient(register char *ptr,
          {
             type_offset = 1;
             id.is_receive_job = NO;
+            il[file_no].add_data[item_counter] = 0;
 #ifdef _WITH_DE_MAIL_SUPPORT
             confirmation_sign = 0;
 #endif
