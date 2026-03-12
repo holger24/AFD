@@ -334,7 +334,7 @@ write_header(int fd, char *sum_sep_line)
       goto write_data;
    }
 
-   if (no_of_search_file_names > 1)
+   if (no_of_search_file_names > 0)
    {
       int i;
 
@@ -360,18 +360,9 @@ write_header(int fd, char *sum_sep_line)
    }
    else
    {
-      if (no_of_search_file_names == 0)
-      {
-         length += snprintf(&buffer[length], 1024 - length,
-                            "\n\tFile name     : \n\tFile size     : %s\n",
-                            search_file_size_str);
-      }
-      else
-      {
-         length += snprintf(&buffer[length], 1024 - length,
-                            "\n\tFile name     : %s\n\tFile size     : %s\n",
-                            search_file_name[0], search_file_size_str);
-      }
+      length += snprintf(&buffer[length], 1024 - length,
+                         "\n\tFile name     :\n\tFile size     : %s\n",
+                         search_file_size_str);
    }
    if (length >= 1024)
    {
