@@ -1,6 +1,6 @@
 /*
  *  fddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -377,6 +377,14 @@ struct msg_cache_buf
        };
 
 /* Structure that holds all data for one sf_xxx/gf_xxx job. */
+#define OF_WARN_LEVEL_DEBUG   1
+#define OF_WARN_LEVEL_INFO    2
+#define OF_WARN_LEVEL_WARN    4
+#define OF_WARN_LEVEL_ERROR   8
+#define OF_WARN_LEVEL_DEFAULT OF_WARN_LEVEL_ERROR
+#define OF_ACTION_CONTINUE    16
+#define OF_ACTION_STOP        32
+#define OF_ACTION_DEFAULT     OF_ACTION_STOP
 union uiid
       {
          unsigned int job;
@@ -471,6 +479,13 @@ struct job
                                          /* was malloced.                */
           char           name2dir_char;  /* Separator character for      */
                                          /* renaming file to directory.  */
+          char           hardlink_on_failure_flag;
+                                         /* 1   OF_WARN_LEVEL_DEBUG      */
+                                         /* 2   OF_WARN_LEVEL_INFO       */
+                                         /* 4   OF_WARN_LEVEL_WARN       */
+                                         /* 8   OF_WARN_LEVEL_ERROR      */
+                                         /* 16  OF_ACTION_CONTINUE       */
+                                         /* 32  OF_ACTION_STOP           */
           char           *group_mail_domain;
           char           *index_file;    /* HTTP directory listing.      */
           int            no_of_restart_files;

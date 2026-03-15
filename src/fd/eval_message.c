@@ -1,6 +1,6 @@
 /*
  *  eval_message.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2025 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2026 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -100,6 +100,7 @@ DESCR__S_M3
  **   10.03.2025 h.Kiehl When 'ulock OFF' is set, we should still do
  **                      the unique locking.
  **   23.08.2025 H.Kiehl Added units s,m,h,d support to age-limit option.
+ **   15.03.2026 H.Kiehl Added --on_failure= parameter for option hardlink.
  **
  */
 DESCR__E_M3
@@ -1169,6 +1170,145 @@ eval_message(char *message_name, struct job *p_db)
                     while ((*ptr == ' ') || (*ptr == '\t'))
                     {
                        ptr++;
+                    }
+
+                    /* --on_failure= */
+                    if ((*ptr == '-') && (*(ptr + 1) == '-') &&
+                        (*(ptr + 2) == 'o') && (*(ptr + 3) == 'n') &&
+                        (*(ptr + 4) == '_') && (*(ptr + 5) == 'f') &&
+                        (*(ptr + 6) == 'a') && (*(ptr + 7) == 'i') &&
+                        (*(ptr + 8) == 'l') && (*(ptr + 9) == 'u') &&
+                        (*(ptr + 10) == 'r') && (*(ptr + 11) == 'e') &&
+                        (*(ptr + 12) == '='))
+                    {
+                       char *p_start;
+
+                       p_db->hardlink_on_failure_flag = 0;
+                       ptr += 13;
+                       while ((*ptr == ' ') || (*ptr == '\t'))
+                       {
+                          ptr++;
+                       }
+
+                       /*
+                        * <warn level>[-<action>]
+                        * warn level - debug
+                        *            - info
+                        *            - warn
+                        *            - error (default)
+                        * action - continue
+                        *        - stop (default)
+                        */
+                       if ((*ptr == 'd') && (*(ptr + 1) == 'e') &&
+                           (*(ptr + 2) == 'b') && (*(ptr + 3) == 'u') &&
+                           (*(ptr + 4) == 'g') &&
+                           ((*(ptr + 5) == '-') || (*(ptr + 5) == ' ') ||
+                            (*(ptr + 5) == '\t')))
+                       {
+                          /* debug */
+                          ptr += 5;
+                          p_db->hardlink_on_failure_flag |= OF_WARN_LEVEL_DEBUG;
+                       }
+                       else if ((*ptr == 'i') && (*(ptr + 1) == 'n') &&
+                                (*(ptr + 2) == 'f') && (*(ptr + 3) == 'o') &&
+                                ((*(ptr + 4) == '-') || (*(ptr + 4) == ' ') ||
+                                 (*(ptr + 4) == '\t')))
+                            {
+                               /* info */
+                               ptr += 4;
+                               p_db->hardlink_on_failure_flag |= OF_WARN_LEVEL_INFO;
+                            }
+                       else if ((*ptr == 'w') && (*(ptr + 1) == 'a') &&
+                                (*(ptr + 2) == 'r') && (*(ptr + 3) == 'n') &&
+                                ((*(ptr + 4) == '-') || (*(ptr + 4) == ' ') ||
+                                 (*(ptr + 4) == '\t')))
+                            {
+                               /* warn */
+                               ptr += 4;
+                               p_db->hardlink_on_failure_flag |= OF_WARN_LEVEL_WARN;
+                            }
+                       else if ((*ptr == 'e') && (*(ptr + 1) == 'r') &&
+                                (*(ptr + 2) == 'r') && (*(ptr + 3) == 'o') &&
+                                (*(ptr + 4) == 'r') &&
+                                ((*(ptr + 5) == '-') || (*(ptr + 5) == ' ') ||
+                                 (*(ptr + 5) == '\t')))
+                            {
+                               /* debug */
+                               ptr += 5;
+                               p_db->hardlink_on_failure_flag |= OF_WARN_LEVEL_ERROR;
+                            }
+                            else
+                            {
+                               char tmp_char;
+
+                               p_start = ptr;
+                               while ((*ptr != '-') && (*ptr != ' ') &&
+                                      (*ptr != '\t'))
+                               {
+                                  ptr++;
+                               }
+                               tmp_char = *ptr;
+                               *ptr = '\0';
+                               system_log(WARN_SIGN, __FILE__, __LINE__,
+                                          "Unknown warn level %s for '%s --on_failure=' parameter, setting default.",
+                                          p_start, REMOTE_HARDLINK_ID);
+                               *ptr = tmp_char;
+                               p_db->hardlink_on_failure_flag |= OF_WARN_LEVEL_DEFAULT;
+                            }
+
+                       if (*ptr == '-')
+                       {
+                          ptr++;
+                          if ((*ptr == 'c') && (*(ptr + 1) == 'o') &&
+                              (*(ptr + 2) == 'n') && (*(ptr + 3) == 't') &&
+                              (*(ptr + 4) == 'i') && (*(ptr + 5) == 'n') &&
+                              (*(ptr + 6) == 'u') && (*(ptr + 7) == 'e') &&
+                              ((*(ptr + 8) == ' ') || (*(ptr + 8) == '\t')))
+                          {
+                             /* continue */
+                             ptr += 8;
+                             p_db->hardlink_on_failure_flag |= OF_ACTION_CONTINUE;
+                          }
+                          else if ((*ptr == 's') && (*(ptr + 1) == 't') &&
+                                   (*(ptr + 2) == 'o') && (*(ptr + 3) == 'p') &&
+                                   ((*(ptr + 4) == ' ') ||
+                                    (*(ptr + 4) == '\t')))
+                               {
+                                  /* stop */
+                                  ptr += 4;
+                                  p_db->hardlink_on_failure_flag |= OF_ACTION_STOP;
+                               }
+                               else
+                               {
+                                  char tmp_char;
+
+                                  p_start = ptr;
+                                  while ((*ptr != ' ') && (*ptr != '\t'))
+                                  {
+                                     ptr++;
+                                  }
+                                  tmp_char = *ptr;
+                                  *ptr = '\0';
+                                  system_log(WARN_SIGN, __FILE__, __LINE__,
+                                             "Unknown action %s for '%s --on_failure=' parameter, setting default.",
+                                             p_start, REMOTE_HARDLINK_ID);
+                                  *ptr = tmp_char;
+                                   p_db->hardlink_on_failure_flag |= OF_ACTION_DEFAULT;
+                               }
+                       }
+                       else
+                       {
+                          p_db->hardlink_on_failure_flag |= OF_ACTION_DEFAULT;
+                       }
+
+                       while ((*ptr == ' ') || (*ptr == '\t'))
+                       {
+                          ptr++;
+                       }
+                    } /* --on_failure= */
+                    else
+                    {
+                       p_db->hardlink_on_failure_flag = OF_WARN_LEVEL_DEFAULT | OF_ACTION_DEFAULT;
                     }
 
                     /*

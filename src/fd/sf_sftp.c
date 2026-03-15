@@ -1916,13 +1916,35 @@ main(int argc, char *argv[])
                                               db.dir_mode,
                                               created_path)) != SUCCESS)
                   {
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                     char sign[LOG_SIGN_LENGTH];
+
+                     if (db.hardlink_on_failure_flag & OF_WARN_LEVEL_DEBUG)
+                     {
+                        (void)memcpy(sign, DEBUG_SIGN, LOG_SIGN_LENGTH);
+                     }
+                     else if (db.hardlink_on_failure_flag & OF_WARN_LEVEL_INFO)
+                          {
+                             (void)memcpy(sign, INFO_SIGN, LOG_SIGN_LENGTH);
+                          }
+                     else if (db.hardlink_on_failure_flag & OF_WARN_LEVEL_INFO)
+                          {
+                             (void)memcpy(sign, WARN_SIGN, LOG_SIGN_LENGTH);
+                          }
+                          else
+                          {
+                             (void)memcpy(sign, ERROR_SIGN, LOG_SIGN_LENGTH);
+                          }
+
+                     trans_log(sign, __FILE__, __LINE__, NULL, msg_str,
                                "Failed to create a hardlink from %s to %s (%d)",
                                initial_filename, name, status);
-                     rm_dupcheck_crc(fullname, p_file_name_buffer,
-                                     *p_file_size_buffer);
-                     sftp_quit();
-                     exit(eval_timeout(LINK_REMOTE_ERROR));
+                     if (db.hardlink_on_failure_flag & OF_ACTION_STOP)
+                     {
+                        rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                        *p_file_size_buffer);
+                        sftp_quit();
+                        exit(eval_timeout(LINK_REMOTE_ERROR));
+                     }
                   }
                   else
                   {

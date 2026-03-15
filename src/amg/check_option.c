@@ -1,6 +1,6 @@
 /*
  *  check_option.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,6 +49,7 @@ DESCR__S_M3
  **   31.05.2023 H.Kiehl Added hardlink and symlink.
  **   27.05.2023 H.Kiehl Added ageing.
  **   23.08.2025 H.Kiehl Added units s,m,h,d support to age-limit option.
+ **   15.03.2026 H.Kiehl Added --on_failure= parameter for option hardlink.
  **
  */
 DESCR__E_M3
@@ -1269,6 +1270,129 @@ check_option(char *option, FILE *cmd_fp)
            {
               ptr++;
            }
+
+           /* --on_failure= */
+           if ((*ptr == '-') && (*(ptr + 1) == '-') &&
+               (*(ptr + 2) == 'o') && (*(ptr + 3) == 'n') &&
+               (*(ptr + 4) == '_') && (*(ptr + 5) == 'f') &&
+               (*(ptr + 6) == 'a') && (*(ptr + 7) == 'i') &&
+               (*(ptr + 8) == 'l') && (*(ptr + 9) == 'u') &&
+               (*(ptr + 10) == 'r') && (*(ptr + 11) == 'e') &&
+               (*(ptr + 12) == '='))
+           {
+              ptr += 13;
+              while ((*ptr == ' ') || (*ptr == '\t'))
+              {
+                 ptr++;
+              }
+
+              /*
+               * <warn level>[-<action>]
+               * warn level - debug
+               *            - info
+               *            - warn
+               *            - error (default)
+               * action - continue
+               *        - stop (default)
+               */
+              if ((*ptr == 'd') && (*(ptr + 1) == 'e') &&
+                  (*(ptr + 2) == 'b') && (*(ptr + 3) == 'u') &&
+                  (*(ptr + 4) == 'g') &&
+                  ((*(ptr + 5) == '-') || (*(ptr + 5) == ' ') ||
+                   (*(ptr + 5) == '\t') || (*(ptr + 5) == '\0')))
+              {
+                 /* debug */
+                 ptr += 5;
+              }
+              else if ((*ptr == 'i') && (*(ptr + 1) == 'n') &&
+                       (*(ptr + 2) == 'f') && (*(ptr + 3) == 'o') &&
+                       ((*(ptr + 4) == '-') || (*(ptr + 4) == ' ') ||
+                        (*(ptr + 4) == '\t') || (*(ptr + 4) == '\0')))
+                   {
+                      /* info */
+                      ptr += 4;
+                   }
+              else if ((*ptr == 'w') && (*(ptr + 1) == 'a') &&
+                       (*(ptr + 2) == 'r') && (*(ptr + 3) == 'n') &&
+                       ((*(ptr + 4) == '-') || (*(ptr + 4) == ' ') ||
+                        (*(ptr + 4) == '\t') || (*(ptr + 4) == '\0')))
+                   {
+                      /* warn */
+                      ptr += 4;
+                   }
+              else if ((*ptr == 'e') && (*(ptr + 1) == 'r') &&
+                       (*(ptr + 2) == 'r') && (*(ptr + 3) == 'o') &&
+                       (*(ptr + 4) == 'r') &&
+                       ((*(ptr + 5) == '-') || (*(ptr + 5) == ' ') ||
+                        (*(ptr + 5) == '\t') || (*(ptr + 5) == '\0')))
+                   {
+                      /* debug */
+                      ptr += 5;
+                   }
+                   else
+                   {
+                      char *p_start = ptr,
+                           tmp_char;
+
+                      while ((*ptr != '-') && (*ptr != ' ') &&
+                             (*ptr != '\t') && (*ptr != '\0'))
+                      {
+                         ptr++;
+                      }
+                      tmp_char = *ptr;
+                      *ptr = '\0';
+                      update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                    "Unknown warn level %s for '%s --on_failure=' parameter.",
+                                    p_start, REMOTE_HARDLINK_ID);
+                      *ptr = tmp_char;
+
+                      return(INCORRECT);
+                   }
+
+              if (*ptr == '-')
+              {
+                 ptr++;
+                 if ((*ptr == 'c') && (*(ptr + 1) == 'o') &&
+                     (*(ptr + 2) == 'n') && (*(ptr + 3) == 't') &&
+                     (*(ptr + 4) == 'i') && (*(ptr + 5) == 'n') &&
+                     (*(ptr + 6) == 'u') && (*(ptr + 7) == 'e') &&
+                     ((*(ptr + 8) == ' ') || (*(ptr + 8) == '\t') ||
+                      (*(ptr + 8) == '\0')))
+                 {
+                    /* continue */
+                    ptr += 8;
+                 }
+                 else if ((*ptr == 's') && (*(ptr + 1) == 't') &&
+                          (*(ptr + 2) == 'o') && (*(ptr + 3) == 'p') &&
+                          ((*(ptr + 4) == ' ') || (*(ptr + 4) == '\t') ||
+                          (*(ptr + 4) == '\0')))
+                      {
+                         /* stop */
+                         ptr += 4;
+                      }
+                      else
+                      {
+                         char *p_start = ptr,
+                              tmp_char;
+
+                         while ((*ptr != '-') && (*ptr != ' ') &&
+                                (*ptr != '\t') && (*ptr != '\0'))
+                         {
+                            ptr++;
+                         }
+                         tmp_char = *ptr;
+                         *ptr = '\0';
+                         update_db_log(WARN_SIGN, __FILE__, __LINE__,
+                                       cmd_fp, NULL,
+                                       "Unknown action %s for '%s --on_failure=' parameter.",
+                                       p_start, REMOTE_HARDLINK_ID);
+                         *ptr = tmp_char;
+
+                         return(INCORRECT);
+                      }
+              }
+           } /* --on_failure= */
+
            if (*ptr == '\0')
            {
               update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
