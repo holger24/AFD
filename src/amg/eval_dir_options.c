@@ -1,7 +1,7 @@
 /*
  *  eval_dir_options.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 2000 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -118,6 +118,7 @@ DESCR__S_M3
  **   30.03.2024 H.Kiehl Added "get dir list[ href]" option.
  **   12.12.2024 H.Kiehl Added "retrieve zero size" option.
  **   06.09.2025 H.Kiehl Added "remove action" option.
+ **   16.03.2026 H.Kiehl For 'ignore size' add possibility to specify unit.
  **
  */
 DESCR__E_M3
@@ -1817,8 +1818,9 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
       else if (((used & IGNORE_SIZE_FLAG) == 0) &&
                (strncmp(ptr, IGNORE_SIZE_ID, IGNORE_SIZE_ID_LENGTH) == 0))
            {
-              int  length = 0;
-              char number[MAX_OFF_T_LENGTH + 1];
+              int   length = 0;
+              off_t unit_modifier = 1;
+              char  number[MAX_OFF_T_LENGTH + 1];
 
               used |= IGNORE_SIZE_FLAG;
               ptr += IGNORE_SIZE_ID_LENGTH;
@@ -1853,6 +1855,40 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
                  number[length] = *ptr;
                  ptr++; length++;
               }
+
+              /* Check if unit is specified. */
+              if ((*ptr == 'K') && (*(ptr + 1) == 'B') &&
+                  ((*(ptr + 2) == '\n') || (*(ptr + 2) == '\0')))
+              {
+                 unit_modifier = KILOBYTE;
+              }
+              else if ((*ptr == 'M') && (*(ptr + 1) == 'B') &&
+                       ((*(ptr + 2) == '\n') || (*(ptr + 2) == '\0')))
+                   {
+                      unit_modifier = MEGABYTE;
+                   }
+              else if ((*ptr == 'G') && (*(ptr + 1) == 'B') &&
+                       ((*(ptr + 2) == '\n') || (*(ptr + 2) == '\0')))
+                   {
+                      unit_modifier = GIGABYTE;
+                   }
+#if SIZEOF_OFF_T > 4
+              else if ((*ptr == 'T') && (*(ptr + 1) == 'B') &&
+                       ((*(ptr + 2) == '\n') || (*(ptr + 2) == '\0')))
+                   {
+                      unit_modifier = TERABYTE;
+                   }
+              else if ((*ptr == 'P') && (*(ptr + 1) == 'B') &&
+                       ((*(ptr + 2) == '\n') || (*(ptr + 2) == '\0')))
+                   {
+                      unit_modifier = PETABYTE;
+                   }
+              else if ((*ptr == 'E') && (*(ptr + 1) == 'B') &&
+                       ((*(ptr + 2) == '\n') || (*(ptr + 2) == '\0')))
+                   {
+                      unit_modifier = EXABYTE;
+                   }
+#endif
               if ((length > 0) && (length != MAX_OFF_T_LENGTH))
               {
                  number[length] = '\0';
@@ -1876,6 +1912,7 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
                                   number, dd[dir_pos].dir_name, IGNORE_SIZE_ID);
                     problems_found++;
                  }
+                 dd[dir_pos].ignore_size = dd[dir_pos].ignore_size * unit_modifier;
                  while ((*ptr == ' ') || (*ptr == '\t'))
                  {
                     ptr++;
