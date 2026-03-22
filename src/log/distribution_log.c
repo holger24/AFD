@@ -98,6 +98,9 @@ DESCR__S_M1
  ** HISTORY
  **   08.04.2008 H.Kiehl Created
  **   09.02.2017 H.Kiehl Flush buffers when we exit.
+ **   15.03.2026 H.Kiehl When appending segmented entries, realloc()
+ **                      additional memory for the line buffer to
+ **                      accommodate the additional jobs.
  **
  */
 DESCR__E_M1
@@ -479,6 +482,9 @@ main(int argc, char *argv[])
                {
                   /* Remove this line and free its buffer. */
                   free(bl[i].line);
+                  bl[i].line = NULL;
+                  bl[i].line_offset = 0;
+                  bl[i].total_jobs_queued = 0;
                   if ((lines_buffered > 1) && ((i + 1) < lines_buffered))
                   {
                      (void)memmove(&bl[i], &bl[i + 1],
@@ -556,6 +562,7 @@ main(int argc, char *argv[])
                                           (fifo_buffer + offset_type + sizeof(char) + sizeof(char) + sizeof(char) + (*jobs_queued * sizeof(char))),
                                           MAX_FILENAME_LENGTH);
                              filename[MAX_FILENAME_LENGTH] = '\0';
+                             *filename_length = MAX_FILENAME_LENGTH;
                           }
                           if ((*(fifo_buffer + offset_type + sizeof(char)) == 1) ||
                               (lines_buffered >= MAX_SEGMENTED_LINES_BUFFERED))
@@ -612,7 +619,8 @@ main(int argc, char *argv[])
                                       exit(INCORRECT);
                                    }
                                 }
-                                bl[lines_buffered].buffer_length = LOG_DATE_LENGTH + 2 + 1 + *filename_length + 1 + MAX_INT_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH + 1 + (*jobs_queued * (MAX_INT_HEX_LENGTH + 3 + 1)) + 1;
+                                bl[lines_buffered].buffer_length = LOG_DATE_LENGTH + 2 + 1 + MAX_INT_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH + 1 + *filename_length + 1 + MAX_TIME_T_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH + 1 + MAX_OFF_T_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH + (*jobs_queued * (1 + MAX_INT_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH)) + 1;
+                                bl[lines_buffered].total_jobs_queued = *jobs_queued;
                                 bl[lines_buffered].did = *dir_number;
                                 bl[lines_buffered].unique_number = *unique_number;
                                 bl[lines_buffered].entry_time = time(NULL);
@@ -656,10 +664,22 @@ main(int argc, char *argv[])
                                                                          (unsigned int)*(fifo_buffer + offset_type + sizeof(char) + sizeof(char) + sizeof(char)));
                                 for (i = 1; i < *jobs_queued; i++)
                                 {
-                                   bl[lines_buffered].line_offset += sprintf(&bl[lines_buffered].line[bl[lines_buffered].line_offset],
-                                                                             ",%x_%x",
-                                                                             jid_list[i],
-                                                                             (unsigned int)*(fifo_buffer + offset_type + sizeof(char) + sizeof(char) + sizeof(char) + (i * sizeof(char))));
+                                   if (bl[lines_buffered].buffer_length >= (bl[lines_buffered].line_offset + 1 + MAX_INT_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH))
+                                   {
+                                      bl[lines_buffered].line_offset += sprintf(&bl[lines_buffered].line[bl[lines_buffered].line_offset],
+                                                                                ",%x_%x",
+                                                                                jid_list[i],
+                                                                                (unsigned int)*(fifo_buffer + offset_type + sizeof(char) + sizeof(char) + sizeof(char) + (i * sizeof(char))));
+                                   }
+                                   else
+                                   {
+                                      system_log(WARN_SIGN, __FILE__, __LINE__,
+                                                 "Buffer length for storing line is not large enough (%d < %d), dropping %d job(s).",
+                                                 bl[lines_buffered].buffer_length,
+                                                 bl[lines_buffered].line_offset + 1 + MAX_INT_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH,
+                                                 *jobs_queued - i);
+                                      break;
+                                   }
                                 }
                                 lines_buffered++;
                              }
@@ -681,12 +701,34 @@ main(int argc, char *argv[])
                                 }
                                 else
                                 {
+                                   bl[i].total_jobs_queued += *jobs_queued;
+                                   bl[i].buffer_length = LOG_DATE_LENGTH + 2 + 1 + MAX_INT_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH + 1 + *filename_length + 1 + MAX_TIME_T_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH + 1 + MAX_OFF_T_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH + (bl[i].total_jobs_queued * (1 + MAX_INT_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH)) + 1;
+                                   if ((bl[i].line = realloc(bl[i].line, bl[i].buffer_length)) == NULL)
+                                   {
+                                      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                                 "Failed to realloc() %d bytes : %s",
+                                                 bl[lines_buffered].buffer_length,
+                                                 strerror(errno));
+                                      exit(INCORRECT);
+                                   }
                                    for (j = 0; j < *jobs_queued; j++)
                                    {
-                                      bl[i].line_offset += sprintf(&bl[i].line[bl[i].line_offset],
-                                                                   ",%x_%x",
-                                                                   jid_list[j],
-                                                                   (unsigned int)*(fifo_buffer + offset_type + sizeof(char) + sizeof(char) + sizeof(char) + (j * sizeof(char))));
+                                      if (bl[i].buffer_length >= (bl[i].line_offset + 1 + MAX_INT_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH))
+                                      {
+                                         bl[i].line_offset += sprintf(&bl[i].line[bl[i].line_offset],
+                                                                      ",%x_%x",
+                                                                      jid_list[j],
+                                                                      (unsigned int)*(fifo_buffer + offset_type + sizeof(char) + sizeof(char) + sizeof(char) + (j * sizeof(char))));
+                                      }
+                                      else
+                                      {
+                                         system_log(WARN_SIGN, __FILE__, __LINE__,
+                                                    "Buffer length for storing line is not large enough (%d < %d), dropping %d job(s).",
+                                                    bl[i].buffer_length,
+                                                    bl[i].line_offset + 1 + MAX_INT_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH,
+                                                    *jobs_queued - j);
+                                         break;
+                                      }
                                    }
 
                                    /* Is this the last segment? */
@@ -708,6 +750,9 @@ main(int argc, char *argv[])
 
                                       /* Remove this line and free its buffer. */
                                       free(bl[i].line);
+                                      bl[i].line = NULL;
+                                      bl[i].line_offset = 0;
+                                      bl[i].total_jobs_queued = 0;
                                       if ((lines_buffered > 1) && ((i + 1) < lines_buffered))
                                       {
                                          (void)memmove(&bl[i], &bl[i + 1],
@@ -798,6 +843,9 @@ main(int argc, char *argv[])
                     {
                        /* Remove this line and free its buffer. */
                        free(bl[i].line);
+                       bl[i].line = NULL;
+                       bl[i].line_offset = 0;
+                       bl[i].total_jobs_queued = 0;
                        if ((lines_buffered > 1) && ((i + 1) < lines_buffered))
                        {
                           (void)memmove(&bl[i], &bl[i + 1],

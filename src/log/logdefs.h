@@ -1,6 +1,6 @@
 /*
  *  logdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -206,6 +206,7 @@ struct buffered_line
           char         *line;
           int          buffer_length;
           int          line_offset;
+          unsigned int total_jobs_queued;
           unsigned int did;
           unsigned int unique_number;
           time_t       entry_time;
