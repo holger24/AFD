@@ -1,6 +1,6 @@
 /*
  *  get_dc_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ DESCR__S_M3
  **               [-C <config hex id> [.. <config hex id n>]]
  **               [-d <dir alias>]
  **               [-D <dir hex id>]
- **               [-h <host alias> [--only_list_target_dirs]]
+ **               [-h <host alias> [--only_list_target_dirs|--only_list_source_dirs]]
  **               [-H <host alias 0> [.. <host alias n>]]
  **               [--show-pwd]
  **
@@ -61,6 +61,7 @@ DESCR__S_M3
  **                      only one configuration file was updated.
  **   21.11.2020 H.Kiehl Only when option --show-pwd and the user has
  **                      the permission will the password be shown.
+ **   01.04.2026 H.Kiehl Added --only_list_source_dirs option.
  **
  */
 DESCR__E_M3
@@ -107,6 +108,7 @@ static int                    alfc,
                               no_of_gotchas,
                               no_of_job_ids,
                               no_of_passwd,
+                              only_list_source_dirs = NO,
                               only_list_target_dirs = NO;
 static unsigned int           *gl; /* Gotcha List. */
 static char                   *fmd = NULL,
@@ -181,11 +183,13 @@ main(int argc, char *argv[])
           ((argv[1][0] == '-') &&
            ((argv[1][1] == 'd') || (argv[1][1] == 'D')) &&
            (argv[1][2] == '\0') && (argc > 3)) ||
+          ((strcmp(argv[1], "--only_list_source_dirs") == 0) &&
+           (argc != 4) && (strcmp(argv[2], "-h") == 0)) ||
           ((strcmp(argv[1], "--only_list_target_dirs") == 0) &&
            (argc != 4) && (strcmp(argv[2], "-h") == 0)) ||
           ((argc > 3) && (strcmp(argv[1], "-h") == 0) &&
-           (((strcmp(argv[3], "--only_list_target_dirs") == 0) && (argc > 4)) ||
-            (strcmp(argv[3], "--only_list_target_dirs") != 0))))
+           (((strcmp(argv[3], "--only_list_source_dirs") == 0) && (argc != 4)) ||
+            (((strcmp(argv[3], "--only_list_target_dirs") == 0) && (argc != 4))))))
       {
          usage(stdout, argv[0]);
          exit(0);
@@ -285,6 +289,10 @@ main(int argc, char *argv[])
    }
    else
    {
+      if (get_arg(&argc, argv, "--only_list_source_dirs", NULL, 0) == SUCCESS)
+      {
+         only_list_source_dirs = YES;
+      }
       if (get_arg(&argc, argv, "--only_list_target_dirs", NULL, 0) == SUCCESS)
       {
          only_list_target_dirs = YES;
@@ -906,8 +914,15 @@ get_dc_data(char         *host_name,
                {
                   if (dnb[j].dir_id == fra[i].dir_id)
                   {
-                     show_dir_data(j, i, no_of_search_host_alias,
-                                   search_host_alias);
+                     if (only_list_source_dirs == YES)
+                     {
+                        (void)fprintf(stdout, "%s\n", dnb[j].orig_dir_name);
+                     }
+                     else
+                     {
+                        show_dir_data(j, i, no_of_search_host_alias,
+                                      search_host_alias);
+                     }
                      break;
                   }
                }
@@ -930,8 +945,16 @@ get_dc_data(char         *host_name,
                      }
                      else
                      {
-                        show_data(&jd[j], dnb[jd[j].dir_id_pos].dir_name,
-                                  fmd, no_of_passwd, pwb, position);
+                        if (only_list_source_dirs == YES)
+                        {
+                           (void)fprintf(stdout, "%s\n",
+                                         dnb[jd[j].dir_id_pos].orig_dir_name);
+                        }
+                        else
+                        {
+                           show_data(&jd[j], dnb[jd[j].dir_id_pos].dir_name,
+                                     fmd, no_of_passwd, pwb, position);
+                        }
                      }
                   }
                   break;
@@ -1998,7 +2021,7 @@ usage(FILE *stream, char *progname)
    (void)fprintf(stream, "       %*s [-C <config hex id 0> [.. <config hex id n>]]\n", length, "");
    (void)fprintf(stream, "       %*s [-d <dir alias>]\n", length, "");
    (void)fprintf(stream, "       %*s [-D <dir hex id>]\n", length, "");
-   (void)fprintf(stream, "       %*s [-h <host alias> [--only_list_target_dirs]]\n", length, "");
+   (void)fprintf(stream, "       %*s [-h <host alias> [--only_list_target_dirs|--only_list_source_dirs]]\n", length, "");
    (void)fprintf(stream, "       %*s [-H <host alias 0> [.. <host alias n>]]\n", length, "");
    (void)fprintf(stream, "       %*s [--show-pwd]\n", length, "");
 
