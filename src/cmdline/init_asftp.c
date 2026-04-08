@@ -1,6 +1,6 @@
 /*
  *  init_asftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2015 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -746,10 +746,20 @@ usage(void)
                                        it. The optional mode can be used to\n\
                                        set the permission of this directory.\n"));
    (void)fprintf(stderr, _("  -d <remote directory>              - Directory where file(s) are to be stored.\n"));
-   (void)fprintf(stderr, _("  -f <filename>                      - File containing a list of filenames\n\
+   if (name[0] == 'r')
+   {
+      (void)fprintf(stderr, _("  -f <filename>                      - File containing a list of filenames\n\
+                                       that are to be retrieved.\n"));
+      (void)fprintf(stderr, _("  -h <host name | IP number>         - Hostname or IP number to which to\n\
+                                       retrieve the file(s).\n"));
+   }
+   else
+   {
+      (void)fprintf(stderr, _("  -f <filename>                      - File containing a list of filenames\n\
                                        that are to be send.\n"));
-   (void)fprintf(stderr, _("  -h <host name | IP number>         - Hostname or IP number to which to\n\
+      (void)fprintf(stderr, _("  -h <host name | IP number>         - Hostname or IP number to which to\n\
                                        send the file(s).\n"));
+   }
    if (name[0] != 'r')
    {
       (void)fprintf(stderr, _("  -l <DOT | DOT_VMS | OFF | xyz.>    - How to lock the file on the remote site.\n"));
