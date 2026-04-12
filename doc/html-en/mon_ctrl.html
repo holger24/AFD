@@ -7,8 +7,44 @@
 <h1 align=center><a name="mon_control">MON Control</a></h1>
 <hr size=3 noshade>
 <p>
-To control and monitor remote AFD's there is an X11 interface, with the
-following appearance:
+To control and monitor remote AFD's there is an X11 interface, which
+called via mon_ctrl with the following parameters:
+<pre>
+    -w &lt;work_dir&gt;
+    -p &lt;user profile&gt;
+    -u[ &lt;fake user&gt;]
+    -no_input
+    -f &lt;numeric font name&gt;
+    -bs
+    -all_groups_closed
+</pre>
+</p>
+<p>
+It needs to know in which directory afd_mon is running. Usually it gets
+this information via AFD_WORK_DIR or MON_WORK_DIR environment. If not
+set you can set this via -w &lt;work dir&gt;. When there more then
+one user monitoring this afd_mon it can be helpful if each user can
+have its own profile. This can be done with -p &lt;user profile&gt;.
+The profile name can be any string, but it is a good if it tells
+which user it is because any changes will be logged under this name.
+Good example could be donald@work or donald@home. This way Donald
+can keep different font settings for his home and work computer
+and one can see from where he committed any changes.
+For the option -u[ &lt;fake user&gt;] please see documentation in
+<a href="mon_config.html#fake_user">MON_CONFIG</a>. If you want a dialog
+without any controls you can start it with the -no_input parameter.
+The font size can be changed via -f &lt;numeric font name&gt;.
+Some X servers have a broken backing store implementation. By default
+afd_ctrl uses backing store. This can be turned off with the -bs option.
+</p>
+<p>
+When there are many alias names, it helps to save screen space grouping
+them in one or more groups. To help accelerate the starting of large
+afd_ctrl dialog, there is the option -all_groups_closed to start with
+all groups closed.
+</p>
+<p>
+The mon_ctrl dialog has the following appearance:
 </p>
 <center><img src="../images/mon_ctrl_labeled.png" alt="[image of labeled mon_ctrl dialog]"></center>
 <p>
@@ -727,9 +763,9 @@ whats in its log files.
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 2000 - 2022 by H.Kiehl<br>
+   Copyright &copy; 2000 - 2026 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 21.03.2022
+   Last updated: 12.04.2026
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

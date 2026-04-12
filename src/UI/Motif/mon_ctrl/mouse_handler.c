@@ -1,6 +1,6 @@
 /*
  *  mouse_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -57,6 +57,8 @@ DESCR__S_M3
  **                      under.
  **   12.09.2020 H.Kiehl Option to disable SSH strict host key
  **                      checking.
+ **   10.02.2026 H.Kiehl If mon_ctrl ist started with -all_groups_closed,
+ **                      pass this as parameter to afd_ctrl.
  **
  */
 DESCR__E_M3
@@ -114,7 +116,8 @@ extern GC                      letter_gc,
                                black_line_gc,
                                white_line_gc,
                                led_gc;
-extern int                     depth,
+extern int                     all_groups_closed,
+                               depth,
                                no_backing_store,
                                no_of_active_process,
                                no_of_afds,
@@ -1493,6 +1496,11 @@ start_remote_prog(Widget    w,
                   if (no_backing_store == True)
                   {
                      args[arg_count + display_offset + offset + 10] = "-bs";
+                     offset += 1;
+                  }
+                  if (all_groups_closed == True)
+                  {
+                     args[arg_count + display_offset + offset + 10] = "-all_groups_closed";
                      offset += 1;
                   }
                   if (profile[0] != '\0')

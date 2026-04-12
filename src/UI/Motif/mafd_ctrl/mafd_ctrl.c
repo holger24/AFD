@@ -1,6 +1,6 @@
 /*
  *  mafd_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2026 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -34,6 +34,7 @@ DESCR__S_M1
  **             [-f <numeric font name>]
  **             [-t <title>]
  **             [-bs]
+ **             [-all_groups_closed]
  **
  ** DESCRIPTION
  **
@@ -61,6 +62,8 @@ DESCR__S_M1
  **                      and save under.
  **   23.01.2021 H.Kiehl Added viewing rename rules.
  **   05.03.2022 H.Kiehl Added setup option to modify alias display length.
+ **   10.02.2026 H.Kiehl Add option -all_groups_closed, to start dialog
+ **                      with all groups closed.
  **
  */
 DESCR__E_M1
@@ -661,12 +664,13 @@ main(int argc, char *argv[])
 static void
 init_mafd_ctrl(int *argc, char *argv[], char *window_title)
 {
-   int          fd,
+   int          all_groups_closed,
+                fd,
                 gotcha,
                 i,
                 j,
                 no_of_invisible_members = 0,
-                prev_plus_minus,
+                prev_plus_minus = PM_UNKOWN_STATE,
                 user_offset;
    unsigned int new_bar_length;
    time_t       current_time,
@@ -691,7 +695,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
        (get_arg(argc, argv, "--help", NULL, 0) == SUCCESS))
    {
       (void)fprintf(stdout,
-                    "Usage: %s [-w <work_dir>] [-p <user profile>] [-u[ <fake user>]] [-no_input] [-f <numeric font name>] [-t <title>] [-bs]\n",
+                    "Usage: %s [-w <work_dir>] [-p <user profile>] [-u[ <fake user>]] [-no_input] [-f <numeric font name>] [-t <title>] [-bs] [-all_groups_closed]\n",
                     argv[0]);
       exit(SUCCESS);
    }
@@ -753,6 +757,16 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
    if (get_arg(argc, argv, "-f", font_name, 20) == INCORRECT)
    {
       (void)strcpy(font_name, DEFAULT_FONT);
+   }
+
+   /* Start with all groups closed? */
+   if (get_arg(argc, argv, "-all_groups_closed", NULL, 0) == SUCCESS)
+   {
+      all_groups_closed = True;
+   }
+   else
+   {
+      all_groups_closed = False;
    }
 
    /* Now lets see if user may use this program. */
@@ -1117,7 +1131,19 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
       }
       else
       {
-         connect_data[i].plus_minus = PM_OPEN_STATE;
+         if (all_groups_closed == True)
+         {
+            connect_data[i].plus_minus = PM_CLOSE_STATE;
+         }
+         else
+         {
+            connect_data[i].plus_minus = PM_OPEN_STATE;
+         }
+      }
+      if ((connect_data[i].type == GROUP_IDENTIFIER) &&
+          (prev_plus_minus == PM_UNKOWN_STATE))
+      {
+         prev_plus_minus = connect_data[i].plus_minus;
       }
       (void)snprintf(connect_data[i].host_display_str, MAX_HOSTNAME_LENGTH + 2,
                      "%-*s",

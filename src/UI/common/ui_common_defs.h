@@ -1,6 +1,6 @@
 /*
  *  ui_common_defs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -119,6 +119,7 @@
 /* Plus Minus Sign state. */
 #define PM_OPEN_STATE                    0
 #define PM_CLOSE_STATE                   1
+#define PM_UNKOWN_STATE                  2
 
 /* LED indicators. */
 #define AMG_LED                          0

@@ -17,6 +17,7 @@ called via afd_ctrl. It can take the following parameters:
     -f &lt;numeric font name&gt;
     -t &lt;title&gt;
     -bs
+    -all_groups_closed
 </pre>
 It needs to know in which directory AFD is running. Usually it gets
 this information via AFD_WORK_DIR environment. If not set you can set
@@ -34,6 +35,12 @@ The font size can be changed via -f &lt;numeric font name&gt;. The
 title can be set with -t &lt;title&gt;. Some X servers have a broken
 backing store implementation. By default afd_ctrl uses backing store.
 This can be turned off with the -bs option.
+</p>
+<p>
+When there are many alias names, it helps to save screen space grouping
+them in one or more groups. To help accelerate the starting of large
+afd_ctrl dialog, there is the option -all_groups_closed to start with
+all groups closed.
 </p>
 <p>
 The afd_ctrl dialog has the following appearance:
@@ -1197,9 +1204,9 @@ it shorter.
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 1997 - 2023 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2026 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 26.10.2023
+   Last updated: 12.04.2026
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

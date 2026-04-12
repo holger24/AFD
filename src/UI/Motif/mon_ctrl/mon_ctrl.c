@@ -1,6 +1,6 @@
 /*
  *  mon_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2026 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -33,6 +33,7 @@ DESCR__S_M1
  **            [-f <font name>]
  **            [-no_input]
  **            [-bs]
+ **            [-all_groups_closed]
  **
  ** DESCRIPTION
  **
@@ -55,6 +56,8 @@ DESCR__S_M1
  **                      In popup menu added calling remote progs
  **                      afd_ctrl, receive log, system log and transfer
  **                      log.
+ **   10.02.2026 H.Kiehl Add option -all_groups_closed, to start dialog
+ **                      with all groups closed.
  **
  */
 DESCR__E_M1
@@ -146,7 +149,8 @@ Pixmap                  button_pixmap,
                         label_pixmap,
                         line_pixmap;
 float                   max_bar_length;
-int                     bar_thickness_3,
+int                     all_groups_closed,
+                        bar_thickness_3,
                         depth,
                         have_groups = NO,
                         his_log_set,
@@ -580,8 +584,7 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
                  i,
                  j,
                  no_of_invisible_members = 0,
-                 prev_plus_minus,
-                 reduce_val,
+                 prev_plus_minus = PM_UNKOWN_STATE,
                  user_offset;
    unsigned int  new_bar_length;
    char          *buffer,
@@ -603,7 +606,7 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
        (get_arg(argc, argv, "--help", NULL, 0) == SUCCESS))
    {
       (void)fprintf(stdout,
-                    "Usage: %s[ -w <work_dir>][ -p <profile/role>][ -u[ <user>][ -no_input][ -f <font name>][ -bs]\n",
+                    "Usage: %s [-w <work_dir>] [-p <user profile>] [-u[ <fake user>]] [-no_input] [-f <numeric font name>] [-bs] [-all_groups_closed]\n",
                     argv[0]);
       exit(SUCCESS);
    }
@@ -655,6 +658,16 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
    if (get_arg(argc, argv, "-f", font_name, 20) == INCORRECT)
    {
       (void)strcpy(font_name, DEFAULT_FONT);
+   }
+
+   /* Start with all groups closed? */
+   if (get_arg(argc, argv, "-all_groups_closed", NULL, 0) == SUCCESS)
+   {
+      all_groups_closed = True;
+   }
+   else
+   {
+      all_groups_closed = False;
    }
 
    /* Now lets see if user may use this program. */
@@ -912,8 +925,6 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
    his_log_set = DEFAULT_NO_OF_HISTORY_LOGS;
    read_setup(MON_CTRL, profile, NULL, NULL, &his_log_set,
               &no_of_invisible_members, &invisible_members);
-   prev_plus_minus = PM_OPEN_STATE;
-   reduce_val = 0;
 
    /* Determine the default bar length. */
    max_bar_length  = 6 * BAR_LENGTH_MODIFIER;
@@ -968,8 +979,6 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
                if (strcmp(connect_data[i].afd_alias, invisible_members[j]) == 0)
                {
                   connect_data[i].plus_minus = PM_CLOSE_STATE;
-                  prev_plus_minus = PM_CLOSE_STATE;
-                  reduce_val = 1;
                   gotcha = YES;
                   break;
                }
@@ -977,19 +986,28 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
             if (gotcha == NO)
             {
                connect_data[i].plus_minus = PM_OPEN_STATE;
-               prev_plus_minus = PM_OPEN_STATE;
-               reduce_val = 0;
             }
          }
          else
          {
-            connect_data[i].plus_minus = prev_plus_minus;
-            no_of_afds_invisible += reduce_val;
+            connect_data[i].plus_minus = PM_OPEN_STATE;
          }
       }
       else
       {
-         connect_data[i].plus_minus = PM_OPEN_STATE;
+         if (all_groups_closed == True)
+         {
+            connect_data[i].plus_minus = PM_CLOSE_STATE;
+         }
+         else
+         {
+            connect_data[i].plus_minus = PM_OPEN_STATE;
+         }
+      }
+      if ((connect_data[i].rcmd == '\0') &&
+          (prev_plus_minus == PM_UNKOWN_STATE))
+      {
+         prev_plus_minus = connect_data[i].plus_minus;
       }
       if ((connect_data[i].amg == OFF) ||
           (connect_data[i].fd == OFF) ||
@@ -1089,18 +1107,28 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
    {
       FREE_RT_ARRAY(invisible_members);
    }
-   no_of_afds_visible = no_of_afds - no_of_afds_invisible;
 
-   j = 0;
+   prev_plus_minus = PM_OPEN_STATE;
+   no_of_afds_visible = 0;
    for (i = 0; i < no_of_afds; i++)
    {
+      if (connect_data[i].rcmd == '\0')
+      {
+         prev_plus_minus = connect_data[i].plus_minus;
+      }
+      else
+      {
+         connect_data[i].plus_minus = prev_plus_minus;
+      }
+
       if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
           (connect_data[i].rcmd == '\0'))
       {
-         vpl[j] = i;
-         j++;
+         vpl[no_of_afds_visible] = i;
+         no_of_afds_visible++;
       }
    }
+   no_of_afds_invisible = no_of_afds - no_of_afds_visible;
 
    /*
     * Initialise all data for AFD_MON status area.
