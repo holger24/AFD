@@ -4030,26 +4030,22 @@ struct old_int_retrieve_list
               if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) == 0))\
               {\
                  (length) = snprintf((buffer), (length), "%.3f EiB (%lu bytes) %s in %d file(s).",\
-                               (double)(file_size_done) / EXABYTE,\
-                               (file_size_done), (how), (no_of_files_done));\
+                               (double)(file_size_done) / EXABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done));\
               }\
               else if (((no_of_files_hardlinked) > 0) && ((no_of_files_softlinked) == 0))\
                    {\
                       (length) = snprintf((buffer), (length), "%.3f EiB (%lu bytes) %s in %d file(s) + %d hardlinks.",\
-                               (double)(file_size_done) / EXABYTE, (file_size_done), (how),\
-                               (no_of_files_done), (no_of_files_hardlinked));\
+                               (double)(file_size_done) / EXABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked));\
                    }\
               else if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) > 0))\
                    {\
                       (length) = snprintf((buffer), (length), "%.3f EiB (%lu bytes) %s in %d file(s) + %d softlinks.",\
-                               (double)(file_size_done) / EXABYTE, (file_size_done), (how),\
-                               (no_of_files_done), (no_of_files_softlinked));\
+                               (double)(file_size_done) / EXABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_softlinked));\
                    }\
                    else\
                    {\
                       (length) = snprintf((buffer), (length), "%.3f EiB (%lu bytes) %s in %d file(s) + %d hardlinks + %d softlinks.",\
-                               (double)(file_size_done) / EXABYTE, (file_size_done), (how), (no_of_files_done),\
-                               (no_of_files_hardlinked), (no_of_files_softlinked));\
+                               (double)(file_size_done) / EXABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked), (no_of_files_softlinked));\
                    }\
            }\
            else if ((file_size_done) >= PETABYTE)\
@@ -4057,26 +4053,22 @@ struct old_int_retrieve_list
                    if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) == 0))\
                    {\
                       (length) = snprintf((buffer), (length), "%.3f PiB (%lu bytes) %s in %d file(s).",\
-                                    (double)(file_size_done) / PETABYTE,\
-                                    (file_size_done), (how), (no_of_files_done));\
+                                    (double)(file_size_done) / PETABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done));\
                    }\
                    else if (((no_of_files_hardlinked) > 0) && ((no_of_files_softlinked) == 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f PiB (%lu bytes) %s in %d file(s) + %d hardlinks.",\
-                                    (double)(file_size_done) / PETABYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_hardlinked));\
+                                    (double)(file_size_done) / PETABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked));\
                         }\
                    else if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) > 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f PiB (%lu bytes) %s in %d file(s) + %d softlinks.",\
-                                    (double)(file_size_done) / PETABYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / PETABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_softlinked));\
                         }\
                         else\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f PiB (%lu bytes) %s in %d file(s) + %d hardlinks + %d softlinks.",\
-                                    (double)(file_size_done) / PETABYTE, (file_size_done), (how), (no_of_files_done),\
-                                    (no_of_files_hardlinked), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / PETABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked), (no_of_files_softlinked));\
                         }\
                 }\
            else if ((file_size_done) >= TERABYTE)\
@@ -4084,26 +4076,22 @@ struct old_int_retrieve_list
                    if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) == 0))\
                    {\
                       (length) = snprintf((buffer), (length), "%.3f TiB (%lu bytes) %s in %d file(s).",\
-                                    (double)(file_size_done) / TERABYTE,
-                                    (file_size_done), (how), (no_of_files_done));\
+                                    (double)(file_size_done) / TERABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done));\
                    }\
                    else if (((no_of_files_hardlinked) > 0) && ((no_of_files_softlinked) == 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f TiB (%lu bytes) %s in %d file(s) + %d hardlinks.",\
-                                    (double)(file_size_done) / TERABYTE, (file_size_done), (how),
-                                    (no_of_files_done), (no_of_files_hardlinked));\
+                                    (double)(file_size_done) / TERABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked));\
                         }\
                    else if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) > 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f TiB (%lu bytes) %s in %d file(s) + %d softlinks.",\
-                                    (double)(file_size_done) / TERABYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / TERABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_softlinked));\
                         }\
                         else\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f TiB (%lu bytes) %s in %d file(s) + %d hardlinks + %d softlinks.",\
-                                    (double)(file_size_done) / TERABYTE, (file_size_done), (how), (no_of_files_done),\
-                                    (no_of_files_hardlinked), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / TERABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked), (no_of_files_softlinked));\
                         }\
                 }\
            else if ((file_size_done) >= GIGABYTE)\
@@ -4111,26 +4099,22 @@ struct old_int_retrieve_list
                    if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) == 0))\
                    {\
                       (length) = snprintf((buffer), (length), "%.3f GiB (%lu bytes) %s in %d file(s).",\
-                                    (double)(file_size_done) / GIGABYTE,\
-                                    (file_size_done), (how), (no_of_files_done));\
+                                    (double)(file_size_done) / GIGABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done));\
                    }\
                    else if (((no_of_files_hardlinked) > 0) && ((no_of_files_softlinked) == 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f GiB (%lu bytes) %s in %d file(s) + %d hardlinks.",\
-                                    (double)(file_size_done) / GIGABYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_hardlinked));\
+                                    (double)(file_size_done) / GIGABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked));\
                         }\
                    else if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) > 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f GiB (%lu bytes) %s in %d file(s) + %d softlinks.",\
-                                    (double)(file_size_done) / GIGABYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / GIGABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_softlinked));\
                         }\
                         else\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f GiB (%lu bytes) %s in %d file(s) + %d hardlinks + %d softlinks.",\
-                                    (double)(file_size_done) / GIGABYTE, (file_size_done), (how), (no_of_files_done),\
-                                    (no_of_files_hardlinked), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / GIGABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked), (no_of_files_softlinked));\
                         }\
                 }\
            else if ((file_size_done) >= MEGABYTE)\
@@ -4138,26 +4122,22 @@ struct old_int_retrieve_list
                    if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) == 0))\
                    {\
                       (length) = snprintf((buffer), (length), "%.3f MiB (%lu bytes) %s in %d file(s).",\
-                                    (double)(file_size_done) / MEGABYTE,\
-                                    (file_size_done), (how), (no_of_files_done));\
+                                    (double)(file_size_done) / MEGABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done));\
                    }\
                    else if (((no_of_files_hardlinked) > 0) && ((no_of_files_softlinked) == 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f MiB (%lu bytes) %s in %d file(s) + %d hardlinks.",\
-                                    (double)(file_size_done) / MEGABYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_hardlinked));\
+                                    (double)(file_size_done) / MEGABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked));\
                         }\
                    else if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) > 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f MiB (%lu bytes) %s in %d file(s) + %d softlinks.",\
-                                    (double)(file_size_done) / MEGABYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / MEGABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_softlinked));\
                         }\
                         else\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f MiB (%lu bytes) %s in %d file(s) + %d hardlinks + %d softlinks.",\
-                                    (double)(file_size_done) / MEGABYTE, (file_size_done), (how), (no_of_files_done),\
-                                    (no_of_files_hardlinked), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / MEGABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked), (no_of_files_softlinked));\
                         }\
                 }\
            else if ((file_size_done) >= KILOBYTE)\
@@ -4165,26 +4145,22 @@ struct old_int_retrieve_list
                    if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) == 0))\
                    {\
                       (length) = snprintf((buffer), (length), "%.3f KiB (%lu bytes) %s in %d file(s).",\
-                                    (double)(file_size_done) / KILOBYTE,\
-                                    (file_size_done), (how), (no_of_files_done));\
+                                    (double)(file_size_done) / KILOBYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done));\
                    }\
                    else if (((no_of_files_hardlinked) > 0) && ((no_of_files_softlinked) == 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f KiB (%lu bytes) %s in %d file(s) + %d hardlinks.",\
-                                    (double)(file_size_done) / KILOBYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_hardlinked));\
+                                    (double)(file_size_done) / KILOBYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked));\
                         }\
                    else if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) > 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f KiB (%lu bytes) %s in %d file(s) + %d softlinks.",\
-                                    (double)(file_size_done) / KILOBYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / KILOBYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_softlinked));\
                         }\
                         else\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f KiB (%lu bytes) %s in %d file(s) + %d hardlinks + %d softlinks.",\
-                                    (double)(file_size_done) / KILOBYTE, (file_size_done), (how), (no_of_files_done),\
-                                    (no_of_files_hardlinked), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / KILOBYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked), (no_of_files_softlinked));\
                         }\
                 }\
                 else\
@@ -4192,22 +4168,22 @@ struct old_int_retrieve_list
                    if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) == 0))\
                    {\
                       (length) = snprintf((buffer), (length), "%lu bytes %s in %d file(s).",\
-                                    (file_size_done), (how), (no_of_files_done));\
+                                    (pri_off_t)(file_size_done), (how), (no_of_files_done));\
                    }\
                    else if (((no_of_files_hardlinked) > 0) && ((no_of_files_softlinked) == 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%lu bytes %s in %d file(s) + %d hardlinks.",\
-                                    (file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked));\
+                                    (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked));\
                         }\
                    else if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) > 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%lu bytes %s in %d file(s) + %d softlinks.",\
-                                    (file_size_done), (how), (no_of_files_done), (no_of_files_softlinked));\
+                                    (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_softlinked));\
                         }\
                         else\
                         {\
                            (length) = snprintf((buffer), (length), "%lu bytes %s in %d file(s) + %d hardlinks + %d softlinks.",\
-                                    (file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked), (no_of_files_softlinked));\
+                                    (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked), (no_of_files_softlinked));\
                         }\
                 }\
         }
@@ -4277,26 +4253,22 @@ struct old_int_retrieve_list
               if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) == 0))\
               {\
                  (length) = snprintf((buffer), (length), "%.3f EiB (%llu bytes) %s in %d file(s).",\
-                                  (double)(file_size_done) / EXABYTE,\
-                                  (file_size_done), (how), (no_of_files_done));\
+                                  (double)(file_size_done) / EXABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done));\
               }\
               else if (((no_of_files_hardlinked) > 0) && ((no_of_files_softlinked) == 0))\
                    {\
                       (length) = snprintf((buffer), (length), "%.3f EiB (%llu bytes) %s in %d file(s) + %d hardlinks.",\
-                                  (double)(file_size_done) / EXABYTE, (file_size_done), (how),\
-                                  (no_of_files_done), (no_of_files_hardlinked));\
+                                  (double)(file_size_done) / EXABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked));\
                    }\
               else if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) > 0))\
                    {\
                       (length) = snprintf((buffer), (length), "%.3f EiB (%llu bytes) %s in %d file(s) + %d softlinks.",\
-                                  (double)(file_size_done) / EXABYTE, (file_size_done), (how),\
-                                  (no_of_files_done), (no_of_files_softlinked));\
+                                  (double)(file_size_done) / EXABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_softlinked));\
                    }\
                    else\
                    {\
                       (length) = snprintf((buffer), (length), "%.3f EiB (%llu bytes) %s in %d file(s) + %d hardlinks + %d softlinks.",\
-                                  (double)(file_size_done) / EXABYTE, (file_size_done), (how), (no_of_files_done),\
-                                  (no_of_files_hardlinked), (no_of_files_softlinked));\
+                                  (double)(file_size_done) / EXABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked), (no_of_files_softlinked));\
                    }\
            }\
            else if ((file_size_done) >= PETABYTE)\
@@ -4304,26 +4276,22 @@ struct old_int_retrieve_list
                    if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) == 0))\
                    {\
                       (length) = snprintf((buffer), (length), "%.3f PiB (%llu bytes) %s in %d file(s).",\
-                                    (double)(file_size_done) / PETABYTE,\
-                                    (file_size_done), (how), (no_of_files_done));\
+                                    (double)(file_size_done) / PETABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done));\
                    }\
                    else if (((no_of_files_hardlinked) > 0) && ((no_of_files_softlinked) == 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f PiB (%llu bytes) %s in %d file(s) + %d hardlinks.",\
-                                    (double)(file_size_done) / PETABYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_hardlinked));\
+                                    (double)(file_size_done) / PETABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked));\
                         }\
                    else if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) > 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f PiB (%llu bytes) %s in %d file(s) + %d softlinks.",\
-                                    (double)(file_size_done) / PETABYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / PETABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_softlinked));\
                         }\
                         else\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f PiB (%llu bytes) %s in %d file(s) + %d hardlinks + %d softlinks.",\
-                                    (double)(file_size_done) / PETABYTE, (file_size_done), (how), (no_of_files_done),\
-                                    (no_of_files_hardlinked), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / PETABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked), (no_of_files_softlinked));\
                         }\
                 }\
            else if ((file_size_done) >= TERABYTE)\
@@ -4331,26 +4299,22 @@ struct old_int_retrieve_list
                    if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) == 0))\
                    {\
                       (length) = snprintf((buffer), (length), "%.3f TiB (%llu bytes) %s in %d file(s).",\
-                                    (double)(file_size_done) / TERABYTE,\
-                                    (file_size_done), (how), (no_of_files_done));\
+                                    (double)(file_size_done) / TERABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done));\
                    }\
                    else if (((no_of_files_hardlinked) > 0) && ((no_of_files_softlinked) == 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f TiB (%llu bytes) %s in %d file(s) + %d hardlinks.",\
-                                    (double)(file_size_done) / TERABYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_hardlinked));\
+                                    (double)(file_size_done) / TERABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked));\
                         }\
                    else if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) > 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f TiB (%llu bytes) %s in %d file(s) + %d softlinks.",\
-                                    (double)(file_size_done) / TERABYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / TERABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_softlinked));\
                         }\
                         else\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f TiB (%llu bytes) %s in %d file(s) + %d hardlinks + %d softlinks.",\
-                                    (double)(file_size_done) / TERABYTE, (file_size_done), (how), (no_of_files_done),\
-                                    (no_of_files_hardlinked), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / TERABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked), (no_of_files_softlinked));\
                         }\
                 }\
            else if ((file_size_done) >= GIGABYTE)\
@@ -4358,26 +4322,22 @@ struct old_int_retrieve_list
                    if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) == 0))\
                    {\
                       (length) = snprintf((buffer), (length), "%.3f GiB (%llu bytes) %s in %d file(s).",\
-                                    (double)(file_size_done) / GIGABYTE,\
-                                    (file_size_done), (how), (no_of_files_done));\
+                                    (double)(file_size_done) / GIGABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done));\
                    }\
                    else if (((no_of_files_hardlinked) > 0) && ((no_of_files_softlinked) == 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f GiB (%llu bytes) %s in %d file(s) + %d hardlinks.",\
-                                    (double)(file_size_done) / GIGABYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_hardlinked));\
+                                    (double)(file_size_done) / GIGABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked));\
                         }\
                    else if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) > 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f GiB (%llu bytes) %s in %d file(s) + %d softlinks.",\
-                                    (double)(file_size_done) / GIGABYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / GIGABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_softlinked));\
                         }\
                         else\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f GiB (%llu bytes) %s in %d file(s) + %d hardlinks + %d softlinks.",\
-                                    (double)(file_size_done) / GIGABYTE, (file_size_done), (how), (no_of_files_done),\
-                                    (no_of_files_hardlinked), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / GIGABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked), (no_of_files_softlinked));\
                         }\
                 }\
            else if ((file_size_done) >= MEGABYTE)\
@@ -4385,26 +4345,22 @@ struct old_int_retrieve_list
                    if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) == 0))\
                    {\
                       (length) = snprintf((buffer), (length), "%.3f MiB (%llu bytes) %s in %d file(s).",\
-                                    (double)(file_size_done) / MEGABYTE,\
-                                    (file_size_done), (how), (no_of_files_done));\
+                                    (double)(file_size_done) / MEGABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done));\
                    }\
                    else if (((no_of_files_hardlinked) > 0) && ((no_of_files_softlinked) == 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f MiB (%llu bytes) %s in %d file(s) + %d hardlinks.",\
-                                    (double)(file_size_done) / MEGABYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_hardlinked));\
+                                    (double)(file_size_done) / MEGABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked));\
                         }\
                    else if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) > 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f MiB (%llu bytes) %s in %d file(s) + %d softlinks.",\
-                                    (double)(file_size_done) / MEGABYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / MEGABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_softlinked));\
                         }\
                         else\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f MiB (%llu bytes) %s in %d file(s) + %d hardlinks + %d softlinks.",\
-                                    (double)(file_size_done) / MEGABYTE, (file_size_done), (how), (no_of_files_done),\
-                                    (no_of_files_hardlinked), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / MEGABYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked), (no_of_files_softlinked));\
                         }\
                 }\
            else if ((file_size_done) >= KILOBYTE)\
@@ -4412,26 +4368,22 @@ struct old_int_retrieve_list
                    if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) == 0))\
                    {\
                       (length) = snprintf((buffer), (length), "%.3f KiB (%llu bytes) %s in %d file(s).",\
-                                    (double)(file_size_done) / KILOBYTE,\
-                                    (file_size_done), (how), (no_of_files_done));\
+                                    (double)(file_size_done) / KILOBYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done));\
                    }\
                    else if (((no_of_files_hardlinked) > 0) && ((no_of_files_softlinked) == 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f KiB (%llu bytes) %s in %d file(s) + %d hardlinks.",\
-                                    (double)(file_size_done) / KILOBYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_hardlinked));\
+                                    (double)(file_size_done) / KILOBYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked));\
                         }\
                    else if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) > 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f KiB (%llu bytes) %s in %d file(s) + %d softlinks.",\
-                                    (double)(file_size_done) / KILOBYTE, (file_size_done), (how),\
-                                    (no_of_files_done), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / KILOBYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_softlinked));\
                         }\
                         else\
                         {\
                            (length) = snprintf((buffer), (length), "%.3f KiB (%llu bytes) %s in %d file(s) + %d hardlinks + %d softlinks.",\
-                                    (double)(file_size_done) / KILOBYTE, (file_size_done), (how), (no_of_files_done),\
-                                    (no_of_files_hardlinked), (no_of_files_softlinked));\
+                                    (double)(file_size_done) / KILOBYTE, (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked), (no_of_files_softlinked));\
                         }\
                 }\
                 else\
@@ -4439,22 +4391,22 @@ struct old_int_retrieve_list
                    if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) == 0))\
                    {\
                       (length) = snprintf((buffer), (length), "%llu bytes %s in %d file(s).",\
-                                    (file_size_done), (how), (no_of_files_done));\
+                                    (pri_off_t)(file_size_done), (how), (no_of_files_done));\
                    }\
                    else if (((no_of_files_hardlinked) > 0) && ((no_of_files_softlinked) == 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%llu bytes %s in %d file(s) + %d hardlinks.",\
-                                    (file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked));\
+                                    (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked));\
                         }\
                    else if (((no_of_files_hardlinked) == 0) && ((no_of_files_softlinked) > 0))\
                         {\
                            (length) = snprintf((buffer), (length), "%llu bytes %s in %d file(s) + %d softlinks.",\
-                                    (file_size_done), (how), (no_of_files_done), (no_of_files_softlinked));\
+                                    (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_softlinked));\
                         }\
                         else\
                         {\
                            (length) = snprintf((buffer), (length), "%llu bytes %s in %d file(s) + %d hardlinks + %d softlinks.",\
-                                    (file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked), (no_of_files_softlinked));\
+                                    (pri_off_t)(file_size_done), (how), (no_of_files_done), (no_of_files_hardlinked), (no_of_files_softlinked));\
                         }\
                 }\
         }

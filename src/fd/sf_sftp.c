@@ -185,15 +185,17 @@ int
 main(int argc, char *argv[])
 {
    int              additional_length,
-                    buffer_offset,
-                    current_toggle,
-                    exit_status = TRANSFER_SUCCESS,
-                    j,
-                    fd,
-                    status,
-                    bytes_buffered,
                     append_file_number = -1,
                     blocksize,
+                    buffer_offset,
+                    bytes_buffered,
+                    current_toggle,
+                    exit_status = TRANSFER_SUCCESS,
+                    fd,
+                    hardlinks_done,
+                    j,
+                    softlinks_done,
+                    status,
                     *unique_counter;
 #ifdef WITH_ARCHIVE_COPY_INFO
    unsigned int     archived_copied = 0;
@@ -1325,6 +1327,8 @@ main(int argc, char *argv[])
          }
 
          no_of_bytes = 0;
+         hardlinks_done = 0;
+         softlinks_done = 0;
          if ((append_offset < *p_file_size_buffer) ||
              (*p_file_size_buffer == 0))
          {
@@ -1968,8 +1972,8 @@ main(int argc, char *argv[])
                            RT_ARRAY(hardlink_name, db.no_of_rhardlinks,
                                     MAX_PATH_LENGTH + 1, char);
                         }
-                        (void)strcpy(hardlink_name[no_of_files_hardlinked],
-                                     name);
+                        (void)strcpy(hardlink_name[k], name);
+                        hardlinks_done++;
                      }
 #endif
                      no_of_files_hardlinked++;
@@ -2073,7 +2077,8 @@ main(int argc, char *argv[])
                            RT_ARRAY(hardlink_name, db.no_of_rhardlinks,
                                     MAX_PATH_LENGTH + 1, char);
                         }
-                        (void)strcpy(hardlink_name[no_of_files_hardlinked], name);
+                        (void)strcpy(hardlink_name[k], name);
+                        hardlinks_done++;
                      }
 #endif
                      no_of_files_hardlinked++;
@@ -2157,8 +2162,8 @@ main(int argc, char *argv[])
                         RT_ARRAY(softlink_name, db.no_of_rsymlinks,
                                  MAX_PATH_LENGTH + 1, char);
                      }
-                     (void)strcpy(softlink_name[no_of_files_softlinked],
-                                  to_name);
+                     (void)strcpy(softlink_name[k], to_name);
+                     softlinks_done++;
                   }
 #endif
                   no_of_files_softlinked++;
@@ -2312,12 +2317,15 @@ main(int argc, char *argv[])
                      system_log(ERROR_SIGN, __FILE__, __LINE__,
                                 "write() error : %s", strerror(errno));
                   }
-                  if (no_of_files_softlinked > 0)
+                  if (softlinks_done > 0)
                   {
                      int  i;
                      char *p_name;
 
-                     for (i = 0; i < no_of_files_softlinked; i++)
+                     *ol_file_size = 0;
+                     *ol_transfer_time = 0;
+                     *ol_output_type = OT_SOFTLINK_DELIVERED + '0';
+                     for (i = 0; i < softlinks_done; i++)
                      {
                         /* Just show link name. */
                         p_name = softlink_name[i] + strlen(softlink_name[i]) - 1;
@@ -2340,8 +2348,6 @@ main(int argc, char *argv[])
                         {
                            *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
                         }
-                        *ol_file_size = 0;
-                        *ol_output_type = OT_SOFTLINK_DELIVERED + '0';
                         ol_real_size = *ol_file_name_length + ol_size;
                         if (write(ol_fd, ol_data, ol_real_size) != ol_real_size)
                         {
@@ -2352,12 +2358,15 @@ main(int argc, char *argv[])
                      FREE_RT_ARRAY(softlink_name);
                      softlink_name = NULL;
                   }
-                  if (no_of_files_hardlinked > 0)
+                  if (hardlinks_done > 0)
                   {
                      int  i;
                      char *p_name;
 
-                     for (i = 0; i < no_of_files_hardlinked; i++)
+                     *ol_file_size = 0;
+                     *ol_transfer_time = 0;
+                     *ol_output_type = OT_HARDLINK_DELIVERED + '0';
+                     for (i = 0; i < hardlinks_done; i++)
                      {
                         /* Just show link name. */
                         p_name = hardlink_name[i] + strlen(hardlink_name[i]) - 1;
@@ -2380,8 +2389,6 @@ main(int argc, char *argv[])
                         {
                            *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
                         }
-                        *ol_file_size = 0;
-                        *ol_output_type = OT_HARDLINK_DELIVERED + '0';
                         ol_real_size = *ol_file_name_length + ol_size;
                         if (write(ol_fd, ol_data, ol_real_size) != ol_real_size)
                         {
@@ -2451,12 +2458,16 @@ main(int argc, char *argv[])
                      system_log(ERROR_SIGN, __FILE__, __LINE__,
                                 "write() error : %s", strerror(errno));
                   }
-                  if (no_of_files_softlinked > 0)
+                  if (softlinks_done > 0)
                   {
                      int  i;
                      char *p_name;
 
-                     for (i = 0; i < no_of_files_softlinked; i++)
+                     *ol_file_size = 0;
+                     *ol_transfer_time = 0;
+                     *ol_archive_name_length = 0;
+                     *ol_output_type = OT_SOFTLINK_DELIVERED + '0';
+                     for (i = 0; i < softlinks_done; i++)
                      {
                         /* Just show link name. */
                         p_name = softlink_name[i] + strlen(softlink_name[i]) - 1;
@@ -2479,8 +2490,6 @@ main(int argc, char *argv[])
                         {
                            *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
                         }
-                        *ol_file_size = 0;
-                        *ol_output_type = OT_SOFTLINK_DELIVERED + '0';
                         ol_real_size = *ol_file_name_length + ol_size;
                         if (write(ol_fd, ol_data, ol_real_size) != ol_real_size)
                         {
@@ -2491,12 +2500,16 @@ main(int argc, char *argv[])
                      FREE_RT_ARRAY(softlink_name);
                      softlink_name = NULL;
                   }
-                  if (no_of_files_hardlinked > 0)
+                  if (hardlinks_done > 0)
                   {
                      int  i;
                      char *p_name;
 
-                     for (i = 0; i < no_of_files_hardlinked; i++)
+                     *ol_file_size = 0;
+                     *ol_transfer_time = 0;
+                     *ol_archive_name_length = 0;
+                     *ol_output_type = OT_HARDLINK_DELIVERED + '0';
+                     for (i = 0; i < hardlinks_done; i++)
                      {
                         /* Just show link name. */
                         p_name = hardlink_name[i] + strlen(hardlink_name[i]) - 1;
@@ -2519,8 +2532,6 @@ main(int argc, char *argv[])
                         {
                            *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
                         }
-                        *ol_file_size = 0;
-                        *ol_output_type = OT_HARDLINK_DELIVERED + '0';
                         ol_real_size = *ol_file_name_length + ol_size;
                         if (write(ol_fd, ol_data, ol_real_size) != ol_real_size)
                         {
@@ -2597,12 +2608,15 @@ try_again_unlink:
                   system_log(ERROR_SIGN, __FILE__, __LINE__,
                              "write() error : %s", strerror(errno));
                }
-               if (no_of_files_softlinked > 0)
+               if (softlinks_done > 0)
                {
                   int  i;
                   char *p_name;
 
-                  for (i = 0; i < no_of_files_softlinked; i++)
+                  *ol_file_size = 0;
+                  *ol_transfer_time = 0;
+                  *ol_output_type = OT_SOFTLINK_DELIVERED + '0';
+                  for (i = 0; i < softlinks_done; i++)
                   {
                      /* Just show link name. */
                      p_name = softlink_name[i] + strlen(softlink_name[i]) - 1;
@@ -2625,8 +2639,6 @@ try_again_unlink:
                      {
                         *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
                      }
-                     *ol_file_size = 0;
-                     *ol_output_type = OT_SOFTLINK_DELIVERED + '0';
                      ol_real_size = *ol_file_name_length + ol_size;
                      if (write(ol_fd, ol_data, ol_real_size) != ol_real_size)
                      {
@@ -2637,12 +2649,15 @@ try_again_unlink:
                   FREE_RT_ARRAY(softlink_name);
                   softlink_name = NULL;
                }
-               if (no_of_files_hardlinked > 0)
+               if (hardlinks_done > 0)
                {
                   int  i;
                   char *p_name;
 
-                  for (i = 0; i < no_of_files_hardlinked; i++)
+                  *ol_file_size = 0;
+                  *ol_transfer_time = 0;
+                  *ol_output_type = OT_HARDLINK_DELIVERED + '0';
+                  for (i = 0; i < hardlinks_done; i++)
                   {
                      /* Just show link name. */
                      p_name = hardlink_name[i] + strlen(hardlink_name[i]) - 1;
@@ -2665,8 +2680,6 @@ try_again_unlink:
                      {
                         *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
                      }
-                     *ol_file_size = 0;
-                     *ol_output_type = OT_HARDLINK_DELIVERED + '0';
                      ol_real_size = *ol_file_name_length + ol_size;
                      if (write(ol_fd, ol_data, ol_real_size) != ol_real_size)
                      {
