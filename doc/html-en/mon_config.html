@@ -1,0 +1,199 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>MON_CONFIG (mon_config.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="mon_config">The MON_CONFIG file</a></h1>
+<hr size=3 noshade>
+<p>
+This file contains some parameter settings that are always read when
+the afd_mon is started. If both AFD and afd_mon are running in the
+same working directory, this file is not necessary and you can use
+AFD_CONFIG for this. The following table shows and describes what
+parameters can be set and which programs must be restarted to activate
+the new value:
+</p>
+<table border>
+<tr>
+   <th>Parameter</th>
+   <th>Description</th>
+   <th>Default</th>
+   <th>Restart</th>
+</tr>
+<tr>
+   <td valign=top><a name="max_mon_sys_log_files">MAX_MON_SYS_LOG_FILES</a></td>
+   <td>The number of old monitor system logfiles that afd_mon keeps before
+       they are deleted.</td>
+   <td valign=top>4</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_mon_sys_logfile_size">MAX_MON_SYS_LOGFILE_SIZE</a></td>
+   <td>The size in bytes before the monitor system logfile is rotated.</td>
+   <td valign=top>2097152</td>
+   <td valign=top>mon_sys_log</td>
+</tr>
+<tr>
+   <td valign=top><a name="max_mon_log_files">MAX_MON_LOG_FILES</a></td>
+   <td>The number of old monitor logfiles that afd_mon keeps before they are
+       deleted.</td>
+   <td valign=top>14</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_system_log_files">MAX_SYSTEM_LOG_FILES</a></td>
+   <td>The number of remote old system logfiles that afd_mon keeps before
+       they are deleted.</td>
+   <td valign=top>4</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_receive_log_files">MAX_RECEIVE_LOG_FILES</a></td>
+   <td>The number of remote old receive logfiles that afd_mon keeps
+       before they are deleted.</td>
+   <td valign=top>7</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_transfer_log_files">MAX_TRANSFER_LOG_FILES</a></td>
+   <td>The number of remote old transfer logfiles that afd_mon keeps
+       before they are deleted.</td>
+   <td valign=top>7</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_trans_db_log_files">MAX_TRANS_DB_LOG_FILES</a></td>
+   <td>The number of remote old transfer debug logfiles that afd_mon
+       keeps before they are deleted.</td>
+   <td valign=top>3</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_event_log_files">MAX_EVENT_LOG_FILES</a></td>
+   <td>The number of remote old event logfiles that afd_mon keeps
+       before they are deleted.</td>
+   <td valign=top>5</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_input_log_files">MAX_INPUT_LOG_FILES</a></td>
+   <td>The number of remote old input logfiles that afd_mon keeps before
+       they are deleted.</td>
+   <td valign=top>7</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_distribution_log_files">MAX_DISTRIBUTION_LOG_FILES</a></td>
+   <td>The number of remote old distribution logfiles that afd_mon
+       keeps before they are deleted.</td>
+   <td valign=top>7</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_afd_dir_list_files">MAX_AFD_DIR_LIST_FILES</a></td>
+   <td>The number of remote old AFD dirlist logfiles that afd_mon keeps
+       before they are deleted.</td>
+   <td valign=top>7</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_production_log_files">MAX_PRODUCTION_LOG_FILES</a></td>
+   <td>The number of remote old production logfiles that afd_mon keeps
+       before they are deleted.</td>
+   <td valign=top>7</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_output_log_files">MAX_OUTPUT_LOG_FILES</a></td>
+   <td>The number of remote old output logfiles that afd_mon keeps before
+       they are deleted.</td>
+   <td valign=top>7</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_afd_job_list_files">MAX_AFD_JOB_LIST_FILES</a></td>
+   <td>The number of remote old AFD joblist logfiles that afd_mon keeps
+       before they are deleted.</td>
+   <td valign=top>7</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_delete_log_files">MAX_DELETE_LOG_FILES</a></td>
+   <td>The number of remote old delete logfiles that afd_mon keeps before
+       they are deleted.</td>
+   <td valign=top>7</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="default_printer_cmd">DEFAULT_PRINTER_CMD</a></td>
+   <td>With this option it is possible to set the printer command
+       for your specific environment.</td>
+   <td valign=top>&#34lpr -P&#34</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="default_printer_name">DEFAULT_PRINTER_NAME</a></td>
+   <td>This option specifies the default printer for your system.</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="ping_cmd">PING_CMD</a></td>
+   <td>Full path of the ping command plus any options. If there are options
+       you must put the full command in ". The hostname will be added to the
+       end of the command.</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+   <td valign=top>mon_ctrl</td>
+</tr>
+<tr>
+   <td valign=top><a name="traceroute_cmd">TRACEROUTE_CMD</a></td>
+   <td>Full path of the traceroute command plus any options. The hostname
+       will be added to the end of the command.</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+   <td valign=top>mon_ctrl</td>
+</tr>
+<tr>
+   <td valign=top><a name="fake_user">FAKE_USER &lt;fake user name&gt;</a></td>
+   <td>This option allows the administrator to allow certain users
+       to take up another identity, even if they do not exist on the
+       system. This user will then be used to look up the permissions
+       in the <a href="afd_users.html">afd.users</a> file. So if you for
+       example give operators limited permission and do not want to
+       create a new user, you can do the following:
+       <pre>
+     FAKE_USER     afd->operator
+       </pre>
+       If the user afd enters the following command:
+       <pre>
+     mon_ctrl -u operator
+       </pre>
+       the mon_ctrl dialog will come up with the permissions of
+       operator. More fake users can be added with a comma as separator:
+       <pre>
+     FAKE_USER     afd->operator,afd->donald
+       </pre>
+       The list may not be longer then 1023 bytes.</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+</table>
+<p>
+When one of the above values is changed the appropriate process must be
+restarted.
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 2026 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 12.04.2026
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>
