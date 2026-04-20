@@ -143,13 +143,13 @@ main(int argc, char *argv[])
    int          no_of_search_host_alias = 0,
                 show_password = NO,
                 ret;
-   char         dir_alias[MAX_DIR_ALIAS_LENGTH + 1],
+   char         *dir_alias = NULL,
                 fake_user[MAX_FULL_USER_ID_LENGTH],
-                host_name[MAX_HOSTNAME_LENGTH + 1],
+                *host_name = NULL,
                 *perm_buffer,
                 profile[MAX_PROFILE_NAME_LENGTH + 1],
                 **search_host_alias = NULL,
-                str_dir_id[MAX_INT_HEX_LENGTH + 1],
+                *str_dir_id = NULL,
                 work_dir[MAX_PATH_LENGTH];
 
    CHECK_FOR_VERSION(argc, argv);
@@ -205,13 +205,11 @@ main(int argc, char *argv[])
       show_password = YES;
    }
 
-   if (get_arg(&argc, argv, "-h", host_name, MAX_HOSTNAME_LENGTH) != SUCCESS)
+   if (get_argb(&argc, argv, "-h", &host_name) == INCORRECT)
    {
-      if (get_arg(&argc, argv, "-d", dir_alias,
-                  MAX_DIR_ALIAS_LENGTH) != SUCCESS)
+      if (get_argb(&argc, argv, "-d", &dir_alias) == INCORRECT)
       {
-         if (get_arg(&argc, argv, "-D", str_dir_id,
-                     MAX_INT_HEX_LENGTH) != SUCCESS)
+         if (get_argb(&argc, argv, "-D", &str_dir_id) == INCORRECT)
          {
             if (get_arg_array(&argc, argv, "-H", &search_host_alias,
                               &no_of_search_host_alias) != SUCCESS)
@@ -226,27 +224,18 @@ main(int argc, char *argv[])
                                  &no_of_elements) == INCORRECT)
                   {
                      dir_id = 0;
-                     dir_alias[0] = '\0';
                      no_of_search_host_alias = 0;
                      search_host_alias = NULL;
                      if (argc == 2)
                      {
-                        if (my_strncpy(host_name, argv[1],
-                                       MAX_HOSTNAME_LENGTH + 1) == -1)
+                        if ((host_name = malloc(strlen(argv[1]) + 1)) == NULL)
                         {
-                           usage(stderr, argv[0]);
-                           if (strlen(argv[1]) >= MAX_HOSTNAME_LENGTH)
-                           {
-                              (void)fprintf(stderr,
-                                            _("Given host_alias `%s' is to long (> %d)\n"),
-                                            argv[1], MAX_HOSTNAME_LENGTH);
-                           }
+                           (void)fprintf(stderr,
+                                         "malloc() error : %s (%s %d)\n",
+                                         strerror(errno), __FILE__, __LINE__);
                            exit(INCORRECT);
                         }
-                     }
-                     else
-                     {
-                        host_name[0] = '\0';
+                        (void)strcpy(host_name, argv[1]);
                      }
                   }
                   else
@@ -266,15 +255,11 @@ main(int argc, char *argv[])
             else
             {
                dir_id = 0;
-               dir_alias[0] = '\0';
-               host_name[0] = '\0';
             }
          }
          else
          {
             dir_id = (unsigned int)strtoul(str_dir_id, NULL, 16);
-            dir_alias[0] = '\0';
-            host_name[0] = '\0';
             no_of_search_host_alias = 0;
             search_host_alias = NULL;
          }
@@ -282,7 +267,6 @@ main(int argc, char *argv[])
       else
       {
          dir_id = 0;
-         host_name[0] = '\0';
          no_of_search_host_alias = 0;
          search_host_alias = NULL;
       }
@@ -396,6 +380,9 @@ main(int argc, char *argv[])
    get_dc_data(host_name, dir_alias, dir_id, no_of_search_host_alias,
                search_host_alias);
    (void)fsa_detach(NO);
+   free(host_name);
+   free(dir_alias);
+   free(str_dir_id);
 
    if (no_of_search_host_alias > 0)
    {
@@ -435,7 +422,7 @@ get_dc_data(char         *host_name,
 #endif
 
    /* First check if the host is in the FSA. */
-   if ((host_name[0] != '\0') &&
+   if ((host_name != NULL) &&
        ((position = get_host_position(fsa, host_name, no_of_hosts)) == INCORRECT))
    {
       (void)fprintf(stderr, _("Host alias %s is not in FSA. (%s %d)\n"),
@@ -846,9 +833,9 @@ get_dc_data(char         *host_name,
       }
       exit(INCORRECT);
    }
-   if (host_name[0] == '\0')
+   if (host_name == NULL)
    {
-      if ((dir_alias[0] == '\0') && (dir_id == 0))
+      if ((dir_alias == NULL) && (dir_id == 0))
       {
          for (i = 0; i < no_of_dirs_in_dnb; i++)
          {
