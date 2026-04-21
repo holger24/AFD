@@ -413,12 +413,18 @@ AC_ARG_ENABLE(sendfile_support,
    [  --enable-sendfile_support       enable sendfile support],
    [if test x$enableval = xyes; then
       AC_DEFINE([WITH_SENDFILE], [], [With sendfile support])
+      osyscall_sendfile="sendfile "
+   else
+      osyscall_sendfile=""
    fi])
 
 AC_ARG_ENABLE(splice_support,
    [  --enable-splice_support       enable splice support],
    [if test x$enableval = xyes; then
       AC_DEFINE([WITH_SPLICE_SUPPORT], [], [With splice support])
+      osyscall_splice="splice "
+   else
+      osyscall_splice=""
    fi])
 
 AC_ARG_ENABLE(readyfile,
@@ -1836,6 +1842,13 @@ AC_CHECK_FUNCS(fdatasync gai_strerror getline getaddrinfo gethostid\
                setpriority seteuid setreuid socket strcasestr strerror\
                strtod strtol strtoll strtoul strtoull unsetenv statx)
 
+if test "x${ac_cv_func_statx}" = "xyes"
+then
+   osyscall_statx="statx "
+else
+   osyscall_statx=""
+fi
+
 AM_GNU_GETTEXT([external])
 if test "x$LIBINTL" != "x"
 then
@@ -1892,6 +1905,10 @@ echo "    Install path man                 : ${mandir}"
 echo "    AFD Version                      : $VERSION"
 echo "    Compiler                         : ${CC}"
 echo "    Compiler flags                   : ${CFLAGS}"
+if test "x${osyscall_sendfile}" = "xsendfile " || test "x${osyscall_splice}" = "xsplice " || test "x${osyscall_statx}" = "xstatx "
+then
+   echo "    Optimised system calls           : ${osyscall_sendfile}${osyscall_splice}${osyscall_statx}"
+fi
 echo "    GUI                              : ${GUIS_STRING}"
 if test "x${ac_cv_with_afdbench_settings}" = "xyes"
 then
