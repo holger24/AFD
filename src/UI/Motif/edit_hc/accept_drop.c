@@ -1,6 +1,6 @@
 /*
  *  accept_drop.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2008 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2026 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -158,6 +158,7 @@ transfer_data(Widget        w,
       {
          ptr = XmCvtXmStringToCT(xmsel[i]);
          str = XmStringCreateLocalized(ptr);
+         XtFree(ptr);
          if (pos == 0) /* Last position! */
          {
             XmListAddItemUnselected(host_list_w, str, 0);
