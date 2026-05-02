@@ -537,11 +537,11 @@ AC_ARG_ENABLE(efence,
    [ac_cv_efence="$enableval"],
    [ac_cv_efence="no"])
 
-dnl This is unused. Keep it to be compatible old build scripts.
+dnl Give user the option to disable systemd.
 AC_ARG_ENABLE(systemd,
-   [  --enable-systemd                enable systemd support],
+   [  --disable-systemd               disable systemd support],
    [ac_cv_systemd="$enableval"],
-   [ac_cv_systemd="no"])
+   [ac_cv_systemd="yes"])
 
 dnl **** Check if we should build with GUI and with which widget set.
 AC_ARG_WITH(gui,
@@ -1177,78 +1177,89 @@ then
    CFLAGS="$CFLAGS -pg"
 fi
 
-PKG_PROG_PKG_CONFIG()
-dnl Check if systemd unit dir is supplied if not try get it via pkg config
-AC_ARG_WITH([systemdsystemunitdir],
-            [AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files])],,
-            [with_systemdsystemunitdir=auto])
-AS_IF([test "x$with_systemdsystemunitdir" = "xyes" -o "x$with_systemdsystemunitdir" = "xauto"],
-      [def_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)
-       AS_IF([test "x$def_systemdsystemunitdir" = "x"],
-             [AS_IF([test "x$with_systemdsystemunitdir" = "xyes"],
-                    [AC_MSG_ERROR([systemd support requested but pkg-config unable to query systemd package])])
-              with_systemdsystemunitdir=no],
-             [with_systemdsystemunitdir="$def_systemdsystemunitdir"])])
-AS_IF([test "x$with_systemdsystemunitdir" != "xno"],
-      [AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])])
-
-if test "x$with_systemdsystemunitdir" != "xno"
+if test "x$ac_cv_systemd" = "xyes"
 then
-   AC_MSG_CHECKING([whether we build with systemd support])
-   PKG_CHECK_MODULES([LIBSYSTEMD], [libsystemd],
-                     [AC_DEFINE([WITH_SYSTEMD], [], [Building with systemd support])
-                      use_systemd="yes"
-                      AC_MSG_RESULT(Building with systemd support)],
-                     [AC_MSG_RESULT(Building without systemd support)
-                     use_systemd="no"])
-   if test "${use_systemd}" = "yes"
+   PKG_PROG_PKG_CONFIG()
+   dnl Check if systemd unit dir is supplied if not try get it via pkg config
+   AC_ARG_WITH([systemdsystemunitdir],
+               [AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files])],,
+               [with_systemdsystemunitdir=auto])
+   AS_IF([test "x$with_systemdsystemunitdir" = "xyes" -o "x$with_systemdsystemunitdir" = "xauto"],
+         [def_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)
+          AS_IF([test "x$def_systemdsystemunitdir" = "x"],
+                [AS_IF([test "x$with_systemdsystemunitdir" = "xyes"],
+                       [AC_MSG_ERROR([systemd support requested but pkg-config unable to query systemd package])])
+                 with_systemdsystemunitdir=no],
+                [with_systemdsystemunitdir="$def_systemdsystemunitdir"])])
+   AS_IF([test "x$with_systemdsystemunitdir" != "xno"],
+         [AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])])
+
+   if test "x$with_systemdsystemunitdir" != "xno"
    then
-      if test "$REQUIRES" = ""
+      AC_MSG_CHECKING([whether we build with systemd support])
+      PKG_CHECK_MODULES([LIBSYSTEMD], [libsystemd],
+                        [AC_DEFINE([WITH_SYSTEMD], [], [Building with systemd support])
+                         use_systemd="yes"
+                         AC_MSG_RESULT(Building with systemd support)],
+                        [AC_MSG_RESULT(Building without systemd support)
+                        use_systemd="no"])
+      if test "${use_systemd}" = "yes"
       then
-         REQUIRES="systemd"
-      else
-         REQUIRES="`echo $REQUIRES`, systemd"
-      fi
-      if test "$BUILD_REQUIRES" = ""
-      then
-         BUILD_REQUIRES="systemd-devel"
-      else
-         BUILD_REQUIRES="`echo $BUILD_REQUIRES`, systemd-devel"
-      fi
+         if test "$REQUIRES" = ""
+         then
+            REQUIRES="systemd"
+         else
+            REQUIRES="`echo $REQUIRES`, systemd"
+         fi
+         if test "$BUILD_REQUIRES" = ""
+         then
+            BUILD_REQUIRES="systemd-devel"
+         else
+            BUILD_REQUIRES="`echo $BUILD_REQUIRES`, systemd-devel"
+         fi
 
-      WITH_SYSTMD=1
-      AM_CONDITIONAL(WITH_SYSTEMD, true)
+         WITH_SYSTMD=1
+         AM_CONDITIONAL(WITH_SYSTEMD, true)
 
-      dnl Check if we can write to systemd unit dir
-      if test -w $with_systemdsystemunitdir; then
-         AM_CONDITIONAL(UNIT_DIR_WRITEABLE, true)
+         dnl Check if we can write to systemd unit dir
+         if test -w $with_systemdsystemunitdir; then
+            AM_CONDITIONAL(UNIT_DIR_WRITEABLE, true)
+         else
+            AM_CONDITIONAL(UNIT_DIR_WRITEABLE, false)
+         fi
       else
-         AM_CONDITIONAL(UNIT_DIR_WRITEABLE, false)
+         case "$DISTRO" in
+            debian)
+               echo "Unable to find systemd development package. Install libsystemd-dev package."
+               ;;
+            fedora)
+               echo "Unable to find systemd development package. Install systemd-devel package."
+               ;;
+            redhat)
+               echo "Unable to find systemd development package. Install systemd-devel package."
+               ;;
+            ubuntu)
+               echo "Unable to find systemd development package. Install libsystemd-dev package."
+               ;;
+            *)
+               echo "Unable to find systemd development package."
+               ;;
+         esac
+         exit 1
       fi
    else
-      case "$DISTRO" in
-         debian)
-            echo "Unable to find systemd development package. Install libsystemd-dev package."
-            ;;
-         fedora)
-            echo "Unable to find systemd development package. Install systemd-devel package."
-            ;;
-         redhat)
-            echo "Unable to find systemd development package. Install systemd-devel package."
-            ;;
-         ubuntu)
-            echo "Unable to find systemd development package. Install libsystemd-dev package."
-            ;;
-         *)
-            echo "Unable to find systemd development package."
-            ;;
-      esac
-      exit 1
+      AM_CONDITIONAL(WITH_SYSTEMD, false)
+      AM_CONDITIONAL(UNIT_DIR_WRITEABLE, false)
+      AC_MSG_RESULT(no)
+      WITH_SYSTMD=0
+      use_systemd="no"
    fi
 else
    AM_CONDITIONAL(WITH_SYSTEMD, false)
+   AM_CONDITIONAL(UNIT_DIR_WRITEABLE, false)
    AC_MSG_RESULT(no)
    WITH_SYSTMD=0
+   use_systemd="no"
 fi
 AC_SUBST(WITH_SYSTMD)
 
