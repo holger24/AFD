@@ -1041,9 +1041,24 @@ main(int argc, char *argv[])
                      {
                         if (fsa->debug > NORMAL_MODE)
                         {
-                           trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                        "Opened HTTP connection for file %s.",
-                                        (fra->dir_options & URL_CREATES_FILE_NAME) ? db.target_dir : tmp_rl.file_name);
+                           if (offset > 0)
+                           {
+                              trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+#if SIZEOF_OFF_T == 4
+                                           "Opened HTTP connection for file %s at offset %ld. [%s]",
+#else
+                                           "Opened HTTP connection for file %s at offset %lld. [%s]",
+#endif
+                                           (fra->dir_options & URL_CREATES_FILE_NAME) ? db.target_dir : tmp_rl.file_name,
+                                           (pri_off_t)offset, fra->dir_alias);
+                           }
+                           else
+                           {
+                              trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                           "Opened HTTP connection for file %s. [%s]",
+                                           (fra->dir_options & URL_CREATES_FILE_NAME) ? db.target_dir : tmp_rl.file_name,
+                                           fra->dir_alias);
+                           }
                         }
                         if (fra->dir_options & URL_CREATES_FILE_NAME)
                         {
@@ -1778,16 +1793,21 @@ main(int argc, char *argv[])
                                 (fra->stupid_mode != NOT_EXACT)) ||
                                (tmp_rl.special_flag & RL_GOT_EXACT_SIZE))
                            {
-                              trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                              /* Do not show info when                */
+                              /* 'store retrieve list append' is set. */
+                              if (fra->stupid_mode != APPEND_ONLY)
+                              {
+                                 trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
 #if SIZEOF_OFF_T == 4
-                                        "File size of file %s in %s changed from %ld to %ld when it was retrieved.",
+                                           "File size of file %s in %s changed from %ld to %ld when it was retrieved.",
 #else
-                                        "File size of file %s in %s changed from %lld to %lld when it was retrieved.",
+                                           "File size of file %s in %s changed from %lld to %lld when it was retrieved.",
 #endif
-                                        tmp_rl.file_name,
-                                        (db.fra_pos == INCORRECT) ? "unknown" : fra->dir_alias,
-                                        (pri_off_t)tmp_rl.size,
-                                        (pri_off_t)(content_length_to_fetch + offset));
+                                           tmp_rl.file_name,
+                                           (db.fra_pos == INCORRECT) ? "unknown" : fra->dir_alias,
+                                           (pri_off_t)tmp_rl.size,
+                                           (pri_off_t)(content_length_to_fetch + offset));
+                              }
                            }
                         }
 

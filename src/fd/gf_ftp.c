@@ -1392,10 +1392,27 @@ main(int argc, char *argv[])
 
                         if (fsa->debug > NORMAL_MODE)
                         {
-                           trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                        "Opened data connection for file %s (data port %d %s).",
-                                        tmp_rl.file_name, ftp_data_port(),
-                                        (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
+                           if (offset > 0)
+                           {
+                              trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+#if SIZEOF_OFF_T == 4
+                                           "Opened data connection for file %s at offset %ld (data port %d %s). [%s]",
+#else
+                                           "Opened data connection for file %s at offset %lld (data port %d %s). [%s]",
+#endif
+                                           tmp_rl.file_name, (pri_off_t)offset,
+                                           ftp_data_port(),
+                                           (db.mode_flag & PASSIVE_MODE) ? "passive" : "active",
+                                           fra->dir_alias);
+                           }
+                           else
+                           {
+                              trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                           "Opened data connection for file %s (data port %d %s). [%s]",
+                                           tmp_rl.file_name, ftp_data_port(),
+                                           (db.mode_flag & PASSIVE_MODE) ? "passive" : "active",
+                                           fra->dir_alias);
+                           }
                         }
                         if ((created_path != NULL) && (created_path[0] != '\0'))
                         {
@@ -1846,15 +1863,20 @@ main(int argc, char *argv[])
                                */
                               if ((bytes_done + offset) != tmp_rl.size)
                               {
-                                 trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                 /* Do not show info when                */
+                                 /* 'store retrieve list append' is set. */
+                                 if (fra->stupid_mode != APPEND_ONLY)
+                                 {
+                                    trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
 #if SIZEOF_OFF_T == 4
-                                           "File size of file %s in %s changed from %ld to %ld when it was retrieved.",
+                                              "File size of file %s in %s changed from %ld to %ld when it was retrieved.",
 #else
-                                           "File size of file %s in %s changed from %lld to %lld when it was retrieved.",
+                                              "File size of file %s in %s changed from %lld to %lld when it was retrieved.",
 #endif
-                                           tmp_rl.file_name, fra->dir_alias,
-                                           (pri_off_t)tmp_rl.size,
-                                           (pri_off_t)(bytes_done + offset));
+                                              tmp_rl.file_name, fra->dir_alias,
+                                              (pri_off_t)tmp_rl.size,
+                                              (pri_off_t)(bytes_done + offset));
+                                 }
                                  fsa->total_file_size += (bytes_done + offset - tmp_rl.size);
                                  tmp_rl.size = bytes_done + offset;
                               }
@@ -1922,15 +1944,20 @@ main(int argc, char *argv[])
                            if ((tmp_rl.size != -1) &&
                                ((bytes_done + offset) != tmp_rl.size))
                            {
-                              trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                              /* Do not show info when                */
+                              /* 'store retrieve list append' is set. */
+                              if (fra->stupid_mode != APPEND_ONLY)
+                              {
+                                 trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
 #if SIZEOF_OFF_T == 4
-                                        "File size of file %s in %s changed from %ld to %ld when it was retrieved.",
+                                           "File size of file %s in %s changed from %ld to %ld when it was retrieved.",
 #else
-                                        "File size of file %s in %s changed from %lld to %lld when it was retrieved.",
+                                           "File size of file %s in %s changed from %lld to %lld when it was retrieved.",
 #endif
-                                        tmp_rl.file_name, fra->dir_alias,
-                                        (pri_off_t)tmp_rl.size,
-                                        (pri_off_t)bytes_done + offset);
+                                           tmp_rl.file_name, fra->dir_alias,
+                                           (pri_off_t)tmp_rl.size,
+                                           (pri_off_t)bytes_done + offset);
+                              }
                               tmp_rl.size = bytes_done + offset;
                            }
                         }
