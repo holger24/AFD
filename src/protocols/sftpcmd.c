@@ -1,6 +1,6 @@
 /*
  *  sftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -3559,7 +3559,14 @@ sftp_multi_read_catch(char *buffer)
                       "sftp_multi_read_catch", NULL,
                       _("Expecting %d bytes, but received %u bytes. (reads_todo=%d reads_done=%d)"),
                       scd.blocksize, ui_var, scd.reads_todo, scd.reads_done);
-            scd.file_offset -= scd.blocksize;
+            if (scd.file_offset >= scd.blocksize)
+            {
+               scd.file_offset -= scd.blocksize;
+            }
+            else
+            {
+               scd.file_offset = 0;
+            }
             status = SFTP_DO_SINGLE_READS;
          }
          else
@@ -3734,7 +3741,14 @@ sftp_multi_read_discard(int report_pending_reads)
          {
             status = get_reply(scd.pending_read_id[i], NULL, __LINE__);
          }
-         scd.file_offset -= scd.blocksize;
+         if (scd.file_offset >= scd.blocksize)
+         {
+            scd.file_offset -= scd.blocksize;
+         }
+         else
+         {
+            scd.file_offset = 0;
+         }
       }
       if (rest > 0)
       {
@@ -3744,7 +3758,14 @@ sftp_multi_read_discard(int report_pending_reads)
             {
                status = get_reply(scd.pending_read_id[i], NULL, __LINE__);
             }
-            scd.file_offset -= scd.blocksize;
+            if (scd.file_offset >= scd.blocksize)
+            {
+               scd.file_offset -= scd.blocksize;
+            }
+            else
+            {
+               scd.file_offset = 0;
+            }
          }
       }
       scd.reads_queued = 0;
