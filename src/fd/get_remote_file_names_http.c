@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_http.c - Part of AFD, an automatic file distribution
  *                                 program.
- *  Copyright (c) 2006 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -3558,7 +3558,7 @@ check_list(char   *file,
 #endif
             {
                int   status;
-               off_t prev_size = 0;
+               off_t prev_size = (rl[i].size == -1) ? 0 : rl[i].size;
 
                /* Try to get remote date and size. */
                if (((fra->dir_options & DONT_GET_DIR_LIST) == 0) &&
@@ -3633,7 +3633,6 @@ check_list(char   *file,
                {
                   if (rl[i].size != file_size)
                   {
-                     prev_size = rl[i].size;
                      rl[i].size = file_size;
                      rl[i].retrieved = NO;
                      rl[i].assigned = 0;

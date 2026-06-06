@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_ftp_list.c - Part of AFD, an automatic file
  *                                     distribution program.
- *  Copyright (c) 2014 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1100,7 +1100,7 @@ check_list(char   *file,
                )
             {
                int   ret;
-               off_t prev_size = 0;
+               off_t prev_size = rl[i].size;
 
                if (rl[i].file_mtime != file_mtime)
                {
@@ -1111,7 +1111,6 @@ check_list(char   *file,
                rl[i].got_date = YES;
                if (rl[i].size != file_size)
                {
-                  prev_size = rl[i].size;
                   rl[i].size = file_size;
                   rl[i].retrieved = NO;
                   rl[i].assigned = 0;
