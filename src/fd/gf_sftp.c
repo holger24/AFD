@@ -852,7 +852,8 @@ main(int argc, char *argv[])
                      {
                         (void)strcpy(p_local_file, tmp_rl.file_name);
                      }
-                     if (fsa->file_size_offset != -1)
+                     if ((fsa->file_size_offset != -1) &&
+                         (fra->stupid_mode != APPEND_ONLY))
                      {
 #ifdef HAVE_STATX
                         if (statx(0, local_tmp_file, AT_STATX_SYNC_AS_STAT,
@@ -861,14 +862,7 @@ main(int argc, char *argv[])
                         if (stat(local_tmp_file, &stat_buf) == -1)
 #endif
                         {
-                           if (fra->stupid_mode == APPEND_ONLY)
-                           {
-                              offset = tmp_rl.prev_size;
-                           }
-                           else
-                           {
-                              offset = 0;
-                           }
+                           offset = 0;
                         }
                         else
                         {
