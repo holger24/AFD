@@ -1152,6 +1152,7 @@ fi
 if test "x${GCC}" = "xyes"
 then
    AX_CHECK_COMPILE_FLAG("-fPIC", [SECURITY_FLAG="${SECURITY_FLAG} -fPIC"], [SECURITY_FLAG="${SECURITY_FLAG}"])
+   AX_CHECK_COMPILE_FLAG("-fcf-protection", [CFLAGS="${CFLAGS} -fcf-protection"], [CFLAGS="${CFLAGS}"])
 fi
 
 if test "${compiler_optimizations}" = "true" || test "${compiler_debug}" = "true"
