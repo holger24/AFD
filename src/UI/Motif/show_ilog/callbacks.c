@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -69,6 +69,10 @@ DESCR__S_M3
  **                      height.
  **   09.08.2009 H.Kiehl Add support for showing where file was
  **                      distributed.
+ **   06.07.2026 H.Kiehl Mask the file name when inserting it to the
+ **                      alda command since it may contain space or
+ **                      other special characters that the shell wants
+ **                      to resolve.
  **
  */
 DESCR__E_M3
@@ -354,7 +358,7 @@ info_click(Widget w, XtPointer client_data, XEvent *event)
             }
             /* -o Host alias|Realhostname|Finalname|Size|HRsize|Delivery time|Duration|JID|Retries|Split Job Number|Archive Dir|Delete time|Job ID|Disttype|UJID entries|UJID list|Reason ID|User/program|Additional reason */
             (void)sprintf(alda_cmd,
-                          "%s -f -g %s -t %s-%s -u %x -d \\#%x -SI %s -o '%%OH|%%Oh|%%OE|%%xOSB|%%.3OSA|%%xOTu|%%ODX|%%xOJ|%%xOe|%%xOL|%%OA|%%xDTu|%%xDJ|%%Pf|%%PF|%%xPJ|%%xUY|%%xUn|%%xUj,|%%xDr|%%DW|%%DA' %s",
+                          "%s -f -g %s -t %s-%s -u %x -d \\#%x -SI %s -o '%%OH|%%Oh|%%OE|%%xOSB|%%.3OSA|%%xOTu|%%ODX|%%xOJ|%%xOe|%%xOL|%%OA|%%xDTu|%%xDJ|%%Pf|%%PF|%%xPJ|%%xUY|%%xUn|%%xUj,|%%xDr|%%DW|%%DA' '%s'",
                           ALDA_CMD, MAX_ALDA_DIFF_TIME_STR, alda_time_str_start,
                           alda_time_str_end, id.unique_number, id.dir_id,
                           id.file_size, id.file_name);
