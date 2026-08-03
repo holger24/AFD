@@ -381,7 +381,7 @@ link_files(char                   *src_file_path,
                                             file_name_pool[k]) == 0)
                            {
                               system_log(DEBUG_SIGN, NULL, 0,
-                                         "File %s has been picked up more then once while scanning input directory %s [%s %x]\n",
+                                         "File %s has been picked up more then once while scanning input directory %s [%s %x]",
                                          file_name_pool[i], p_de->dir,
                                          p_de->alias, p_de->dir_id);
                               gotcha = YES;
