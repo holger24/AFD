@@ -119,6 +119,8 @@ DESCR__S_M3
  **   12.12.2024 H.Kiehl Added "retrieve zero size" option.
  **   06.09.2025 H.Kiehl Added "remove action" option.
  **   16.03.2026 H.Kiehl For 'ignore size' add possibility to specify unit.
+ **   03.08.2026 H.Kiehl Ignore 'do not remove' if there is data behind
+ **                      this pattern.
  **
  */
 DESCR__E_M3
@@ -708,11 +710,25 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
            {
               used |= DO_NOT_REMOVE_FLAG;
               ptr += DO_NOT_REMOVE_ID_LENGTH;
-              while ((*ptr != '\n') && (*ptr != '\0'))
+              while ((*ptr == ' ') || (*ptr == '\t'))
               {
                  ptr++;
               }
-              dd[dir_pos].remove = NO;
+              if ((*ptr != '\n') && (*ptr != '\0'))
+              {
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Unknown data behind directory option `%s' for directory `%s'.",
+                               DO_NOT_REMOVE_ID, dd[dir_pos].dir_name);
+                 problems_found++;
+                 while ((*ptr != '\n') && (*ptr != '\0'))
+                 {
+                    ptr++;
+                 }
+              }
+              else
+              {
+                 dd[dir_pos].remove = NO;
+              }
            }
       else if (((used & STORE_RETRIEVE_LIST_FLAG) == 0) &&
                (strncmp(ptr, STORE_RETRIEVE_LIST_ID, STORE_RETRIEVE_LIST_ID_LENGTH) == 0))
