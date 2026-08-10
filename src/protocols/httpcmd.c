@@ -272,6 +272,7 @@ http_connect(char          *hostname,
          hmr.features = features;
          hmr.debug = debug;
 #ifdef WITH_SSL
+         hmr.tls_auth = tls_auth;
          hmr.service_type = service;
          hmr.marker[0] = '\0';
          hmr.marker_length = 0;
@@ -412,10 +413,10 @@ http_connect(char          *hostname,
 # ifdef WITH_TRACE
             length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
                               _("socket() error : %s"), strerror(errno));
-             if (length > MAX_RET_MSG_LENGTH)
-             {
-                length = MAX_RET_MSG_LENGTH;
-             }
+            if (length > MAX_RET_MSG_LENGTH)
+            {
+               length = MAX_RET_MSG_LENGTH;
+            }
             trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
 # endif
             continue;
