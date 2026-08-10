@@ -144,6 +144,9 @@ link_files(char                   *src_file_path,
                 j;
    time_t       pmatch_time;
    char         *p_src,
+#ifndef _WITH_PTHREAD
+                *p_file_name = file_name_buffer,
+#endif
                 *p_dest = NULL,
                 *p_dest_end = NULL;
 
@@ -567,23 +570,30 @@ try_copy_file:
                                       strerror(errno));
                            exit(INCORRECT);
                         }
+                        p_file_name = file_name_buffer;
                      }
                      else
                      {
-                        if ((file_name_buffer = realloc(file_name_buffer, new_size)) == NULL)
+                        int offset;
+
+                        offset = p_file_name - file_name_buffer;
+                        if ((file_name_buffer = realloc(file_name_buffer,
+                                                        new_size)) == NULL)
                         {
                            system_log(FATAL_SIGN, __FILE__, __LINE__,
                                       "Could not realloc() memory : %s",
                                       strerror(errno));
                            exit(INCORRECT);
                         }
+                        p_file_name = file_name_buffer + offset;
                      }
 
                      /* Calculate new size of file size buffer. */
                      new_size = ((files_linked / FILE_NAME_STEP_SIZE) + 1) * FILE_NAME_STEP_SIZE * sizeof(off_t);
 
                      /* Increase the space for the file size buffer. */
-                     if ((file_size_buffer = realloc(file_size_buffer, new_size)) == NULL)
+                     if ((file_size_buffer = realloc(file_size_buffer,
+                                                     new_size)) == NULL)
                      {
                         system_log(FATAL_SIGN, __FILE__, __LINE__,
                                    "Could not realloc() memory : %s",
@@ -591,9 +601,9 @@ try_copy_file:
                         exit(INCORRECT);
                      }
                   }
-                  (void)memcpy((file_name_buffer + (files_linked * MAX_FILENAME_LENGTH)),
-                               file_name_pool[i],
+                  (void)memcpy(p_file_name, file_name_pool[i],
                                (size_t)(file_length_pool[i] + 1));
+                  p_file_name += MAX_FILENAME_LENGTH;
                   file_size_buffer[files_linked] = file_size_pool[i];
 #endif
                   files_linked++;
