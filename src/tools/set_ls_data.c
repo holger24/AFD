@@ -1,7 +1,7 @@
 /*
  *  set_ls_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2021, 2022 Deutscher Wetterdienst (DWD),
- *                           Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2021 - 2026 Deutscher Wetterdienst (DWD),
+ *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ DESCR__S_M1
  **   set_ls_data - set some value in ls data file
  **
  ** SYNOPSIS
- **   set_ls_data [--version] <ls data filename 1>[...<ls data filename n>]
+ **   set_ls_data [--version] <dir alias> <option> [<file name|pattern> [...<file name|pattern n>]]
  **
  ** DESCRIPTION
  **
@@ -249,7 +249,8 @@ main(int argc, char *argv[])
 static void
 usage(char *progname)
 {
-   (void)fprintf(stderr, "%s <dir-alias> <option> [<file name>]\n",
+   (void)fprintf(stderr,
+                 "%s <dir-alias> <option> [<file name|pattern>[...<file name|pattern n>]]\n",
                  progname);
    (void)fprintf(stderr, "         -r     mark as retrieved.\n");
    (void)fprintf(stderr, "         -R     mark as Not retrieved.\n");

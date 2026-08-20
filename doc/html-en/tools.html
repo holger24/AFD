@@ -545,6 +545,72 @@ The output looks as follows when a job ID is given as the first argument:
 <p>
 If no argument is given, all jobs in AFD will be printed to stdout.
 </p>
+<h3 align=center><a name="view_ls_data"><u>View content of ls data file (view_ls_data)</u></a></h3>
+<p>
+When the <a href="dir_config.html#store_retrieve_list">store retrieve list</a>
+option is set in [dir options] it sttores a list of filename that have
+been or still need to be retrieved in a file $AFD_WORK_DIR/files/incoming/ls_data/&lt;dir alias&gt;.
+This is a binary file and to view it you can use it as follows:
+</p>
+<pre>
+   donald@ducktown:~$ view_ls_data radar_data
+
+           radar_data (23 entries  Struct Version: 2  Create time: Mon Sep  8 09:41:08 2025)
+
+                           |            |  Previous  |Got |    | In |Assi|
+             Date          |    Size    |    Size    |date|Retr|list|nged|Flag|   File name
+   ------------------------+------------+------------+----+----+----+----+----+----------------------------------
+   Sun Sep  7 00:29:43 2025|        8430|           0| YES| YES| NO |   0|   7|raa00-pg_bfr26-2509062230-dwd---bufr
+   Mon Sep  8 03:29:53 2025|       17392|           0| YES| YES| NO |   0|   7|raa00-pg_bfr26-2509080130-dwd---bufr
+   Mon Sep  8 06:04:50 2025|       26782|           0| YES| YES| NO |   0|   7|raa00-pg_bfr26-2509080405-dwd---bufr
+   Sat Sep  6 18:24:47 2025|       14706|           0| YES| YES| NO |   0|   7|raa00-pc_10015-2509061625-dwd---bin
+   Sun Sep  7 06:30:06 2025|        7954|           0| YES| YES| NO |   0|   7|raa00-pg_bfr26-2509070430-dwd---bufr
+   Sun Sep  7 02:09:59 2025|        8550|           0| YES| YES| NO |   0|   7|raa00-pg_bfr26-2509070010-dwd---bufr
+   Sun Sep  7 05:30:16 2025|        8116|           0| YES| YES| NO |   0|   7|raa00-pg_bfr26-2509070330-dwd---bufr
+   Sun Sep  7 03:35:09 2025|        8518|           0| YES| YES| NO |   0|   7|PAAH21EDZW070135.buf
+   Sun Sep  7 23:40:08 2025|        8658|           0| YES| YES| NO |   0|   7|PAAH21EDZW072140.buf
+   Sun Sep  7 05:45:08 2025|        8184|           0| YES| YES| NO |   0|   7|raa00-pg_bfr26-2509070345-dwd---bufr
+   Sun Sep  7 19:39:49 2025|        7914|           0| YES| YES| NO |   0|   7|PAAH21EDZW071740.buf
+   Sun Sep  7 20:49:55 2025|       14411|           0| YES| YES| NO |   0|   7|raa00-pc_10015-2509071850-dwd---bin
+   Sun Sep  7 19:19:43 2025|        7992|           0| YES| YES| NO |   0|   7|PAAH21EDZW071720.buf
+   Sat Sep  6 14:29:45 2025|       15185|           0| YES| YES| NO |   0|   7|raa00-pc_10015-2509061230-dwd---bin
+   Sun Sep  7 02:39:47 2025|        8734|           0| YES| YES| NO |   0|   7|raa00-pg_bfr26-2509070040-dwd---bufr
+   Sat Sep  6 09:59:54 2025|       15010|           0| YES| YES| NO |   0|   7|raa00-pc_10015-2509060800-dwd---bin
+   Sat Sep  6 16:29:45 2025|       14919|           0| YES| YES| NO |   0|   7|raa00-pc_10015-2509061430-dwd---bin
+   Sat Sep  6 20:55:01 2025|        8486|           0| YES| YES| NO |   0|   7|PAAH21EDZW061855.buf
+   Sat Sep  6 09:59:52 2025|       10116|           0| YES| YES| NO |   0|   7|raa00-pg_bfr26-2509060800-dwd---bufr
+   Sun Sep  7 08:59:55 2025|        7754|           0| YES| YES| NO |   0|   7|raa00-pg_bfr26-2509070700-dwd---bufr
+   Sun Sep  7 08:04:56 2025|        7790|           0| YES| YES| NO |   0|   7|PAAH21EDZW070605.buf
+   Sat Sep  6 14:44:46 2025|       10852|           0| YES| YES| NO |   0|   7|raa00-pg_bfr26-2509061245-dwd---bufr
+   Sat Sep  6 10:39:45 2025|       10258|           0| YES| YES| NO |   0|   7|PAAH21EDZW060840.buf
+</pre>
+<p>
+To modify values in this list one can use <a href="#set_ls_data">set_ls_data</a>.
+</p>
+<h3 align=center><a name="set_ls_data"><u>Set values in ls data file (set_ls_data)</u></a></h3>
+<p>
+To modify values in a ls_data file use set_ls_data with the following
+syntax:
+</p>
+<pre>
+   donald@ducktown:~$ set_ls_data
+   set_ls_data &lt;dir-alias&gt; &lt;option&gt; [&lt;file name|pattern&gt;[...&lt;file name|pattern n&gt;]]
+         -r     mark as retrieved.
+         -R     mark as Not retrieved.
+</pre>
+<p>
+If you want to stop AFD retrieving any remaining files for dir alias
+radar_data, just do the following:
+</p>
+<pre>
+   donald@ducktown:~$ set_ls_data radar_data -r
+</pre>
+<p>
+Or if you want it to download all *.jpg and *.png:
+</p>
+<pre>
+   donald@ducktown:~$ set_ls_data radar_data -R \*.jpg \*.png
+</pre>
 <h3 align=center><a name="show_exec_stat"><u>Show exec statistics
 (show_exec_stat)</u></a></h3>
 <p>
@@ -975,9 +1041,9 @@ SYNTAX: ahtml_list [options] [URL|file]
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 2001 - 2025 by H.Kiehl<br>
+   Copyright &copy; 2001 - 2026 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 30.09.2025
+   Last updated: 20.08.2026
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
