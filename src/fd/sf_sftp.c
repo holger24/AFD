@@ -466,6 +466,11 @@ main(int argc, char *argv[])
             exit(SET_BLOCKSIZE_ERROR);
          }
       }
+      else if (fsa->debug > NORMAL_MODE)
+           {
+              trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                             "Leaving blocksize at %d.", blocksize);
+           }
 
       if (db.special_flag & CREATE_TARGET_DIR)
       {
