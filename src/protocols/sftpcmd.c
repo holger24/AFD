@@ -3603,7 +3603,7 @@ sftp_multi_read_catch(char *buffer)
       }
       else if (msg[0] == SSH_FXP_STATUS)
            {
-              if (get_xfer_uint(&msg[5]) != SSH_FX_EOF)
+              if (get_xfer_uint(&msg[5]) == SSH_FX_EOF)
               {
                  status = SFTP_EOF;
               }
