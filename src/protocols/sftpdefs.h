@@ -1,6 +1,6 @@
 /*
  *  sftpdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,11 +26,10 @@
 #define MAX_SFTP_BLOCKSIZE              262144    /* 256 KBytes */
 #define MAX_PENDING_WRITE_BUFFER        786432    /* 768 KBytes */
 #define INITIAL_SFTP_MSG_LENGTH         (MIN_SFTP_BLOCKSIZE + DEFAULT_ADD_SFTP_HEADER_LENGTH)
-#define MAX_PENDING_WRITES              (MAX_PENDING_WRITE_BUFFER / 16384)
-#define SFTP_DEFAULT_MAX_OPEN_REQUEST   64
-#define MAX_PENDING_READS               SFTP_DEFAULT_MAX_OPEN_REQUEST
-#define MAX_SFTP_REPLY_BUFFER           (SFTP_DEFAULT_MAX_OPEN_REQUEST + 10)
-#define SFTP_READ_STEP_SIZE             4
+#define SFTP_DEFAULT_MAX_OPEN_REQUEST   32
+#define MAX_SFTP_PENDING_REQUESTS       64
+#define MAX_SFTP_REPLY_BUFFER           (MAX_SFTP_PENDING_REQUESTS + 10)
+#define SFTP_READ_STEP_SIZE             MAX_SFTP_PENDING_REQUESTS
 
 #define SFTP_WRITE_FILE                 1 /* Open file for writting. */
 #define SFTP_READ_FILE                  2 /* Open file for reading.  */
@@ -288,8 +287,8 @@ struct sftp_connect_data
           unsigned int               file_handle_length;
           unsigned int               dir_handle_length;
           unsigned int               stat_flag;
-          unsigned int               pending_write_id[MAX_PENDING_WRITES];
-          unsigned int               pending_read_id[MAX_PENDING_READS];
+          unsigned int               pending_write_id[MAX_SFTP_REPLY_BUFFER];
+          unsigned int               pending_read_id[MAX_SFTP_REPLY_BUFFER];
           unsigned int               reads_todo;
           unsigned int               reads_done;
           unsigned int               nl_pos;     /* Name list position. */

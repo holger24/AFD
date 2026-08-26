@@ -889,11 +889,6 @@ get_limits(int store_value)
                   scd.oss_limits.max_read_length = get_xfer_uint64(&msg[5 + 8]);
                   scd.oss_limits.max_write_length = get_xfer_uint64(&msg[5 + 8 + 8]);
                   scd.oss_limits.max_open_handles = get_xfer_uint64(&msg[5 + 8 + 8 + 8]);
-                  if ((scd.oss_limits.max_open_handles > 0) &&
-                      (scd.oss_limits.max_open_handles < MAX_SFTP_REPLY_BUFFER))
-                  {
-                     scd.max_open_handles = scd.oss_limits.max_open_handles;
-                  }
                }
             }
             else
@@ -1906,7 +1901,7 @@ retry_open_file:
       {
          set_xfer_uint(&msg[4 + 1 + 4 + 4 + status],
                        (SSH_FXF_WRITE | SSH_FXF_CREAT |
-                       ((offset == 0) ? SSH_FXF_TRUNC : 0)));
+                        ((offset == 0) ? SSH_FXF_TRUNC : 0)));
          pos = 4 + 1 + 4 + 4 + status + 4;
 #ifdef WITH_TRACE
          if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
@@ -2065,11 +2060,7 @@ retry_open_file:
                if (openmode == SFTP_WRITE_FILE)
                {
                   scd.pending_write_counter = -1;
-                  scd.max_pending_writes = MAX_PENDING_WRITE_BUFFER / blocksize;
-                  if (scd.max_pending_writes > MAX_PENDING_WRITES)
-                  {
-                     scd.max_pending_writes = MAX_PENDING_WRITES;
-                  }
+                  scd.max_pending_writes = MAX_SFTP_PENDING_REQUESTS;
                }
                else
                {
@@ -2211,11 +2202,7 @@ retry_open_file:
               if (openmode == SFTP_WRITE_FILE)
               {
                  scd.pending_write_counter = -1;
-                 scd.max_pending_writes = MAX_PENDING_WRITE_BUFFER / blocksize;
-                 if (scd.max_pending_writes > MAX_PENDING_WRITES)
-                 {
-                    scd.max_pending_writes = MAX_PENDING_WRITES;
-                 }
+                 scd.max_pending_writes = MAX_SFTP_PENDING_REQUESTS;
               }
               else
               {
@@ -3343,9 +3330,9 @@ sftp_multi_read_init(int blocksize, off_t expected_size)
    scd.pending_id_read_pos = 0;
    scd.pending_id_end_pos = 0;
    scd.blocksize = blocksize;
-   if (scd.reads_todo > MAX_PENDING_READS)
+   if (scd.reads_todo > MAX_SFTP_PENDING_REQUESTS)
    {
-      scd.max_pending_reads = MAX_PENDING_READS;
+      scd.max_pending_reads = MAX_SFTP_PENDING_REQUESTS;
    }
    else
    {
@@ -3399,10 +3386,10 @@ sftp_multi_read_dispatch(void)
          todo = scd.current_max_pending_reads - scd.reads_queued;
       }
 
-      if ((scd.pending_id_end_pos + todo) > MAX_PENDING_READS)
+      if ((scd.pending_id_end_pos + todo) > MAX_SFTP_PENDING_REQUESTS)
       {
-         rest = (scd.pending_id_end_pos + todo) - MAX_PENDING_READS;
-         todo = MAX_PENDING_READS;
+         rest = (scd.pending_id_end_pos + todo) - MAX_SFTP_PENDING_REQUESTS;
+         todo = MAX_SFTP_PENDING_REQUESTS;
       }
       else
       {
@@ -3576,12 +3563,12 @@ sftp_multi_read_catch(char *buffer)
             if ((scd.reads_todo != (scd.reads_done + 1)) &&
                 (scd.reads_queued == (scd.current_max_pending_reads - 1)))
             {
-               if (scd.current_max_pending_reads < MAX_PENDING_READS)
+               if (scd.current_max_pending_reads < MAX_SFTP_PENDING_REQUESTS)
                {
                   scd.current_max_pending_reads += SFTP_READ_STEP_SIZE;
-                  if (scd.current_max_pending_reads > MAX_PENDING_READS)
+                  if (scd.current_max_pending_reads > MAX_SFTP_PENDING_REQUESTS)
                   {
-                     scd.current_max_pending_reads = MAX_PENDING_READS;
+                     scd.current_max_pending_reads = MAX_SFTP_PENDING_REQUESTS;
                   }
                   scd.reads_low_water_mark = scd.current_max_pending_reads / 2;
                }
@@ -3629,7 +3616,7 @@ sftp_multi_read_catch(char *buffer)
            }
 
       scd.pending_id_read_pos++;
-      if (scd.pending_id_read_pos >= MAX_PENDING_READS)
+      if (scd.pending_id_read_pos >= MAX_SFTP_PENDING_REQUESTS)
       {
          scd.pending_id_read_pos = 0;
       }
@@ -3640,7 +3627,7 @@ sftp_multi_read_catch(char *buffer)
         {
            status = SUCCESS;
            scd.pending_id_read_pos++;
-           if (scd.pending_id_read_pos >= MAX_PENDING_READS)
+           if (scd.pending_id_read_pos >= MAX_SFTP_PENDING_REQUESTS)
            {
               scd.pending_id_read_pos = 0;
            }
@@ -3712,16 +3699,16 @@ sftp_multi_read_discard(int report_pending_reads)
                    "Pending read counter is still %d!?", scd.reads_queued);
       }
 
-     if ((scd.pending_id_read_pos + scd.reads_queued) >= MAX_PENDING_READS)
-     {
-        todo = MAX_PENDING_READS;
-        rest = scd.reads_queued - (MAX_PENDING_READS - scd.pending_id_read_pos);
-     }
-     else
-     {
-        todo = scd.pending_id_read_pos + scd.reads_queued;
-        rest = 0;
-     }
+      if ((scd.pending_id_read_pos + scd.reads_queued) >= MAX_SFTP_PENDING_REQUESTS)
+      {
+         todo = MAX_SFTP_PENDING_REQUESTS;
+         rest = scd.reads_queued - (MAX_SFTP_PENDING_REQUESTS - scd.pending_id_read_pos);
+      }
+      else
+      {
+         todo = scd.pending_id_read_pos + scd.reads_queued;
+         rest = 0;
+      }
 #ifdef WITH_TRACE
       if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
       {
@@ -5202,22 +5189,9 @@ retry:
             {
                if (scd.stored_replies == scd.max_open_handles)
                {
-                  if ((scd.limits == 1) &&
-                      (scd.oss_limits.max_open_handles > 0) &&
-                      (scd.oss_limits.max_open_handles < MAX_SFTP_REPLY_BUFFER))
-                  {
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, "get_reply", NULL,
-                               _("Only able to queue %d replies, remote server sets limit to %u. [%d]"),
-                               scd.stored_replies,
-                               (unsigned int)scd.oss_limits.max_open_handles,
-                               line);
-                  }
-                  else
-                  {
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, "get_reply", NULL,
-                               _("Only able to queue %d replies, try increase MAX_SFTP_REPLY_BUFFER and recompile. [%d]"),
-                               MAX_SFTP_REPLY_BUFFER, line);
-                  }
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "get_reply", NULL,
+                            _("Only able to queue %d replies, try increase MAX_SFTP_REPLY_BUFFER and recompile. [%d]"),
+                            MAX_SFTP_REPLY_BUFFER, line);
                   reply = INCORRECT;
                }
                else
@@ -5355,24 +5329,10 @@ get_write_reply(unsigned int id, int line)
 #endif
                         if (scd.stored_replies == scd.max_open_handles)
                         {
-                           if ((scd.limits == 1) &&
-                               (scd.oss_limits.max_open_handles > 0) &&
-                               (scd.oss_limits.max_open_handles < MAX_SFTP_REPLY_BUFFER))
-                           {
-                              trans_log(ERROR_SIGN, __FILE__, __LINE__,
-                                        "get_write_reply", NULL,
-                                        _("Only able to queue %d replies, remote server sets limit to %u. [%d]"),
-                                        scd.stored_replies,
-                                        (unsigned int)scd.oss_limits.max_open_handles,
-                                        line);
-                           }
-                           else
-                           {
-                              trans_log(ERROR_SIGN, __FILE__, __LINE__,
-                                        "get_write_reply", NULL,
-                                        _("Only able to queue %d replies, try increase MAX_SFTP_REPLY_BUFFER and recompile. [%d]"),
-                                        MAX_SFTP_REPLY_BUFFER, line);
-                           }
+                           trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                     "get_write_reply", NULL,
+                                     _("Only able to queue %d replies, try increase MAX_SFTP_REPLY_BUFFER and recompile. [%d]"),
+                                     MAX_SFTP_REPLY_BUFFER, line);
                            reply = INCORRECT;
                         }
                         else
@@ -6333,6 +6293,7 @@ show_sftp_cmd(unsigned int ui_var, int type, int mode)
                            ui_var, get_xfer_uint(&msg[offset + 1]));
          break;
       case SSH_FXP_EXTENDED_REPLY :
+         trace_log(NULL, 0, BIN_CMD_R_TRACE, msg, ui_var, NULL);
          length = snprintf(buffer, 4096,
                            "SSH_FXP_EXTENDED_REPLY length=%u id=%u",
                            ui_var, get_xfer_uint(&msg[offset + 1]));
