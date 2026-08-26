@@ -378,9 +378,12 @@ main(int argc, char *argv[])
          }
          else if (blocksize > max_blocksize)
               {
-                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
-                           "Decreasing block size from %d to %d",
-                           blocksize, max_blocksize);
+                 if ((blocksize - max_blocksize) != DEFAULT_ADD_SFTP_HEADER_LENGTH)
+                 {
+                    trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                              "Decreasing block size from %d to %d",
+                              blocksize, max_blocksize);
+                 }
                  blocksize = max_blocksize;
               }
       }
@@ -406,7 +409,7 @@ main(int argc, char *argv[])
       else if (fsa->debug > NORMAL_MODE)
            {
               trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                             "Leaving blocksize at %d.", blocksize);
+                           "Leaving blocksize at %d.", blocksize);
            }
    }
    connected = time(NULL);
