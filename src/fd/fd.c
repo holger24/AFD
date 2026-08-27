@@ -1,6 +1,6 @@
 /*
  *  fd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2025 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2026 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1378,7 +1378,7 @@ system_log(DEBUG_SIGN, NULL, 0,
             }
             if (incorrect_entries > 0)
             {
-               system_log(WARN_SIGN, __FILE__, __LINE__,
+               system_log(DEBUG_SIGN, __FILE__, __LINE__,
                           "%d FRA queued %s corrected.", incorrect_entries,
                           (incorrect_entries == 1) ? "counter" : "counters");
             }
