@@ -1047,12 +1047,12 @@ sftp_max_write_length(void)
       }
       else
       {
-         return(MIN_SFTP_BLOCKSIZE);
+         return(MAX_SFTP_WRITE_BLOCKSIZE);
       }
    }
    else
    {
-      return(MIN_SFTP_BLOCKSIZE);
+      return(MAX_SFTP_WRITE_BLOCKSIZE);
    }
 }
 
@@ -1069,12 +1069,12 @@ sftp_max_read_length(void)
       }
       else
       {
-         return(MIN_SFTP_BLOCKSIZE);
+         return(MAX_SFTP_READ_BLOCKSIZE);
       }
    }
    else
    {
-      return(MIN_SFTP_BLOCKSIZE);
+      return(MAX_SFTP_READ_BLOCKSIZE);
    }
 }
 

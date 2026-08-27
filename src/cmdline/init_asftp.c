@@ -175,13 +175,36 @@ init_asftp(int argc, char *argv[], struct data *p_db)
                p_db->blocksize = atoi(*(argv + 1));
                argc--;
                argv++;
-               if (p_db->blocksize > MAX_SFTP_BLOCKSIZE)
+               if (p_db->exec_mode == RETRIEVE_MODE)
                {
-                  (void)fprintf(stdout,
-                                "Decreasing block size to %d because it is the maximum SFTP can handle.\n",
-                                MAX_SFTP_BLOCKSIZE);
-                  p_db->blocksize = MAX_SFTP_BLOCKSIZE;
+                  if (p_db->blocksize > MAX_SFTP_READ_BLOCKSIZE)
+                  {
+                     (void)fprintf(stdout,
+                                   "Decreasing block size to %d because it is the maximum SFTP can handle.\n",
+                                   MAX_SFTP_READ_BLOCKSIZE);
+                     p_db->blocksize = MAX_SFTP_READ_BLOCKSIZE;
+                  }
                }
+               else if (p_db->exec_mode == TRANSFER_MODE)
+                    {
+                       if (p_db->blocksize > MAX_SFTP_WRITE_BLOCKSIZE)
+                       {
+                          (void)fprintf(stdout,
+                                        "Decreasing block size to %d because it is the maximum SFTP can handle.\n",
+                                        MAX_SFTP_WRITE_BLOCKSIZE);
+                          p_db->blocksize = MAX_SFTP_WRITE_BLOCKSIZE;
+                       }
+                    }
+                    else
+                    {
+                       if (p_db->blocksize > MAX_SFTP_BLOCKSIZE)
+                       {
+                          (void)fprintf(stdout,
+                                        "Decreasing block size to %d because it is the maximum SFTP can handle.\n",
+                                        MAX_SFTP_BLOCKSIZE);
+                          p_db->blocksize = MAX_SFTP_BLOCKSIZE;
+                       }
+                    }
             }
             break;
 
