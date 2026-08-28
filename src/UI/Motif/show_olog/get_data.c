@@ -3348,7 +3348,6 @@ file_name_only(register char *ptr,
                 item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
                 ptr_is_remote,
-                loops = 0,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
@@ -3391,7 +3390,6 @@ file_name_only(register char *ptr,
             CHECK_INTERRUPT();
             if (special_button_flag != STOP_BUTTON)
             {
-               loops--;
                break;
             }
          }
@@ -4471,8 +4469,6 @@ file_name_only(register char *ptr,
          file_size += tmp_file_size;
       }
 
-      loops++;
-
       /* Display what we have in buffer. */
       display_data(i, first_date_found, time_when_transmitted);
 
@@ -4518,7 +4514,6 @@ file_size_only(register char *ptr,
                 item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
                 ptr_is_remote,
-                loops = 0,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
@@ -4560,7 +4555,6 @@ file_size_only(register char *ptr,
             CHECK_INTERRUPT();
             if (special_button_flag != STOP_BUTTON)
             {
-               loops--;
                break;
             }
          }
@@ -5034,8 +5028,6 @@ file_size_only(register char *ptr,
          file_size += tmp_file_size;
       }
 
-      loops++;
-
       /* Display what we have in buffer. */
       display_data(i, first_date_found, time_when_transmitted);
 
@@ -5082,7 +5074,6 @@ file_name_and_size(register char *ptr,
                 item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
                 ptr_is_remote,
-                loops = 0,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
@@ -5125,7 +5116,6 @@ file_name_and_size(register char *ptr,
             CHECK_INTERRUPT();
             if (special_button_flag != STOP_BUTTON)
             {
-               loops--;
                break;
             }
          }
@@ -6085,8 +6075,6 @@ file_name_and_size(register char *ptr,
          file_size += tmp_file_size;
       }
 
-      loops++;
-
       /* Display what we have in buffer. */
       display_data(i, first_date_found, time_when_transmitted);
 
@@ -6132,7 +6120,6 @@ recipient_only(register char *ptr,
                 item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
                 ptr_is_remote,
-                loops = 0,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
@@ -6174,7 +6161,6 @@ recipient_only(register char *ptr,
             CHECK_INTERRUPT();
             if (special_button_flag != STOP_BUTTON)
             {
-               loops--;
                break;
             }
          }
@@ -7212,8 +7198,6 @@ recipient_only(register char *ptr,
          file_size += tmp_file_size;
       }
 
-      loops++;
-
       /* Display what we have in buffer. */
       display_data(i, first_date_found, time_when_transmitted);
 
@@ -7254,7 +7238,6 @@ file_name_and_recipient(register char *ptr,
                 item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
                 ptr_is_remote,
-                loops = 0,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
@@ -7297,7 +7280,6 @@ file_name_and_recipient(register char *ptr,
             CHECK_INTERRUPT();
             if (special_button_flag != STOP_BUTTON)
             {
-               loops--;
                break;
             }
          }
@@ -7723,8 +7705,6 @@ file_name_and_recipient(register char *ptr,
          file_size += tmp_file_size;
       }
 
-      loops++;
-
       /* Display what we have in buffer. */
       display_data(i, first_date_found, time_when_transmitted);
 
@@ -7765,7 +7745,6 @@ file_size_and_recipient(register char *ptr,
                 item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
                 ptr_is_remote,
-                loops = 0,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
@@ -7807,7 +7786,6 @@ file_size_and_recipient(register char *ptr,
             CHECK_INTERRUPT();
             if (special_button_flag != STOP_BUTTON)
             {
-               loops--;
                break;
             }
          }
@@ -8282,8 +8260,6 @@ file_size_and_recipient(register char *ptr,
          file_size += tmp_file_size;
       }
 
-      loops++;
-
       /* Display what we have in buffer. */
       display_data(i, first_date_found, time_when_transmitted);
 
@@ -8324,7 +8300,6 @@ file_name_size_recipient(register char *ptr,
                 item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
                 ptr_is_remote,
-                loops = 0,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
@@ -8367,7 +8342,6 @@ file_name_size_recipient(register char *ptr,
             CHECK_INTERRUPT();
             if (special_button_flag != STOP_BUTTON)
             {
-               loops--;
                break;
             }
          }
@@ -9600,8 +9574,6 @@ file_name_size_recipient(register char *ptr,
          COMMON_BLOCK();
          file_size += tmp_file_size;
       }
-
-      loops++;
 
       /* Display what we have in buffer. */
       display_data(i, first_date_found, time_when_transmitted);

@@ -1,6 +1,6 @@
 /*
  *  awmo.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2010 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2010 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -106,8 +106,7 @@ main(int argc, char *argv[])
                 status,
                 *wmo_counter,
                 wmo_counter_fd = -1;
-   off_t        local_file_size,
-                no_of_bytes;
+   off_t        local_file_size;
    char         *ascii_buffer = NULL,
                 *buffer,
                 *file_ptr,
@@ -412,7 +411,6 @@ main(int argc, char *argv[])
          }
 
          /* Read (local) and write (remote) data. */
-         no_of_bytes = 0;
          loops = (length_type_indicator + header_length + local_file_size) / db.blocksize;
          rest = (length_type_indicator + header_length + local_file_size) % db.blocksize;
          if (ascii_buffer != NULL)
@@ -481,7 +479,6 @@ main(int argc, char *argv[])
                   }
 
                   file_size_done += db.blocksize;
-                  no_of_bytes += db.blocksize;
 
                   if (length_type_indicator > 0)
                   {
@@ -524,7 +521,6 @@ main(int argc, char *argv[])
                   }
 
                   file_size_done += rest + end_length;
-                  no_of_bytes += rest + end_length;
                }
 
                /*
@@ -610,7 +606,6 @@ main(int argc, char *argv[])
                }
 
                file_size_done += db.blocksize;
-               no_of_bytes += db.blocksize;
             }
             if (rest > 0)
             {
@@ -625,7 +620,6 @@ main(int argc, char *argv[])
                }
 
                file_size_done += rest;
-               no_of_bytes += rest;
             }
          }
 

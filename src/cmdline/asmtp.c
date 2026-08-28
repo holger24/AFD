@@ -1,6 +1,6 @@
 /*
  *  asmtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -129,8 +129,7 @@ main(int argc, char *argv[])
                 write_size;
    size_t       length;
    off_t        file_size_done = 0,
-                local_file_size,
-                no_of_bytes;
+                local_file_size;
    char         *buffer,
                 *buffer_ptr,
                 *encode_buffer = NULL,
@@ -458,7 +457,6 @@ main(int argc, char *argv[])
             (void)smtp_quit();
             exit(eval_timeout(WRITE_REMOTE_ERROR));
          }
-         no_of_bytes = length;
       }
       if (db.reply_to != NULL)
       {
@@ -479,7 +477,6 @@ main(int argc, char *argv[])
             (void)smtp_quit();
             exit(eval_timeout(WRITE_REMOTE_ERROR));
          }
-         no_of_bytes += length;
       }
 
       length = snprintf(buffer, buffer_size, "To: %s\r\n", remote_user);
@@ -498,7 +495,6 @@ main(int argc, char *argv[])
          (void)smtp_quit();
          exit(eval_timeout(WRITE_REMOTE_ERROR));
       }
-      no_of_bytes += length;
 
       if (db.subject != NULL)
       {
@@ -518,7 +514,6 @@ main(int argc, char *argv[])
             (void)smtp_quit();
             exit(eval_timeout(WRITE_REMOTE_ERROR));
          }
-         no_of_bytes += length;
       }
       else if (db.special_flag & FILE_NAME_IS_SUBJECT)
            {
@@ -538,7 +533,6 @@ main(int argc, char *argv[])
                  (void)smtp_quit();
                  exit(eval_timeout(WRITE_REMOTE_ERROR));
               }
-              no_of_bytes += length;
            } /* if (db.special_flag & FILE_NAME_IS_SUBJECT) */
 
       if (smtp_write("\r\n", NULL, 2) < 0)
@@ -549,7 +543,6 @@ main(int argc, char *argv[])
          (void)smtp_quit();
          exit(eval_timeout(WRITE_REMOTE_ERROR));
       }
-      no_of_bytes += 2;
 
       /* Close remote file. */
       if ((status = smtp_close()) != SUCCESS)
@@ -748,7 +741,6 @@ main(int argc, char *argv[])
          }
 
          /* Read (local) and write (remote) file. */
-         no_of_bytes = 0;
          loops = local_file_size / blocksize;
          rest = local_file_size % blocksize;
 
@@ -770,7 +762,6 @@ main(int argc, char *argv[])
                (void)smtp_quit();
                exit(eval_timeout(WRITE_REMOTE_ERROR));
             }
-            no_of_bytes = length;
          }
          if (db.reply_to != NULL)
          {
@@ -791,7 +782,6 @@ main(int argc, char *argv[])
                (void)smtp_quit();
                exit(eval_timeout(WRITE_REMOTE_ERROR));
             }
-            no_of_bytes += length;
          }
 
          length = snprintf(buffer, buffer_size, "To: %s\r\n", remote_user);
@@ -810,7 +800,6 @@ main(int argc, char *argv[])
             (void)smtp_quit();
             exit(eval_timeout(WRITE_REMOTE_ERROR));
          }
-         no_of_bytes += length;
 
          if (db.subject != NULL)
          {
@@ -830,7 +819,6 @@ main(int argc, char *argv[])
                (void)smtp_quit();
                exit(eval_timeout(WRITE_REMOTE_ERROR));
             }
-            no_of_bytes += length;
          }
          else if (db.special_flag & FILE_NAME_IS_SUBJECT)
               {
@@ -850,7 +838,6 @@ main(int argc, char *argv[])
                     (void)smtp_quit();
                     exit(eval_timeout(WRITE_REMOTE_ERROR));
                  }
-                 no_of_bytes += length;
               } /* if (db.special_flag & FILE_NAME_IS_SUBJECT) */
 
          /* Send MIME information. */
@@ -895,7 +882,6 @@ main(int argc, char *argv[])
                (void)smtp_quit();
                exit(eval_timeout(WRITE_REMOTE_ERROR));
             }
-            no_of_bytes += length;
          } /* if (db.special_flag & ATTACH_FILE) */
          else if (db.charset != NULL)
               {
@@ -918,7 +904,6 @@ main(int argc, char *argv[])
                     (void)smtp_quit();
                     exit(eval_timeout(WRITE_REMOTE_ERROR));
                  }
-                 no_of_bytes += length;
               }
               else
               {
@@ -935,7 +920,6 @@ main(int argc, char *argv[])
             (void)smtp_quit();
             exit(eval_timeout(WRITE_REMOTE_ERROR));
          }
-         no_of_bytes += 2;
 
          for (;;)
          {
@@ -979,7 +963,6 @@ main(int argc, char *argv[])
                   write_size = blocksize;
                }
                file_size_done += write_size;
-               no_of_bytes += write_size;
             }
 
             if (rest > 0)
@@ -1021,7 +1004,6 @@ main(int argc, char *argv[])
                   write_size = rest;
                }
                file_size_done += write_size;
-               no_of_bytes += write_size;
             } /* if (rest > 0) */
 
             /*
@@ -1099,7 +1081,6 @@ main(int argc, char *argv[])
                (void)smtp_quit();
                exit(eval_timeout(WRITE_REMOTE_ERROR));
             }
-            no_of_bytes += length;
          }
 
          /* Close local file. */

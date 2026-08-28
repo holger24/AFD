@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -676,8 +676,7 @@ search_data(register char *ptr,
    register int i,
                 j,
                 k;
-   int          loops = 0,
-                type;
+   int          type;
    time_t       prev_time_val = 0L,
                 now,
                 time_when_transmitted = 0L;
@@ -700,7 +699,6 @@ search_data(register char *ptr,
             CHECK_INTERRUPT();
             if (special_button_flag != STOP_BUTTON)
             {
-               loops--;
                break;
             }
          }
@@ -1191,8 +1189,6 @@ search_data(register char *ptr,
          bytes_buffered += bytes_written;
          ptr++;
       }
-
-      loops++;
 
       /* Display what we have in buffer. */
       str_list[bytes_buffered] = '\0';

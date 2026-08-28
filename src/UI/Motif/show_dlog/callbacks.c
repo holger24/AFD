@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -921,8 +921,7 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
       case RECIPIENT_NAME_NO_ENTER :
       case RECIPIENT_NAME :
         {
-            int  i = 0,
-                 ii = 0;
+            int  ii = 0;
             char *ptr,
                  *ptr_start;
 
@@ -962,14 +961,13 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                for (;;)
                {
                   ptr_start = ptr;
-                  i = 0;
                   while ((*ptr != '\0') && (*ptr != ',') && (*ptr != '@'))
                   {
                      if (*ptr == '\\')
                      {
                         ptr++;
                      }
-                     ptr++; i++;
+                     ptr++;
                   }
                   if (*ptr == '@')
                   {

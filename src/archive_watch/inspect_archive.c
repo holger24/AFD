@@ -1,6 +1,6 @@
 /*
  *  inspect_archive.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2026 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -95,7 +95,6 @@ inspect_archive(char *archive_dir)
    else
    {
 #ifdef MULTI_FS_SUPPORT
-      int           nof;
       char          *ptr_filesystemname;
       struct dirent *dp_filesystemname;
 # ifdef HAVE_STATX
@@ -142,10 +141,8 @@ inspect_archive(char *archive_dir)
                {
                   ptr_filesystemname = archive_dir + strlen(archive_dir);
                   *(ptr_filesystemname++) = '/';
-                  nof = 0;
                   while ((dp_filesystemname = readdir(p_dir_filesystemname)) != NULL)
                   {
-                     nof++;
                      if (dp_filesystemname->d_name[0]  != '.')
                      {
                         /* Enter directory with hostname. */

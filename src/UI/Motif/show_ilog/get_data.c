@@ -1274,11 +1274,10 @@ no_criteria(register char *ptr,
                 j;
    int          item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
-                line_counter = 0,
+                line_counter = 0;
 #ifndef LESSTIF_WORKAROUND
-                unmanaged,
+   int          unmanaged;
 #endif
-                loops = 0;
    time_t       now,
                 prev_time_val = 0L,
                 time_when_transmitted = 0L;
@@ -1311,7 +1310,6 @@ no_criteria(register char *ptr,
             CHECK_INTERRUPT();
             if (special_button_flag != STOP_BUTTON)
             {
-               loops--;
                break;
             }
          }
@@ -1484,8 +1482,6 @@ no_criteria(register char *ptr,
          file_size += tmp_file_size;
       }
 
-      loops++;
-
       /* Display what we have in buffer. */
       display_data(i, first_date_found, time_when_transmitted);
 
@@ -1535,7 +1531,6 @@ file_name_only(register char *ptr,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
-                loops = 0,
                 ret;
    time_t       now,
                 prev_time_val = 0L,
@@ -1568,7 +1563,6 @@ file_name_only(register char *ptr,
             CHECK_INTERRUPT();
             if (special_button_flag != STOP_BUTTON)
             {
-               loops--;
                break;
             }
          }
@@ -1679,8 +1673,6 @@ file_name_only(register char *ptr,
          file_size += tmp_file_size;
       }
 
-      loops++;
-
       /* Display what we have in buffer. */
       display_data(i, first_date_found, time_when_transmitted);
 
@@ -1724,11 +1716,10 @@ file_size_only(register char *ptr,
                 j;
    int          item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
-                line_counter = 0,
+                line_counter = 0;
 #ifndef LESSTIF_WORKAROUND
-                unmanaged,
+   int          unmanaged;
 #endif
-                loops = 0;
    time_t       now,
                 prev_time_val = 0L,
                 time_when_transmitted = 0L;
@@ -1760,7 +1751,6 @@ file_size_only(register char *ptr,
             CHECK_INTERRUPT();
             if (special_button_flag != STOP_BUTTON)
             {
-               loops--;
                break;
             }
          }
@@ -1908,8 +1898,6 @@ file_size_only(register char *ptr,
          file_size += tmp_file_size;
       }
 
-      loops++;
-
       /* Display what we have in buffer. */
       display_data(i, first_date_found, time_when_transmitted);
 
@@ -1960,7 +1948,6 @@ file_name_and_size(register char *ptr,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
-                loops = 0,
                 ret;
    time_t       now,
                 prev_time_val = 0L,
@@ -1993,7 +1980,6 @@ file_name_and_size(register char *ptr,
             CHECK_INTERRUPT();
             if (special_button_flag != STOP_BUTTON)
             {
-               loops--;
                break;
             }
          }
@@ -2137,8 +2123,6 @@ file_name_and_size(register char *ptr,
          file_size += tmp_file_size;
       }
 
-      loops++;
-
       /* Display what we have in buffer. */
       display_data(i, first_date_found, time_when_transmitted);
 
@@ -2185,11 +2169,10 @@ recipient_only(register char *ptr,
                 ii,
                 item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
-                line_counter = 0,
+                line_counter = 0;
 #ifndef LESSTIF_WORKAROUND
-                unmanaged,
+   int          unmanaged;
 #endif
-                loops = 0;
    time_t       now,
                 prev_time_val = 0L,
                 time_when_transmitted = 0L;
@@ -2222,7 +2205,6 @@ recipient_only(register char *ptr,
             CHECK_INTERRUPT();
             if (special_button_flag != STOP_BUTTON)
             {
-               loops--;
                break;
             }
          }
@@ -2440,7 +2422,6 @@ recipient_only(register char *ptr,
          str_list[i] = XmStringCreateLocalized(line);
          ptr++;
       }
-      loops++;
 
       /* Display what we have in buffer. */
       display_data(i, first_date_found, time_when_transmitted);
@@ -2489,7 +2470,6 @@ file_name_and_recipient(register char *ptr,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
-                loops = 0,
                 ret;
    time_t       now,
                 prev_time_val = 0L,
@@ -2523,7 +2503,6 @@ file_name_and_recipient(register char *ptr,
             CHECK_INTERRUPT();
             if (special_button_flag != STOP_BUTTON)
             {
-               loops--;
                break;
             }
          }
@@ -2761,7 +2740,6 @@ file_name_and_recipient(register char *ptr,
          str_list[i] = XmStringCreateLocalized(line);
          ptr++;
       }
-      loops++;
 
       /* Display what we have in buffer. */
       display_data(i, first_date_found, time_when_transmitted);
@@ -2804,11 +2782,10 @@ file_size_and_recipient(register char *ptr,
                 ii,
                 item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
-                line_counter = 0,
+                line_counter = 0;
 #ifndef LESSTIF_WORKAROUND
-                unmanaged,
+   int          unmanaged;
 #endif
-                loops = 0;
    time_t       now,
                 prev_time_val = 0L,
                 time_when_transmitted = 0L;
@@ -2841,7 +2818,6 @@ file_size_and_recipient(register char *ptr,
             CHECK_INTERRUPT();
             if (special_button_flag != STOP_BUTTON)
             {
-               loops--;
                break;
             }
          }
@@ -3123,7 +3099,6 @@ file_size_and_recipient(register char *ptr,
          str_list[i] = XmStringCreateLocalized(line);
          ptr++;
       }
-      loops++;
 
       /* Display what we have in buffer. */
       display_data(i, first_date_found, time_when_transmitted);
@@ -3172,7 +3147,6 @@ file_name_size_recipient(register char *ptr,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
-                loops = 0,
                 ret;
    time_t       now,
                 prev_time_val = 0L,
@@ -3206,7 +3180,6 @@ file_name_size_recipient(register char *ptr,
             CHECK_INTERRUPT();
             if (special_button_flag != STOP_BUTTON)
             {
-               loops--;
                break;
             }
          }
@@ -3492,7 +3465,6 @@ file_name_size_recipient(register char *ptr,
          str_list[i] = XmStringCreateLocalized(line);
          ptr++;
       }
-      loops++;
 
       /* Display what we have in buffer. */
       display_data(i, first_date_found, time_when_transmitted);

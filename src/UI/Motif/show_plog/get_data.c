@@ -1114,11 +1114,10 @@ collect_data(register char *ptr,
                         no_of_rn1l = 0,
                         no_of_rnnl = 0,
                         onefoureigth_or_greater,
-                        prev_item_counter = il[file_no].no_of_items,
+                        prev_item_counter = il[file_no].no_of_items;
 #ifndef LESSTIF_WORKAROUND
-                        unmanaged,
+   int                  unmanaged;
 #endif
-                        loops = 0;
    time_t               prev_time_val = 0L,
                         now;
    char                 numeric_str[MAX_DOUBLE_LENGTH + 1],
@@ -1154,7 +1153,6 @@ collect_data(register char *ptr,
             CHECK_INTERRUPT();
             if (special_button_flag != STOP_BUTTON)
             {
-               loops--;
                break;
             }
          }
@@ -2383,8 +2381,6 @@ collect_data(register char *ptr,
          str_list[i] = XmStringCreateLocalized(line);
          item_counter++;
       }
-
-      loops++;
 
       /* Display what we have in buffer. */
       display_data(i, first_date_found, id.time_when_produced);

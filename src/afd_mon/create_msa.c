@@ -472,8 +472,7 @@ create_msa(void)
    }
    else /* There is an old database file. */
    {
-      int  afd_pos,
-           no_of_gotchas = 0;
+      int  afd_pos;
       char *gotcha = NULL;
 
       /*
@@ -532,7 +531,6 @@ create_msa(void)
 
          if (afd_pos != INCORRECT)
          {
-            no_of_gotchas++;
             gotcha[afd_pos] = YES;
 
             (void)strcpy(msa[i].r_work_dir, old_msa[afd_pos].r_work_dir);

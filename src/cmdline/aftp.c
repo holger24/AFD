@@ -1,6 +1,6 @@
 /*
  *  aftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2025 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2026 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -157,8 +157,7 @@ main(int argc, char *argv[])
                 no_of_files_done = 0;
    off_t        file_size_done = 0,
                 file_size_to_retrieve,
-                local_file_size,
-                no_of_bytes;
+                local_file_size;
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
    time_t       keep_alive_time;
 #endif
@@ -1282,7 +1281,6 @@ main(int argc, char *argv[])
 #endif
 
          /* Read (local) and write (remote) file. */
-         no_of_bytes = 0;
          loops = (local_file_size - append_offset) / db.blocksize;
          rest = (local_file_size - append_offset) % db.blocksize;
          if (ascii_buffer != NULL)
@@ -1347,7 +1345,6 @@ main(int argc, char *argv[])
                   }
 
                   file_size_done += db.blocksize;
-                  no_of_bytes += db.blocksize;
 
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
                   if (db.keepalive == YES)
@@ -1422,7 +1419,6 @@ main(int argc, char *argv[])
                   }
 
                   file_size_done += rest;
-                  no_of_bytes += rest;
                }
 
                /*
@@ -1531,7 +1527,6 @@ main(int argc, char *argv[])
                }
 
                file_size_done += db.blocksize;
-               no_of_bytes += db.blocksize;
             }
             if (rest > 0)
             {
@@ -1566,7 +1561,6 @@ main(int argc, char *argv[])
                }
 
                file_size_done += rest;
-               no_of_bytes += rest;
             }
          }
 

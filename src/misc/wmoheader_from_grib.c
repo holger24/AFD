@@ -248,7 +248,9 @@ wmoheader_from_grib(char *grib_buffer,
          if ((unsigned char)(*(ptr + 11)) & 128) /* PDS Octet 8 */
          {
             int           pds_length,
+#ifdef _WHEN_KNOWN
                           gds_length,
+#endif
                           la1, lo1, la2, lo2,
                           minus;
             unsigned char octet;
@@ -260,12 +262,14 @@ wmoheader_from_grib(char *grib_buffer,
             pds_length <<= 8;
             pds_length |= (unsigned char)*(ptr + 6);
 
+#ifdef _WHEN_KNOWN
             gds_length = 0;
             gds_length |= (unsigned char)*(ptr + 4 + pds_length);
             gds_length <<= 8;
             gds_length |= (unsigned char)*(ptr + 5 + pds_length);
             gds_length <<= 8;
             gds_length |= (unsigned char)*(ptr + 6 + pds_length);
+#endif
 
             /* GDS octet 11 - 13 */
             octet = (unsigned char)*(ptr + pds_length + 14);

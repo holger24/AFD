@@ -1,6 +1,6 @@
 /*
  *  asftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2015 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -128,8 +128,7 @@ main(int argc, char *argv[])
                 no_of_files_done = 0;
    off_t        file_size_done = 0,
                 file_size_to_retrieve,
-                local_file_size,
-                no_of_bytes;
+                local_file_size;
    char         *ascii_buffer = NULL,
                 append_count = 0,
                 *buffer,
@@ -813,7 +812,6 @@ main(int argc, char *argv[])
          }
 
          /* Read (local) and write (remote) file. */
-         no_of_bytes = 0;
          if (ascii_buffer != NULL)
          {
             ascii_buffer[0] = 0;
@@ -858,7 +856,6 @@ main(int argc, char *argv[])
                   }
 
                   file_size_done += db.blocksize;
-                  no_of_bytes += db.blocksize;
                } /* if (bytes_buffered > 0) */
             } while (bytes_buffered == (db.blocksize - buffer_offset));
 
@@ -940,7 +937,6 @@ main(int argc, char *argv[])
                }
 
                file_size_done += db.blocksize;
-               no_of_bytes += db.blocksize;
             }
             if (rest > 0)
             {
@@ -955,7 +951,6 @@ main(int argc, char *argv[])
                }
 
                file_size_done += rest;
-               no_of_bytes += rest;
             }
          }
 
