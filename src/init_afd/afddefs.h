@@ -4625,6 +4625,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                     get_dir_id_position(struct fileretrieve_status *,
                                         unsigned int, int),
                     get_dir_position(struct fileretrieve_status *, char *, int),
+                    get_fs_type(char *, int *, char *),
                     get_file_checksum(int, char *, int, int, unsigned int *),
                     get_file_checksum_crc32c(int, char *, int, int,
 #ifdef HAVE_HW_CRC32

@@ -1,6 +1,6 @@
 /*
  *  dir_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -679,12 +679,31 @@ main(int argc, char *argv[])
 #ifdef MULTI_FS_SUPPORT
    if (no_of_extra_work_dirs > 1)
    {
+      int  is_remote;
+      char fs_type_name[MAX_FILENAME_LENGTH];
+
       system_log(DEBUG_SIGN, NULL, 0, "%s: Extra filesystem dirs : %d",
                  DC_PROC_NAME, no_of_extra_work_dirs - 1);
+      if ((get_fs_type(ewl[0].dir_name, &is_remote, fs_type_name) == SUCCESS) &&
+          (is_remote != -1))
+      {
+         system_log(DEBUG_SIGN, NULL, 0, "   %s (default) %s",
+                    ewl[0].dir_name, fs_type_name);
+      }
       for (i = 1; i < no_of_extra_work_dirs; i++)
       {
-         system_log(DEBUG_SIGN, NULL, 0, "   %s (%xh)",
-                    ewl[i].dir_name, ewl[i].dev);
+         if ((get_fs_type(ewl[i].dir_name, &is_remote,
+                          fs_type_name) == SUCCESS) &&
+             (is_remote != -1))
+         {
+            system_log(DEBUG_SIGN, NULL, 0, "   %s (%xh) %s",
+                       ewl[i].dir_name, ewl[i].dev, fs_type_name);
+         }
+         else
+         {
+            system_log(DEBUG_SIGN, NULL, 0, "   %s (%xh)",
+                       ewl[i].dir_name, ewl[i].dev);
+         }
       }
    }
 #endif

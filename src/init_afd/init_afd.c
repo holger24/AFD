@@ -1,6 +1,6 @@
 /*
  *  init_afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2025 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2026 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -3261,6 +3261,9 @@ start_afd(int          binary_changed,
           int          afdd_port,
           int          afdds_port)
 {
+   int  is_remote;
+   char fs_type_name[MAX_FILENAME_LENGTH];
+
    /* Initialize start_time so AMG signals us that we must start FD. */
    p_afd_status->start_time = 0L;
 
@@ -3356,6 +3359,34 @@ start_afd(int          binary_changed,
    system_log(DEBUG_SIGN, NULL, 0,
               _("AFD configuration: Default age limit         %d (sec)"),
               default_age_limit);
+
+   /* See if we can get the filesystem type for fifo and files directory. */
+   if ((get_fs_type(p_work_dir, &is_remote, fs_type_name) == SUCCESS) &&
+       (is_remote != -1))
+   {
+      system_log(DEBUG_SIGN, NULL, 0,
+                 _("File system type AFD_WORK_DIR : %s"), fs_type_name);
+   }
+   if ((get_fs_type(afd_status_file, &is_remote, fs_type_name) == SUCCESS) &&
+       (is_remote != -1))
+   {
+      if (is_remote == 0)
+      {
+         system_log(DEBUG_SIGN, NULL, 0,
+                    _("File system type fifodir      : %s Good!"), fs_type_name);
+      }
+      else if (is_remote == 1)
+           {
+              system_log(DEBUG_SIGN, NULL, 0,
+                         _("File system type fifodir      : %s"), fs_type_name);
+           }
+           else
+           {
+              system_log(WARN_SIGN, NULL, 0,
+                         _("File system type fifodir      : %s BAD! This should not be a network filesystem."),
+                         fs_type_name);
+           }
+   }
 
    /* Start the process AMG. */
    proc_table[AMG_NO].pid = make_process(AMG, p_work_dir, NULL);

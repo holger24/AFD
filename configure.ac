@@ -1756,6 +1756,13 @@ else
    fi
 fi
 
+# Check for f_fstypename in struct statfs (BSD/macOS)
+AC_CHECK_MEMBERS([struct statfs.f_fstypename], [], [], [#include <sys/param.h>
+#include <sys/mount.h>])
+
+# Check for f_basetype in struct statvfs (Solaris)
+AC_CHECK_MEMBERS([struct statvfs.f_basetype], [], [], [#include <sys/statvfs.h>])
+
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_UID_T
@@ -1851,8 +1858,9 @@ AC_CHECK_FUNC([mmap],
               [AM_CONDITIONAL(WITHOUT_MMAP, true)])
 AC_CHECK_FUNCS(fdatasync gai_strerror getline getaddrinfo gethostid\
                gethostname memcpy mkdir mkfifo mktime rmdir select\
-               setpriority seteuid setreuid socket strcasestr strerror\
-               strtod strtol strtoll strtoul strtoull unsetenv statx)
+               setpriority seteuid setreuid socket statfs strcasestr\
+               strerror strtod strtol strtoll strtoul strtoull unsetenv\
+               statx)
 
 if test "x${ac_cv_func_statx}" = "xyes"
 then
