@@ -1,6 +1,6 @@
 /*
  *  writen.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008, 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@ DESCR__S_M3
  ** HISTORY
  **   01.12.2008 H.Kiehl Created
  **   27.02.2009 H.Kiehl Added block size option.
+ **   31.08.2026 H.Kiehl Increase DEFAULT_WRITEN_BLOCK_SIZE to 64 KB.
  **
  */
 DESCR__E_M3
@@ -55,7 +56,7 @@ DESCR__E_M3
 #include <stdio.h>
 #include <unistd.h>                   /* write()                         */
 
-#define DEFAULT_WRITEN_BLOCK_SIZE 4096
+#define DEFAULT_WRITEN_BLOCK_SIZE 65536
 
 
 /*############################## writen() ###############################*/

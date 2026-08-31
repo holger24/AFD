@@ -49,6 +49,7 @@ DESCR__S_M1
  **   27.06.2006 H.Kiehl When downloading a file with leading dot
  **                      remove the dot when finish downloading.
  **   06.04.2020 H.Kiehl Implement implicit FTPS.
+ **   31.08.2026 H.Kiehl Use writen() to write file to disk.
  **
  */
 DESCR__E_M1
@@ -1568,10 +1569,10 @@ main(int argc, char *argv[])
                               }
                               if (status > 0)
                               {
-                                 if (write(fd, buffer, status) != status)
+                                 if (writen(fd, buffer, status, status) != status)
                                  {
                                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                              "Failed to write() to file %s : %s",
+                                              "Failed to writen() to file %s : %s",
                                               local_tmp_file, strerror(errno));
                                     (void)ftp_quit();
                                     reset_values(files_retrieved,

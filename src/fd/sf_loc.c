@@ -69,6 +69,7 @@ DESCR__S_M1
  **   15.12.2024 H.Kiehl Added name2dir option.
  **   09.01.2025 H.Kiehl On linux, when link() returns EPERM, assume
  **                      that hardlinks are protected and try copy file.
+ **   31.08.2026 H.Kiehl Use writen() to write file to disk.
  **
  */
 DESCR__E_M1
@@ -2220,10 +2221,10 @@ copy_file_mkdir(char *from,
                      }
                      if (bytes_buffered > 0)
                      {
-                        if (write(to_fd, buffer, bytes_buffered) != bytes_buffered)
+                        if (writen(to_fd, buffer, bytes_buffered, bytes_buffered) != bytes_buffered)
                         {
                            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                     "Failed to write() `%s' : %s",
+                                     "Failed to writen() `%s' : %s",
                                      to, strerror(errno));
                            ret = MOVE_ERROR;
                            break;

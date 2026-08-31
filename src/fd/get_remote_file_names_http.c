@@ -844,10 +844,10 @@ try_attach_again:
                }
                else
                {
-                  if (write(fd, listbuffer, bytes_buffered) != bytes_buffered)
+                  if (writen(fd, listbuffer, bytes_buffered, 0) != bytes_buffered)
                   {
                      system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                "Failed to write() to `%s' : %s",
+                                "Failed to writen() to `%s' : %s",
                                 dump_file_name, strerror(errno));
                   }
                   if (close(fd) == -1)

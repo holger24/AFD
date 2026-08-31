@@ -46,6 +46,7 @@ DESCR__S_M1
  **   18.11.2003 H.Kiehl Created
  **   13.06.2004 H.Kiehl Added transfer rate limit.
  **   18.08.2006 H.Kiehl Added handling of directory listing.
+ **   31.08.2026 H.Kiehl Use writen() to write file to disk.
  **
  */
 DESCR__E_M1
@@ -1245,10 +1246,10 @@ main(int argc, char *argv[])
                                     }
                                     if (status > 0)
                                     {
-                                       if (write(fd, buffer, status) != status)
+                                       if (writen(fd, buffer, status, status) != status)
                                        {
                                           trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                                    "Failed to write() to file %s : %s",
+                                                    "Failed to writen() to file %s : %s",
                                                     local_tmp_file,
                                                     strerror(errno));
                                           http_quit();
@@ -1390,10 +1391,10 @@ main(int argc, char *argv[])
                                     }
                                     if (status > 0)
                                     {
-                                       if (write(fd, buffer, status) != status)
+                                       if (writen(fd, buffer, status, status) != status)
                                        {
                                           trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                                    "Failed to write() to file %s : %s",
+                                                    "Failed to writen() to file %s : %s",
                                                     local_tmp_file,
                                                     strerror(errno));
                                           http_quit();
@@ -1521,10 +1522,10 @@ main(int argc, char *argv[])
                                  }
                                  if (status > 0)
                                  {
-                                    if (write(fd, chunkbuffer, status) != status)
+                                    if (writen(fd, chunkbuffer, status, status) != status)
                                     {
                                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                                 "Failed to write() to file %s : %s",
+                                                 "Failed to writen() to file %s : %s",
                                                  local_tmp_file,
                                                  strerror(errno));
                                        http_quit();

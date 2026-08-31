@@ -1,6 +1,6 @@
 /*
  *  append.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ DESCR__S_M3
  **                      if we append a file. For this reason the new
  **                      function append_compare() was added.
  **   27.03.2024 H.Kiehl Use str2timet() instead of atol().
+ **   31.08.2026 H.Kiehl Use writen().
  **
  */
 DESCR__E_M3
@@ -270,10 +271,16 @@ log_append(struct job *p_db, char *file_name, char *source_file_name)
                   }
                   else
                   {
-                     if (write(fd, buffer, buf_size) != buf_size)
+#ifdef HAVE_STATX
+                     if (writen(fd, buffer, buf_size,
+                                stat_buf.stx_blksize) != buf_size)
+#else
+                     if (writen(fd, buffer, buf_size,
+                                stat_buf.st_blksize) != buf_size)
+#endif
                      {
                         system_log(WARN_SIGN, __FILE__, __LINE__,
-                                   "Failed to write() to message %x : %s",
+                                   "Failed to writen() to message %x : %s",
                                    p_db->id.job, strerror(errno));
                      }
                      else
@@ -352,10 +359,14 @@ log_append(struct job *p_db, char *file_name, char *source_file_name)
    }
    else
    {
-      if (write(fd, buffer, buf_size) != buf_size)
+#ifdef HAVE_STATX
+      if (writen(fd, buffer, buf_size, stat_buf.stx_blksize) != buf_size)
+#else
+      if (writen(fd, buffer, buf_size, stat_buf.st_blksize) != buf_size)
+#endif
       {
          system_log(WARN_SIGN, __FILE__, __LINE__,
-                    "Failed to write() to message %x : %s",
+                    "Failed to writen() to message %x : %s",
                     p_db->id.job, strerror(errno));
       }
       else
@@ -557,10 +568,10 @@ remove_append(unsigned int job_id, char *file_name)
    }
    else
    {
-      if (write(fd, buffer, length) != length)
+      if (writen(fd, buffer, length, 0) != length)
       {
          system_log(WARN_SIGN, __FILE__, __LINE__,
-                    "Failed to write() to %s : %s", msg, strerror(errno));
+                    "Failed to writen() to %s : %s", msg, strerror(errno));
       }
       else
       {
@@ -684,10 +695,10 @@ remove_all_appends(unsigned int job_id)
    }
    else
    {
-      if (write(fd, buffer, length) != length)
+      if (writen(fd, buffer, length, 0) != length)
       {
          system_log(WARN_SIGN, __FILE__, __LINE__,
-                    "Failed to write() to %s : %s", msg, strerror(errno));
+                    "Failed to writen() to %s : %s", msg, strerror(errno));
       }
       else
       {

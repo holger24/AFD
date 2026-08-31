@@ -1,6 +1,6 @@
 /*
  *  copy_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ DESCR__S_M3
  ** DESCRIPTION
  **   The function copy_file() copies the file 'from' to the file
  **   'to'. The files are copied blockwise using the read()
- **   and write() functions.
+ **   and writen() functions.
  **
  ** RETURN VALUES
  **   SUCCESS when file 'from' was copied successful or else INCORRECT
@@ -47,13 +47,14 @@ DESCR__S_M3
  **   13.07.2012 H.Kiehl Keep modification and access time of original
  **                      file.
  **   28.11.2022 H.Kiehl Use statx() when available.
+ **   31.08.2026 H.Kiehl Use writen().
  **
  */
 DESCR__E_M3
 
 #include <stdio.h>      /* NULL                                          */
 #include <stddef.h>
-#include <unistd.h>     /* lseek(), write(), close()                     */
+#include <unistd.h>     /* lseek(), close()                              */
 #include <string.h>     /* memcpy(), strerror()                          */
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -255,10 +256,10 @@ copy_file(char *from, char *to, struct stat *p_stat_buf)
                      }
                      if (bytes_buffered > 0)
                      {
-                        if (write(to_fd, buffer, bytes_buffered) != bytes_buffered)
+                        if (writen(to_fd, buffer, bytes_buffered, bytes_buffered) != bytes_buffered)
                         {
                            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                      _("Failed to write() to `%s' : %s"),
+                                      _("Failed to writen() to `%s' : %s"),
                                       to, strerror(errno));
                            ret = INCORRECT;
                            break;
