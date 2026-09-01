@@ -1249,14 +1249,26 @@ link_error_try_copy:
                                    *p_file = '/';
                                    if (rename(if_name, ff_name) == -1)
                                    {
-                                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                                "Failed to rename() file `%s' to `%s' : %s",
-                                                if_name, ff_name,
-                                                strerror(errno));
+                                      if (errno == ENOENT)
+                                      {
+                                         trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                                   "Failed to rename() file `%s' to `%s' : %s",
+                                                   if_name, ff_name,
+                                                   strerror(errno));
+                                         ret = STILL_FILES_TO_SEND;
+                                      }
+                                      else
+                                      {
+                                         trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                                   "Failed to rename() file `%s' to `%s' : %s",
+                                                   if_name, ff_name,
+                                                   strerror(errno));
+                                         ret = RENAME_ERROR;
+                                      }
                                       rm_dupcheck_crc(source_file,
                                                       p_file_name_buffer,
                                                       *p_file_size_buffer);
-                                      exit(RENAME_ERROR);
+                                      exit(ret);
                                    }
                                 }
                            if ((ret != CREATED_DIR) && (ret != CHOWN_ERROR) &&
