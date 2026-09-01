@@ -1,6 +1,6 @@
 /*
  *  output_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -415,11 +415,11 @@ main(int argc, char *argv[])
    if (log_length > 0)
    {
       *(time_t *)log_cache_buffer = time(NULL);
-      if (write(log_cache_fd, log_cache_buffer,
-                log_cache_buf_size) != log_cache_buf_size)
+      if (writen(log_cache_fd, log_cache_buffer,
+                 log_cache_buf_size, 0) != log_cache_buf_size)
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "write() error : %s", strerror(errno));
+                    "writen() error : %s", strerror(errno));
       }
       (*log_pos) += log_length;
    }
@@ -549,11 +549,11 @@ main(int argc, char *argv[])
             if (log_length > 0)
             {
                *(time_t *)log_cache_buffer = time(NULL);
-               if (write(log_cache_fd, log_cache_buffer,
-                         log_cache_buf_size) != log_cache_buf_size)
+               if (writen(log_cache_fd, log_cache_buffer,
+                          log_cache_buf_size, 0) != log_cache_buf_size)
                {
                   system_log(ERROR_SIGN, __FILE__, __LINE__,
-                             "write() error : %s", strerror(errno));
+                             "writen() error : %s", strerror(errno));
                }
                (*log_pos) += log_length;
             }
@@ -708,11 +708,11 @@ main(int argc, char *argv[])
                        }
 #ifdef WITH_LOG_CACHE
                        *(time_t *)log_cache_buffer = now;
-                       if (write(log_cache_fd, log_cache_buffer,
-                                 log_cache_buf_size) != log_cache_buf_size)
+                       if (writen(log_cache_fd, log_cache_buffer,
+                                  log_cache_buf_size) != log_cache_buf_size)
                        {
                           system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                     "write() error : %s", strerror(errno));
+                                     "writen() error : %s", strerror(errno));
                        }
                        (*log_pos) += log_length;
 #endif
@@ -803,11 +803,11 @@ main(int argc, char *argv[])
                  if (log_length > 0)
                  {
                     *(time_t *)log_cache_buffer = time(NULL);
-                    if (write(log_cache_fd, log_cache_buffer,
-                              log_cache_buf_size) != log_cache_buf_size)
+                    if (writen(log_cache_fd, log_cache_buffer,
+                               log_cache_buf_size, 0) != log_cache_buf_size)
                     {
                        system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  "write() error : %s", strerror(errno));
+                                  "writen() error : %s", strerror(errno));
                     }
                     (*log_pos) += log_length;
                  }

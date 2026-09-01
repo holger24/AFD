@@ -1,7 +1,7 @@
 /*
  *  write_host_config.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1997 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2026 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -73,7 +73,7 @@ DESCR__E_M3
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>            /* exit()                                 */
-#include <unistd.h>            /* write(), close()                       */
+#include <unistd.h>            /* close()                                */
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifdef HAVE_FCNTL_H
@@ -455,24 +455,24 @@ write_host_config(int              no_of_hosts,
 
    /* Write introduction comment. */
    length = sizeof(HOST_CONFIG_TEXT_PART1) - 1;
-   if (write(fd, HOST_CONFIG_TEXT_PART1, length) != length)
+   if (writen(fd, HOST_CONFIG_TEXT_PART1, length, 0) != length)
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__,
-                 _("write() error : %s"), strerror(errno));
+                 _("writen() error : %s"), strerror(errno));
       exit(INCORRECT);
    }
    length = sizeof(HOST_CONFIG_TEXT_PART2) - 1;
-   if (write(fd, HOST_CONFIG_TEXT_PART2, length) != length)
+   if (writen(fd, HOST_CONFIG_TEXT_PART2, length, 0) != length)
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__,
-                 _("write() error : %s"), strerror(errno));
+                 _("writen() error : %s"), strerror(errno));
       exit(INCORRECT);
    }
    length = sizeof(HOST_CONFIG_TEXT_PART3) - 1;
-   if (write(fd, HOST_CONFIG_TEXT_PART3, length) != length)
+   if (writen(fd, HOST_CONFIG_TEXT_PART3, length, 0) != length)
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__,
-                 _("write() error : %s"), strerror(errno));
+                 _("writen() error : %s"), strerror(errno));
       exit(INCORRECT);
    }
 
@@ -565,10 +565,10 @@ write_host_config(int              no_of_hosts,
                            p_hl[i].protocol_options2);
       }
 
-      if (write(fd, line_buffer, length) != length)
+      if (writen(fd, line_buffer, length, 0) != length)
       {
          system_log(FATAL_SIGN, __FILE__, __LINE__,
-                    _("write() error : %s"), strerror(errno));
+                    _("writen() error : %s"), strerror(errno));
          exit(INCORRECT);
       }
    }

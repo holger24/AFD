@@ -1,6 +1,6 @@
 /*
  *  lock_proc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -219,10 +219,16 @@ lock_proc(int proc_id, int test_lock)
       }
 
       get_user(user_str, "", 0);
-      if (write(fd, user_str, MAX_FULL_USER_ID_LENGTH) != MAX_FULL_USER_ID_LENGTH)
+      if (writen(fd, user_str, MAX_FULL_USER_ID_LENGTH,
+#ifdef HAVE_STATX
+                 stat_buf.stx_blksize
+#else
+                 stat_buf.st_blksize
+#endif
+                ) != MAX_FULL_USER_ID_LENGTH)
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    _("write() error : %s"), strerror(errno));
+                    _("writen() error : %s"), strerror(errno));
          exit(INCORRECT);
       }
    }

@@ -1,6 +1,6 @@
 /*
  *  typesize_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -772,20 +772,20 @@ adapt_pwb_database(int old_real_hostname_length, int old_user_name_length)
                      (void)memset(buffer, 0, 4096);
                      for (i = 0; i < loops; i++)
                      {
-                        if (write(new_pwb_fd, buffer, 4096) != 4096)
+                        if (writen(new_pwb_fd, buffer, 4096, 0) != 4096)
                         {
                            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                      "write() error : %s", strerror(errno));
+                                      "writen() error : %s", strerror(errno));
                            ret = INCORRECT;
                            break;
                         }
                      }
                      if ((rest > 0) && (ret != INCORRECT))
                      {
-                        if (write(new_pwb_fd, buffer, rest) != rest)
+                        if (writen(new_pwb_fd, buffer, rest, 0) != rest)
                         {
                            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                      "write() error : %s", strerror(errno));
+                                      "writen() error : %s", strerror(errno));
                            ret = INCORRECT;
                         }
                      }

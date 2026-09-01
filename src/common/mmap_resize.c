@@ -1,6 +1,6 @@
 /*
  *  mmap_resize.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ DESCR__S_M3
 DESCR__E_M3
 
 #include <string.h>
-#include <unistd.h>     /* lseek(), write(), ftruncate()                 */
+#include <unistd.h>     /* lseek(), ftruncate()                          */
 #include <sys/types.h>
 #ifdef HAVE_STATX
 # include <fcntl.h>     /* Definition of AT_* constants                  */
@@ -154,19 +154,31 @@ mmap_resize(int fd, void *area, size_t new_size)
       rest = write_size % 4096;
       for (i = 0; i < loops; i++)
       {
-         if (write(fd, buffer, 4096) != 4096)
+         if (writen(fd, buffer, 4096,
+#ifdef HAVE_STATX
+                    stat_buf.stx_blksize
+#else
+                    stat_buf.st_blksize
+#endif
+                   ) != 4096)
          {
             system_log(FATAL_SIGN, __FILE__, __LINE__,
-                       _("write() error : %s"), strerror(errno));
+                       _("writen() error : %s"), strerror(errno));
             return((void *)-1);
          }
       }
       if (rest > 0)
       {
-         if (write(fd, buffer, rest) != rest)
+         if (writen(fd, buffer, rest,
+#ifdef HAVE_STATX
+                    stat_buf.stx_blksize
+#else
+                    stat_buf.st_blksize
+#endif
+                   ) != rest)
          {
             system_log(FATAL_SIGN, __FILE__, __LINE__,
-                       _("write() error : %s"), strerror(errno));
+                       _("writen() error : %s"), strerror(errno));
             return((void *)-1);
          }
       }

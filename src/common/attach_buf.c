@@ -1,6 +1,6 @@
 /*
  *  attach_buf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ DESCR__E_M3
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>                 /* open()                            */
 #endif
-#include <unistd.h>                 /* fstat(), lseek(), write()         */
+#include <unistd.h>                 /* fstat(), lseek()                  */
 #ifdef HAVE_MMAP
 # include <sys/mman.h>              /* mmap()                            */
 #endif
@@ -163,10 +163,16 @@ attach_buf(char   *file,
       {
          int buf_size = 0;
 
-         if (write(*fd, &buf_size, sizeof(int)) != sizeof(int))
+         if (writen(*fd, &buf_size, sizeof(int),
+#ifdef HAVE_STATX
+                    stat_buf.stx_blksize
+#else
+                    stat_buf.st_blksize
+#endif
+                   ) != sizeof(int))
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       _("Failed to write() to `%s' : %s"),
+                       _("Failed to writen() to `%s' : %s"),
                        file, strerror(errno));
             return((caddr_t) -1);
          }
@@ -192,20 +198,32 @@ attach_buf(char   *file,
       rest = write_size % 4096;
       for (i = 0; i < loops; i++)
       {
-         if (write(*fd, buffer, 4096) != 4096)
+         if (writen(*fd, buffer, 4096,
+#ifdef HAVE_STATX
+                    stat_buf.stx_blksize
+#else
+                    stat_buf.st_blksize
+#endif
+                   ) != 4096)
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       _("Failed to write() to `%s' : %s"),
+                       _("Failed to writen() to `%s' : %s"),
                        file, strerror(errno));
             return((caddr_t) -1);
          }
       }
       if (rest > 0)
       {
-         if (write(*fd, buffer, rest) != rest)
+         if (writen(*fd, buffer, rest,
+#ifdef HAVE_STATX
+                    stat_buf.stx_blksize
+#else
+                    stat_buf.st_blksize
+#endif
+                   ) != rest)
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       _("Failed to write() to `%s' : %s"),
+                       _("Failed to writen() to `%s' : %s"),
                        file, strerror(errno));
             return((caddr_t) -1);
          }

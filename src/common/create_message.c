@@ -1,6 +1,6 @@
 /*
  *  create_message.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@ DESCR__E_M3
 #include <string.h>          /* strlen(), strerror()                     */
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>          /* write(), close()                         */
+#include <unistd.h>          /* close()                                  */
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>          /* open()                                   */
 #endif
@@ -138,7 +138,8 @@ create_message(unsigned int job_id, char *recipient, char *options)
                      S_IRUSR | S_IWUSR)) != -1)
 #endif
       {
-         if (write(fd, DESTINATION_IDENTIFIER, DESTINATION_IDENTIFIER_LENGTH) == DESTINATION_IDENTIFIER_LENGTH)
+         if (writen(fd, DESTINATION_IDENTIFIER,
+                    DESTINATION_IDENTIFIER_LENGTH, 0) == DESTINATION_IDENTIFIER_LENGTH)
          {
             int  length;
             char buffer[1 + MAX_RECIPIENT_LENGTH + 2 + 1];
@@ -160,7 +161,7 @@ create_message(unsigned int job_id, char *recipient, char *options)
             }
             else
             {
-               if (write(fd, buffer, length) == length)
+               if (writen(fd, buffer, length, 0) == length)
                {
                   if (options != NULL)
                   {
@@ -174,16 +175,16 @@ create_message(unsigned int job_id, char *recipient, char *options)
                      }
                      else
                      {
-                        if (write(fd, buffer, length) == length)
+                        if (writen(fd, buffer, length, 0) == length)
                         {
                            length = strlen(options);
-                           if (write(fd, options, length) == length)
+                           if (writen(fd, options, length, 0) == length)
                            {
                               /* Don't forget the newline, options does not have it. */
-                              if (write(fd, "\n", 1) != 1)
+                              if (writen(fd, "\n", 1, 0) != 1)
                               {
                                  system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                            _("Failed to write to `%s' : %s"),
+                                            _("Failed to writen() to `%s' : %s"),
                                             msg_dir, strerror(errno));
                                  ret = INCORRECT;
                               }
@@ -191,7 +192,7 @@ create_message(unsigned int job_id, char *recipient, char *options)
                            else
                            {
                               system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                         _("Failed to write to `%s' : %s"),
+                                         _("Failed to writen() to `%s' : %s"),
                                          msg_dir, strerror(errno));
                               ret = INCORRECT;
                            }
@@ -199,7 +200,7 @@ create_message(unsigned int job_id, char *recipient, char *options)
                         else
                         {
                            system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                      _("Failed to write to `%s' : %s"),
+                                      _("Failed to writen() to `%s' : %s"),
                                       msg_dir, strerror(errno));
                            ret = INCORRECT;
                         }
@@ -209,7 +210,7 @@ create_message(unsigned int job_id, char *recipient, char *options)
                else
                {
                   system_log(FATAL_SIGN, __FILE__, __LINE__,
-                             _("Failed to write to `%s' : %s"),
+                             _("Failed to writen() to `%s' : %s"),
                              msg_dir, strerror(errno));
                   ret = INCORRECT;
                }
@@ -218,7 +219,7 @@ create_message(unsigned int job_id, char *recipient, char *options)
          else
          {
             system_log(FATAL_SIGN, __FILE__, __LINE__,
-                       _("Failed to write to `%s' : %s"),
+                       _("Failed to writen() to `%s' : %s"),
                        msg_dir, strerror(errno));
             ret = INCORRECT;
          }
