@@ -1,5 +1,5 @@
 ## Makemodule.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2021 Holger Kiehl
+## Copyright (C) 2001 - 2026 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -53,8 +53,10 @@ bin_PROGRAMS                      += bin/afdcmd\
                                      bin/get_rr_data\
                                      bin/grib2wmo\
                                      bin/jid_view\
+                                     bin/set_ls_data\
                                      bin/set_pw\
-                                     bin/udc
+                                     bin/udc\
+                                     bin/view_ls_data
 sbin_PROGRAMS                     += sbin/cache_spy\
                                      sbin/convert_fsa\
                                      sbin/convert_stat\
@@ -66,9 +68,7 @@ sbin_PROGRAMS                     += sbin/cache_spy\
                                      sbin/gen_file\
                                      sbin/queue_spy\
                                      sbin/set_counter\
-                                     sbin/set_ls_data\
-                                     sbin/rm_job\
-                                     sbin/view_ls_data
+                                     sbin/rm_job
 EXTRA_PROGRAMS                    += bin/afdconvert\
                                      $(EXTRA_AFDIPDBCMD)\
                                      $(EXTRA_AFDTR)\
@@ -194,8 +194,8 @@ sbin_set_counter_LDADD             = lib/libafd.a
 bin_set_pw_SOURCES                 = src/tools/get_current_jid_list.c\
                                      src/tools/set_pw.c
 bin_set_pw_LDADD                   = lib/libafd.a
-sbin_set_ls_data_SOURCES           = src/tools/set_ls_data.c
-sbin_set_ls_data_LDADD             = lib/libafd.a
+bin_set_ls_data_SOURCES            = src/tools/set_ls_data.c
+bin_set_ls_data_LDADD              = lib/libafd.a
 bin_sysconf_SOURCES                = src/tools/sysconf.c
 bin_sysconf_LDADD                  = lib/libafd.a
 bin_tiff_sniffer_SOURCES           = src/tools/tiff_sniffer.c
@@ -203,8 +203,8 @@ bin_udc_SOURCES                    = src/tools/update_db.c
 bin_udc_LDADD                      = lib/libafd.a
 bin_view_error_queue_SOURCES       = src/tools/view_error_queue.c
 bin_view_error_queue_LDADD         = lib/libafd.a
-sbin_view_ls_data_SOURCES          = src/tools/view_ls_data.c
-sbin_view_ls_data_LDADD            = lib/libafd.a
+bin_view_ls_data_SOURCES           = src/tools/view_ls_data.c
+bin_view_ls_data_LDADD             = lib/libafd.a
 bin_watch_dir_SOURCES              = src/tools/watch_dir.c
 bin_watch_dir_LDADD                = lib/libafd.a
 
