@@ -383,7 +383,7 @@ AC_ARG_ENABLE(ms_error_workaround,
       AC_DEFINE([WITH_MS_ERROR_WORKAROUND], [], [With MS FTP error workaround])
    fi])
 
-AC_ARG_ENABLE(ftp_reuse_data_port,
+AC_ARG_ENABLE(no_auto_basic_auth,
    [  --enable-no_auto_basic_auth     disable automatic default basic HTTP authorization],
    [if test x$enableval = xyes; then
       AC_DEFINE([HTTP_NO_AUTO_BASIC_AUTH], [], [Without automatic HTTP basic auth])
