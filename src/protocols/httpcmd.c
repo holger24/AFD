@@ -1,6 +1,6 @@
 /*
  *  httpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -81,6 +81,11 @@ DESCR__S_M3
  **   17.07.2022 H.Kiehl Add option to enable TLS legacy renegotiation.
  **   18.10.2022 H.Kiehl Add support for HTTP digest authentication.
  **   12.01.2024 H.Kiehl For http_head() see 204+206 as success.
+ **   07.09.2026 H.Kiehl According to RFC 2617 + 7616 store_http_digest()
+ **                      must set MD5 if the server does not supply a
+ **                      'algorithm='.
+ **              H.Kiehl store_http_digest() shows in trace what it
+ **                      detects.
  */
 DESCR__E_M3
 
@@ -5069,6 +5074,10 @@ store_http_digest(int i, int read_length)
          }
          (void)memcpy(hmr.realm, &msg_str[i], length);
          hmr.realm[length] = '\0';
+#ifdef WITH_TRACE
+         trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
+                   "store_http_digest(): realm=%s", hmr.realm);
+#endif
          if (msg_str[i + length] == '"')
          {
             i += (length + 1);
@@ -5115,6 +5124,10 @@ store_http_digest(int i, int read_length)
               }
               (void)memcpy(hmr.nonce, &msg_str[i], length);
               hmr.nonce[length] = '\0';
+#ifdef WITH_TRACE
+              trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
+                        "store_http_digest(): nonce=%s", hmr.nonce);
+#endif
               if (msg_str[i + length] == '"')
               {
                  i += (length + 1);
@@ -5148,6 +5161,10 @@ store_http_digest(int i, int read_length)
               {
                  i += 3;
                  hmr.www_authenticate = WWW_AUTHENTICATE_DIGEST_MD5;
+#ifdef WITH_TRACE
+                 trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
+                           "store_http_digest(): authenticate=WWW_AUTHENTICATE_DIGEST_MD5");
+#endif
               }
 #ifdef HAVE_EVP_SHA256
                    /* SHA-256 */
@@ -5161,6 +5178,10 @@ store_http_digest(int i, int read_length)
                    {
                       i += 7;
                       hmr.www_authenticate = WWW_AUTHENTICATE_DIGEST_SHA256;
+# ifdef WITH_TRACE
+                      trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
+                                "store_http_digest(): authenticate=WWW_AUTHENTICATE_DIGEST_SHA256");
+# endif
                    }
 #endif
                    /* MD5-sess */
@@ -5176,6 +5197,10 @@ store_http_digest(int i, int read_length)
                    {
                       i += 8;
                       hmr.www_authenticate = WWW_AUTHENTICATE_DIGEST_MD5_S;
+#ifdef WITH_TRACE
+                      trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
+                                "store_http_digest(): authenticate=WWW_AUTHENTICATE_DIGEST_MD5_S");
+#endif
                    }
 #ifdef HAVE_EVP_SHA256
                    /* SHA-256-sess */
@@ -5196,6 +5221,10 @@ store_http_digest(int i, int read_length)
                    {
                       i += 12;
                       hmr.www_authenticate = WWW_AUTHENTICATE_DIGEST_SHA256_S;
+# ifdef WITH_TRACE
+                      trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
+                                "store_http_digest(): authenticate=WWW_AUTHENTICATE_DIGEST_SHA256_S");
+# endif
                    }
 #endif
 #ifdef HAVE_EVP_SHA512_256
@@ -5213,6 +5242,10 @@ store_http_digest(int i, int read_length)
                    {
                       i += 11;
                       hmr.www_authenticate = WWW_AUTHENTICATE_DIGEST_SHA512_256;
+# ifdef WITH_TRACE
+                      trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
+                                "store_http_digest(): authenticate=WWW_AUTHENTICATE_DIGEST_SHA512_256");
+# endif
                    }
                    /* SHA-512-256-sees */
               else if (((i + 17) <= read_length) &&
@@ -5239,6 +5272,10 @@ store_http_digest(int i, int read_length)
                    {
                       i += 17;
                       hmr.www_authenticate = WWW_AUTHENTICATE_DIGEST_SHA512_256_S;
+# ifdef WITH_TRACE
+                      trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
+                                "store_http_digest(): authenticate=WWW_AUTHENTICATE_DIGEST_SHA512_256_S");
+# endif
                    }
 #endif
                    else
@@ -5301,6 +5338,10 @@ store_http_digest(int i, int read_length)
                         ((msg_str[i + 8] == '"') || (msg_str[i + 8] == ',')))
                     {
                        hmr.digest_options |= QOP_AUTH_INT;
+#ifdef WITH_TRACE
+                       trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
+                                 "store_http_digest(): didest_options=QOP_AUTH_INT");
+#endif
                        if (msg_str[i + 8] == '"')
                        {
                           i += 9;
@@ -5347,6 +5388,10 @@ store_http_digest(int i, int read_length)
                        ((msg_str[i + 8] == '"') || (msg_str[i + 8] == ',')))
                    {
                       hmr.digest_options |= QOP_AUTH_INT;
+#ifdef WITH_TRACE
+                      trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
+                                "store_http_digest(): didest_options=QOP_AUTH_INT");
+#endif
                       if (msg_str[i + 8] == '"')
                       {
                          i += 9;
@@ -5442,6 +5487,10 @@ store_http_digest(int i, int read_length)
            {
               i += 13;
               hmr.digest_options |= HASH_USERNAME;
+#ifdef WITH_TRACE
+              trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
+                        "store_http_digest(): didest_options=HASH_USERNAME");
+#endif
            }
            /* opaque= */
       else if ((read_length > (i + 7)) &&
@@ -5478,6 +5527,10 @@ store_http_digest(int i, int read_length)
                  (void)memcpy(hmr.opaque, &msg_str[i], length);
               }
               hmr.opaque[length] = '\0';
+#ifdef WITH_TRACE
+              trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
+                        "store_http_digest(): opaque=%s", hmr.opaque);
+#endif
               if (msg_str[i + length] == '"')
               {
                  i += (length + 1);
@@ -5533,6 +5586,10 @@ store_http_digest(int i, int read_length)
                  }
                  (void)memcpy(hmr.nonce, &msg_str[i], length);
                  hmr.nonce[length] = '\0';
+#ifdef WITH_TRACE
+                 trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
+                           "store_http_digest(): nextnonce=%s", hmr.nonce);
+#endif
               }
               if (msg_str[i + length] == '"')
               {
@@ -5560,6 +5617,21 @@ store_http_digest(int i, int read_length)
          {
             i++;
          }
+      }
+   }
+
+   /*
+    * If server does not supply 'algorithm=' we must according
+    * to RFC 2617 + 7616 set MD5.
+    */
+   if ((hmr.www_authenticate == WWW_AUTHENTICATE_UNKNOWN) ||
+       (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC))
+   {
+      hmr.www_authenticate = WWW_AUTHENTICATE_DIGEST_MD5;
+      if (hmr.debug > 0)
+      {
+         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "store_http_digest", NULL,
+                   "No algorithm, so default to WWW_AUTHENTICATE_DIGEST_MD5.");
       }
    }
 
