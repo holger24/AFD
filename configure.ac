@@ -745,7 +745,8 @@ AC_DEFINE_UNQUOTED([MAX_NO_PARALLEL_JOBS], [$with_max_no_of_parallel_jobs], [
   The value of MAX_NO_PARALLEL_JOBS determines the number of parallel
   transfers per host. The default is 24, which should be enough in most
   cases. However, on some long distance lines or lines with high latencies
-  it might be necessary to increase this value.])
+  it might be necessary to increase this value. Largest possible value
+  is 255.])
 AC_ARG_WITH(default-no-of-parallel-jobs,
             AS_HELP_STRING([--with-default-no-of-parallel-jobs=N],
                            [default number of parallel transfers per host (default=6)]),

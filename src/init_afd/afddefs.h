@@ -1630,7 +1630,8 @@ typedef unsigned long       u_long_64;
                                             /* event reason.                */
 #ifndef MAX_NO_PARALLEL_JOBS
 # define MAX_NO_PARALLEL_JOBS        24     /* Maximum number of parallel   */
-                                            /* jobs per host alias.         */
+                                            /* jobs per host alias. Largest */
+                                            /* possible value here is 255.  */
 #endif
 #define MAX_NO_PARALLEL_JOBS_STR     "MAX_NO_PARALLEL_JOBS"
 #define MAX_FILENAME_LENGTH          256    /* Maximum length of a filename.*/
