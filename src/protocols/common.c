@@ -435,6 +435,10 @@ ssl_connect(int  sock_fd,
    {
       ctx_options |= SSL_OP_LEGACY_SERVER_CONNECT;
    }
+# ifdef SSL_OP_NO_SESSION_REUSE_ON_RENEGOTIATE
+   /* Only valid for legacy TLS 1.1 + 1.2. */
+   ctx_options |= SSL_OP_NO_SESSION_REUSE_ON_RENEGOTIATE;
+# endif
    SSL_CTX_set_options(ssl_ctx, ctx_options);
    SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
    if ((p_env = getenv("SSL_CIPHER")) != NULL)
@@ -443,7 +447,7 @@ ssl_connect(int  sock_fd,
    }
    else
    {
-      SSL_CTX_set_cipher_list(ssl_ctx, NULL);
+      /* Do NOT call SSL_CTX_set_cipher_list() for OS vendor defaults. */;
    }
    if (((p_env = getenv(X509_get_default_cert_file_env())) != NULL) &&
        ((p_env1 = getenv(X509_get_default_cert_dir_env())) != NULL))

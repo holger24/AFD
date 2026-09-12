@@ -1,6 +1,6 @@
 /*
  *  ftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -839,6 +839,10 @@ ftp_connect(char *hostname,
          {
             ctx_options |= SSL_OP_LEGACY_SERVER_CONNECT;
          }
+# ifdef SSL_OP_NO_SESSION_REUSE_ON_RENEGOTIATE
+         /* Only valid for legacy TLS 1.1 + 1.2. */
+         ctx_options |= SSL_OP_NO_SESSION_REUSE_ON_RENEGOTIATE;
+# endif
          SSL_CTX_set_options(ssl_ctx, ctx_options);
          SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
          if ((p_env = getenv("SSL_CIPHER")) != NULL)
@@ -847,7 +851,7 @@ ftp_connect(char *hostname,
          }
          else
          {
-            SSL_CTX_set_cipher_list(ssl_ctx, NULL);
+            /* Do NOT call SSL_CTX_set_cipher_list() for OS vendor defaults. */;
          }
          if (((p_env = getenv(X509_get_default_cert_file_env())) != NULL) &&
              ((p_env1 = getenv(X509_get_default_cert_dir_env())) != NULL))
@@ -1131,6 +1135,10 @@ ftp_ssl_auth(int strict, int legacy_renegotiation)
             {
                ctx_options |= SSL_OP_LEGACY_SERVER_CONNECT;
             }
+# ifdef SSL_OP_NO_SESSION_REUSE_ON_RENEGOTIATE
+            /* Only valid for legacy TLS 1.1 + 1.2. */
+            ctx_options |= SSL_OP_NO_SESSION_REUSE_ON_RENEGOTIATE;
+# endif
             SSL_CTX_set_options(ssl_ctx, ctx_options);
             SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
             if ((p_env = getenv("SSL_CIPHER")) != NULL)
@@ -1139,7 +1147,7 @@ ftp_ssl_auth(int strict, int legacy_renegotiation)
             }
             else
             {
-               SSL_CTX_set_cipher_list(ssl_ctx, NULL);
+               /* Do NOT call SSL_CTX_set_cipher_list() for OS vendor defaults. */;
             }
             if (((p_env = getenv(X509_get_default_cert_file_env())) != NULL) &&
                 ((p_env1 = getenv(X509_get_default_cert_dir_env())) != NULL))

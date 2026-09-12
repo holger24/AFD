@@ -1,6 +1,6 @@
 /*
  *  tcpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -299,7 +299,6 @@ tcp_connect(char *hostname, int port, int sending_logdata)
          return(INCORRECT);
       }
       SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
-      SSL_CTX_set_cipher_list(ssl_ctx, NULL);
       SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
 
       ssl_con = (SSL *)SSL_new(ssl_ctx);
