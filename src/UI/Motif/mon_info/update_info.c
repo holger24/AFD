@@ -1,6 +1,6 @@
 /*
  *  update_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,12 +39,15 @@ DESCR__S_M3
  ** HISTORY
  **   21.02.1999 H.Kiehl Created
  **   10.09.2000 H.Kiehl Added top transfer and top file rate.
+ **   15.09.2026 H.Kiehl When MSA changed check if afd_position is still
+ **                      the same and if it is removed.
  **
  */
 DESCR__E_M3
 
 #include <stdio.h>
 #include <string.h>           /* strerror()                              */
+#include <stdlib.h>           /* exit()                                  */
 #include <time.h>             /* strftime(), localtime()                 */
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -55,7 +58,8 @@ DESCR__E_M3
 #include "mon_info.h"
 
 /* External global variables. */
-extern int                    afd_position;
+extern int                    afd_position,
+                              no_of_afds;
 extern char                   afd_name[],
                               *info_data,
                               label_l[NO_OF_MSA_ROWS][21],
@@ -82,7 +86,26 @@ update_info(Widget w)
                tmp_str_line[MAX_INFO_STRING_LENGTH];
 
    /* Check if MSA changed. */
-   (void)check_msa();
+   if (check_msa(YES, MON_INFO) == YES)
+   {
+      int i;
+
+      for (i = 0; i < no_of_afds; i++)
+      {
+         if (my_strcmp(msa[i].afd_alias, afd_name) == 0)
+         {
+            afd_position = i;
+            break;
+         }
+      }
+      if (afd_position < 0)
+      {
+         (void)fprintf(stderr,
+                       "WARNING : Could not find AFD %s in MSA. (%s %d)\n",
+                       afd_name, __FILE__, __LINE__);
+         exit(INCORRECT);
+      }
+   }
 
    if (prev.afd_toggle != msa[afd_position].afd_toggle)
    {

@@ -1,6 +1,6 @@
 /*
  *  update_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2023 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2026 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -41,12 +41,15 @@ DESCR__S_M3
  **   14.11.1996 H.Kiehl Created
  **   06.10.1997 H.Kiehl Take real hostname when displaying the IP number.
  **   15.08.2004 H.Kiehl Added HTTP and SSL support.
+ **   15.09.2026 H.Kiehl When FSA changed check if host_position is still
+ **                      the same and if it is removed.
  **
  */
 DESCR__E_M3
 
 #include <stdio.h>
 #include <string.h>           /* strerror()                              */
+#include <stdlib.h>           /* exit()                                  */
 #include <time.h>             /* strftime(), localtime()                 */
 #include <errno.h>
 #include <Xm/Xm.h>
@@ -55,7 +58,8 @@ DESCR__E_M3
 #include "afd_info.h"
 
 /* External global variables. */
-extern int                        host_position;
+extern int                        host_position,
+                                  no_of_hosts;
 extern char                       host_name[],
                                   host_alias_1[],
                                   host_alias_2[],
@@ -93,7 +97,14 @@ update_info(Widget w)
    XmString    text;
 
    /* Check if FSA changed. */
-   (void)check_fsa(YES, AFD_INFO);
+   if (check_fsa(YES, AFD_INFO) == YES)
+   {
+      if ((host_position = get_host_position(fsa, host_name, no_of_hosts)) < 0)
+      {
+         (void)fprintf(stderr, "Host %s is no longer in FSA.\n", host_name);
+         exit(INCORRECT);
+      }
+   }
 
    status = fsa[host_position].host_status & HOST_ERROR_OFFLINE_STATIC;
    if (prev.errors_offline != status)

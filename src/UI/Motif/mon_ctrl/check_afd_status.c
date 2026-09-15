@@ -1,7 +1,7 @@
 /*
  *  check_afd_status.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 1998 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -113,7 +113,7 @@ check_afd_status(Widget w)
     * If it changed resize the window.
     */
    prev_no_of_afds = no_of_afds;
-   if (check_msa() == YES)
+   if (check_msa(NO, MON_CTRL) == YES)
    {
       int             prev_no_of_afds_visible = no_of_afds_visible,
                       prev_plus_minus;

@@ -1,6 +1,6 @@
 /*
  *  check_msa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,24 +25,29 @@ DESCR__S_M3
  **   check_msa - checks if MSA has been updated
  **
  ** SYNOPSIS
- **   int check_msa(void)
+ **   int check_msa(int passive, char *who)
  **
  ** DESCRIPTION
  **   This function checks if the MSA (Monitor Status Area) with the
  **   ID 'msa_id' is still in use. If not it will detach from the old
  **   memory mapped area and attach to the new one with the function
- **   msa_attach().
+ **   msa_attach() or if passive is YES msa_attach_passive().
  **
  ** RETURN VALUES
  **   Returns NO if the MSA is still in use. Returns YES if a
  **   new MSA has been created. It will then also return new
  **   values for 'msa_id' and 'no_of_afds'.
  **
+ ** SEE ALSO
+ **   msa_attach(), msa_attach_passive()
+ **
  ** AUTHOR
  **   H.Kiehl
  **
  ** HISTORY
  **   17.10.1998 H.Kiehl Created
+ **   15.09.2026 H.Kiehl Option to only attach in read only mode (passive)
+ **                      and print the caller on error.
  **
  */
 DESCR__E_M3
@@ -69,7 +74,7 @@ extern struct mon_status_area *msa;
 
 /*############################ check_msa() ##############################*/
 int
-check_msa(void)
+check_msa(int passive, char *who)
 {
    if (msa != NULL)
    {
@@ -84,23 +89,35 @@ check_msa(void)
          if (munmap(ptr, msa_size) == -1)
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       _("Failed to munmap() from MSA [msa_id = %d msa_size = %d] : %s"),
-                       msa_id, msa_size, strerror(errno));
+                       _("Failed to munmap() from MSA [msa_id = %d msa_size = %d] [%s] : %s"),
+                       msa_id, msa_size, who, strerror(errno));
          }
 #else
          if (munmap_emu(ptr) == -1)
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       _("Failed to munmap_emu() from MSA (%d) : %s"),
-                       msa_id, strerror(errno));
+                       _("Failed to munmap_emu() from MSA (%d) [%s] : %s"),
+                       msa_id, who, strerror(errno));
          }
 #endif
 
-         if (msa_attach() < 0)
+         if (passive == YES)
          {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       _("Failed to attach to MSA."));
-            exit(INCORRECT);
+            if (msa_attach_passive() < 0)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          _("Failed to attach to MSA [%s]."), who);
+               exit(INCORRECT);
+            }
+         }
+         else
+         {
+            if (msa_attach() < 0)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          _("Failed to attach to MSA [%s]."), who);
+               exit(INCORRECT);
+            }
          }
 
          return(YES);
