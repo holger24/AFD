@@ -1,6 +1,6 @@
 /*
  *  check_fsa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2026 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -32,7 +32,8 @@ DESCR__S_M3
  **   This function checks if the FSA (Filetransfer Status Area)
  **   which is a memory mapped area is still in use. If not
  **   it will detach from the old memory area and attach
- **   to the new one with the function fsa_attach().
+ **   to the new one with the function fsa_attach() or if
+ **   passive is YES fsa_attach_passive().
  **
  ** RETURN VALUES
  **   Returns NO if the FSA is still in use. Returns YES if a
