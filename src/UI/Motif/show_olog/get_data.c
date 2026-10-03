@@ -157,6 +157,7 @@ static char             *p_file_name,
                         *p_file_size,
                         *p_tt,
                         *p_archive_flag,
+                        *p_link_flag,
                         log_file[MAX_PATH_LENGTH],
                         *p_log_file,
                         line[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 1];
@@ -1635,6 +1636,7 @@ get_data(void)
    p_file_size    = p_type + 6 + 1;
    p_tt           = p_file_size + MAX_DISPLAYED_FILE_SIZE + MAX_DISPLAYED_TRANSFER_TIME;
    p_archive_flag = p_tt + 2;
+   p_link_flag    = p_archive_flag + 1;
    *(line + MAX_OUTPUT_LINE_LENGTH + file_name_length) = '\0';
 
    special_button_flag = STOP_BUTTON;
@@ -2552,6 +2554,7 @@ no_criteria(register char *ptr,
                      IGNORE_ENTRY();
                   }
                   id.is_receive_job = YES;
+                  *p_link_flag = ' ';
                   il[file_no].add_data[item_counter] = 0;
                }
                else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
@@ -2561,6 +2564,7 @@ no_criteria(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = 'S';
                        il[file_no].add_data[item_counter] = LINK_SOFT;
                     }
                else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
@@ -2570,6 +2574,7 @@ no_criteria(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = 'H';
                        il[file_no].add_data[item_counter] = LINK_HARD;
                     }
                     else /* OT_NORMAL_DELIVERED */
@@ -2579,6 +2584,7 @@ no_criteria(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = ' ';
                        il[file_no].add_data[item_counter] = 0;
                     }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -2642,6 +2648,7 @@ no_criteria(register char *ptr,
                         IGNORE_ENTRY();
                      }
                      id.is_receive_job = YES;
+                     *p_link_flag = ' ';
                      il[file_no].add_data[item_counter] = 0;
                   }
                   else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
@@ -2651,6 +2658,7 @@ no_criteria(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = 'S';
                           il[file_no].add_data[item_counter] = LINK_SOFT;
                        }
                   else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
@@ -2660,6 +2668,7 @@ no_criteria(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = 'H';
                           il[file_no].add_data[item_counter] = LINK_HARD;
                        }
                        else /* OT_NORMAL_DELIVERED */
@@ -2669,6 +2678,7 @@ no_criteria(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = ' ';
                           il[file_no].add_data[item_counter] = 0;
                        }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -3421,6 +3431,7 @@ file_name_only(register char *ptr,
                      IGNORE_ENTRY();
                   }
                   id.is_receive_job = YES;
+                  *p_link_flag = ' ';
                   il[file_no].add_data[item_counter] = 0;
                }
                else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
@@ -3430,6 +3441,7 @@ file_name_only(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = 'S';
                        il[file_no].add_data[item_counter] = LINK_SOFT;
                     }
                else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
@@ -3439,6 +3451,7 @@ file_name_only(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = 'H';
                        il[file_no].add_data[item_counter] = LINK_HARD;
                     }
                     else /* OT_NORMAL_DELIVERED */
@@ -3448,6 +3461,7 @@ file_name_only(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = ' ';
                        il[file_no].add_data[item_counter] = 0;
                     }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -3511,6 +3525,7 @@ file_name_only(register char *ptr,
                         IGNORE_ENTRY();
                      }
                      id.is_receive_job = YES;
+                     *p_link_flag = ' ';
                      il[file_no].add_data[item_counter] = 0;
                   }
                   else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
@@ -3520,6 +3535,7 @@ file_name_only(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = 'S';
                           il[file_no].add_data[item_counter] = LINK_SOFT;
                        }
                   else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
@@ -3529,6 +3545,7 @@ file_name_only(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = 'H';
                           il[file_no].add_data[item_counter] = LINK_HARD;
                        }
                        else /* OT_NORMAL_DELIVERED */
@@ -3538,6 +3555,7 @@ file_name_only(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = ' ';
                           il[file_no].add_data[item_counter] = 0;
                        }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -4586,6 +4604,7 @@ file_size_only(register char *ptr,
                      IGNORE_ENTRY();
                   }
                   id.is_receive_job = YES;
+                  *p_link_flag = ' ';
                   il[file_no].add_data[item_counter] = 0;
                }
                else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
@@ -4595,6 +4614,7 @@ file_size_only(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = 'S';
                        il[file_no].add_data[item_counter] = LINK_SOFT;
                     }
                else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
@@ -4604,6 +4624,7 @@ file_size_only(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = 'H';
                        il[file_no].add_data[item_counter] = LINK_HARD;
                     }
                     else /* OT_NORMAL_DELIVERED */
@@ -4613,6 +4634,7 @@ file_size_only(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = ' ';
                        il[file_no].add_data[item_counter] = 0;
                     }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -4676,6 +4698,7 @@ file_size_only(register char *ptr,
                         IGNORE_ENTRY();
                      }
                      id.is_receive_job = YES;
+                     *p_link_flag = ' ';
                      il[file_no].add_data[item_counter] = 0;
                   }
                   else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
@@ -4685,6 +4708,7 @@ file_size_only(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = 'S';
                           il[file_no].add_data[item_counter] = LINK_SOFT;
                        }
                   else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
@@ -4694,6 +4718,7 @@ file_size_only(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = 'H';
                           il[file_no].add_data[item_counter] = LINK_HARD;
                        }
                        else /* OT_NORMAL_DELIVERED */
@@ -4703,6 +4728,7 @@ file_size_only(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = ' ';
                           il[file_no].add_data[item_counter] = 0;
                        }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -5147,6 +5173,7 @@ file_name_and_size(register char *ptr,
                      IGNORE_ENTRY();
                   }
                   id.is_receive_job = YES;
+                  *p_link_flag = ' ';
                   il[file_no].add_data[item_counter] = 0;
                }
                else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
@@ -5156,6 +5183,7 @@ file_name_and_size(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = 'S';
                        il[file_no].add_data[item_counter] = LINK_SOFT;
                     }
                else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
@@ -5165,6 +5193,7 @@ file_name_and_size(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = 'H';
                        il[file_no].add_data[item_counter] = LINK_HARD;
                     }
                     else /* OT_NORMAL_DELIVERED */
@@ -5174,6 +5203,7 @@ file_name_and_size(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = ' ';
                        il[file_no].add_data[item_counter] = 0;
                     }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -5237,6 +5267,7 @@ file_name_and_size(register char *ptr,
                         IGNORE_ENTRY();
                      }
                      id.is_receive_job = YES;
+                     *p_link_flag = ' ';
                      il[file_no].add_data[item_counter] = 0;
                   }
                   else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
@@ -5246,6 +5277,7 @@ file_name_and_size(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = 'S';
                           il[file_no].add_data[item_counter] = LINK_SOFT;
                        }
                   else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
@@ -5255,6 +5287,7 @@ file_name_and_size(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = 'H';
                           il[file_no].add_data[item_counter] = LINK_HARD;
                        }
                        else /* OT_NORMAL_DELIVERED */
@@ -5264,6 +5297,7 @@ file_name_and_size(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = ' ';
                           il[file_no].add_data[item_counter] = 0;
                        }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -6193,6 +6227,7 @@ recipient_only(register char *ptr,
                      IGNORE_ENTRY();
                   }
                   id.is_receive_job = YES;
+                  *p_link_flag = ' ';
                   il[file_no].add_data[item_counter] = 0;
                }
                else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
@@ -6202,6 +6237,7 @@ recipient_only(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = 'S';
                        il[file_no].add_data[item_counter] = LINK_SOFT;
                     }
                else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
@@ -6211,6 +6247,7 @@ recipient_only(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = 'H';
                        il[file_no].add_data[item_counter] = LINK_HARD;
                     }
                     else /* OT_NORMAL_DELIVERED */
@@ -6220,6 +6257,7 @@ recipient_only(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = ' ';
                        il[file_no].add_data[item_counter] = 0;
                     }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -6283,6 +6321,7 @@ recipient_only(register char *ptr,
                         IGNORE_ENTRY();
                      }
                      id.is_receive_job = YES;
+                     *p_link_flag = ' ';
                      il[file_no].add_data[item_counter] = 0;
                   }
                   else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
@@ -6292,6 +6331,7 @@ recipient_only(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = 'S';
                           il[file_no].add_data[item_counter] = LINK_SOFT;
                        }
                   else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
@@ -6301,6 +6341,7 @@ recipient_only(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = 'H';
                           il[file_no].add_data[item_counter] = LINK_HARD;
                        }
                        else /* OT_NORMAL_DELIVERED */
@@ -6310,6 +6351,7 @@ recipient_only(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = ' ';
                           il[file_no].add_data[item_counter] = 0;
                        }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -7312,6 +7354,7 @@ file_name_and_recipient(register char *ptr,
                      IGNORE_ENTRY();
                   }
                   id.is_receive_job = YES;
+                  *p_link_flag = ' ';
                   il[file_no].add_data[item_counter] = 0;
                }
                else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
@@ -7321,6 +7364,7 @@ file_name_and_recipient(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = 'S';
                        il[file_no].add_data[item_counter] = LINK_SOFT;
                     }
                else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
@@ -7330,6 +7374,7 @@ file_name_and_recipient(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = 'H';
                        il[file_no].add_data[item_counter] = LINK_HARD;
                     }
                     else /* OT_NORMAL_DELIVERED */
@@ -7339,6 +7384,7 @@ file_name_and_recipient(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = ' ';
                        il[file_no].add_data[item_counter] = 0;
                     }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -7402,6 +7448,7 @@ file_name_and_recipient(register char *ptr,
                         IGNORE_ENTRY();
                      }
                      id.is_receive_job = YES;
+                     *p_link_flag = ' ';
                      il[file_no].add_data[item_counter] = 0;
                   }
                   else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
@@ -7411,6 +7458,7 @@ file_name_and_recipient(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = 'S';
                           il[file_no].add_data[item_counter] = LINK_SOFT;
                        }
                   else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
@@ -7420,6 +7468,7 @@ file_name_and_recipient(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = 'H';
                           il[file_no].add_data[item_counter] = LINK_HARD;
                        }
                        else /* OT_NORMAL_DELIVERED */
@@ -7429,6 +7478,7 @@ file_name_and_recipient(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = ' ';
                           il[file_no].add_data[item_counter] = 0;
                        }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -7818,6 +7868,7 @@ file_size_and_recipient(register char *ptr,
                      IGNORE_ENTRY();
                   }
                   id.is_receive_job = YES;
+                  *p_link_flag = ' ';
                   il[file_no].add_data[item_counter] = 0;
                }
                else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
@@ -7827,6 +7878,7 @@ file_size_and_recipient(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = 'S';
                        il[file_no].add_data[item_counter] = LINK_SOFT;
                     }
                else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
@@ -7836,6 +7888,7 @@ file_size_and_recipient(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = 'H';
                        il[file_no].add_data[item_counter] = LINK_HARD;
                     }
                     else /* OT_NORMAL_DELIVERED */
@@ -7845,6 +7898,7 @@ file_size_and_recipient(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = ' ';
                        il[file_no].add_data[item_counter] = 0;
                     }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -7908,6 +7962,7 @@ file_size_and_recipient(register char *ptr,
                         IGNORE_ENTRY();
                      }
                      id.is_receive_job = YES;
+                     *p_link_flag = ' ';
                      il[file_no].add_data[item_counter] = 0;
                   }
                   else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
@@ -7917,6 +7972,7 @@ file_size_and_recipient(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = 'S';
                           il[file_no].add_data[item_counter] = LINK_SOFT;
                        }
                   else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
@@ -7926,6 +7982,7 @@ file_size_and_recipient(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = 'H';
                           il[file_no].add_data[item_counter] = LINK_HARD;
                        }
                        else /* OT_NORMAL_DELIVERED */
@@ -7935,6 +7992,7 @@ file_size_and_recipient(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = ' ';
                           il[file_no].add_data[item_counter] = 0;
                        }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -8374,6 +8432,7 @@ file_name_size_recipient(register char *ptr,
                      IGNORE_ENTRY();
                   }
                   id.is_receive_job = YES;
+                  *p_link_flag = ' ';
                   il[file_no].add_data[item_counter] = 0;
                }
                else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
@@ -8383,6 +8442,7 @@ file_name_size_recipient(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = 'S';
                        il[file_no].add_data[item_counter] = LINK_SOFT;
                     }
                else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
@@ -8392,6 +8452,7 @@ file_name_size_recipient(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = 'H';
                        il[file_no].add_data[item_counter] = LINK_HARD;
                     }
                     else /* OT_NORMAL_DELIVERED */
@@ -8401,6 +8462,7 @@ file_name_size_recipient(register char *ptr,
                           IGNORE_ENTRY();
                        }
                        id.is_receive_job = NO;
+                       *p_link_flag = ' ';
                        il[file_no].add_data[item_counter] = 0;
                     }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -8464,6 +8526,7 @@ file_name_size_recipient(register char *ptr,
                         IGNORE_ENTRY();
                      }
                      id.is_receive_job = YES;
+                     *p_link_flag = ' ';
                      il[file_no].add_data[item_counter] = 0;
                   }
                   else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_SOFTLINK_DELIVERED))
@@ -8473,6 +8536,7 @@ file_name_size_recipient(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = 'S';
                           il[file_no].add_data[item_counter] = LINK_SOFT;
                        }
                   else if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_HARDLINK_DELIVERED))
@@ -8482,6 +8546,7 @@ file_name_size_recipient(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = 'H';
                           il[file_no].add_data[item_counter] = LINK_HARD;
                        }
                        else /* OT_NORMAL_DELIVERED */
@@ -8491,6 +8556,7 @@ file_name_size_recipient(register char *ptr,
                              IGNORE_ENTRY();
                           }
                           id.is_receive_job = NO;
+                          *p_link_flag = ' ';
                           il[file_no].add_data[item_counter] = 0;
                        }
 # ifdef _WITH_DE_MAIL_SUPPORT

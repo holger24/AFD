@@ -111,8 +111,8 @@ to reduce the search time by filling in some of the following values:
 </tr>
 <tr>
    <td>&nbsp;<b>12</b>&nbsp;</td>
-   <td>When selected, only confirmed data will be shown. Confirmed
-       is where the protocol does support this. Not yet implemented.</td>
+   <td>Determines which output types are shown Received, Output,
+       Symlink and/or Hardlink.</td>
    <td>&nbsp;</td>
 </tr>
 <tr>
@@ -206,6 +206,16 @@ each item:
            R - Confirmation of retrieve.
            t - Confirmation deleted due to timeup.
        </pre></td>
+</tr>
+<tr>
+   <td>L</td>
+   <td>Link type flag. The meaning of this flag is as follows:
+       <pre>
+           H - Distributed as hard link.
+           S - Distributed as soft link.
+       </pre>
+       No value means no link.
+   </td>
 </tr>
 </table>
 </center>
@@ -338,9 +348,9 @@ which have the following meaning:
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1997 - 2023 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2026 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 04.03.2023
+   Last updated: 03.10.2026
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

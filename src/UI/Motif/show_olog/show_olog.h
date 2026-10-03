@@ -134,7 +134,7 @@
 #else
 # define HOST_NAME_LENGTH        MAX_HOSTNAME_LENGTH
 #endif
-#define REST_HEADER              "Type    File size   TT   A"
+#define REST_HEADER              "Type    File size   TT   AL"
 
 #define LOG_CHECK_INTERVAL       1000L  /* Default interval in milli-    */
                                         /* seconds to check for changes  */
