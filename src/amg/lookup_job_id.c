@@ -1,6 +1,6 @@
 /*
  *  lookup_job_id.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -156,7 +156,8 @@ lookup_job_id(struct instant_db *p_db,
          gotcha[i] = YES;
 #endif
          p_db->job_id = jd[i].job_id;
-         (void)snprintf(p_db->str_job_id, MAX_INT_HEX_LENGTH, "%x", jd[i].job_id);
+         (void)snprintf(p_db->str_job_id, MAX_INT_HEX_LENGTH, "%x",
+                        jd[i].job_id);
 
          /* Touch the message file so FD knows this is a new file. */
          (void)snprintf(p_msg_dir, MAX_PATH_LENGTH - (p_msg_dir - msg_dir),
@@ -171,7 +172,8 @@ lookup_job_id(struct instant_db *p_db,
                 * not know what to do with it.
                 */
                system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "Message %x not there, recreating it.", p_db->job_id);
+                          "Message %x [%s] not there, recreating it.",
+                          p_db->job_id, p_db->recipient);
                if (create_message(p_db->job_id, p_db->recipient,
                                   p_db->soptions) != SUCCESS)
                {
