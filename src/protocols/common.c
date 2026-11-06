@@ -1,6 +1,6 @@
 /*
  *  common.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -835,7 +835,7 @@ sig_handler(int signo)
 /* This code is taken from wget https://www.gnu.org/software/wget/       */
 /*#######################################################################*/
 char *
-rfc2253_formatted(X509_NAME *name)
+rfc2253_formatted(const X509_NAME *name)
 {
    int  length;
    char *out = NULL;
