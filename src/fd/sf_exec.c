@@ -205,8 +205,10 @@ main(int argc, char *argv[])
                     diff_time,
 #endif
                     last_update_time,
-                    now,
-                    *p_file_mtime_buffer;
+#ifdef WITH_DUP_CHECK
+                    *p_file_mtime_buffer,
+#endif
+                    now;
    char             add_env_var[15 + MAX_LONG_LENGTH + 1 + 17 + MAX_INT_LENGTH + 1 + 21 + MAX_REAL_HOSTNAME_LENGTH + 2 + 59 + 2],
                     *command_str,
                     file_name[MAX_FILENAME_LENGTH],
@@ -434,7 +436,9 @@ main(int argc, char *argv[])
 
       p_file_name_buffer = file_name_buffer;
       p_file_size_buffer = file_size_buffer;
+#ifdef WITH_DUP_CHECK
       p_file_mtime_buffer = file_mtime_buffer;
+#endif
       last_update_time = time(NULL);
       local_file_size = 0;
       exec_done = NO;
@@ -983,10 +987,12 @@ try_again_unlink:
 #endif
          p_file_name_buffer += MAX_FILENAME_LENGTH;
          p_file_size_buffer++;
-         if (file_mtime_buffer != NULL)
+#ifdef WITH_DUP_CHECK
+         if ((file_mtime_buffer != NULL) && (p_file_mtime_buffer != NULL))
          {
             p_file_mtime_buffer++;
          }
+#endif
       } /* for (files_send = 0; files_send < files_to_send; files_send++) */
 
 #ifdef WITH_ARCHIVE_COPY_INFO

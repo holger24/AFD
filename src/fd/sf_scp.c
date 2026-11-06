@@ -204,7 +204,9 @@ main(int argc, char *argv[])
                     diff_time,
 #endif
                     end_transfer_time_file,
+#ifdef WITH_DUP_CHECK
                     *p_file_mtime_buffer,
+#endif
                     start_transfer_time_file = 0,
                     last_update_time,
                     now;
@@ -412,7 +414,9 @@ main(int argc, char *argv[])
       /* Send all files. */
       p_file_name_buffer = file_name_buffer;
       p_file_size_buffer = file_size_buffer;
+#ifdef WITH_DUP_CHECK
       p_file_mtime_buffer = file_mtime_buffer;
+#endif
       last_update_time = time(NULL);
       local_file_size = 0;
       for (files_send = 0; files_send < files_to_send; files_send++)
@@ -1046,10 +1050,12 @@ try_again_unlink:
 #endif
          p_file_name_buffer += MAX_FILENAME_LENGTH;
          p_file_size_buffer++;
-         if (file_mtime_buffer != NULL)
+#ifdef WITH_DUP_CHECK
+         if ((file_mtime_buffer != NULL) && (p_file_mtime_buffer != NULL))
          {
             p_file_mtime_buffer++;
          }
+#endif
       } /* for (files_send = 0; files_send < files_to_send; files_send++) */
 
 #ifdef WITH_ARCHIVE_COPY_INFO
