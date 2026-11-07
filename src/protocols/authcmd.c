@@ -1,6 +1,6 @@
 /*
  *  authcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2021 - 2025 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2021 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -852,8 +852,20 @@ aws_cmd(char                      *cmd,
 
    if (p_hmr->auth_type == AUTH_AWS4_HMAC_SHA256)
    {
-      ret = aws4_cmd_authentication(cmd, file_name, target_dir,
-                                    parameter, p_hmr);
+      if ((p_hmr->user[0] == '\0') && (p_hmr->passwd[0] == '\0'))
+      {
+         if (p_hmr->authorization != NULL)
+         {
+            free(p_hmr->authorization);
+            p_hmr->authorization = NULL;
+         }
+         ret = SUCCESS;
+      }
+      else
+      {
+         ret = aws4_cmd_authentication(cmd, file_name, target_dir,
+                                       parameter, p_hmr);
+      }
    }
    else if (p_hmr->auth_type == AUTH_AWS_NO_SIGN_REQUEST)
         {
