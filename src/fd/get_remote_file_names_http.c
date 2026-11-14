@@ -281,7 +281,10 @@ try_attach_again:
                break;
             }
          }
-         if ((rl[i].retrieved == NO) && (rl[i].assigned == 0))
+         if ((rl[i].retrieved == NO) &&
+             ((rl[i].assigned == 0) ||
+              (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) &&
+               (rl[i].assigned == ((unsigned char)db.job_no + 1)))))
          {
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
             if ((fra->stupid_mode == YES) || (fra->remove == YES) ||
