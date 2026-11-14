@@ -1386,6 +1386,7 @@ link_error_try_copy:
                              }
                              else
                              {
+                                reason_str[0] = '\0';
                                 ret = RENAME_ERROR;
                                 sign = WARN_SIGN;
                              }
