@@ -2622,7 +2622,7 @@ handle_dir(int                       dir_pos,
                (void)strcat(src_file_dir, host_name);
                orig_search_time = 0; /* Silence compiler. */
             }
-            p_fra = &fra[dir_pos];
+            p_fra = &fra[de[dir_pos].fra_pos];
 
             fra[de[dir_pos].fra_pos].dir_status = DIRECTORY_ACTIVE;
             if ((host_name != NULL) && (fra[de[dir_pos].fra_pos].fsa_pos != -1))
@@ -2720,7 +2720,7 @@ handle_dir(int                       dir_pos,
           */
          if (dir_pos != -1)
          {
-            p_fra = &fra[dir_pos];
+            p_fra = &fra[de[dir_pos].fra_pos];
          }
          if (now == NULL)
          {
