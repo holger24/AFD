@@ -145,10 +145,24 @@ link_files(char                   *src_file_path,
    time_t       pmatch_time;
    char         *p_src,
 #ifndef _WITH_PTHREAD
-                *p_file_name = file_name_buffer,
+                *p_file_name,
 #endif
                 *p_dest = NULL,
                 *p_dest_end = NULL;
+
+#ifndef _WITH_PTHREAD
+   if (file_name_buffer != NULL)
+   {
+      free(file_name_buffer);
+      file_name_buffer = NULL;
+   }
+   p_file_name = file_name_buffer;
+   if (file_size_buffer != NULL)
+   {
+      free(file_size_buffer);
+      file_size_buffer = NULL;
+   }
+#endif
 
    *file_size_linked = 0;
    p_src = src_file_path + strlen(src_file_path);
@@ -555,38 +569,23 @@ try_copy_file:
 #ifndef _WITH_PTHREAD
                   if ((files_linked % FILE_NAME_STEP_SIZE) == 0)
                   {
+                     int    offset;
                      size_t new_size;
 
                      /* Calculate new size of file name buffer. */
                      new_size = ((files_linked / FILE_NAME_STEP_SIZE) + 1) * FILE_NAME_STEP_SIZE * MAX_FILENAME_LENGTH;
 
                      /* Increase the space for the file name buffer. */
-                     if (file_name_buffer == NULL)
+                     offset = p_file_name - file_name_buffer;
+                     if ((file_name_buffer = realloc(file_name_buffer,
+                                                     new_size)) == NULL)
                      {
-                        if ((file_name_buffer = malloc(new_size)) == NULL)
-                        {
-                           system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                      "Could not malloc() memory : %s",
-                                      strerror(errno));
-                           exit(INCORRECT);
-                        }
-                        p_file_name = file_name_buffer;
+                        system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                   "Could not realloc() memory : %s",
+                                   strerror(errno));
+                        exit(INCORRECT);
                      }
-                     else
-                     {
-                        int offset;
-
-                        offset = p_file_name - file_name_buffer;
-                        if ((file_name_buffer = realloc(file_name_buffer,
-                                                        new_size)) == NULL)
-                        {
-                           system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                      "Could not realloc() memory : %s",
-                                      strerror(errno));
-                           exit(INCORRECT);
-                        }
-                        p_file_name = file_name_buffer + offset;
-                     }
+                     p_file_name = file_name_buffer + offset;
 
                      /* Calculate new size of file size buffer. */
                      new_size = ((files_linked / FILE_NAME_STEP_SIZE) + 1) * FILE_NAME_STEP_SIZE * sizeof(off_t);
