@@ -343,7 +343,7 @@ link_files(char                   *src_file_path,
                                     unique_number, *split_job_counter);
                      p_dest = p_dest_end +
                               snprintf(p_dest_end,
-                                       MAX_PATH_LENGTH - (dest_file_path - p_dest_end),
+                                       MAX_PATH_LENGTH - (p_dest_end - dest_file_path),
                                        "/%s/", unique_name);
                      if (mkdir(dest_file_path, DIR_MODE) == -1)
                      {
