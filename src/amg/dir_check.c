@@ -1530,8 +1530,20 @@ main(int argc, char *argv[])
                          ((fra[de[i].fra_pos].remove != NO) ||
                           (fra[de[i].fra_pos].stupid_mode != YES)))
                      {
-                        full_dir[fdc] = i;
-                        fdc++;
+                        int j;
+
+                        for (j = 0; j < fdc; j++)
+                        {
+                           if (full_dir[j] == i)
+                           {
+                              break;
+                           }
+                        }
+                        if ((j == fdc) && (fdc < no_of_local_dirs))
+                        {
+                           full_dir[fdc] = i;
+                           fdc++;
+                        }
                      }
                   }
 # ifdef REPORT_UNCHANGED_TIMESTAMP
@@ -1754,10 +1766,10 @@ main(int argc, char *argv[])
                            {
                               fra[de[full_dir[i]].fra_pos].dir_flag ^= MAX_COPIED;
                            }
-                           if (i < fdc)
+                           if (i < (fdc - 1))
                            {
                               (void)memmove(&full_dir[i], &full_dir[i + 1],
-                                            ((fdc - i) * sizeof(int)));
+                                            ((fdc - 1 - i) * sizeof(int)));
                            }
                            fdc--;
                            i--;
@@ -1797,11 +1809,11 @@ main(int argc, char *argv[])
                             (ret == YES))
                         {
                            first_time = YES;
-                           if (i < fdc)
+                           if (i < (fdc - 1))
                            {
                               (void)memmove(&full_dir[i],
                                             &full_dir[i + 1],
-                                            ((fdc - i) * sizeof(int)));
+                                            ((fdc - 1 - i) * sizeof(int)));
                            }
                            fdc--;
                            i--;
@@ -1823,11 +1835,11 @@ main(int argc, char *argv[])
                            {
                               fra[de[full_dir[j]].fra_pos].dir_flag ^= MAX_COPIED;
                            }
-                           if (j < fdc)
+                           if (j < (fdc - 1))
                            {
                               (void)memmove(&full_dir[j],
                                             &full_dir[j + 1],
-                                            ((fdc - j) * sizeof(int)));
+                                            ((fdc - 1 - j) * sizeof(int)));
                            }
                            fdc--;
                            j--;
@@ -1866,11 +1878,11 @@ main(int argc, char *argv[])
                         if ((diff_time >= one_dir_copy_timeout) && (ret == YES))
                         {
                            first_time = YES;
-                           if (j < fdc)
+                           if (j < (fdc - 1))
                            {
                               (void)memmove(&full_dir[j],
                                             &full_dir[j + 1],
-                                            ((fdc - j) * sizeof(int)));
+                                            ((fdc - 1 - j) * sizeof(int)));
                            }
                            fdc--;
                            j--;
@@ -1922,11 +1934,11 @@ main(int argc, char *argv[])
 # endif
                                                  NULL)) == NO)
                            {
-                              if (i < fpdc)
+                              if (i < (fpdc - 1))
                               {
                                  (void)memmove(&full_paused_dir[i],
                                                &full_paused_dir[i + 1],
-                                               ((fpdc - i) * sizeof(int)));
+                                               ((fpdc - 1 - i) * sizeof(int)));
                               }
                               fpdc--;
                               i--;
@@ -1948,11 +1960,11 @@ main(int argc, char *argv[])
                                (ret == YES))
                            {
                               first_time = YES;
-                              if (i < fpdc)
+                              if (i < (fpdc - 1))
                               {
                                  (void)memmove(&full_paused_dir[i],
                                                &full_paused_dir[i + 1],
-                                               ((fpdc - i) * sizeof(int)));
+                                               ((fpdc - 1 - i) * sizeof(int)));
                               }
                               fpdc--;
                               i--;
@@ -1971,11 +1983,11 @@ main(int argc, char *argv[])
 # endif
                                                  NULL)) == NO)
                            {
-                              if (j < fpdc)
+                              if (j < (fpdc - 1))
                               {
                                  (void)memmove(&full_paused_dir[j],
                                                &full_paused_dir[j + 1],
-                                               ((fpdc - j) * sizeof(int)));
+                                               ((fpdc - 1 - j) * sizeof(int)));
                               }
                               fpdc--;
                               j--;
@@ -1997,11 +2009,11 @@ main(int argc, char *argv[])
                                (ret == YES))
                            {
                               first_time = YES;
-                              if (j < fpdc)
+                              if (j < (fpdc - 1))
                               {
                                  (void)memmove(&full_paused_dir[j],
                                                &full_paused_dir[j + 1],
-                                               ((fpdc - j) * sizeof(int)));
+                                               ((fpdc - 1 - j) * sizeof(int)));
                               }
                               fpdc--;
                               j--;
