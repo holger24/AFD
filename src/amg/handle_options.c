@@ -1,6 +1,6 @@
 /*
  *  handle_options.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -4607,7 +4607,7 @@ cleanup_rename_ow(int          file_counter,
       {
          if (*p_new_name != '\0')
          {
-            (void)strcpy(p_file_name, p_new_name);
+            (void)my_strncpy(p_file_name, p_new_name, MAX_FILENAME_LENGTH - 1);
             p_file_name += MAX_FILENAME_LENGTH;
             file_size_buffer[count] = (*new_size_buffer)[i];
             count++;
@@ -4622,7 +4622,7 @@ cleanup_rename_ow(int          file_counter,
       p_file_name = file_name_buffer;
       for (i = 0; i < file_counter; i++)
       {
-         (void)strcpy(p_file_name, p_new_name);
+         (void)my_strncpy(p_file_name, p_new_name, MAX_FILENAME_LENGTH - 1);
          file_size_buffer[i] = (*new_size_buffer)[i];
          p_file_name += MAX_FILENAME_LENGTH;
          p_new_name += MAX_FILENAME_LENGTH;
