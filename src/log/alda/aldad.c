@@ -1,6 +1,6 @@
 /*
  *  aldad.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2009 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2009 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,6 +41,8 @@ DESCR__S_M3
  **   09.05.2023 H.Kiehl If all entries are removed and realloc() returns
  **                      NULL, evaluate errno to check if this is the
  **                      case.
+ **   21.11.2026 H.Kiehl Use correct position in memmove() when we
+ **                      remove a process from apl.
  **
  */
 DESCR__E_M3
@@ -281,7 +283,7 @@ main(int argc, char *argv[])
                         else
                         {
                            free(apl[i].parameters);
-                           if (i < no_of_process)
+                           if (i < (no_of_process - 1))
                            {
                               (void)memmove(&apl[i], &apl[i + 1],
                                             ((no_of_process - (i + 1)) * sizeof(struct aldad_proc_list)));
@@ -428,7 +430,7 @@ zombie_check(void)
             if (i < (no_of_process - 1))
             {
                (void)memmove(&apl[i], &apl[i + 1],
-                             ((no_of_process - i) * sizeof(struct aldad_proc_list)));
+                             ((no_of_process - 1 - i) * sizeof(struct aldad_proc_list)));
             }
             no_of_process--;
             i--;
@@ -456,10 +458,10 @@ zombie_check(void)
                             "Alda log process (%s) terminated by signal %d.",
                             apl[i].parameters, WTERMSIG(status));
                  free(apl[i].parameters);
-                 if (i < no_of_process)
+                 if (i < (no_of_process - 1))
                  {
                     (void)memmove(&apl[i], &apl[i + 1],
-                                  ((no_of_process - i) * sizeof(struct aldad_proc_list)));
+                                  ((no_of_process - 1 - i) * sizeof(struct aldad_proc_list)));
                  }
                  no_of_process--;
                  i--;
