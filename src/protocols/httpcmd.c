@@ -270,7 +270,14 @@ http_connect(char          *hostname,
             hmr.nonce = NULL;
             hmr.opaque = NULL;
          }
-         hmr.auth_type = auth_type;
+         if ((auth_type == AUTH_AWS4_HMAC_SHA256) && (hmr.passwd[0] == '\0'))
+         {
+            hmr.auth_type = AUTH_AWS_NO_SIGN_REQUEST;
+         }
+         else
+         {
+            hmr.auth_type = auth_type;
+         }
          hmr.port = port;
          hmr.free = YES;
          hmr.fra_options = fra_options;
@@ -829,7 +836,14 @@ http_connect(char          *hostname,
          hmr.nonce = NULL;
          hmr.opaque = NULL;
       }
-      hmr.auth_type = auth_type;
+      if ((auth_type == AUTH_AWS4_HMAC_SHA256) && (hmr.passwd[0] == '\0'))
+      {
+         hmr.auth_type = AUTH_AWS_NO_SIGN_REQUEST;
+      }
+      else
+      {
+         hmr.auth_type = auth_type;
+      }
 #ifdef WITH_SSL
       hmr.service_type = service;
       hmr.marker[0] = '\0';
@@ -1242,28 +1256,34 @@ http_get(char  *path,
            resource[8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + MAX_AWS4_PARAMETER_LENGTH + MAX_INT_LENGTH + MAX_FILENAME_LENGTH + 1];
 
 #ifdef WITH_SSL
-      if (((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) ||
-           (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST)) &&
-          (filename[0] != '\0'))
+      if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) ||
+          (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST))
       {
          resource_length = 0;
-         if (hmr.features & BUCKETNAME_IS_IN_PATH)
+         if (filename[0] != '\0')
          {
-            while ((resource_length < MAX_RECIPIENT_LENGTH) &&
-                   (path[resource_length] != '/') &&
-                   (path[resource_length] != '\0'))
+            if (hmr.features & BUCKETNAME_IS_IN_PATH)
             {
-               tmp_path[resource_length] = path[resource_length];
-               resource_length++;
+               while ((resource_length < MAX_RECIPIENT_LENGTH) &&
+                      (path[resource_length] != '/') &&
+                      (path[resource_length] != '\0'))
+               {
+                  tmp_path[resource_length] = path[resource_length];
+                  resource_length++;
+               }
+               if (path[resource_length] == '/')
+               {
+                  tmp_path[resource_length] = path[resource_length];
+                  resource_length++;
+               }
             }
-            if (path[resource_length] == '/')
-            {
-               tmp_path[resource_length] = path[resource_length];
-               resource_length++;
-            }
+            tmp_path[resource_length] = '\0';
+            p_path = tmp_path;
          }
-         tmp_path[resource_length] = '\0';
-         p_path = tmp_path;
+         else
+         {
+            resource[0] = '\0';
+         }
       }
 #endif
       hmr.bytes_read = 0;
@@ -1282,22 +1302,36 @@ http_get(char  *path,
          }
          else
          {
-            char *tmp_ptr;
-
-            if (*p_path == '/')
+#ifdef WITH_SSL
+            if ((filename[0] == '\0') &&
+                ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) ||
+                 (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST)))
             {
-               resource_length = 0;
-               tmp_ptr = resource;
+               /* For prepare_aws4_listing() we don't want */
+               /* p_path in resource.                      */
             }
             else
             {
-               resource_length = 1;
-               resource[0] = '/';
-               tmp_ptr = &resource[1];
+#endif
+               char *tmp_ptr;
+
+               if (*p_path == '/')
+               {
+                  resource_length = 0;
+                  tmp_ptr = resource;
+               }
+               else
+               {
+                  resource_length = 1;
+                  resource[0] = '/';
+                  tmp_ptr = &resource[1];
+               }
+               resource_length += snprintf(tmp_ptr,
+                                           1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
+                                           "%s%s", p_path, filename);
+#ifdef WITH_SSL
             }
-            resource_length += snprintf(tmp_ptr,
-                                        1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                                        "%s%s", p_path, filename);
+#endif
          }
       }
       else
@@ -1751,9 +1785,17 @@ prepare_aws4_listing(char *filename,
          /* NOTE: This MUST be sorted alphabetically by key name! */
          if (hmr.marker[0] == '\0')
          {
-            i = snprintf(canonical_query, size, "%smax-keys=%d",
-                         (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
-                         AWS4_MAX_KEYS);
+            if (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST)
+            {
+               i = snprintf(canonical_query, size, "%s",
+                            (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&");
+            }
+            else
+            {
+               i = snprintf(canonical_query, size, "%smax-keys=%d",
+                            (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                            AWS4_MAX_KEYS);
+            }
          }
          else
          {
@@ -1768,10 +1810,18 @@ prepare_aws4_listing(char *filename,
                return(INCORRECT);
             }
             url_encode(hmr.marker, marker_encoded);
-            i = snprintf(canonical_query, size,
-                         "%smarker=%s&max-keys=%d",
-                         (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
-                         marker_encoded, AWS4_MAX_KEYS);
+            if (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST)
+            {
+               i = snprintf(canonical_query, size, "%smarker=%s",
+                            (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                            marker_encoded);
+            }
+            else
+            {
+               i = snprintf(canonical_query, size, "%smarker=%s&max-keys=%d",
+                            (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                            marker_encoded, AWS4_MAX_KEYS);
+            }
             free(marker_encoded);
          }
       }
@@ -1781,10 +1831,17 @@ prepare_aws4_listing(char *filename,
          /* NOTE: This MUST be sorted alphabetically by key name! */
          if (hmr.marker[0] == '\0')
          {
-            i = snprintf(canonical_query, size,
-                         "%slist-type=2&max-keys=%d",
-                         (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
-                         AWS4_MAX_KEYS);
+            if (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST)
+            {
+               i = snprintf(canonical_query, size, "%slist-type=2",
+                            (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&");
+            }
+            else
+            {
+               i = snprintf(canonical_query, size, "%slist-type=2&max-keys=%d",
+                            (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                            AWS4_MAX_KEYS);
+            }
          }
          else
          {
@@ -1799,11 +1856,21 @@ prepare_aws4_listing(char *filename,
                return(INCORRECT);
             }
             url_encode(hmr.marker, marker_encoded);
-            i = snprintf(canonical_query, size,
-                         "continuation-token=%s&%slist-type=2&max-keys=%d",
-                         marker_encoded,
-                         (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
-                         AWS4_MAX_KEYS);
+            if (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST)
+            {
+               i = snprintf(canonical_query, size,
+                            "continuation-token=%s&%slist-type=2",
+                            marker_encoded,
+                            (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&");
+            }
+            else
+            {
+               i = snprintf(canonical_query, size,
+                            "continuation-token=%s&%slist-type=2&max-keys=%d",
+                            marker_encoded,
+                            (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                            AWS4_MAX_KEYS);
+            }
             free(marker_encoded);
          }
       }
@@ -1840,10 +1907,18 @@ prepare_aws4_listing(char *filename,
          /* NOTE: This MUST be sorted alphabetically by key name! */
          if (hmr.marker[0] == '\0')
          {
-            i = snprintf(canonical_query, size,
-                         "%smax-keys=%d&prefix=%s",
-                         (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
-                         AWS4_MAX_KEYS, prefix_encoded);
+            if (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST)
+            {
+               i = snprintf(canonical_query, size, "%sprefix=%s",
+                            (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                            prefix_encoded);
+            }
+            else
+            {
+               i = snprintf(canonical_query, size, "%smax-keys=%d&prefix=%s",
+                            (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                            AWS4_MAX_KEYS, prefix_encoded);
+            }
          }
          else
          {
@@ -1859,10 +1934,19 @@ prepare_aws4_listing(char *filename,
                return(INCORRECT);
             }
             url_encode(hmr.marker, marker_encoded);
-            i = snprintf(canonical_query, size,
-                         "%smarker=%s&max-keys=%d&prefix=%s",
-                         (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
-                         marker_encoded, AWS4_MAX_KEYS, prefix_encoded);
+            if (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST)
+            {
+               i = snprintf(canonical_query, size, "%smarker=%s&prefix=%s",
+                            (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                            marker_encoded, prefix_encoded);
+            }
+            else
+            {
+               i = snprintf(canonical_query, size,
+                            "%smarker=%s&max-keys=%d&prefix=%s",
+                            (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                            marker_encoded, AWS4_MAX_KEYS, prefix_encoded);
+            }
             free(marker_encoded);
          }
       }
@@ -1872,10 +1956,19 @@ prepare_aws4_listing(char *filename,
          /* NOTE: This MUST be sorted alphabetically by key name! */
          if (hmr.marker[0] == '\0')
          {
-            i = snprintf(canonical_query, size,
-                         "%slist-type=2&max-keys=%d&prefix=%s",
-                         (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
-                         AWS4_MAX_KEYS, prefix_encoded);
+            if (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST)
+            {
+               i = snprintf(canonical_query, size, "%slist-type=2&prefix=%s",
+                            (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                            prefix_encoded);
+            }
+            else
+            {
+               i = snprintf(canonical_query, size,
+                            "%slist-type=2&max-keys=%d&prefix=%s",
+                            (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                            AWS4_MAX_KEYS, prefix_encoded);
+            }
          }
          else
          {
@@ -1891,11 +1984,22 @@ prepare_aws4_listing(char *filename,
                return(INCORRECT);
             }
             url_encode(hmr.marker, marker_encoded);
-            i = snprintf(canonical_query, size,
-                         "continuation-token=%s&%slist-type=2&max-keys=%d&prefix=%s",
-                         marker_encoded,
-                         (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
-                         AWS4_MAX_KEYS, prefix_encoded);
+            if (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST)
+            {
+               i = snprintf(canonical_query, size,
+                            "continuation-token=%s&%slist-type=2&prefix=%s",
+                            marker_encoded,
+                            (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                            prefix_encoded);
+            }
+            else
+            {
+               i = snprintf(canonical_query, size,
+                            "continuation-token=%s&%slist-type=2&max-keys=%d&prefix=%s",
+                            marker_encoded,
+                            (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                            AWS4_MAX_KEYS, prefix_encoded);
+            }
             free(marker_encoded);
          }
       }
@@ -1914,8 +2018,12 @@ prepare_aws4_listing(char *filename,
       return(INCORRECT);
    }
 
+   if (*resource_length == 0)
+   {
+      resource[0] = '/';
+      *resource_length = 1;
+   }
    resource[*resource_length] = '?';
-   (void)strcpy(&resource[*resource_length + 1], canonical_query);
    if (my_strlcpy(&resource[*resource_length + 1], canonical_query,
                   (8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + MAX_AWS4_PARAMETER_LENGTH + MAX_INT_LENGTH + MAX_FILENAME_LENGTH + 1) - (*resource_length + 1)) >=
                   ((8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + MAX_AWS4_PARAMETER_LENGTH + MAX_INT_LENGTH + MAX_FILENAME_LENGTH + 1) - (*resource_length + 1)))

@@ -1664,20 +1664,82 @@ eval_html_dir_list(char         *html_buffer,
                                     etag[date_str_length] = '\0';
 #endif
                                     ptr++;
-                                    /* /ETag><Size> */
+                                    /* /ETag> */
                                     if ((*ptr == '/') && (*(ptr + 1) == 'E') &&
                                         (*(ptr + 2) == 'T') &&
                                         (*(ptr + 3) == 'a') &&
                                         (*(ptr + 4) == 'g') &&
-                                        (*(ptr + 5) == '>') &&
-                                        (*(ptr + 6) == '<') &&
-                                        (*(ptr + 7) == 'S') &&
-                                        (*(ptr + 8) == 'i') &&
-                                        (*(ptr + 9) == 'z') &&
-                                        (*(ptr + 10) == 'e') &&
-                                        (*(ptr + 11) == '>'))
+                                        (*(ptr + 5) == '>'))
                                     {
-                                       ptr += 12;
+                                       /* <ChecksumAlgorithm> */
+                                       if ((*(ptr + 6) == '<') &&
+                                           (*(ptr + 7) == 'C') &&
+                                           (*(ptr + 8) == 'h') &&
+                                           (*(ptr + 9) == 'e') &&
+                                           (*(ptr + 10) == 'c') &&
+                                           (*(ptr + 11) == 'k') &&
+                                           (*(ptr + 12) == 's') &&
+                                           (*(ptr + 13) == 'u') &&
+                                           (*(ptr + 14) == 'm') &&
+                                           (*(ptr + 15) == 'A') &&
+                                           (*(ptr + 16) == 'l') &&
+                                           (*(ptr + 17) == 'g') &&
+                                           (*(ptr + 18) == 'o') &&
+                                           (*(ptr + 19) == 'r') &&
+                                           (*(ptr + 20) == 'i') &&
+                                           (*(ptr + 21) == 't') &&
+                                           (*(ptr + 22) == 'h') &&
+                                           (*(ptr + 23) == 'm') &&
+                                           (*(ptr + 24) == '>'))
+                                       {
+                                          ptr += 25;
+
+                                          /* For now lets, ignore the */
+                                          /* checksum. Something that */
+                                          /* would really be nice to  */
+                                          /* have in the future. TODO */
+                                          if ((ptr = llposi(ptr, (end_ptr - ptr),
+                                                            "<Size>", 6)) != NULL)
+                                          {
+                                             ptr--;
+                                          }
+                                          else
+                                          {
+                                             trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                                       "eval_html_dir_list", NULL,
+                                                       "Unable to find <Size>.");
+                                             *listing_complete = YES;
+                                             return(INCORRECT);
+                                          }
+                                       }
+                                       else if ((*(ptr + 6) == '<') &&
+                                                (*(ptr + 7) == 'S') &&
+                                                (*(ptr + 8) == 'i') &&
+                                                (*(ptr + 9) == 'z') &&
+                                                (*(ptr + 10) == 'e') &&
+                                                (*(ptr + 11) == '>'))
+                                            {
+                                               ptr += 12;
+                                            }
+                                            else
+                                            {
+                                               ptr += 6;
+
+                                               /* Search for <Size>. */
+                                               if ((ptr = llposi(ptr, (end_ptr - ptr),
+                                                                 "<Size>", 6)) != NULL)
+                                               {
+                                                  ptr--;
+                                               }
+                                               else
+                                               {
+                                                  trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                                            "eval_html_dir_list", NULL,
+                                                            "Unable to find <Size>.");
+                                                  *listing_complete = YES;
+                                                  return(INCORRECT);
+                                               }
+                                            }
                                        date_str_length = 0;
 
                                        while ((date_str_length < MAX_FILENAME_LENGTH) &&
@@ -1776,7 +1838,7 @@ eval_html_dir_list(char         *html_buffer,
                                     {
                                        trans_log(ERROR_SIGN, __FILE__, __LINE__,
                                                  "eval_html_dir_list", NULL,
-                                                 "No matching /ETag><Size> found.");
+                                                 "No matching /ETag> found.");
                                        *listing_complete = YES;
                                        return(INCORRECT);
                                     }
@@ -4231,7 +4293,10 @@ check_name(char         *file_name,
               status = 0;
          char *p_file_name;
 
-         if (file_name[0] == '/')
+         if ((file_name[0] == '/') ||
+             (((db.auth == AUTH_AWS4_HMAC_SHA256) ||
+               (db.auth == AUTH_AWS_NO_SIGN_REQUEST)) &&
+              ((fra->dir_options & KEEP_PATH) == 0)))
          {
             p_file_name = file_name + file_name_length;
             while ((p_file_name > file_name) && (*p_file_name != '/'))

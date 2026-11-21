@@ -612,10 +612,11 @@ main(int argc, char *argv[])
                file_size = 4 + header_length + *p_file_size_buffer + 4;
             }
 
-            if (db.auth == AUTH_AWS4_HMAC_SHA256)
+            if ((db.auth == AUTH_AWS4_HMAC_SHA256) ||
+                (db.auth == AUTH_AWS_NO_SIGN_REQUEST))
             {
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                         "FILE_NAME_IS_HEADER is not yet implemented for AUTH_AWS4_HMAC_SHA256.");
+                         "FILE_NAME_IS_HEADER is not yet implemented for AUTH_AWS4_HMAC_SHA256|AUTH_AWS_NO_SIGN_REQUEST.");
                rm_dupcheck_crc(fullname, p_file_name_buffer,
                                *p_file_size_buffer);
                http_quit();

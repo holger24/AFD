@@ -30,7 +30,8 @@ In the following example we upload all files from the local directory
 </pre>
 <p>
 The only difference here is setting the auth= parameter at the end to
-aws4-hmac-sha256. Otherwise it would have tried with the default
+aws4-hmac-sha256. If it is an open server you can also set this to
+aws-no-sign-request. Otherwise it would have tried with the default
 basic authentication. The bucketname is either in the hostname or
 the first element in the path.
 </p>
@@ -103,9 +104,9 @@ When AFD gets a listing of available files it would see the files
 as follows (from TRANS_DB_LOG with trace enabled):
 </p>
 <pre>
-      06 14:21:00 <D> host [0]: eval_html_dir_list(): filename=README.configure length=16 mtime=1611483449 exact=3 size=22944 exact=1
-      06 14:21:00 <D> host [0]: eval_html_dir_list(): filename=amdgpu.2 length=8 mtime=1628350724 exact=3 size=2785 exact=1
-      06 14:21:00 <D> host [0]: eval_html_dir_list(): filename=aws_authorization.c length=19 mtime=1628349108 exact=3 size=8120 exact=1
+      06 14:21:00 <D> host [0]: eval_html_dir_list(): README.configure length=16 mtime=1611483449 exact=3 size=22944 exact=1
+      06 14:21:00 <D> host [0]: eval_html_dir_list(): amdgpu.2 length=8 mtime=1628350724 exact=3 size=2785 exact=1
+      06 14:21:00 <D> host [0]: eval_html_dir_list(): aws_authorization.c length=19 mtime=1628349108 exact=3 size=8120 exact=1
 </pre>
 <p>
 If one adds the [dir options] <a href="dir_config.html#no_delimiter">no
@@ -133,18 +134,18 @@ delimiter</a>:
 One gets a listing of all files in the bucket test:
 </p>
 <pre>
-      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=README.configure length=16 mtime=1611483449 exact=3 size=22944 exact=1
-      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=amdgpu.2 length=8 mtime=1628350724 exact=3 size=2785 exact=1
-      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=aws_authorization.c length=19 mtime=1628349108 exact=3 size=8120 exact=1
-      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=test2/1X7/rename.rule2 length=22 mtime=1630912523 exact=3 size=1805 exact=1
-      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=test2/afd.users.sample length=22 mtime=1628926069 exact=3 size=3736 exact=1
-      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=test3/1X8/rename.rule length=21 mtime=1630912441 exact=3 size=9985 exact=1
-      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=test3/IMG_0843.JPG length=18 mtime=1629042168 exact=3 size=1073143 exact=1
-      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=test3/afd.users.sample length=22 mtime=1628938088 exact=3 size=3736 exact=1
-      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=test3/afd.users.sample2 length=23 mtime=1628939026 exact=3 size=3736 exact=1
-      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=test3/afd.users.sample3 length=23 mtime=1628940807 exact=3 size=3736 exact=1
-      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=test3/afd.users.sample4 length=23 mtime=1628941351 exact=3 size=3736 exact=1
-      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=test3/afd.users.sample5 length=23 mtime=1628963020 exact=3 size=3736 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): README.configure length=16 mtime=1611483449 exact=3 size=22944 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): amdgpu.2 length=8 mtime=1628350724 exact=3 size=2785 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): aws_authorization.c length=19 mtime=1628349108 exact=3 size=8120 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): test2/1X7/rename.rule2 length=22 mtime=1630912523 exact=3 size=1805 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): test2/afd.users.sample length=22 mtime=1628926069 exact=3 size=3736 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): test3/1X8/rename.rule length=21 mtime=1630912441 exact=3 size=9985 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): test3/IMG_0843.JPG length=18 mtime=1629042168 exact=3 size=1073143 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): test3/afd.users.sample length=22 mtime=1628938088 exact=3 size=3736 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): test3/afd.users.sample2 length=23 mtime=1628939026 exact=3 size=3736 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): test3/afd.users.sample3 length=23 mtime=1628940807 exact=3 size=3736 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): test3/afd.users.sample4 length=23 mtime=1628941351 exact=3 size=3736 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): test3/afd.users.sample5 length=23 mtime=1628963020 exact=3 size=3736 exact=1
 </pre>
 <p>
 Since AFD cuts off the path by default you will notice that the file from
@@ -207,8 +208,8 @@ prefix option is added as soon as you specify a path after the bucketname:
 The listing of the above configuration will look as follows:
 </p>
 <pre>
-      06 10:22:00 <D> host [0]: eval_html_dir_list(): filename=test2/1X7/rename.rule2 length=22 mtime=1630912523 exact=3 size=1805 exact=1
-      06 10:22:00 <D> host [0]: eval_html_dir_list(): filename=test2/afd.users.sample length=22 mtime=1628926069 exact=3 size=3736 exact=1
+      06 10:22:00 <D> host [0]: eval_html_dir_list(): test2/1X7/rename.rule2 length=22 mtime=1630912523 exact=3 size=1805 exact=1
+      06 10:22:00 <D> host [0]: eval_html_dir_list(): test2/afd.users.sample length=22 mtime=1628926069 exact=3 size=3736 exact=1
 </pre>
 <p>
 What also works, but is NOT recommended, is if you put the path
@@ -267,9 +268,9 @@ sub directories might pop up when your not the only one using the bucket.
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 2021 by H.Kiehl<br>
+   Copyright &copy; 2021 - 2026 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 07.09.2021
+   Last updated: 16.11.2026
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

@@ -852,20 +852,8 @@ aws_cmd(char                      *cmd,
 
    if (p_hmr->auth_type == AUTH_AWS4_HMAC_SHA256)
    {
-      if ((p_hmr->user[0] == '\0') && (p_hmr->passwd[0] == '\0'))
-      {
-         if (p_hmr->authorization != NULL)
-         {
-            free(p_hmr->authorization);
-            p_hmr->authorization = NULL;
-         }
-         ret = SUCCESS;
-      }
-      else
-      {
-         ret = aws4_cmd_authentication(cmd, file_name, target_dir,
-                                       parameter, p_hmr);
-      }
+      ret = aws4_cmd_authentication(cmd, file_name, target_dir,
+                                    parameter, p_hmr);
    }
    else if (p_hmr->auth_type == AUTH_AWS_NO_SIGN_REQUEST)
         {
