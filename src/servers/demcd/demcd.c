@@ -1,6 +1,6 @@
 /*
  *  demcd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2015 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -374,7 +374,7 @@ main(int argc, char *argv[])
             if ((now - dqb[i].log_time) >= time_up)
             {
                log_confirmation(i, CL_TIMEUP);
-               if (i <= (*no_demcd_queued - 1))
+               if (i < (*no_demcd_queued - 1))
                {
                   (void)memmove(&dqb[i], &dqb[i + 1],
                                 ((*no_demcd_queued - 1 - i) * sizeof(struct demcd_queue_buf)));

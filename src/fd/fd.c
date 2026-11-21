@@ -1309,7 +1309,7 @@ system_log(DEBUG_SIGN, NULL, 0,
                              "Have not received an ACK for %s. Was unable to locate the corresponding job in the queue.",
                              ab[i].msg_name);
                }
-               if (i <= (*no_of_acks_queued - 1))
+               if (i < (*no_of_acks_queued - 1))
                {
                   (void)memmove(&ab[i], &ab[i + 1],
                                 ((*no_of_acks_queued - 1 - i) *
@@ -4167,7 +4167,7 @@ remove_ack(char *ack_msg_name, time_t ack_creation_time)
                        "Hmm, failed to locate %s in queue_buf (%d)",
                        ack_msg_name, *no_msg_queued);
          }
-         if (i <= (*no_of_acks_queued - 1))
+         if (i < (*no_of_acks_queued - 1))
          {
             (void)memmove(&ab[i], &ab[i + 1],
                           ((*no_of_acks_queued - 1 - i) *

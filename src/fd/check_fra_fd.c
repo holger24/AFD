@@ -1,6 +1,6 @@
 /*
  *  check_fra_fd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -369,7 +369,7 @@ check_fra_fd(void)
                             */
                            if (*no_msg_queued > 0)
                            {
-                              if (rql[j].qb_pos <= (*no_msg_queued - 1))
+                              if (rql[j].qb_pos < (*no_msg_queued - 1))
                               {
                                  (void)memmove(&qb[rql[j].qb_pos],
                                                &qb[rql[j].qb_pos + 1],

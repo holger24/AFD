@@ -210,7 +210,7 @@ remove_msg(int qb_pos, int remove_only)
                         qb[qb_pos].msg_number, *no_msg_queued, file, line);
       }
 #endif
-      if (qb_pos <= (*no_msg_queued - 1))
+      if (qb_pos < (*no_msg_queued - 1))
       {
          (void)memmove(&qb[qb_pos], &qb[qb_pos + 1],
                        ((*no_msg_queued - 1 - qb_pos) * sizeof(struct queue_buf)));

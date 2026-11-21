@@ -1,6 +1,6 @@
 /*
  *  init_msg_buffer.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1031,7 +1031,7 @@ list_job_to_remove(int                cache_pos,
             if (strncmp(qb[j].msg_name, ab[k].msg_name,
                         MAX_MSG_NAME_LENGTH) == 0)
             {
-               if (k <= (*no_of_acks_queued - 1))
+               if (k < (*no_of_acks_queued - 1))
                {
                   (void)memmove(&ab[k], &ab[k + 1],
                                 ((*no_of_acks_queued - 1 - k) *

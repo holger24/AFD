@@ -1,6 +1,6 @@
 /*
  *  isdup.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2024 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -524,7 +524,7 @@ isdup_rm(char         *fullname,
       {
          if ((crc == cdb[i].crc) && (flag == cdb[i].flag))
          {
-            if (i <= *no_of_crcs)
+            if (i < *no_of_crcs)
             {
                (void)memmove(&cdb[i], &cdb[i + 1],
                              ((*no_of_crcs - 1 - i) * sizeof(struct crc_buf)));

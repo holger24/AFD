@@ -1,6 +1,6 @@
 /*
  *  get_new_positions.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2023 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2026 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -162,7 +162,7 @@ get_new_positions(void)
                      /* Remove job from queue. */
                      if (*no_msg_queued > 0)
                      {
-                        if (qb_pos <= (*no_msg_queued - 1))
+                        if (qb_pos < (*no_msg_queued - 1))
                         {
                            (void)memmove(&qb[qb_pos], &qb[qb_pos + 1],
                                          ((*no_msg_queued - 1 - qb_pos) * sizeof(struct queue_buf)));
